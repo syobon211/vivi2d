@@ -22,7 +22,7 @@
     "obs-websocket-js": "^5.0.8"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.2"
   }
 }
