@@ -1,0 +1,26 @@
+import { common as enCommon } from "../en/common";
+
+export const common = {
+  ...enCommon,
+  "common.save": "保存",
+  "common.cancel": "取消",
+  "common.close": "关闭",
+  "common.delete": "删除",
+  "common.reset": "重置",
+  "common.ok": "确定",
+  "common.export": "导出",
+  "common.import": "导入",
+  "common.enabled": "已启用",
+  "common.disabled": "已禁用",
+  "common.apply": "应用",
+  "common.add": "+ 添加",
+  "common.search": "搜索...",
+  "common.exporting": "正在导出...",
+  "common.selectAll": "全选",
+  "common.deselectAll": "取消全选",
+  "common.error": "错误",
+  "common.warning": "警告",
+  "common.info": "信息",
+  "common.versus": "对比",
+  "canvas.editorCanvas": "编辑器画布",
+} as const satisfies Record<keyof typeof enCommon, string>;

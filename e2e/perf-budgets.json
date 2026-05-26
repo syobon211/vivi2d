@@ -1,0 +1,104 @@
+{
+  "description": "Budgets for the Playwright perf suite. Soft budgets are log-oriented guardrails. Hard budgets fail the spec when exceeded.",
+  "lastUpdated": "2026-05-02",
+  "notes": [
+    "These thresholds are intended for the local Windows Electron test environment. CI noise can differ by runner.",
+    "Use docs/developer/quality/baselines/perf-*.json diffs to inspect slower regressions in detail.",
+    "Bundle chunk-level enforcement still lives in docs/developer/quality/baselines/bundle-budget.json plus scripts/check-bundle-budget.mjs. The E2E perf spec only performs a lightweight main bundle assertion."
+  ],
+  "startup": {
+    "budget_soft": {
+      "launchToVivi2dMs_p50": 700,
+      "launchToVivi2dMs_p95": 1200
+    },
+    "budget_hard": {
+      "launchToVivi2dMs_max": 2500
+    }
+  },
+  "canvasOpen": {
+    "coarseEnvelopeMode": "reportOnly",
+    "budget_soft": {
+      "projectReadyMs_p50": 40,
+      "layerListReadyMs_p50": 60,
+      "editableCanvasReadyMs_p50": 75,
+      "openToEditableCanvasMs_p50": 700,
+      "openToEditableCanvasMs_p95": 1200
+    },
+    "budget_hard": {
+      "projectReadyMs_max": 120,
+      "layerListReadyMs_max": 150,
+      "editableCanvasReadyMs_max": 180,
+      "openToEditableCanvasMs_max": 2000
+    },
+    "note": "Measured from the PSD import command to the first editable canvas-ready state. The ready state requires a loaded project, visible layer list, and a live canvas element with non-zero dimensions. Internal probes also track project-ready, layer-list-ready, and editable-canvas-ready milestones so DOM-visible envelope drift can be separated from app-side regressions."
+  },
+  "editorInteraction": {
+    "samples": 5,
+    "warmupSamples": 1,
+    "coarseEnvelopeMode": "reportOnly",
+    "budget_soft": {
+      "layerPanelClickToNextFrameMs_p50": 20,
+      "selectionStoreSelectLayerMs_p50": 2,
+      "selectionViviMeshReadyMs_p50": 10,
+      "enterMeshEditMs_p50": 130,
+      "exitMeshEditMs_p50": 45,
+      "toolButtonClickToNextFrameMs_p50": 2,
+      "viewportSetToolMs_p50": 2,
+      "meshEditAppReadyMs_p50": 10,
+      "meshOverlayVertexDetailsReadyMs_p50": 2,
+      "meshOverlayVisualModelBuildMs_p50": 2
+    },
+    "budget_hard": {
+      "enterMeshEditMs_max": 250,
+      "exitMeshEditMs_max": 100,
+      "layerPanelClickToNextFrameMs_max": 40,
+      "selectionStoreSelectLayerMs_max": 10,
+      "selectionViviMeshReadyMs_max": 20,
+      "toolButtonClickToNextFrameMs_max": 8,
+      "viewportSetToolMs_max": 8,
+      "meshEditAppReadyMs_max": 20,
+      "meshOverlayVertexDetailsReadyMs_max": 8,
+      "meshOverlayVisualModelBuildMs_max": 8
+    },
+    "note": "Measured on a warm editor after importing the test PSD. Each sample resets to select mode, selects a representative ViviMesh, enters mesh edit, then exits back to select mode. The coarse browser-visible envelope is still recorded for diagnostics, but the enforced regression signal should come from the internal app probes for layer-selection, tool-switch, and mesh-overlay readiness."
+  },
+  "fps": {
+    "budget_soft": {
+      "minFPS": 58
+    },
+    "budget_hard": {
+      "minFPS": 50
+    },
+    "samplingMs": 2000,
+    "note": "Measured from requestAnimationFrame cadence in the Electron renderer. This is a compositor-vsync proxy rather than a direct PixiJS ticker measurement, but it is stable enough for regression detection."
+  },
+  "memoryLeak": {
+    "loops": 10,
+    "budget_soft": {
+      "heapIncreaseMBPerLoop": 0.15
+    },
+    "budget_hard": {
+      "heapIncreaseMBPerLoop": 0.75
+    }
+  },
+  "timelineRender": {
+    "keyframeCount": 1000,
+    "budget_soft": {
+      "injectionMs": 10,
+      "firstPaintMs": 20
+    },
+    "budget_hard": {
+      "injectionMs": 40,
+      "firstPaintMs": 80
+    }
+  },
+  "bundle": {
+    "budget_hard": {
+      "mainIndexBytes": 100000
+    },
+    "budget_soft": {
+      "mainIndexBytes": 50000
+    },
+    "note": "Strict chunk budgets are enforced by docs/developer/quality/baselines/bundle-budget.json plus scripts/check-bundle-budget.mjs. The E2E perf spec keeps a lighter main-bundle soft/hard guard around the current baseline."
+  }
+}

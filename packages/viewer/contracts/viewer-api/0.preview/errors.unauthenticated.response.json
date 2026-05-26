@@ -1,0 +1,13 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "unauthenticated",
+    "message": "unauthenticated",
+    "retryable": true
+  },
+  "id": "request-id"
+}

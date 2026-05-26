@@ -1,0 +1,120 @@
+name: Bug report
+description: Report a reproducible Vivi2D bug.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Vivi2D. If this report involves a security vulnerability, token, private file path, unreleased asset, or exploit path, do not open a public issue. Please use the private security reporting path in SECURITY.md.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Summarize the bug in one or two sentences.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the smallest reliable reproduction.
+      placeholder: |
+        1. Open ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should Vivi2D do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What did Vivi2D do instead?
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Release version, commit SHA, or branch name.
+      placeholder: "v0.x.y, commit SHA, or branch"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Editor UI
+        - Project import/export
+        - Layer editing / See-through
+        - Auto setup / rigging
+        - Viewer API / actions / props / tracking
+        - Runtime package
+        - WASM runtime
+        - Native runtime / C ABI
+        - Renderer / web package
+        - Electron / desktop shell
+        - Provider / plugin integration
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: asset_source
+    attributes:
+      label: Asset or project source
+      description: Only choose an option if the bug depends on a model, image, or project file.
+      options:
+        - Not asset-specific
+        - Minimal synthetic fixture
+        - User-created asset I can share publicly
+        - User-created asset I cannot share publicly
+        - Third-party asset with redistribution restrictions
+        - Generated output
+        - Other
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser/Electron version, Node/npm version, GPU if relevant.
+      placeholder: "Windows 11, Electron app, Node 22, npm 10"
+    validations:
+      required: true
+
+  - type: textarea
+    id: regression
+    attributes:
+      label: Regression information
+      description: Did this work before? If so, what version or commit last worked?
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots, or recordings
+      description: Remove secrets, private paths, private assets, and unreleased third-party material before attaching.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have not included secrets, private file paths, or private assets.
+          required: true
+        - label: I have read SECURITY.md and confirmed this report contains no vulnerability details.
+          required: true

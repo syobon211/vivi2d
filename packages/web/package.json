@@ -1,0 +1,55 @@
+{
+  "name": "@vivi2d/web",
+  "version": "0.1.0-alpha.0",
+  "type": "module",
+  "description": "Independent Vivi2D Web Component for embedding 2D models in browsers",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vivi2d/vivi2d.git",
+    "directory": "packages/web"
+  },
+  "bugs": {
+    "url": "https://github.com/vivi2d/vivi2d/issues"
+  },
+  "homepage": "https://github.com/vivi2d/vivi2d/tree/main/packages/web",
+  "vivi2d": {
+    "publication": "experimental"
+  },
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/vivi2d.es.js"
+    },
+    "./auto-register": {
+      "types": "./dist/auto-register.d.ts",
+      "import": "./dist/auto-register.js"
+    },
+    "./umd": {
+      "default": "./dist/vivi2d.umd.js"
+    }
+  },
+  "sideEffects": [
+    "./dist/auto-register.js",
+    "./dist/vivi2d.umd.js"
+  ],
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "cross-env VIVI_WEB_BUILD_TARGET=es vite build && cross-env VIVI_WEB_BUILD_TARGET=umd vite build && tsc --emitDeclarationOnly --declarationDir dist/.types && node ../../scripts/extract-web-types.mjs",
+    "dev": "vite"
+  },
+  "keywords": [
+    "2d-model",
+    "2d-avatar",
+    "2d-animation",
+    "web-component",
+    "pixi"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "license": "Apache-2.0"
+}

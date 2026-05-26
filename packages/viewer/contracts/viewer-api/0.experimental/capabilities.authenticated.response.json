@@ -1,0 +1,106 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.experimental",
+  "id": "request-id",
+  "type": "viewer.api.capabilities.get.result",
+  "ok": true,
+  "data": {
+    "capabilities": {
+      "api": "ViviViewerApi",
+      "version": "0.experimental",
+      "authMethods": [
+        "pairing-token"
+      ],
+      "pairingOpen": false,
+      "requestTypes": [
+        "viewer.actions.list",
+        "viewer.api.capabilities.get",
+        "viewer.calibration.get",
+        "viewer.events.list",
+        "viewer.events.subscribe",
+        "viewer.events.unsubscribe",
+        "viewer.prop.group.cycle",
+        "viewer.prop.load",
+        "viewer.prop.remove",
+        "viewer.prop.update",
+        "viewer.props.list",
+        "viewer.signals.list",
+        "viewer.state.get"
+      ],
+      "eventTypes": [
+        "viewer.events.dropped",
+        "viewer.event.test",
+        "viewer.model.loaded",
+        "viewer.model.unloaded",
+        "viewer.model.transform.changed",
+        "viewer.action.started",
+        "viewer.action.completed",
+        "viewer.action.failed",
+        "viewer.action.skipped",
+        "viewer.signals.changed",
+        "viewer.prop.added",
+        "viewer.prop.updated",
+        "viewer.prop.removed",
+        "viewer.calibration.changed",
+        "viewer.tracking.status.changed",
+        "viewer.input.clicked",
+        "viewer.api.grant.revoked"
+      ],
+      "propSourceKinds": [
+        "inlineBase64",
+        "filePickerAsset"
+      ],
+      "limits": {
+        "maxWebSocketTextFrameBytes": 65536,
+        "maxJsonNestingDepth": 16,
+        "maxTopLevelKeys": 5,
+        "maxRequestIdLength": 128,
+        "maxSignalValuesPerRequest": 128,
+        "maxInlinePropBytes": 49152,
+        "maxFilePickerPropBytes": 8388608,
+        "maxActiveEventSubscriptions": 32,
+        "maxQueuedEventsPerClient": 128,
+        "maxQueuedEventBytesPerClient": 262144,
+        "maxEventPayloadBytes": 16384
+      },
+      "closeCodes": {
+        "invalidRequest": {
+          "code": 4400,
+          "reason": "invalid_request"
+        },
+        "unauthenticated": {
+          "code": 4401,
+          "reason": "unauthenticated"
+        },
+        "grantRevoked": {
+          "code": 4403,
+          "reason": "grant_revoked"
+        },
+        "rateLimited": {
+          "code": 4408,
+          "reason": "rate_limited"
+        },
+        "originMismatch": {
+          "code": 4409,
+          "reason": "origin_mismatch"
+        },
+        "hostRejected": {
+          "code": 4410,
+          "reason": "host_rejected"
+        },
+        "frameTooLarge": {
+          "code": 4411,
+          "reason": "frame_too_large"
+        },
+        "binaryRejected": {
+          "code": 4412,
+          "reason": "binary_rejected"
+        },
+        "compressionRejected": {
+          "code": 4413,
+          "reason": "compression_rejected"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,368 @@
+{
+  "schemaVersion": 1,
+  "status": "provisional-technical-review",
+  "lastUpdated": "2026-05-26",
+  "notes": "This manifest tracks reviewed translation source snapshots. zh-Hans and ko-KR copy is ready for implementation testing; native-speaker human review remains a release-candidate checklist item.",
+  "entries": [
+    {
+      "locale": "ja",
+      "surface": "editor",
+      "namespace": "common",
+      "sourcePath": "src/lib/i18n/ja/common.ts",
+      "sourceHash": "sha256:db76316f3a9cb4108767ec15f2df25a798a65daebe4db2b3b9a467ccc0ba21e3",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ja",
+      "surface": "editor",
+      "namespace": "dialog",
+      "sourcePath": "src/lib/i18n/ja/dialog.ts",
+      "sourceHash": "sha256:87f6fcae02aa77433e5dd117b017bf4b4d2138f60f3670ff11a61fc272381a63",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ja",
+      "surface": "editor",
+      "namespace": "layer",
+      "sourcePath": "src/lib/i18n/ja/layer.ts",
+      "sourceHash": "sha256:808c2752354edd4ebcae1b5b84ae1e2efbfcb47598ee8a0268522a1681f61080",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ja",
+      "surface": "editor",
+      "namespace": "menu",
+      "sourcePath": "src/lib/i18n/ja/menu.ts",
+      "sourceHash": "sha256:61c238808ad5499b1581dc748d15d5d4321cea10e6aa56ab4ce62506062f87df",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ja",
+      "surface": "editor",
+      "namespace": "panel",
+      "sourcePath": "src/lib/i18n/ja/panel.ts",
+      "sourceHash": "sha256:1730d68d7062fceeebe50e6657889d3b3d5c3912445aae2a7b9f988afda8b256",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ja",
+      "surface": "editor",
+      "namespace": "shortcut",
+      "sourcePath": "src/lib/i18n/ja/shortcut.ts",
+      "sourceHash": "sha256:20ec135a3fb0d8b83634f4f0fee2b82b4addfde55d97a187446efa87cf80e89b",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ja",
+      "surface": "editor",
+      "namespace": "timeline",
+      "sourcePath": "src/lib/i18n/ja/timeline.ts",
+      "sourceHash": "sha256:4f8077027ddc2a8a2814d7718caeb13c88ed5302568f8ac98d8366027654cc22",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "zh-Hans",
+      "surface": "editor",
+      "namespace": "common",
+      "sourcePath": "src/lib/i18n/zh-Hans/common.ts",
+      "sourceHash": "sha256:5f8c76603dac5532eb363399b6591daf6756e604801c2971831902940f43add4",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "zh-Hans",
+      "surface": "editor",
+      "namespace": "dialog",
+      "sourcePath": "src/lib/i18n/zh-Hans/dialog.ts",
+      "sourceHash": "sha256:656924c6a03dab570a555166b55de2606730eadaf87bc34537a6e55e8511a253",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "zh-Hans",
+      "surface": "editor",
+      "namespace": "layer",
+      "sourcePath": "src/lib/i18n/zh-Hans/layer.ts",
+      "sourceHash": "sha256:15f7542db923f2e0de55d45a4841a83f9aaea8f02ac5a0033cf92c31f9a57ee0",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "zh-Hans",
+      "surface": "editor",
+      "namespace": "menu",
+      "sourcePath": "src/lib/i18n/zh-Hans/menu.ts",
+      "sourceHash": "sha256:ad292e4d57c67f42e8ca6aa8e6c94ca32732ad04ee58ee5fad0aece5a166b419",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "zh-Hans",
+      "surface": "editor",
+      "namespace": "panel",
+      "sourcePath": "src/lib/i18n/zh-Hans/panel.ts",
+      "sourceHash": "sha256:3207f82d6ec8f27f7c074752da585266fe71cf01545dd11b75bdaeb04fdcfb3c",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-21",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "zh-Hans",
+      "surface": "editor",
+      "namespace": "shortcut",
+      "sourcePath": "src/lib/i18n/zh-Hans/shortcut.ts",
+      "sourceHash": "sha256:572a0043108110bd553c7f35401062468efc33fd95e28cd6445d93bde7dab72c",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "zh-Hans",
+      "surface": "editor",
+      "namespace": "timeline",
+      "sourcePath": "src/lib/i18n/zh-Hans/timeline.ts",
+      "sourceHash": "sha256:211d9fd4a10058228712244164f54f80c8fc039233b162429ce2dcb58253d60e",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ko-KR",
+      "surface": "editor",
+      "namespace": "common",
+      "sourcePath": "src/lib/i18n/ko-KR/common.ts",
+      "sourceHash": "sha256:5d4b3666a798cc68f7d416662f0618ad085fc4fa6cb3d7d581ba605592f7bc69",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ko-KR",
+      "surface": "editor",
+      "namespace": "dialog",
+      "sourcePath": "src/lib/i18n/ko-KR/dialog.ts",
+      "sourceHash": "sha256:d031f56d249116c69d5313cb3e73aac0907b38d903ffe02d4ba7532b0a7acf98",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ko-KR",
+      "surface": "editor",
+      "namespace": "layer",
+      "sourcePath": "src/lib/i18n/ko-KR/layer.ts",
+      "sourceHash": "sha256:197e8860ebf98203691336fe316fcc64c2f45da98a862caf2d87177c9a119ed5",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ko-KR",
+      "surface": "editor",
+      "namespace": "menu",
+      "sourcePath": "src/lib/i18n/ko-KR/menu.ts",
+      "sourceHash": "sha256:b412cc4bb1267a8e593bebd26c848b24b9c850517f4ccff763d20a0f1fd8ecc1",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ko-KR",
+      "surface": "editor",
+      "namespace": "panel",
+      "sourcePath": "src/lib/i18n/ko-KR/panel.ts",
+      "sourceHash": "sha256:e9d5b1b30e0c0da978249e7d3af13ed76d5dcd3a770ace74688104db32aefc6f",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-21",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ko-KR",
+      "surface": "editor",
+      "namespace": "shortcut",
+      "sourcePath": "src/lib/i18n/ko-KR/shortcut.ts",
+      "sourceHash": "sha256:601694cc169b548e37d406358e7dd97a03b75926a0afaf758380092736ec9960",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ko-KR",
+      "surface": "editor",
+      "namespace": "timeline",
+      "sourcePath": "src/lib/i18n/ko-KR/timeline.ts",
+      "sourceHash": "sha256:aba06651e28b7e9d8de536925ea124da53574e87e549163f0138ceab3fc78a63",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ja",
+      "surface": "viewer",
+      "namespace": "viewer",
+      "sourcePath": "packages/viewer/src/i18n/ja.ts",
+      "sourceHash": "sha256:5b491325e9e7a398c84c023d70e4e9b098b8690bbab74ac2338ffa3eaabf9f8d",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "zh-Hans",
+      "surface": "viewer",
+      "namespace": "viewer",
+      "sourcePath": "packages/viewer/src/i18n/zh-Hans.ts",
+      "sourceHash": "sha256:6e0aa4ec74f4a1efda3c6665d620d0c85103fdf2e0b0d01c5d0873e2e9eefc4d",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    },
+    {
+      "locale": "ko-KR",
+      "surface": "viewer",
+      "namespace": "viewer",
+      "sourcePath": "packages/viewer/src/i18n/ko-KR.ts",
+      "sourceHash": "sha256:8b540f7aa8a2ee8033b658cc4b48fc37fcb02e3d592dcc5b4a913312446fb5e6",
+      "reviewedBy": "Vivi2D provisional i18n review",
+      "reviewedAt": "2026-05-20",
+      "reviewStatus": "provisional-technical-review",
+      "machineDraftUsed": true,
+      "keysReviewed": [
+        "*"
+      ],
+      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+    }
+  ]
+}

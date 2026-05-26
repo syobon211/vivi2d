@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vivi2D Web SDK Basic Example</title>
+  </head>
+  <body>
+    <main class="sample-shell">
+      <section class="hero">
+        <p class="eyebrow">Vivi2D Web SDK</p>
+        <h1>Programmatic player sample</h1>
+        <p>
+          Load a generated public-profile model, create a player, drive inputs,
+          and dispose resources from app-owned controls.
+        </p>
+      </section>
+
+      <section class="stage-card">
+        <canvas
+          id="vivi-canvas"
+          width="480"
+          height="600"
+          role="img"
+          aria-label="Vivi2D model preview"
+        ></canvas>
+        <div class="status-stack">
+          <div id="status" role="status" aria-live="polite">Starting sample...</div>
+          <dl id="metadata-summary" class="metadata-grid"></dl>
+        </div>
+      </section>
+
+      <section class="control-grid" aria-label="Model loading and lifecycle controls">
+        <div class="panel">
+          <h2>Load</h2>
+          <div class="button-row">
+            <button type="button" data-testid="load-fixture">Load bundled fixture</button>
+            <button type="button" data-testid="load-delayed">Load slowly</button>
+            <button type="button" data-testid="cancel-load">Cancel load</button>
+            <button type="button" data-testid="reload-model">Reload</button>
+          </div>
+          <label class="file-picker">
+            <span>Load .vivi file</span>
+            <input id="file-input" type="file" accept=".vivi" data-testid="file-input" />
+          </label>
+        </div>
+
+        <div class="panel">
+          <h2>Lifecycle</h2>
+          <div class="button-row">
+            <button type="button" data-testid="start-player">Start</button>
+            <button type="button" data-testid="stop-player">Stop</button>
+            <button type="button" data-testid="manual-update">Manual update + render</button>
+            <button type="button" data-testid="resize-small">Resize 320x480</button>
+            <button type="button" data-testid="resize-large">Resize 640x960</button>
+            <button type="button" data-testid="dispose-player">Dispose</button>
+            <button type="button" data-testid="reload-after-dispose">Reload after dispose</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>Inputs</h2>
+          <label class="toggle">
+            <input type="checkbox" data-testid="strict-inputs" />
+            <span>Strict input mode recreates the stopped player and resets values</span>
+          </label>
+        </div>
+        <div id="parameter-controls" class="parameter-list"></div>
+        <div class="button-row">
+          <button type="button" data-testid="apply-visible-inputs">Apply visible inputs</button>
+          <button type="button" data-testid="reset-inputs">Reset inputs</button>
+          <button type="button" data-testid="unknown-input">Try unknown input</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Error handling</h2>
+        <p>
+          These buttons intentionally trigger safe SDK errors and display stable
+          copy from the sample formatter.
+        </p>
+        <div class="button-row">
+          <button type="button" data-testid="error-fetch">Fetch failure</button>
+          <button type="button" data-testid="error-invalid-source">Invalid source</button>
+          <button type="button" data-testid="error-validation">Validation failure</button>
+          <button type="button" data-testid="error-parse">Parse failure</button>
+          <button type="button" data-testid="error-invalid-input">Invalid input</button>
+          <button type="button" data-testid="error-invalid-resize">Invalid resize matrix</button>
+          <button type="button" data-testid="error-disposed">Use after dispose</button>
+          <button type="button" data-testid="error-source-shortcut-abort">
+            Source shortcut abort
+          </button>
+        </div>
+        <output id="error-output" class="error-output" data-testid="error-output"></output>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

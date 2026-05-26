@@ -1,0 +1,36 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.experimental",
+  "id": "request-id",
+  "type": "viewer.props.list.result",
+  "ok": true,
+  "data": {
+    "props": [
+      {
+        "id": "prop-api-fixture",
+        "name": "Fixture Badge",
+        "kind": "image",
+        "visible": true,
+        "drawOrder": 100,
+        "opacity": 0.8,
+        "transform": {
+          "x": 12,
+          "y": 24,
+          "scaleX": 1,
+          "scaleY": 1,
+          "rotation": 0
+        },
+        "groupId": "fixture-group",
+        "anchor": {
+          "kind": "screen"
+        },
+        "source": {
+          "kind": "inlineBase64",
+          "mimeType": "image/png",
+          "portable": true,
+          "bytes": 33
+        }
+      }
+    ]
+  }
+}

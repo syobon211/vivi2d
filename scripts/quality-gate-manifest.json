@@ -1,0 +1,619 @@
+{
+  "schemaVersion": 1,
+  "description": "Canonical map from local quality gates to CI workflow coverage. scripts/check-quality-gate-drift.mjs compares this file with scripts/run-quality-gates.mjs and .github/workflows/*.yml.",
+  "excludedWorkflows": [
+    {
+      "path": ".github/workflows/codeql.yml",
+      "reason": "CodeQL is a dedicated security-analysis workflow, not a local quality-gate mirror."
+    },
+    {
+      "path": ".github/workflows/perf-monitor.yml",
+      "reason": "Performance monitoring is report-only or scheduled and is not part of the blocking quality-gate set."
+    },
+    {
+      "path": ".github/workflows/publish-web-alpha.yml",
+      "reason": "Manual protected npm publication workflow; checked by npm run check:web-npm-alpha-release rather than mirrored as a normal quality gate."
+    }
+  ],
+  "lintCoverage": {
+    "workflows": [
+      ".github/workflows/quality-gates.yml",
+      ".github/workflows/test-matrix.yml"
+    ],
+    "requiredScripts": [
+      "scripts/check-architecture-boundaries.mjs",
+      "scripts/check-core-model-current-fixtures.mjs",
+      "scripts/check-direct-model-mutations.mjs",
+      "scripts/check-docs-public-surface.mjs",
+      "scripts/check-task-guide-paths.mjs",
+      "scripts/check-task-guide-gates.mjs",
+      "scripts/check-pr-recipe-gates.mjs",
+      "scripts/check-troubleshooting-content.mjs",
+      "scripts/check-content-safety-integrity.mjs",
+      "scripts/check-escalation-template.mjs",
+      "scripts/check-user-docs.mjs",
+      "scripts/check-docs-architecture.mjs",
+      "scripts/check-history-secrets.mjs",
+      "scripts/check-hosted-release-surfaces.mjs",
+      "scripts/create-source-review-archive.mjs",
+      "scripts/check-ip-markers.mjs",
+      "scripts/check-ip-product-profile.mjs",
+      "scripts/check-local-motion-private-markers.mjs",
+      "scripts/check-local-motion-worker-fixtures.mjs",
+      "scripts/check-clean-room-coverage.mjs",
+      "scripts/check-auto-setup-ip-compliance.mjs",
+      "scripts/generate-local-motion-marker-catalogs.mjs",
+      "scripts/check-ipc-contract-sync.mjs",
+      "scripts/check-import-cycles.mjs",
+      "scripts/check-license-policy.mjs",
+      "scripts/check-native-artifact-policy.mjs",
+      "scripts/check-oss-readiness.mjs",
+      "scripts/check-pack-contents.mjs",
+      "scripts/check-package-boundaries.mjs",
+      "scripts/check-web-sdk-unlock.mjs",
+      "scripts/check-ui-module-budget.mjs",
+      "scripts/check-publication-history.mjs",
+      "scripts/check-quality-gate-drift.mjs",
+      "scripts/check-release-surface.mjs",
+      "scripts/check-release-gates.test.mjs",
+      "scripts/check-runtime-c-abi-link.mjs",
+      "scripts/check-runtime-c-abi.mjs",
+      "scripts/check-runtime-wasm-browser.mjs",
+      "scripts/check-secrets.mjs",
+      "scripts/check-security-patterns.mjs",
+      "scripts/check-security-patterns.test.mjs",
+      "scripts/check-source-comments.mjs",
+      "scripts/check-web-sdk-basic-static.mjs",
+      "scripts/check-web-sdk-basic-smoke.mjs",
+      "scripts/check-samples-public-surface.mjs",
+      "scripts/check-viewer-test-text.mjs",
+      "scripts/lib/source-hygiene.mjs",
+      "scripts/lib/content-safety-patterns.mjs",
+      "scripts/check-workspace-layout.mjs",
+      "scripts/generate-sbom.mjs",
+      "scripts/lib/repo.test.mjs",
+      "scripts/lib/repo.mjs",
+      "scripts/generate-third-party-notices.mjs",
+      "scripts/generate-web-sdk-basic-fixture.mjs",
+      "scripts/run-quality-gates.mjs"
+    ]
+  },
+  "gates": [
+    {
+      "id": "root-typecheck",
+      "npmScript": null,
+      "command": "npx tsc --noEmit",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:packages-types",
+      "command": "npm run check:packages-types",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:workspace-layout",
+      "command": "npm run check:workspace-layout",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "check-docs-architecture",
+      "npmScript": "check:docs-architecture",
+      "command": "npm run check:docs-architecture",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "check-task-guide-paths",
+      "npmScript": "check:task-guide-paths",
+      "command": "npm run check:task-guide-paths",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "check-task-guide-gates",
+      "npmScript": "check:task-guide-gates",
+      "command": "npm run check:task-guide-gates",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "check-pr-recipe-gates",
+      "npmScript": "check:pr-recipe-gates",
+      "command": "npm run check:pr-recipe-gates",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "check-troubleshooting-content",
+      "npmScript": "check:troubleshooting-content",
+      "command": "npm run check:troubleshooting-content",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "check-content-safety-integrity",
+      "npmScript": "check:content-safety-integrity",
+      "command": "npm run check:content-safety-integrity",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "check-escalation-template",
+      "npmScript": "check:escalation-template",
+      "command": "npm run check:escalation-template",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "docs-user-check",
+      "npmScript": "docs:user:check",
+      "command": "npm run docs:user:check",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "docs-user-check-release",
+      "npmScript": "docs:user:check:release",
+      "command": "npm run docs:user:check:release",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "check-docs-public-surface",
+      "npmScript": "check:docs-public-surface",
+      "command": "npm run check:docs-public-surface",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:quality-gate-drift",
+      "command": "npm run check:quality-gate-drift",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "test",
+      "command": "npm run test",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "i18n:check:all",
+      "command": "npm run i18n:check:all",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:ipc-contract",
+      "command": "npm run check:ipc-contract",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:ipc-contract-sync",
+      "command": "npm run check:ipc-contract-sync",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:ip-markers",
+      "command": "npm run check:ip-markers",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:ip-product-profile",
+      "command": "npm run check:ip-product-profile",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:local-motion-marker-catalogs",
+      "command": "npm run check:local-motion-marker-catalogs",
+      "escalatable": false,
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ]
+    },
+    {
+      "npmScript": "check:local-motion-private-markers",
+      "command": "npm run check:local-motion-private-markers",
+      "escalatable": false,
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ]
+    },
+    {
+      "npmScript": "check:local-motion-worker-fixtures",
+      "command": "npm run check:local-motion-worker-fixtures",
+      "escalatable": false,
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ]
+    },
+    {
+      "npmScript": "check:clean-room-coverage",
+      "command": "npm run check:clean-room-coverage",
+      "escalatable": false,
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ]
+    },
+    {
+      "npmScript": "check:auto-setup-ip-compliance",
+      "command": "npm run check:auto-setup-ip-compliance",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:architecture-boundaries",
+      "command": "npm run check:architecture-boundaries",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:direct-model-mutations",
+      "command": "npm run check:direct-model-mutations",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:ui-module-budget",
+      "command": "npm run check:ui-module-budget",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:import-cycles",
+      "command": "npm run check:import-cycles",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:license-policy",
+      "command": "npm run check:license-policy",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:secrets",
+      "command": "npm run check:secrets",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:history-secrets",
+      "command": "npm run check:history-secrets",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:source-comments",
+      "command": "npm run check:source-comments",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:viewer-tests",
+      "command": "npm run check:viewer-tests",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:provider-conformance",
+      "command": "npm run check:provider-conformance",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:core-model-current-fixtures",
+      "command": "npm run check:core-model-current-fixtures",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:model-fixtures",
+      "command": "npm run check:model-fixtures",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:samples:static",
+      "command": "npm run check:samples:static",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:samples-public-surface",
+      "command": "npm run check:samples-public-surface",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:security-patterns",
+      "command": "npm run check:security-patterns",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:package-boundaries",
+      "command": "npm run check:package-boundaries",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:sdk-unlock:web",
+      "command": "npm run check:sdk-unlock:web",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:publication-history",
+      "command": "npm run check:publication-history",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:hosted-release-surfaces",
+      "command": "npm run check:hosted-release-surfaces",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:workflow-artifact-safety",
+      "command": "npm run check:workflow-artifact-safety",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:source-review-archive",
+      "command": "npm run check:source-review-archive",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "build",
+      "command": "npm run build",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "build:packages",
+      "command": "npm run build:packages",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:bundle",
+      "command": "npm run check:bundle",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:pack-contents",
+      "command": "npm run check:pack-contents",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:release-surface",
+      "command": "npm run check:release-surface",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-c-abi",
+      "command": "npm run check:runtime-c-abi",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml",
+        ".github/workflows/runtime-c-abi.yml"
+      ],
+      "notes": "The sibling workflow runs the same header check on Windows, macOS, and Linux.",
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-c-abi-link",
+      "command": "npm run check:runtime-c-abi-link",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-c-abi.yml",
+        ".github/workflows/runtime-native.yml"
+      ],
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-native",
+      "command": "npm run check:runtime-native",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:native-artifact-policy",
+      "command": "npm run check:native-artifact-policy",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "pathTriggerWorkflows": [
+        ".github/workflows/runtime-native.yml",
+        ".github/workflows/runtime-wasm-browser.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "test:runtime-wasm:browser",
+      "command": "npm run test:runtime-wasm:browser",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-wasm-browser.yml"
+      ],
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "notices:check",
+      "command": "npm run notices:check",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:sbom",
+      "command": "npm run check:sbom",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "audit:all",
+      "command": "npm run audit:all",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "audit:prod",
+      "command": "npm run audit:prod",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:npm-token-hygiene",
+      "command": "npm run check:npm-token-hygiene",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:environment-protection",
+      "command": "npm run check:environment-protection",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:web-npm-alpha-release",
+      "command": "npm run check:web-npm-alpha-release",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "pathTriggerWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:oss-readiness",
+      "command": "npm run check:oss-readiness",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    }
+  ]
+}

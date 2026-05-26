@@ -1,0 +1,156 @@
+{
+  "name": "physics-pendulum",
+  "description": "Public pendulum physics maps scalar input velocity to a deterministic scalar output.",
+  "fileData": {
+    "version": 10,
+    "profile": "publicProfileV1",
+    "atlases": [
+      {
+        "image": "host-atlas-0",
+        "width": 16,
+        "height": 16,
+        "entries": [
+          {
+            "layerId": "mesh-body",
+            "x": 0,
+            "y": 0,
+            "width": 10,
+            "height": 10
+          }
+        ]
+      }
+    ],
+    "project": {
+      "name": "physics-fixture",
+      "width": 64,
+      "height": 64,
+      "layers": [
+        {
+          "id": "mesh-body",
+          "name": "Body",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 10,
+          "height": 10,
+          "blendMode": "normal",
+          "expanded": true,
+          "kind": "viviMesh",
+          "children": [],
+          "drawOrder": 10,
+          "mesh": {
+            "vertices": [0, 0, 10, 0, 0, 10],
+            "uvs": [0, 0, 1, 0, 0, 1],
+            "indices": [0, 1, 2],
+            "divisionsX": 1,
+            "divisionsY": 1
+          }
+        }
+      ],
+      "parameters": [
+        {
+          "id": "vivi.motion.x",
+          "name": "Motion X",
+          "minValue": -1,
+          "maxValue": 1,
+          "defaultValue": 0
+        },
+        {
+          "id": "vivi.physics.angle",
+          "name": "Physics Angle",
+          "minValue": -1,
+          "maxValue": 1,
+          "defaultValue": 0
+        }
+      ],
+      "clips": [],
+      "scenes": [],
+      "physicsGroups": [
+        {
+          "id": "physics-tail",
+          "name": "Tail Physics",
+          "enabled": true,
+          "pendulums": [
+            {
+              "length": 1,
+              "mass": 1,
+              "damping": 0
+            }
+          ],
+          "inputs": [
+            {
+              "parameterId": "vivi.motion.x",
+              "weight": 1,
+              "type": "x"
+            }
+          ],
+          "outputs": [
+            {
+              "parameterId": "vivi.physics.angle",
+              "pendulumIndex": 0,
+              "weight": 1,
+              "type": "angle"
+            }
+          ],
+          "gravityDirection": 0,
+          "gravityStrength": 9.8,
+          "wind": 0
+        }
+      ],
+      "lipsyncConfig": {
+        "enabled": false,
+        "targetParameterId": null,
+        "source": "microphone",
+        "threshold": 0.02,
+        "smoothing": 0.7,
+        "gain": 2
+      },
+      "skins": {},
+      "colliders": [],
+      "stateMachines": [],
+      "expressionPresets": []
+    }
+  },
+  "actions": [
+    {
+      "type": "setInput",
+      "id": "vivi.motion.x",
+      "value": 1
+    },
+    {
+      "type": "update",
+      "deltaSeconds": 0.008333333333333333
+    }
+  ],
+  "expect": {
+    "parameters": {
+      "vivi.motion.x": 1,
+      "vivi.physics.angle": 0.00006944444444444444
+    },
+    "textures": [
+      {
+        "id": "atlas:0",
+        "width": 16,
+        "height": 16,
+        "format": "rgba8-straight",
+        "colorSpace": "srgb",
+        "source": "hostImage"
+      }
+    ],
+    "renderList": [
+      {
+        "id": "mesh-body",
+        "textureId": "atlas:0",
+        "visible": true,
+        "culled": false,
+        "blendMode": "normal",
+        "drawOrder": 10,
+        "vertices": [0, 0, 10, 0, 0, 10],
+        "uvs": [0, 0, 1, 0, 0, 1],
+        "indices": [0, 1, 2]
+      }
+    ],
+    "hitTests": []
+  }
+}

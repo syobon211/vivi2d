@@ -1,0 +1,27 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.experimental",
+  "id": "request-id",
+  "type": "viewer.prop.load",
+  "data": {
+    "name": "Fixture Badge",
+    "visible": true,
+    "groupId": "fixture-group",
+    "transform": {
+      "x": 12,
+      "y": 24,
+      "scaleX": 1,
+      "scaleY": 1,
+      "rotation": 0,
+      "opacity": 0.8
+    },
+    "anchor": {
+      "kind": "screen"
+    },
+    "source": {
+      "kind": "inlineBase64",
+      "mimeType": "image/png",
+      "bytes": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAAAAAAAAAAAA"
+    }
+  }
+}

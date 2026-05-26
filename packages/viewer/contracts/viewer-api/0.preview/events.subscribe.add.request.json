@@ -1,0 +1,14 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "id": "request-id",
+  "type": "viewer.events.subscribe",
+  "data": {
+    "mode": "add",
+    "events": [
+      {
+        "name": "viewer.prop.removed"
+      }
+    ]
+  }
+}

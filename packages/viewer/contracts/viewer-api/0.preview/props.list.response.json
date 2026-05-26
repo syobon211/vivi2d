@@ -1,0 +1,10 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.props.list.result",
+  "ok": true,
+  "data": {
+    "props": []
+  },
+  "id": "request-id"
+}

@@ -1,0 +1,32 @@
+{
+  "name": "private-profile-raw-key",
+  "description": "Public runtime must reject private-profile raw deformation markers before hydration.",
+  "fileData": {
+    "version": 10,
+    "profile": "publicProfileV1",
+    "atlases": [],
+    "project": {
+      "name": "private-profile-fixture",
+      "width": 64,
+      "height": 64,
+      "blendShapes": [],
+      "layers": [],
+      "parameters": [],
+      "clips": [],
+      "scenes": [],
+      "physicsGroups": [],
+      "lipsyncConfig": {
+        "enabled": false,
+        "targetParameterId": null,
+        "source": "microphone",
+        "threshold": 0.02,
+        "smoothing": 0.7,
+        "gain": 2
+      },
+      "skins": {},
+      "colliders": [],
+      "stateMachines": []
+    }
+  },
+  "expectError": "VIVI_ERR_PRIVATE_PROFILE"
+}

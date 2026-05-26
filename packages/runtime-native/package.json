@@ -1,0 +1,12 @@
+{
+  "name": "@vivi2d/runtime-native",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "vivi2d": {
+    "publication": "internal"
+  },
+  "scripts": {
+    "check": "cargo fmt --manifest-path Cargo.toml --all -- --check && cargo clippy --manifest-path Cargo.toml --workspace --all-targets -- -D warnings && cargo test --manifest-path Cargo.toml --workspace --all-targets && node ../../scripts/check-runtime-native-wasm.mjs"
+  }
+}

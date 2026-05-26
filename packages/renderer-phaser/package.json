@@ -1,0 +1,21 @@
+{
+  "name": "@vivi2d/renderer-phaser",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "vivi2d": {
+    "publication": "internal"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@vivi2d/core": "^0.1.0",
+    "@vivi2d/loader": "^0.1.0",
+    "@vivi2d/runtime": "^0.1.0"
+  },
+  "peerDependencies": {
+    "phaser": "^4.0.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "id": "request-id",
+  "type": "viewer.events.unsubscribe",
+  "data": {
+    "mode": "clear",
+    "events": []
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "recordedAt": "2026-05-05T11:47:15.363Z",
+  "platform": "win32",
+  "arch": "x64",
+  "mainBundle": {
+    "name": "index-CbI4fIVP.js",
+    "bytes": 3050
+  },
+  "chunkCount": 101,
+  "totalJsBytes": 2386111,
+  "topChunks": [
+    {
+      "name": "vendor-pixi-min8HhES.js",
+      "bytes": 498963
+    },
+    {
+      "name": "vendor-psd-BP_EKDb2.js",
+      "bytes": 244913
+    },
+    {
+      "name": "psd-parse.worker-DLGA7sak.js",
+      "bytes": 212367
+    },
+    {
+      "name": "vendor-react-DtXPxyDJ.js",
+      "bytes": 193838
+    },
+    {
+      "name": "themeStore-BYCKv0MU.js",
+      "bytes": 180625
+    },
+    {
+      "name": "glb-exporter-DpFyydEq.js",
+      "bytes": 161544
+    },
+    {
+      "name": "TimelinePanel-CFiJ_SqI.js",
+      "bytes": 95353
+    },
+    {
+      "name": "vendor-zod-F7BoApG1.js",
+      "bytes": 73181
+    },
+    {
+      "name": "AutoSetupDialog-y8cqy61J.js",
+      "bytes": 65239
+    },
+    {
+      "name": "PropertiesPanel-D8vQF6tw.js",
+      "bytes": 58666
+    }
+  ]
+}

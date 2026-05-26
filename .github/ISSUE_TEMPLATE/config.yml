@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/xltt/vivi2d/security/advisories/new
+    about: Do not open public security issues. Use GitHub Private Vulnerability Reporting after the repository is public.
+  - name: Security policy
+    url: https://github.com/xltt/vivi2d/blob/master/SECURITY.md
+    about: Read supported versions, private reporting guidance, and pre-release security checks.
+  - name: Contribution guide
+    url: https://github.com/xltt/vivi2d/blob/master/CONTRIBUTING.md
+    about: Read development setup, validation expectations, DCO terms, and project boundaries.

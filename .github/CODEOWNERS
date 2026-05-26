@@ -1,0 +1,62 @@
+# Replace @xltt if the publication owner or maintainer team changes.
+* @xltt
+
+# The specific rows below intentionally repeat the default owner. They act as a
+# public review map for high-risk surfaces, satisfy release-readiness checks, and
+# make future team splits straightforward without changing protected paths.
+
+# Repository governance and public-facing docs.
+/README.md @xltt
+/CHANGELOG.md @xltt
+/LICENSE @xltt
+/NOTICE @xltt
+/SECURITY.md @xltt
+/CONTRIBUTING.md @xltt
+/CODE_OF_CONDUCT.md @xltt
+/.github/ @xltt
+/.github/workflows/ @xltt
+/.github/ISSUE_TEMPLATE/ @xltt
+
+# Release, security, and policy scripts.
+/scripts/ @xltt
+/package.json @xltt
+/package-lock.json @xltt
+/THIRD_PARTY_NOTICES @xltt
+
+# Electron privileged boundaries.
+/electron/ @xltt
+/packages/viewer/electron/ @xltt
+
+# Public and release policy documentation.
+/docs/developer/ @xltt
+/docs/user/ @xltt
+/docs/user/ja/ @xltt
+/docs/user/zh-Hans/ @xltt
+/docs/user/ko-KR/ @xltt
+/docs/user/assets/ @xltt
+/docs/user/review-ownership.json @xltt
+/docs/developer/adr/ @xltt
+/docs/developer/contributing/package-boundaries.md @xltt
+/docs/developer/quality/release-policy.md @xltt
+
+# Public, experimental, and renderer package surfaces.
+/packages/web/ @xltt
+# Keep runtime*/ as a glob so new runtime-family packages remain owner-reviewed.
+/packages/runtime*/ @xltt
+/packages/renderer-pixi/ @xltt
+/packages/renderer-three/ @xltt
+/packages/renderer-phaser/ @xltt
+
+# Provider and local-service boundaries.
+/packages/provider-sdk/ @xltt
+/packages/provider-comfyui/ @xltt
+
+# Viewer automation and external integration surfaces.
+/packages/viewer/src/api/ @xltt
+/packages/viewer/src/actions/ @xltt
+/packages/viewer/src/calibration/ @xltt
+/packages/viewer/src/props/ @xltt
+/packages/viewer/contracts/ @xltt
+/packages/viewer/e2e/ @xltt
+/examples/viewer-api-browser-client/ @xltt
+/examples/viewer-api-node-client/ @xltt

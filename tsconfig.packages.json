@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "packages/provider-comfyui/src/**/*.ts",
+    "packages/core/src/**/*.ts",
+    "packages/editor-core/src/**/*.ts",
+    "packages/loader/src/**/*.ts",
+    "packages/model/src/**/*.ts",
+    "packages/provider-sdk/src/**/*.ts",
+    "packages/runtime/src/**/*.ts",
+    "packages/runtime-wasm/src/**/*.ts",
+    "packages/renderer-phaser/src/**/*.ts",
+    "packages/renderer-pixi/src/**/*.ts",
+    "packages/renderer-three/src/**/*.ts",
+    "packages/viewer-api-client/src/**/*.ts",
+    "packages/viewer-bridge-obs/src/**/*.ts",
+    "packages/viewer/src/**/*.ts",
+    "packages/viewer/src/**/*.tsx",
+    "packages/web/src/**/*.ts"
+  ],
+  "exclude": [
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.bench.ts",
+    "packages/*/src/__bench__/**"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "@vivi2d/runtime-c-abi",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "vivi2d": {
+    "publication": "internal"
+  }
+}

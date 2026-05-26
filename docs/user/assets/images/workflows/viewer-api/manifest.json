@@ -1,0 +1,25 @@
+{
+  "id": "viewer-api.browser-sample",
+  "kind": "image",
+  "status": "placeholder",
+  "topicSlugs": [
+    "workflows/viewer-api"
+  ],
+  "variants": {
+    "neutral": {
+      "path": "docs/user/assets/images/workflows/viewer-api/connection.neutral.svg",
+      "alt": {
+        "en": "Placeholder showing a browser client connected to the Viewer API.",
+        "ja": "Viewer API に接続したブラウザクライアントのプレースホルダー。",
+        "zh-Hans": "连接到 Viewer API 的浏览器客户端占位图。",
+        "ko-KR": "Viewer API에 연결된 브라우저 클라이언트 자리 표시자입니다."
+      },
+      "caption": {
+        "en": "Pair with Viewer through the public client flow before sending requests.",
+        "ja": "リクエストを送る前に、公開クライアントの流れで Viewer とペアリングします。",
+        "zh-Hans": "发送请求前，请通过公开客户端流程与 Viewer 配对。",
+        "ko-KR": "요청을 보내기 전에 공개 클라이언트 흐름으로 Viewer와 페어링합니다."
+      }
+    }
+  }
+}

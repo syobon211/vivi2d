@@ -1,0 +1,13 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.experimental",
+  "type": "viewer.events.dropped",
+  "ok": true,
+  "eventId": "evt-1",
+  "timestamp": 0,
+  "data": {
+    "category": "queue_overflow",
+    "count": 1,
+    "streamClosed": false
+  }
+}

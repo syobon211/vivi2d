@@ -1,0 +1,15 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.auth.authenticate.result",
+  "ok": true,
+  "data": {
+    "grantId": "grant-fixture",
+    "fingerprint": "fingerprint",
+    "scopes": [
+      "read:state"
+    ],
+    "tokenPersistence": "persistent"
+  },
+  "id": "request-id"
+}

@@ -1,0 +1,13 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.auth.challenge.result",
+  "ok": true,
+  "data": {
+    "phase": "pending",
+    "challengeId": "challenge-fixture",
+    "code": "<pairing-code>",
+    "expiresAt": "2030-01-01T00:00:00.000Z"
+  },
+  "id": "request-id"
+}

@@ -1,0 +1,34 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.prop.load.result",
+  "ok": true,
+  "data": {
+    "prop": {
+      "id": "prop-api-fixture",
+      "name": "Badge",
+      "kind": "image",
+      "visible": true,
+      "drawOrder": 100,
+      "opacity": 1,
+      "transform": {
+        "x": 0,
+        "y": 0,
+        "scaleX": 1,
+        "scaleY": 1,
+        "rotation": 0
+      },
+      "groupId": null,
+      "anchor": {
+        "kind": "screen"
+      },
+      "source": {
+        "kind": "inlineBase64",
+        "mimeType": "image/png",
+        "portable": true,
+        "bytes": 33
+      }
+    }
+  },
+  "id": "request-id"
+}

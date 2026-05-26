@@ -1,0 +1,204 @@
+:root {
+  color: #1f2340;
+  background: #eeedf8;
+  font-family:
+    "Aptos",
+    "Segoe UI",
+    sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  background: #6856d9;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.65rem 0.95rem;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.sample-shell {
+  display: grid;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 1.5rem;
+}
+
+.hero,
+.panel,
+.stage-card {
+  border: 1px solid rgba(90, 80, 160, 0.22);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 20px 60px rgba(43, 39, 78, 0.12);
+  padding: 1.25rem;
+}
+
+.hero {
+  background:
+    radial-gradient(circle at top left, rgba(251, 189, 97, 0.35), transparent 34rem),
+    linear-gradient(135deg, #ffffff 0%, #efedff 100%);
+}
+
+.eyebrow {
+  color: #6856d9;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 3.75rem);
+  line-height: 0.95;
+  margin-bottom: 0.75rem;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin-bottom: 0.9rem;
+}
+
+.stage-card {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(280px, 520px) 1fr;
+}
+
+canvas {
+  border-radius: 20px;
+  background:
+    linear-gradient(45deg, rgba(104, 86, 217, 0.08) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(104, 86, 217, 0.08) 25%, transparent 25%),
+    #faf9ff;
+  box-shadow: inset 0 0 0 1px rgba(44, 39, 89, 0.12);
+  height: min(62vh, 600px);
+  max-width: 100%;
+  width: 100%;
+}
+
+.status-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+#status,
+.error-output {
+  border-radius: 18px;
+  background: #292743;
+  color: #f7f4ff;
+  min-height: 3rem;
+  padding: 1rem;
+}
+
+.metadata-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  margin: 0;
+}
+
+.metadata-grid div {
+  border-radius: 16px;
+  background: rgba(104, 86, 217, 0.11);
+  padding: 0.85rem;
+}
+
+.metadata-grid dt {
+  color: #5b5485;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metadata-grid dd {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0.25rem 0 0;
+}
+
+.control-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.file-picker,
+.toggle {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.panel-heading {
+  align-items: start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.parameter-list {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.parameter-row {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 2fr) 4rem;
+}
+
+.parameter-row code {
+  color: #4b4691;
+  font-size: 0.82rem;
+}
+
+.empty-state {
+  color: #5b5485;
+  font-style: italic;
+}
+
+@media (max-width: 800px) {
+  .stage-card,
+  .control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .parameter-row {
+    grid-template-columns: 1fr;
+  }
+}

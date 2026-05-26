@@ -1,0 +1,39 @@
+{
+  "name": "@vivi2d/provider-sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "vivi2d": {
+    "publication": "internal"
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run packages/provider-sdk/src/__tests__ --root ../.. --config ./vitest.config.ts --no-coverage"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./artifact-policy": {
+      "types": "./dist/artifact-policy.d.ts",
+      "import": "./dist/artifact-policy.js"
+    },
+    "./invocation": {
+      "types": "./dist/invocation.d.ts",
+      "import": "./dist/invocation.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js"
+    }
+  },
+  "sideEffects": false,
+  "license": "Apache-2.0"
+}

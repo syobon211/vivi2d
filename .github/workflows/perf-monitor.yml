@@ -1,0 +1,108 @@
+name: Perf Monitor
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/perf-monitor.yml"
+      - "docs/developer/quality/baselines/**"
+      - "e2e/**"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - "scripts/**"
+      - "src/**"
+  workflow_dispatch:
+  schedule:
+    - cron: "0 18 * * *"
+
+concurrency:
+  group: perf-monitor-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  perf-pr-report:
+    name: Perf Playwright (report only)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build for perf
+        run: npm run build:e2e
+      - name: Check release surface before artifact upload
+        run: npm run check:release-surface
+      - name: Run perf project
+        id: perf
+        continue-on-error: true
+        run: xvfb-run --auto-servernum -- npx playwright test --config=e2e/playwright.config.ts --project=perf
+      - name: Summarize PR perf result
+        if: always()
+        run: |
+          echo "## Perf Monitor" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Mode: pull request / report only" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Artifacts: playwright-report and test-results are uploaded for inspection." >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.perf.outcome }}" = "failure" ]; then
+            echo "- Result: report only (soft/hard regression observed)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- Action: inspect the uploaded perf artifacts before deciding whether to refresh baselines or tighten budgets." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Result: perf project passed in report-only mode." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: perf-playwright-pr-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+  perf-enforced:
+    name: Perf Playwright
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build for perf
+        run: npm run build:e2e
+      - name: Check release surface before artifact upload
+        run: npm run check:release-surface
+      - name: Run perf project
+        id: perf
+        run: xvfb-run --auto-servernum -- npx playwright test --config=e2e/playwright.config.ts --project=perf
+      - name: Summarize enforced perf result
+        if: always()
+        run: |
+          echo "## Perf Monitor" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Mode: nightly/manual / enforced" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.perf.outcome }}" = "failure" ]; then
+            echo "- Result: regression detected and job failed." >> "$GITHUB_STEP_SUMMARY"
+            echo "- Action: review artifacts first, then either fix the regression or refresh baselines as a deliberate follow-up change." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Result: perf project passed in enforced mode." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: perf-playwright-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

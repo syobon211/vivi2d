@@ -1,0 +1,25 @@
+{
+  "id": "manual-image-split.mask-editor",
+  "kind": "image",
+  "status": "placeholder",
+  "topicSlugs": [
+    "workflows/manual-image-split"
+  ],
+  "variants": {
+    "neutral": {
+      "path": "docs/user/assets/images/workflows/manual-image-split/layer-mask.neutral.svg",
+      "alt": {
+        "en": "Placeholder showing the Manual Image Split workspace with masks and quality warnings.",
+        "ja": "マスクと品質警告を表示する手動画像分割ワークスペースのプレースホルダー。",
+        "zh-Hans": "显示蒙版和质量警告的手动图像分割工作区占位图。",
+        "ko-KR": "마스크와 품질 경고를 보여 주는 수동 이미지 분할 작업 공간 자리 표시자입니다."
+      },
+      "caption": {
+        "en": "Review masks before applying the split so later setup tools can trust them.",
+        "ja": "後続のセットアップツールが信頼できるように、分割を適用する前にマスクを確認します。",
+        "zh-Hans": "应用分割前请检查蒙版，让后续设置工具可以可靠使用它们。",
+        "ko-KR": "이후 설정 도구가 신뢰할 수 있도록 분할을 적용하기 전에 마스크를 확인합니다."
+      }
+    }
+  }
+}

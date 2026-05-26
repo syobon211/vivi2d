@@ -1,0 +1,16 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "payload_too_large",
+    "message": "payload too large",
+    "retryable": false,
+    "details": {
+      "limitBytes": 49152
+    }
+  },
+  "id": "request-id"
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Placeholder Viewer API connection">
+  <rect width="960" height="540" rx="32" fill="#eaf1fb"/>
+  <rect x="110" y="110" width="300" height="260" rx="24" fill="#ffffff" stroke="#6e9ee8" stroke-width="6"/>
+  <rect x="550" y="110" width="300" height="260" rx="24" fill="#ffffff" stroke="#6e9ee8" stroke-width="6"/>
+  <path d="M420 240h120" fill="none" stroke="#315c99" stroke-width="18" stroke-linecap="round"/>
+  <path d="M512 205l42 35-42 35" fill="none" stroke="#315c99" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="260" cy="240" r="62" fill="#9fc4ff"/>
+  <circle cx="700" cy="240" r="62" fill="#b5d8ff"/>
+</svg>

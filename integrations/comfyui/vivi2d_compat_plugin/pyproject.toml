@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vivi2d-compat-comfyui"
+version = "0.1.0"
+description = "Vivi2D-maintained ComfyUI custom nodes for See-through interoperability"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+  { name = "Vivi2D authors" }
+]
+dependencies = [
+  "numpy>=1.24.0",
+  "Pillow>=10.0.0",
+  "jsonschema>=4.0.0",
+  "packbits>=0.6",
+  "pytoshop>=1.2.1"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["vivi2d_compat*"]
+
+[tool.setuptools.package-data]
+vivi2d_compat = ["schema/*.json"]

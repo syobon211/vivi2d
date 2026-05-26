@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@vivi2d/core": ["../core/src/index.ts"],
+      "@vivi2d/core/*": ["../core/src/*"],
+      "@vivi2d/model": ["../model/src/index.ts"],
+      "@vivi2d/model/*": ["../model/src/*"],
+      "@vivi2d/renderer-pixi": ["../renderer-pixi/src/index.ts"],
+      "@vivi2d/renderer-pixi/*": ["../renderer-pixi/src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["src/__tests__"]
+}

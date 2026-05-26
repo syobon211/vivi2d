@@ -1,0 +1,64 @@
+name: Provider integration
+description: Propose or report an optional provider/plugin integration.
+title: "[Provider]: "
+labels: ["provider", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provider integrations are optional boundaries around external services, workflows, generated assets, or third-party tools. Do not paste secrets, API keys, private prompts, private local paths, or non-redistributable assets into a public issue.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What provider, plugin, or local service integration is involved?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider_kind
+    attributes:
+      label: Provider kind
+      options:
+        - ComfyUI
+        - See-through compatible workflow
+        - External local service
+        - File or asset pipeline
+        - Tracking or viewer companion service
+        - Other optional provider
+    validations:
+      required: true
+
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Boundary and data flow
+      description: Describe what data crosses the provider boundary, where it is stored, and whether the service is local-only or networked.
+    validations:
+      required: true
+
+  - type: textarea
+    id: license
+    attributes:
+      label: License and distribution impact
+      description: Include provider license, model/workflow license, generated-output terms, redistribution limits, and unknowns.
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: What tests, fixtures, screenshots, recordings, or manual checks should cover this integration?
+
+  - type: checkboxes
+    id: review
+    attributes:
+      label: Review points
+      description: For proposals, check every statement that is already true. For reports, leave an item unchecked if it describes the problem.
+      options:
+        - label: Runtime, renderer, web, and core packages do not import provider implementation code.
+        - label: Paths, external URLs, provider responses, and generated outputs can be validated before use.
+        - label: The integration can be disabled or omitted without breaking core Vivi2D behavior.
+        - label: License, distribution, and provenance impact is documented or explicitly unknown.

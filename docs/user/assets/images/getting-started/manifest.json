@@ -1,0 +1,25 @@
+{
+  "id": "getting-started.first-project",
+  "kind": "image",
+  "status": "placeholder",
+  "topicSlugs": [
+    "getting-started/open-your-first-project"
+  ],
+  "variants": {
+    "neutral": {
+      "path": "docs/user/assets/images/getting-started/first-project.neutral.svg",
+      "alt": {
+        "en": "Placeholder showing the first project opened in the Vivi2D editor.",
+        "ja": "Vivi2D エディターで最初のプロジェクトを開いた状態を示すプレースホルダー。",
+        "zh-Hans": "显示第一个 Vivi2D 项目已在编辑器中打开的占位图。",
+        "ko-KR": "Vivi2D 편집기에서 첫 프로젝트를 연 상태를 보여 주는 자리 표시자입니다."
+      },
+      "caption": {
+        "en": "Replace this placeholder with a real first-project screenshot before publication.",
+        "ja": "公開前に、このプレースホルダーを実際の最初のプロジェクト画面に差し替えます。",
+        "zh-Hans": "发布前，请将此占位图替换为真实的第一个项目截图。",
+        "ko-KR": "공개 전에 이 자리 표시자를 실제 첫 프로젝트 화면으로 교체합니다."
+      }
+    }
+  }
+}

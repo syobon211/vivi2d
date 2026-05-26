@@ -1,0 +1,65 @@
+name: Feature request
+description: Suggest a product or developer-facing improvement.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe the workflow or developer problem first. If the idea depends on third-party intellectual property, private model data, or a provider service, call that out explicitly so maintainers can review the boundary safely.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or developer problem would this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful version of the feature.
+    validations:
+      required: true
+
+  - type: textarea
+    id: users
+    attributes:
+      label: Intended users and workflow
+      description: Who benefits, and when would they use it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What simpler or safer alternatives did you consider?
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact areas
+      options:
+        - label: Public API, package boundary, schema, or file format
+        - label: Viewer API, action system, props, or tracking
+        - label: Runtime, renderer, WASM, native, or C ABI
+        - label: Electron IPC, file IO, external URL handling, or local networking
+        - label: Provider/plugin integration
+        - label: Layer editing, See-through, auto setup, masking, or generated assets
+        - label: Localization, accessibility, documentation, or onboarding
+        - label: Third-party license, trademark, patent, or asset provenance
+
+  - type: textarea
+    id: safety
+    attributes:
+      label: Security, privacy, and IP notes
+      description: Note any untrusted input, local services, generated content, third-party assets, or patent/trademark-sensitive areas.
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Expected validation
+      description: What tests, screenshots, recordings, or docs would prove the feature is working?

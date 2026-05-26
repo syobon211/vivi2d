@@ -1,0 +1,18 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.prop.load.result",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "scope_denied",
+    "message": "scope denied",
+    "retryable": false,
+    "details": {
+      "requiredScopes": [
+        "write:props"
+      ]
+    }
+  },
+  "id": "request-id"
+}

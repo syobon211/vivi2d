@@ -1,0 +1,29 @@
+{
+  "recordedAt": "2026-05-05T11:47:35.348Z",
+  "platform": "win32",
+  "arch": "x64",
+  "node": "v24.14.0",
+  "runs": 3,
+  "samples": [
+    {
+      "launchToDomMs": 613,
+      "launchToVivi2dMs": 629,
+      "domToVivi2dMs": 15
+    },
+    {
+      "launchToDomMs": 602,
+      "launchToVivi2dMs": 715,
+      "domToVivi2dMs": 113
+    },
+    {
+      "launchToDomMs": 589,
+      "launchToVivi2dMs": 604,
+      "domToVivi2dMs": 15
+    }
+  ],
+  "median": {
+    "launchToDomMs": 602,
+    "launchToVivi2dMs": 629,
+    "domToVivi2dMs": 15
+  }
+}

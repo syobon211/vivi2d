@@ -1,0 +1,222 @@
+{
+  "name": "draw-hit-culling",
+  "description": "Runtime snapshots preserve draw order, public blend modes, culling, and rectangle/circle hit testing.",
+  "fileData": {
+    "version": 10,
+    "profile": "publicProfileV1",
+    "atlases": [
+      {
+        "image": "host-atlas-0",
+        "width": 32,
+        "height": 32,
+        "entries": [
+          {
+            "layerId": "mesh-back",
+            "x": 0,
+            "y": 0,
+            "width": 10,
+            "height": 10
+          },
+          {
+            "layerId": "mesh-front",
+            "x": 10,
+            "y": 0,
+            "width": 10,
+            "height": 10
+          }
+        ]
+      }
+    ],
+    "project": {
+      "name": "draw-hit-culling-fixture",
+      "width": 64,
+      "height": 64,
+      "layers": [
+        {
+          "id": "mesh-front",
+          "name": "Front Mesh",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 10,
+          "height": 10,
+          "blendMode": "multiply",
+          "expanded": true,
+          "kind": "viviMesh",
+          "children": [],
+          "drawOrder": 20,
+          "mesh": {
+            "vertices": [0, 0, 0, 10, 10, 0],
+            "uvs": [0, 0, 0, 1, 1, 0],
+            "indices": [0, 1, 2],
+            "divisionsX": 1,
+            "divisionsY": 1
+          },
+          "culling": true
+        },
+        {
+          "id": "mesh-back",
+          "name": "Back Mesh",
+          "visible": true,
+          "opacity": 1,
+          "x": 3,
+          "y": 4,
+          "width": 10,
+          "height": 10,
+          "blendMode": "screen",
+          "expanded": true,
+          "kind": "viviMesh",
+          "children": [],
+          "drawOrder": 5,
+          "mesh": {
+            "vertices": [0, 0, 10, 0, 0, 10],
+            "uvs": [0, 0, 1, 0, 0, 1],
+            "indices": [0, 1, 2],
+            "divisionsX": 1,
+            "divisionsY": 1
+          }
+        }
+      ],
+      "parameters": [],
+      "clips": [],
+      "scenes": [],
+      "physicsGroups": [],
+      "lipsyncConfig": {
+        "enabled": false,
+        "targetParameterId": null,
+        "source": "microphone",
+        "threshold": 0.02,
+        "smoothing": 0.7,
+        "gain": 2
+      },
+      "skins": {},
+      "colliders": [
+        {
+          "id": "ui-rect",
+          "name": "UI Rect",
+          "enabled": true,
+          "shape": {
+            "type": "rectangle",
+            "x": 20,
+            "y": 20,
+            "width": 10,
+            "height": 10
+          }
+        },
+        {
+          "id": "ui-circle",
+          "name": "UI Circle",
+          "enabled": true,
+          "shape": {
+            "type": "circle",
+            "x": 40,
+            "y": 40,
+            "radius": 5
+          }
+        },
+        {
+          "id": "front-hidden",
+          "name": "Front Hidden",
+          "enabled": true,
+          "shape": {
+            "type": "mesh",
+            "meshId": "mesh-front"
+          }
+        },
+        {
+          "id": "back-translated",
+          "name": "Back Translated",
+          "enabled": true,
+          "shape": {
+            "type": "mesh",
+            "meshId": "mesh-back"
+          }
+        }
+      ],
+      "stateMachines": [],
+      "expressionPresets": []
+    }
+  },
+  "actions": [
+    {
+      "type": "update",
+      "deltaSeconds": 0
+    }
+  ],
+  "expect": {
+    "parameters": {},
+    "textures": [
+      {
+        "id": "atlas:0",
+        "width": 32,
+        "height": 32,
+        "format": "rgba8-straight",
+        "colorSpace": "srgb",
+        "source": "hostImage"
+      }
+    ],
+    "renderList": [
+      {
+        "id": "mesh-back",
+        "textureId": "atlas:0",
+        "visible": true,
+        "culled": false,
+        "blendMode": "screen",
+        "drawOrder": 5,
+        "x": 3,
+        "y": 4,
+        "vertices": [0, 0, 10, 0, 0, 10],
+        "uvs": [0, 0, 1, 0, 0, 1],
+        "indices": [0, 1, 2]
+      },
+      {
+        "id": "mesh-front",
+        "textureId": "atlas:0",
+        "visible": false,
+        "culled": true,
+        "blendMode": "multiply",
+        "drawOrder": 20,
+        "x": 0,
+        "y": 0,
+        "vertices": [0, 0, 0, 10, 10, 0],
+        "uvs": [0, 0, 0, 1, 1, 0],
+        "indices": [0, 1, 2]
+      }
+    ],
+    "hitTests": [
+      {
+        "x": 22,
+        "y": 22,
+        "hit": {
+          "colliderId": "ui-rect",
+          "layerId": null,
+          "meshId": null
+        }
+      },
+      {
+        "x": 40,
+        "y": 40,
+        "hit": {
+          "colliderId": "ui-circle",
+          "layerId": null,
+          "meshId": null
+        }
+      },
+      {
+        "x": 11,
+        "y": 5,
+        "hit": {
+          "colliderId": "back-translated",
+          "layerId": "mesh-back",
+          "meshId": "mesh-back"
+        }
+      },
+      {
+        "x": 2,
+        "y": 2,
+        "hit": null
+      }
+    ]
+  }
+}

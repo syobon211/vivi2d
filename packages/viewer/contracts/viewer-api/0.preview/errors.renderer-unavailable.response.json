@@ -1,0 +1,13 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "renderer_unavailable",
+    "message": "renderer unavailable",
+    "retryable": true
+  },
+  "id": "request-id"
+}

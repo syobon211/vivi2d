@@ -1,0 +1,16 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "renderer_timeout",
+    "message": "renderer timeout",
+    "retryable": true,
+    "details": {
+      "timeoutMs": 5000
+    }
+  },
+  "id": "request-id"
+}

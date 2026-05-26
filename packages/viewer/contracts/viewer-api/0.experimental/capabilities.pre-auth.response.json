@@ -1,0 +1,17 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.experimental",
+  "id": "request-id",
+  "type": "viewer.api.capabilities.get.result",
+  "ok": true,
+  "data": {
+    "capabilities": {
+      "api": "ViviViewerApi",
+      "version": "0.experimental",
+      "authMethods": [
+        "pairing-token"
+      ],
+      "pairingOpen": false
+    }
+  }
+}

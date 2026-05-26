@@ -1,0 +1,307 @@
+{
+  "sourceExtensions": [".cjs", ".js", ".jsx", ".mjs", ".ts", ".tsx"],
+  "rules": [
+    {
+      "label": "core must stay runtime-neutral",
+      "phase": "Q0",
+      "owner": "architecture-maintainers",
+      "layer": "core",
+      "allowedUpstream": ["model"],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/core/src/",
+      "forbidden": [
+        "^@/components(?:/|$)",
+        "^@/stores(?:/|$)",
+        "^@vivi2d/(?:provider-comfyui|loader)(?:/|$)",
+        "^electron$",
+        "^pixi\\.js(?:/|$)",
+        "^react(?:/|$)",
+        "^react-dom(?:/|$)",
+        "^three(?:/|$)",
+        "^vtubestudio(?:/|$)",
+        "^obs-websocket-js(?:/|$)"
+      ]
+    },
+    {
+      "label": "model must stay runtime-neutral",
+      "phase": "Q0",
+      "owner": "architecture-maintainers",
+      "layer": "model",
+      "allowedUpstream": [],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/model/src/",
+      "forbidden": [
+        "^@/(?:components|stores)(?:/|$)",
+        "^@vivi2d/(?:core|runtime|runtime-wasm|runtime-c-abi|runtime-native|loader|provider-comfyui)(?:/|$)",
+        "^electron$",
+        "^pixi\\.js(?:/|$)",
+        "^react(?:/|$)",
+        "^react-dom(?:/|$)",
+        "^three(?:/|$)",
+        "^vtubestudio(?:/|$)",
+        "^obs-websocket-js(?:/|$)",
+        "^zustand(?:/|$)"
+      ]
+    },
+    {
+      "label": "model must not depend on provider-sdk",
+      "phase": "Q5",
+      "owner": "provider-boundary-maintainers",
+      "layer": "model",
+      "allowedUpstream": [],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/model/src/",
+      "forbidden": ["^@vivi2d/provider-sdk(?:/|$)"]
+    },
+    {
+      "label": "loader must not depend on core or editor internals",
+      "phase": "Q0",
+      "owner": "architecture-maintainers",
+      "layer": "loader",
+      "allowedUpstream": ["model"],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/loader/src/",
+      "forbidden": [
+        "^@/(?:components|stores)(?:/|$)",
+        "^@vivi2d/(?:core|runtime|runtime-wasm|runtime-c-abi|runtime-native|provider-comfyui)(?:/|$)",
+        "^electron$",
+        "^pixi\\.js(?:/|$)",
+        "^react(?:/|$)",
+        "^react-dom(?:/|$)",
+        "^three(?:/|$)",
+        "^phaser(?:/|$)",
+        "^zustand(?:/|$)"
+      ]
+    },
+    {
+      "label": "editor-core must stay UI-free",
+      "phase": "Q0",
+      "owner": "architecture-maintainers",
+      "layer": "editor-core",
+      "allowedUpstream": ["core", "model"],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/editor-core/src/",
+      "forbidden": [
+        "^@/(?:components|stores)(?:/|$)",
+        "^@vivi2d/(?:provider-comfyui|provider-sdk|runtime-wasm|runtime-c-abi|runtime-native)(?:/|$)",
+        "^electron$",
+        "^pixi\\.js(?:/|$)",
+        "^react(?:/|$)",
+        "^react-dom(?:/|$)",
+        "^three(?:/|$)",
+        "^phaser(?:/|$)",
+        "^vtubestudio(?:/|$)",
+        "^obs-websocket-js(?:/|$)",
+        "^zustand(?:/|$)"
+      ]
+    },
+    {
+      "label": "provider-comfyui must stay provider-only",
+      "phase": "Q0",
+      "owner": "provider-boundary-maintainers",
+      "layer": "provider-adapter",
+      "allowedUpstream": ["provider-sdk", "model"],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/provider-comfyui/src/",
+      "forbidden": [
+        "^@/components(?:/|$)",
+        "^@/stores(?:/|$)",
+        "^electron$",
+        "^pixi\\.js(?:/|$)",
+        "^react(?:/|$)",
+        "^react-dom(?:/|$)",
+        "^three(?:/|$)",
+        "^zustand(?:/|$)"
+      ]
+    },
+    {
+      "label": "provider-sdk must stay host-neutral",
+      "phase": "Q0",
+      "owner": "provider-boundary-maintainers",
+      "layer": "provider-sdk",
+      "allowedUpstream": ["model"],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/provider-sdk/src/",
+      "forbidden": [
+        "^@/(?:components|stores)(?:/|$)",
+        "^@vivi2d/(?:core|editor-core|runtime|runtime-wasm|runtime-c-abi|runtime-native|loader|provider-comfyui)(?:/|$)",
+        "^electron$",
+        "^pixi\\.js(?:/|$)",
+        "^react(?:/|$)",
+        "^react-dom(?:/|$)",
+        "^three(?:/|$)",
+        "^phaser(?:/|$)",
+        "^vtubestudio(?:/|$)",
+        "^obs-websocket-js(?:/|$)",
+        "^zustand(?:/|$)"
+      ]
+    },
+    {
+      "label": "viewer core must not import optional third-party bridge SDKs",
+      "phase": "Q0",
+      "owner": "viewer-maintainers",
+      "layer": "viewer-core",
+      "allowedUpstream": ["model", "runtime"],
+      "publicationIntent": "internal-app",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/viewer/src/",
+      "forbidden": ["^vtubestudio(?:/|$)", "^obs-websocket-js(?:/|$)"]
+    },
+    {
+      "label": "viewer core must not import providers",
+      "phase": "Q5",
+      "owner": "viewer-maintainers",
+      "layer": "viewer-core",
+      "allowedUpstream": ["model", "runtime"],
+      "publicationIntent": "internal-app",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/viewer/src/",
+      "forbidden": ["^@vivi2d/(?:provider-comfyui|provider-sdk)(?:/|$)"]
+    },
+    {
+      "label": "viewer electron must not import optional third-party bridge SDKs",
+      "phase": "Q0",
+      "owner": "viewer-maintainers",
+      "layer": "viewer-electron",
+      "allowedUpstream": ["viewer-core"],
+      "publicationIntent": "internal-app",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/viewer/electron/",
+      "forbidden": [
+        "^@vivi2d/viewer-bridge-obs(?:/|$)",
+        "^vtubestudio(?:/|$)",
+        "^obs-websocket-js(?:/|$)"
+      ]
+    },
+    {
+      "label": "renderer adapters must not import Electron",
+      "phase": "Q0",
+      "owner": "renderer-maintainers",
+      "layer": "renderer",
+      "allowedUpstream": ["runtime", "model"],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefixPattern": "^packages/(?:renderer-pixi|renderer-three|renderer-phaser|web)/src/",
+      "forbidden": ["^electron$"]
+    },
+    {
+      "label": "renderer and web packages must not import app, provider, or editor internals",
+      "phase": "Q6",
+      "owner": "renderer-maintainers",
+      "layer": "renderer",
+      "allowedUpstream": ["runtime", "model"],
+      "publicationIntent": "internal-or-experimental",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefixPattern": "^packages/(?:renderer-pixi|renderer-three|renderer-phaser|web)/src/",
+      "forbidden": [
+        "^electron(?:/|$)",
+        "^@vivi2d/editor-core(?:/|$)",
+        "^@vivi2d/(?:provider-comfyui|provider-sdk|runtime-c-abi|runtime-native)(?:/|$)",
+        "^@/(?:.*)",
+        "^src/",
+        "^apps/"
+      ]
+    },
+    {
+      "label": "runtime packages must stay host-neutral",
+      "phase": "Q0",
+      "owner": "runtime-maintainers",
+      "layer": "runtime",
+      "allowedUpstream": ["model"],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefixPattern": "^packages/(?:runtime|runtime-wasm|runtime-c-abi)/src/",
+      "forbidden": [
+        "^@/components(?:/|$)",
+        "^@/stores(?:/|$)",
+        "^@vivi2d/provider-comfyui(?:/|$)",
+        "^electron$",
+        "^pixi\\.js(?:/|$)",
+        "^react(?:/|$)",
+        "^react-dom(?:/|$)",
+        "^three(?:/|$)",
+        "^vtubestudio(?:/|$)",
+        "^obs-websocket-js(?:/|$)",
+        "^zustand(?:/|$)"
+      ]
+    },
+    {
+      "label": "runtime packages must not import app or provider-sdk internals",
+      "phase": "Q6",
+      "owner": "runtime-maintainers",
+      "layer": "runtime",
+      "allowedUpstream": ["model"],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefixPattern": "^packages/(?:runtime|runtime-wasm|runtime-c-abi)/src/",
+      "forbidden": [
+        "^@/(?:.*)",
+        "^src/",
+        "^apps/",
+        "^@vivi2d/provider-sdk(?:/|$)",
+        "^electron(?:/|$)"
+      ]
+    },
+    {
+      "label": "public SDK packages must not import editor local-motion internals",
+      "phase": "Q6",
+      "owner": "sdk-boundary-maintainers",
+      "layer": "sdk",
+      "allowedUpstream": ["model", "runtime"],
+      "publicationIntent": "internal-or-experimental",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefixPattern": "^packages/(?:web|viewer-api-client|provider-sdk|runtime|runtime-wasm|runtime-c-abi)/src/",
+      "forbidden": [
+        "^@vivi2d/editor-core(?:/|$)",
+        "^\\.\\./\\.\\./editor-core(?:/|$)",
+        "^\\.\\./editor-core(?:/|$)"
+      ]
+    },
+    {
+      "label": "Electron main/preload must not import renderer source aliases",
+      "phase": "Q0",
+      "owner": "desktop-security-maintainers",
+      "layer": "electron-main",
+      "allowedUpstream": ["model", "editor-core"],
+      "publicationIntent": "internal-app",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "electron/",
+      "forbidden": ["^@/", "^@vivi2d/viewer(?:/|$)"]
+    },
+    {
+      "label": "renderer process code must cross desktop APIs through preload bridges",
+      "phase": "Q7",
+      "owner": "desktop-security-maintainers",
+      "layer": "renderer-process",
+      "allowedUpstream": ["preload-bridge"],
+      "publicationIntent": "internal-app",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefixPattern": "^(?:src/|packages/viewer/src/|packages/editor-ui/|apps/[^/]+/src/)",
+      "forbidden": ["^electron$", "^electron(?:/|$)"]
+    }
+  ]
+}

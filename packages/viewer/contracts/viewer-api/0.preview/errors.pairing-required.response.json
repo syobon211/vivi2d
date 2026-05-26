@@ -1,0 +1,13 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "pairing_required",
+    "message": "pairing required",
+    "retryable": true
+  },
+  "id": "request-id"
+}

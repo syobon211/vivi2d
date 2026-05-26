@@ -1,0 +1,42 @@
+{
+  "recordedAt": "2026-05-05T11:47:19.386Z",
+  "platform": "win32",
+  "arch": "x64",
+  "node": "v24.14.0",
+  "runs": 3,
+  "note": "Measured from the PSD import command to the first editable canvas-ready state. The ready state requires a loaded project, visible layer list, and a live canvas element with non-zero dimensions. Internal probes also track project-ready, layer-list-ready, and editable-canvas-ready milestones so DOM-visible envelope drift can be separated from app-side regressions.",
+  "samples": [
+    {
+      "projectReadyMs": 41,
+      "layerListReadyInternalMs": 47,
+      "editableCanvasReadyInternalMs": 49,
+      "openToLayerListMs": 587,
+      "openToEditableCanvasMs": 593,
+      "layerListToCanvasMs": 6
+    },
+    {
+      "projectReadyMs": 42,
+      "layerListReadyInternalMs": 48,
+      "editableCanvasReadyInternalMs": 50,
+      "openToLayerListMs": 509,
+      "openToEditableCanvasMs": 513,
+      "layerListToCanvasMs": 4
+    },
+    {
+      "projectReadyMs": 41,
+      "layerListReadyInternalMs": 48,
+      "editableCanvasReadyInternalMs": 49,
+      "openToLayerListMs": 506,
+      "openToEditableCanvasMs": 510,
+      "layerListToCanvasMs": 4
+    }
+  ],
+  "median": {
+    "projectReadyMs": 41,
+    "layerListReadyInternalMs": 48,
+    "editableCanvasReadyInternalMs": 49,
+    "openToLayerListMs": 509,
+    "openToEditableCanvasMs": 513,
+    "layerListToCanvasMs": 4
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "name": "binding-skinning",
+  "description": "Parameter binding rotates a public bone, and linear skinning evaluates mesh vertices without shape-delta interpolation.",
+  "fileData": {
+    "version": 10,
+    "profile": "publicProfileV1",
+    "atlases": [
+      {
+        "image": "host-atlas-0",
+        "width": 16,
+        "height": 16,
+        "entries": [
+          {
+            "layerId": "mesh-limb",
+            "x": 0,
+            "y": 0,
+            "width": 10,
+            "height": 10
+          }
+        ]
+      }
+    ],
+    "project": {
+      "name": "binding-skinning-fixture",
+      "width": 64,
+      "height": 64,
+      "layers": [
+        {
+          "id": "bone-root",
+          "name": "Root Bone",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "blendMode": "normal",
+          "expanded": true,
+          "kind": "bone",
+          "children": [],
+          "drawOrder": 0,
+          "bone": {
+            "angle": 0,
+            "length": 10,
+            "scaleX": 1,
+            "scaleY": 1
+          }
+        },
+        {
+          "id": "mesh-limb",
+          "name": "Limb Mesh",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 10,
+          "height": 10,
+          "blendMode": "normal",
+          "expanded": true,
+          "kind": "viviMesh",
+          "children": [],
+          "drawOrder": 10,
+          "mesh": {
+            "vertices": [1, 0, 2, 0, 1, 1],
+            "uvs": [0, 0, 1, 0, 0, 1],
+            "indices": [0, 1, 2],
+            "divisionsX": 1,
+            "divisionsY": 1
+          }
+        }
+      ],
+      "parameters": [
+        {
+          "id": "vivi.bone.rotate",
+          "name": "Bone Rotate",
+          "minValue": 0,
+          "maxValue": 1,
+          "defaultValue": 0
+        }
+      ],
+      "clips": [],
+      "scenes": [],
+      "physicsGroups": [],
+      "lipsyncConfig": {
+        "enabled": false,
+        "targetParameterId": null,
+        "source": "microphone",
+        "threshold": 0.02,
+        "smoothing": 0.7,
+        "gain": 2
+      },
+      "skins": {
+        "mesh-limb": {
+          "weights": [
+            [{ "boneId": "bone-root", "weight": 1 }],
+            [{ "boneId": "bone-root", "weight": 1 }],
+            [{ "boneId": "bone-root", "weight": 1 }]
+          ],
+          "bindPoseInverse": {
+            "bone-root": [1, 0, 0, 1, 0, 0]
+          }
+        }
+      },
+      "parameterBindings": [
+        {
+          "id": "bind-rotate-root",
+          "parameterId": "vivi.bone.rotate",
+          "target": {
+            "type": "bone",
+            "boneId": "bone-root",
+            "property": "angle"
+          },
+          "bindingPoints": [
+            { "paramValue": 0, "targetValue": 0 },
+            { "paramValue": 1, "targetValue": 1.5707963267948966 }
+          ]
+        }
+      ],
+      "colliders": [],
+      "stateMachines": [],
+      "expressionPresets": []
+    }
+  },
+  "actions": [
+    {
+      "type": "setInput",
+      "id": "vivi.bone.rotate",
+      "value": 1
+    },
+    {
+      "type": "update",
+      "deltaSeconds": 0
+    }
+  ],
+  "expect": {
+    "parameters": {
+      "vivi.bone.rotate": 1
+    },
+    "textures": [
+      {
+        "id": "atlas:0",
+        "width": 16,
+        "height": 16,
+        "format": "rgba8-straight",
+        "colorSpace": "srgb",
+        "source": "hostImage"
+      }
+    ],
+    "renderList": [
+      {
+        "id": "mesh-limb",
+        "textureId": "atlas:0",
+        "visible": true,
+        "culled": false,
+        "blendMode": "normal",
+        "drawOrder": 10,
+        "vertices": [0, 1, 0, 2, -1, 1],
+        "uvs": [0, 0, 1, 0, 0, 1],
+        "indices": [0, 1, 2]
+      }
+    ],
+    "hitTests": [
+      {
+        "x": 32,
+        "y": 32,
+        "hit": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "recordedAt": "2026-05-21T18:10:00+09:00",
+  "platform": "win32",
+  "arch": "x64",
+  "buildCommand": "npm exec vite -- build --sourcemap",
+  "chunkCount": 83,
+  "totalJsBytes": 2683184,
+  "topChunks": [
+    { "name": "vendor-pixi-D0BcyVGY.js", "bytes": 499012 },
+    { "name": "App-tu84nyy6.js", "bytes": 431927 },
+    { "name": "vendor-psd-BP_EKDb2.js", "bytes": 244961 },
+    { "name": "psd-parse.worker-9VggpwCX.js", "bytes": 212374 },
+    { "name": "vendor-react-C_piNZIU.js", "bytes": 193888 },
+    { "name": "AutoSetupDialog-B-WRqfs3.js", "bytes": 168950 },
+    { "name": "glb-exporter-DYEzlJ5I.js", "bytes": 161727 },
+    { "name": "TimelinePanel-DcV3OuJh.js", "bytes": 102289 },
+    { "name": "vendor-zod-Dv-cNvsp.js", "bytes": 73237 },
+    { "name": "MenuBar-BKMsCKxm.js", "bytes": 65037 },
+    { "name": "PropertiesPanel-CBV6DYAe.js", "bytes": 43221 },
+    { "name": "Canvas-Dw68U3CU.js", "bytes": 38709 },
+    { "name": "ManualPngSplitDialog-DVC3Nxxb.js", "bytes": 38059 },
+    { "name": "vendor-msgpack-BE8aAsr3.js", "bytes": 22438 },
+    { "name": "vendor-state-Bv9rCRZp.js", "bytes": 20708 }
+  ],
+  "autoSetupDialog": {
+    "name": "AutoSetupDialog-B-WRqfs3.js",
+    "bytes": 168950,
+    "gzipBytes": 45620,
+    "sourceMapBytes": 638763,
+    "topSources": [
+      { "source": "../../packages/editor-core/src/motion-preview-authoring-module.ts", "bytes": 61304 },
+      { "source": "../../src/components/AutoSetupDialog.tsx", "bytes": 33059 },
+      {
+        "source": "../../packages/editor-core/src/motion-handle-suggestions.ts",
+        "bytes": 32551
+      },
+      { "source": "../../src/lib/auto-setup.ts", "bytes": 23162 },
+      {
+        "source": "../../packages/editor-core/src/auto-setup-apply-command.ts",
+        "bytes": 20698
+      },
+      { "source": "../../packages/editor-core/src/layer-graph.ts", "bytes": 20425 },
+      {
+        "source": "../../src/components/auto-setup/AutoSetupSeeThroughPanel.tsx",
+        "bytes": 17233
+      },
+      {
+        "source": "../../src/components/auto-setup/AutoSetupMotionReviewPanel.tsx",
+        "bytes": 14608
+      },
+      {
+        "source": "../../src/components/AutoSetupMotionSuggestionHelpers.ts",
+        "bytes": 13603
+      },
+      { "source": "../../packages/core/src/bbw-weights.ts", "bytes": 12946 },
+      {
+        "source": "../../src/components/auto-setup/AutoSetupPreviewDebugPanel.tsx",
+        "bytes": 12225
+      },
+      { "source": "../../packages/core/src/heat-weights.ts", "bytes": 10572 },
+      { "source": "../../src/components/AutoSetupStepPreview.tsx", "bytes": 10145 },
+      { "source": "../../src/lib/see-through-depth-rig-hints.ts", "bytes": 9004 },
+      { "source": "../../src/lib/see-through-warning-i18n.ts", "bytes": 8807 },
+      { "source": "../../src/lib/ai-bone-generator.ts", "bytes": 8600 },
+      {
+        "source": "../../packages/editor-core/src/layer-graph-safe-plan.ts",
+        "bytes": 8409
+      },
+      { "source": "../../packages/editor-core/src/see-through-eye-rig.ts", "bytes": 8084 },
+      { "source": "../../packages/editor-core/src/see-through-mouth-rig.ts", "bytes": 7919 },
+      { "source": "../../src/lib/layer-occlusion-cleanup/preview.ts", "bytes": 7076 }
+    ]
+  }
+}

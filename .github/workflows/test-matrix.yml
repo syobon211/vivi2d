@@ -1,0 +1,181 @@
+# Playwright matrix for manual and CI-driven Electron checks.
+#
+# This workflow is intentionally `workflow_dispatch` only. Push and pull request
+# automation live in other workflows so ownership and runtime cost stay clear.
+#
+# Expected usage:
+#   - smoke: quick regression pass
+#   - full / visual: wider editor and screenshot coverage
+#   - perf: scheduled or manual performance monitoring
+#
+# Electron 41 requires xvfb on Linux. Windows and macOS run without it.
+name: Test Matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Playwright project (smoke / full / perf / visual / all)"
+        required: true
+        default: "smoke"
+        type: choice
+        options:
+          - smoke
+          - full
+          - perf
+          - visual
+          - all
+      os:
+        description: "OS matrix (single / triple)"
+        required: true
+        default: "single"
+        type: choice
+        options:
+          - single
+          - triple
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit + Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: >
+          npx biome check
+          e2e/playwright.config.ts
+          electron/ipc-contract.cjs
+          electron/main.cjs
+          electron/security.cjs
+          electron/window.cjs
+          electron/ipc/comfyui.cjs
+          electron/__tests__/security.test.ts
+          electron/__tests__/comfyui-ipc.test.ts
+          packages/viewer/electron/ipc-contract.cjs
+          packages/viewer/electron/security.cjs
+          packages/viewer/electron/main.cjs
+          packages/viewer/electron/viewer-api-origin.cjs
+          packages/viewer/electron/viewer-api-rate-limit.cjs
+          packages/viewer/src/__tests__/viewer-api-boundary-utils.test.ts
+          packages/viewer/src/__tests__/electron-security.test.ts
+          scripts/check-architecture-boundaries.mjs
+          scripts/check-core-model-current-fixtures.mjs
+          scripts/check-direct-model-mutations.mjs
+          scripts/check-docs-architecture.mjs
+          scripts/check-docs-public-surface.mjs
+          scripts/check-task-guide-paths.mjs
+          scripts/check-task-guide-gates.mjs
+          scripts/check-pr-recipe-gates.mjs
+          scripts/check-troubleshooting-content.mjs
+          scripts/check-content-safety-integrity.mjs
+          scripts/check-escalation-template.mjs
+          scripts/check-history-secrets.mjs
+          scripts/check-source-comments.mjs
+          scripts/check-web-sdk-basic-static.mjs
+          scripts/check-web-sdk-basic-smoke.mjs
+          scripts/check-samples-public-surface.mjs
+          scripts/check-viewer-test-text.mjs
+          scripts/check-ip-markers.mjs
+          scripts/check-ip-product-profile.mjs
+          scripts/check-local-motion-private-markers.mjs
+          scripts/check-local-motion-worker-fixtures.mjs
+          scripts/check-clean-room-coverage.mjs
+          scripts/check-auto-setup-ip-compliance.mjs
+          scripts/generate-local-motion-marker-catalogs.mjs
+          scripts/check-ipc-contract-sync.mjs
+          scripts/check-import-cycles.mjs
+          scripts/check-license-policy.mjs
+          scripts/check-native-artifact-policy.mjs
+          scripts/check-oss-readiness.mjs
+          scripts/check-pack-contents.mjs
+          scripts/check-package-boundaries.mjs
+          scripts/check-web-sdk-unlock.mjs
+          scripts/check-publication-history.mjs
+          scripts/check-hosted-release-surfaces.mjs
+          scripts/create-source-review-archive.mjs
+          scripts/check-quality-gate-drift.mjs
+          scripts/check-release-surface.mjs
+          scripts/check-release-gates.test.mjs
+          scripts/check-runtime-c-abi-link.mjs
+          scripts/check-runtime-c-abi.mjs
+          scripts/check-runtime-wasm-browser.mjs
+          scripts/check-ui-module-budget.mjs
+          scripts/check-user-docs.mjs
+          scripts/check-secrets.mjs
+          scripts/check-security-patterns.mjs
+          scripts/check-security-patterns.test.mjs
+          scripts/generate-third-party-notices.mjs
+          scripts/generate-web-sdk-basic-fixture.mjs
+          scripts/generate-sbom.mjs
+          scripts/check-workspace-layout.mjs
+          scripts/lib/source-hygiene.mjs
+          scripts/lib/content-safety-patterns.mjs
+          scripts/lib/repo.test.mjs
+          scripts/lib/repo.mjs
+          scripts/run-quality-gates.mjs
+      - run: npx tsc --noEmit
+      - run: npm run check:packages-types
+      - run: npm run test:coverage
+      - run: npm run i18n:check
+      - run: npm run check:ipc-contract
+      - run: npm run check:ipc-contract-sync
+      - run: npm run check:ip-markers
+      - run: npm run check:architecture-boundaries
+      - run: npm run check:license-policy
+      - run: npm run check:source-comments
+      - run: npm run check:security-patterns
+      - run: npm run check:package-boundaries
+      - run: npm run check:publication-history
+      - run: npm run notices:check
+      - run: npm run audit:prod
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: coverage-${{ github.run_id }}
+          path: coverage/
+          retention-days: 7
+
+  e2e:
+    name: E2E (${{ matrix.project }} / ${{ matrix.os }})
+    needs: unit
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ github.event.inputs.project == 'all' && fromJSON('["smoke","full","perf","visual"]') || fromJSON(format('["{0}"]', github.event.inputs.project)) }}
+        os: ${{ github.event.inputs.os == 'triple' && fromJSON('["ubuntu-latest","windows-latest","macos-latest"]') || fromJSON('["ubuntu-latest"]') }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build for E2E
+        run: npm run build:e2e
+      - run: npm run check:release-surface
+      - name: Run Playwright (${{ matrix.project }})
+        # Linux Electron runs under xvfb so Chromium has a display server.
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run --auto-servernum -- npx playwright test --config=e2e/playwright.config.ts --project=${{ matrix.project }}
+          else
+            npx playwright test --config=e2e/playwright.config.ts --project=${{ matrix.project }}
+          fi
+        shell: bash
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.project }}-${{ matrix.os }}-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

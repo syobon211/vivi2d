@@ -1,0 +1,9 @@
+{
+  "recordedAt": "2026-05-05T11:47:36.770Z",
+  "platform": "win32",
+  "arch": "x64",
+  "node": "v24.14.0",
+  "keyframeCount": 1000,
+  "injectionMs": 1,
+  "firstPaintMs": 1.81
+}

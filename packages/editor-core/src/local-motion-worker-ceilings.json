@@ -1,0 +1,10 @@
+{
+  "maxIterations": 24,
+  "maxVertexCount": 4096,
+  "maxHandleCount": 32,
+  "maxRegionCount": 8,
+  "maxScratchBytes": 67108864,
+  "maxSolveMs": 8,
+  "maxDisplacementPx": 32,
+  "maxResponseBytes": 33554432
+}

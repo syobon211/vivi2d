@@ -1,0 +1,113 @@
+{
+  "locales": ["en", "ja", "zh-Hans", "ko-KR"],
+  "routes": [
+    {
+      "slug": "",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "faq",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "getting-started/first-launch",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "getting-started/install",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "getting-started/open-your-first-project",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "integrations/comfyui",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "reference/file-formats",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "reference/keyboard-shortcuts",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "reference/settings",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "troubleshooting/display-and-gpu",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "troubleshooting/import-errors",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "troubleshooting/localization",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "workflows/auto-setup",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "workflows/export",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "workflows/manual-image-split",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "workflows/psd-to-rig",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "workflows/viewer",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    },
+    {
+      "slug": "workflows/viewer-api",
+      "published": false,
+      "includeInNavigation": false,
+      "includeInSearch": false
+    }
+  ]
+}
