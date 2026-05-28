@@ -1,0 +1,16 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "pairing_code_mismatch",
+    "message": "pairing code mismatch",
+    "retryable": true,
+    "details": {
+      "attemptsRemaining": 4
+    }
+  },
+  "id": "request-id"
+}

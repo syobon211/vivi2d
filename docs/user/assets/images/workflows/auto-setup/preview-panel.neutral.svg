@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Placeholder Auto Setup review panel">
+  <rect width="960" height="540" rx="32" fill="#f1eef8"/>
+  <rect x="140" y="72" width="680" height="396" rx="26" fill="#ffffff" stroke="#8c7be8" stroke-width="6"/>
+  <rect x="190" y="132" width="250" height="56" rx="12" fill="#d7d1fb"/>
+  <rect x="190" y="220" width="580" height="38" rx="10" fill="#eeeafd"/>
+  <rect x="190" y="280" width="580" height="38" rx="10" fill="#eeeafd"/>
+  <rect x="190" y="340" width="430" height="38" rx="10" fill="#eeeafd"/>
+  <circle cx="710" cy="160" r="38" fill="#6c5ce7"/>
+</svg>

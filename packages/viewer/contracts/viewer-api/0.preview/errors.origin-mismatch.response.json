@@ -1,0 +1,13 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "origin_mismatch",
+    "message": "origin mismatch",
+    "retryable": false
+  },
+  "id": "request-id"
+}

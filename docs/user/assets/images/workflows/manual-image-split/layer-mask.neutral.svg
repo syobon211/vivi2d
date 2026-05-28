@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Placeholder manual image split mask">
+  <rect width="960" height="540" rx="32" fill="#eef3ea"/>
+  <rect x="110" y="80" width="740" height="380" rx="24" fill="#ffffff" stroke="#94b58a" stroke-width="6"/>
+  <path d="M300 370c-35-85 0-190 85-238 70-40 160-22 210 42 62 80 40 178-34 222-90 54-210 28-261-26z" fill="#8fd1a0" opacity="0.86"/>
+  <path d="M388 150c40 42 60 100 48 170" fill="none" stroke="#2e6f47" stroke-width="18" stroke-linecap="round"/>
+</svg>

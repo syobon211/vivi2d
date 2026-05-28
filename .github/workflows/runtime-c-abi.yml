@@ -1,0 +1,67 @@
+name: Runtime C ABI
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/runtime-c-abi.yml"
+      - "docs/developer/api/spec/runtime-spec-v1.md"
+      - "docs/developer/quality/public-api-status.md"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/runtime-c-abi/**"
+      - "scripts/check-runtime-c-abi.mjs"
+      - "scripts/check-runtime-c-abi-link.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-c-abi-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  header-check:
+    name: Header Check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: rustup toolchain install 1.89.0 --profile minimal
+      - run: rustup default 1.89.0
+      - run: npm run check:runtime-c-abi
+      - name: Syntax-check sample host (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ipackages/runtime-c-abi/include -fsyntax-only packages/runtime-c-abi/samples/minimal-host.c
+          cc -std=c11 -Wall -Wextra -Wpedantic -Werror -Ipackages/runtime-c-abi/include -fsyntax-only packages/runtime-c-abi/tests/header-layout.c
+          npm run check:runtime-c-abi-link
+      - name: Syntax-check sample host (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          if (!(Test-Path $vswhere)) {
+            throw "vswhere.exe was not found"
+          }
+          $vsPath = & $vswhere -latest -property installationPath
+          if (!$vsPath) {
+            throw "Visual Studio installation path was not found"
+          }
+          $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+          if (!(Test-Path $vcvars)) {
+            throw "vcvars64.bat was not found"
+          }
+          cmd /c "`"$vcvars`" && cl /nologo /std:c11 /W4 /WX /TC /Ipackages\runtime-c-abi\include /Zs packages\runtime-c-abi\samples\minimal-host.c && cl /nologo /std:c11 /W4 /WX /TC /Ipackages\runtime-c-abi\include /Zs packages\runtime-c-abi\tests\header-layout.c && npm run check:runtime-c-abi-link"
+          if ($LASTEXITCODE -ne 0) {
+            throw "MSVC C ABI check failed with exit code $LASTEXITCODE"
+          }

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src ws://127.0.0.1:*; base-uri 'none'; form-action 'none'"
+    />
+    <title>Vivi2D Viewer API Browser Sample</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="card">
+        <p class="eyebrow">Vivi2D Viewer API</p>
+        <h1>Browser Origin Pairing Sample</h1>
+        <p>
+          This page demonstrates the approved browser Origin path. Keep it on a
+          local server you control, and approve only the exact Origin shown by
+          Vivi2D.
+        </p>
+        <label>
+          Viewer API endpoint
+          <input
+            id="endpoint"
+            data-testid="viewer-api-endpoint"
+            placeholder="ws://127.0.0.1:<port>"
+            autocomplete="off"
+          />
+        </label>
+        <div class="actions">
+          <button id="connect" data-testid="viewer-api-connect" type="button">
+            Connect
+          </button>
+          <button id="pair" data-testid="viewer-api-pair" type="button" disabled>
+            Pair
+          </button>
+          <button id="state" data-testid="viewer-api-state" type="button" disabled>
+            Get State
+          </button>
+          <button id="clear-token" data-testid="viewer-api-clear-token" type="button">
+            Clear Session Token
+          </button>
+        </div>
+        <output
+          id="status"
+          class="status"
+          data-testid="viewer-api-status"
+          role="status"
+          aria-live="polite"
+        >Idle.</output>
+        <pre id="log" data-testid="viewer-api-log" aria-live="polite"></pre>
+      </section>
+    </main>
+    <script type="module" src="./src/client.ts"></script>
+  </body>
+</html>

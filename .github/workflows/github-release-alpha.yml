@@ -1,0 +1,210 @@
+name: GitHub Release Alpha
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Expected repository release version, for example 0.1.0-alpha.1"
+        required: true
+      ref:
+        description: "Release tag to publish, for example v0.1.0-alpha.1"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-release-alpha
+  cancel-in-progress: false
+
+jobs:
+  validate-and-package-github-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_REF: ${{ inputs.ref }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - name: Verify release tag before repository scripts run
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+$ ]]
+          test "$RELEASE_REF" = "v$VERSION"
+          test "$GITHUB_REF" = "refs/tags/$RELEASE_REF"
+          git rev-parse -q --verify "refs/tags/$RELEASE_REF^{tag}" >/dev/null
+          test "$(git rev-list -n 1 "$RELEASE_REF")" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-list -n 1 "$RELEASE_REF")" = "$(git rev-parse HEAD)"
+      - run: npm ci
+      - run: node scripts/run-release-step.mjs --name playwright-install-browsers -- npx playwright install --with-deps chromium firefox webkit
+      - run: node scripts/run-release-step.mjs --name rust-wasm-target -- rustup target add wasm32-unknown-unknown
+      - run: xvfb-run -a node scripts/run-release-step.mjs --name check-quality -- npm run check:quality
+      - run: xvfb-run -a node scripts/run-release-step.mjs --name check-quality-e2e-workflow-record -- npm run check:quality:e2e-workflow-record
+      - run: node scripts/run-release-step.mjs --name check-oss-readiness -- npm run check:oss-readiness
+      - run: node scripts/run-release-step.mjs --name check-oss-publication -- npm run check:oss-publication
+      - run: node scripts/run-release-step.mjs --name check-release-surface -- npm run check:release-surface
+      - run: node scripts/run-release-step.mjs --name check-pack-contents -- npm run check:pack-contents
+      - run: node scripts/run-release-step.mjs --name check-ip-product-profile -- npm run check:ip-product-profile
+      - run: node scripts/run-release-step.mjs --name check-clean-room-coverage -- npm run check:clean-room-coverage
+      - run: node scripts/run-release-step.mjs --name check-license-policy -- npm run check:license-policy
+      - run: node scripts/run-release-step.mjs --name notices-check -- npm run notices:check
+      - run: node scripts/run-release-step.mjs --name check-sbom -- npm run check:sbom
+      - run: node scripts/run-release-step.mjs --name check-publication-history -- npm run check:publication-history
+      - run: node scripts/run-release-step.mjs --name check-hosted-release-surfaces -- npm run check:hosted-release-surfaces
+      - run: node scripts/run-release-step.mjs --name check-workflow-artifact-safety -- npm run check:workflow-artifact-safety
+      - run: node scripts/run-release-step.mjs --name check-source-review-archive -- npm run check:source-review-archive
+      - run: node scripts/run-release-step.mjs --name check-viewer-mediapipe-assets -- npm run check:viewer-mediapipe-assets
+      - run: node scripts/install-pinned-gitleaks.mjs --manifest scripts/release-tool-versions.json
+      - run: node scripts/run-release-step.mjs --name check-history-secrets -- npm run check:history-secrets
+      - run: node scripts/run-release-step.mjs --name gitleaks-worktree -- gitleaks detect --source . --no-git
+      - run: node scripts/run-release-step.mjs --name gitleaks-history -- gitleaks git --log-opts="--all" .
+      - run: node scripts/run-release-step.mjs --name sbom-generate -- npm run sbom:generate
+      - run: node scripts/run-release-step.mjs --name archive-source-review -- npm run archive:source-review
+      - run: npm run release:github:prepare -- --version "$VERSION" --tag "$RELEASE_REF"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: github-release-alpha-assets
+          retention-days: 14
+          if-no-files-found: error
+          path: tmp/github-release-assets/
+
+  verify-github-release-assets:
+    needs: validate-and-package-github-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_REF: ${{ inputs.ref }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify release tag before creating release
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+$ ]]
+          test "$RELEASE_REF" = "v$VERSION"
+          test "$GITHUB_REF" = "refs/tags/$RELEASE_REF"
+          git rev-parse -q --verify "refs/tags/$RELEASE_REF^{tag}" >/dev/null
+          test "$(git rev-list -n 1 "$RELEASE_REF")" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-list -n 1 "$RELEASE_REF")" = "$(git rev-parse HEAD)"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: github-release-alpha-assets
+          path: tmp/github-release-assets
+      - name: Verify downloaded release assets
+        run: node scripts/verify-github-release-assets.mjs --asset-dir tmp/github-release-assets --version "$VERSION" --tag "$RELEASE_REF" --sha "$GITHUB_SHA"
+
+  create-github-release:
+    needs: verify-github-release-assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_REF: ${{ inputs.ref }}
+    steps:
+      - name: Create GitHub Release
+        shell: bash
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          rm -rf tmp/github-release-assets
+          gh run download "$GITHUB_RUN_ID" \
+            --repo "$GH_REPO" \
+            --name github-release-alpha-assets \
+            --dir tmp/github-release-assets
+          pushd tmp/github-release-assets >/dev/null
+          expected_files=(
+            "THIRD_PARTY_NOTICES.txt"
+            "checksums.txt"
+            "release-notes.md"
+            "vivi2d-$VERSION-release-record.json"
+            "vivi2d-$VERSION-source-review.zip"
+            "vivi2d-$VERSION-source-review-manifest.json"
+            "vivi2d-$VERSION.cdx.json"
+          )
+          actual_files="$(find . -maxdepth 1 -type f -printf '%f\n' | sort)"
+          expected_text="$(printf '%s\n' "${expected_files[@]}" | sort)"
+          test "$actual_files" = "$expected_text"
+          sha256sum -c checksums.txt
+          node <<'NODE'
+          const crypto = require("node:crypto");
+          const fs = require("node:fs");
+          const version = process.env.VERSION;
+          const sha = process.env.GITHUB_SHA;
+          const record = JSON.parse(
+            fs.readFileSync(`vivi2d-${version}-release-record.json`, "utf8"),
+          );
+          function sha256(file) {
+            return `sha256:${crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex")}`;
+          }
+          if (record.sourceCommit !== sha) throw new Error("release record sourceCommit mismatch.");
+          if (record.releaseNotesAttachedAsDownload !== false) {
+            throw new Error("release notes must not be downloadable.");
+          }
+          if ((record.downloadableAssetNames ?? []).includes("release-notes.md")) {
+            throw new Error("release-notes.md must not be a downloadable asset.");
+          }
+          if (record.releaseNotes?.name !== "release-notes.md") {
+            throw new Error("release notes name mismatch.");
+          }
+          if (record.releaseNotes?.sha256 !== sha256("release-notes.md")) {
+            throw new Error("release notes sha256 mismatch.");
+          }
+          if (record.releaseNotes?.sizeBytes !== fs.statSync("release-notes.md").size) {
+            throw new Error("release notes size mismatch.");
+          }
+          NODE
+          popd >/dev/null
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+$ ]]
+          test "$RELEASE_REF" = "v$VERSION"
+          tag_ref_json="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_REF")"
+          tag_type="$(printf '%s' "$tag_ref_json" | jq -r '.object.type')"
+          tag_sha="$(printf '%s' "$tag_ref_json" | jq -r '.object.sha')"
+          if [ "$tag_type" = "tag" ]; then
+            peeled_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha" --jq '.object.sha')"
+          else
+            peeled_sha="$tag_sha"
+          fi
+          test "$peeled_sha" = "$GITHUB_SHA"
+          assets=(
+            "tmp/github-release-assets/THIRD_PARTY_NOTICES.txt"
+            "tmp/github-release-assets/checksums.txt"
+            "tmp/github-release-assets/vivi2d-$VERSION-release-record.json"
+            "tmp/github-release-assets/vivi2d-$VERSION-source-review.zip"
+            "tmp/github-release-assets/vivi2d-$VERSION-source-review-manifest.json"
+            "tmp/github-release-assets/vivi2d-$VERSION.cdx.json"
+          )
+          for file in "${assets[@]}"; do
+            test -f "$file"
+          done
+          gh release create "$RELEASE_REF" \
+            --repo "$GH_REPO" \
+            "${assets[@]}" \
+            --verify-tag \
+            --title "Vivi2D $VERSION" \
+            --notes-file tmp/github-release-assets/release-notes.md \
+            --draft

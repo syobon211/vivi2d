@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "status": "publicOssSourceAllowed",
+  "notes": [
+    "The in-repository Vivi2D compat plugin source is Vivi2D-maintained Apache-2.0 code and may be included in the public OSS source tree.",
+    "This record does not approve bundling ComfyUI, ComfyUI-See-through, See-through source, model weights, generated assets, or a combined custom-node pack. Those remain separate release decisions."
+  ],
+  "compatPlugin": {
+    "installDirectory": "vivi2d_compat_plugin",
+    "sourceLocation": "repo:integrations/comfyui/vivi2d_compat_plugin",
+    "sourceRevision": "ec7fea44678e76d7c17b96cfbb2d9bcefde06c24",
+    "version": "0.1.0",
+    "sha256": "sha256:08089b71ae72cb88e461684aca4b9708262c1aa4ffd8326d76e53b6e07ed9a20",
+    "signature": null,
+    "licenseSpdx": "Apache-2.0",
+    "licenseStatus": "releaseReviewed",
+    "supportedVivi2DBuildRange": ">=0.1.0 <0.2.0",
+    "reviewed": true
+  },
+  "seeThrough": {
+    "upstreamRepo": "jtydhr88/ComfyUI-See-through",
+    "testedTagOrCommit": "0.4.4 / 57bf9edb1f34ca1617bed5ce73608b323280eee1",
+    "licenseSpdx": "MIT",
+    "thirdPartyNotice": "ComfyUI-See-through is a separate MIT-licensed third-party custom-node plugin installed by users from its upstream source; it is not bundled in this source tree.",
+    "reviewed": true
+  },
+  "seeThroughResearchProject": {
+    "upstreamRepo": "shitagaki-lab/see-through",
+    "paperTitle": "See-through: Single-image Layer Decomposition for Anime Characters",
+    "bibtexEntryId": "lin2026seethrough",
+    "citationSource": "https://github.com/shitagaki-lab/see-through#citation",
+    "licenseSpdx": "Apache-2.0",
+    "thirdPartyNotice": "See-through is an independent open-source research project for single-image anime layer decomposition. It is not bundled with Vivi2D; users install any upstream See-through tooling separately and should cite the upstream paper for academic or published use.",
+    "reviewed": true
+  }
+}

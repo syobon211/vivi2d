@@ -1,0 +1,194 @@
+name: Quality Gates
+
+on:
+  pull_request:
+    paths:
+      - ".github/**"
+      - "CODE_OF_CONDUCT.md"
+      - "CONTRIBUTING.md"
+      - "README.md"
+      - "SECURITY.md"
+      - "docs/**"
+      - "electron/**"
+      - "examples/**"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - "scripts/**"
+      - "src/**"
+      - "tsconfig.json"
+      - "tsconfig.packages.json"
+      - "vite.aliases.ts"
+      - "vite.config.ts"
+      - "vitest.config.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-gates-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Build, Test, Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: >
+          npx biome check
+          e2e/playwright.config.ts
+          electron/ipc-contract.cjs
+          electron/main.cjs
+          electron/security.cjs
+          electron/window.cjs
+          electron/ipc/comfyui.cjs
+          electron/__tests__/security.test.ts
+          electron/__tests__/comfyui-ipc.test.ts
+          packages/viewer/electron/ipc-contract.cjs
+          packages/viewer/electron/security.cjs
+          packages/viewer/electron/main.cjs
+          packages/viewer/electron/viewer-api-origin.cjs
+          packages/viewer/electron/viewer-api-rate-limit.cjs
+          packages/viewer/src/__tests__/viewer-api-boundary-utils.test.ts
+          packages/viewer/src/__tests__/electron-security.test.ts
+          scripts/check-architecture-boundaries.mjs
+          scripts/check-core-model-current-fixtures.mjs
+          scripts/check-direct-model-mutations.mjs
+          scripts/check-docs-architecture.mjs
+          scripts/check-docs-public-surface.mjs
+          scripts/check-task-guide-paths.mjs
+          scripts/check-task-guide-gates.mjs
+          scripts/check-pr-recipe-gates.mjs
+          scripts/check-troubleshooting-content.mjs
+          scripts/check-content-safety-integrity.mjs
+          scripts/check-escalation-template.mjs
+          scripts/check-history-secrets.mjs
+          scripts/check-source-comments.mjs
+          scripts/check-viewer-test-text.mjs
+          scripts/check-web-sdk-basic-static.mjs
+          scripts/check-web-sdk-basic-smoke.mjs
+          scripts/check-samples-public-surface.mjs
+          scripts/check-ip-markers.mjs
+          scripts/check-ip-product-profile.mjs
+          scripts/check-local-motion-private-markers.mjs
+          scripts/check-local-motion-worker-fixtures.mjs
+          scripts/check-clean-room-coverage.mjs
+          scripts/check-auto-setup-ip-compliance.mjs
+          scripts/generate-local-motion-marker-catalogs.mjs
+          scripts/check-ipc-contract-sync.mjs
+          scripts/check-import-cycles.mjs
+          scripts/check-license-policy.mjs
+          scripts/check-native-artifact-policy.mjs
+          scripts/check-oss-readiness.mjs
+          scripts/check-web-npm-alpha-release.mjs
+          scripts/check-github-release-alpha.mjs
+          scripts/generate-github-release-alpha-review-packet.mjs
+          scripts/prepare-github-release-assets.mjs
+          scripts/verify-github-release-assets.mjs
+          scripts/check-npm-token-hygiene.mjs
+          scripts/check-environment-protection.mjs
+          scripts/check-npm-cli-version.mjs
+          scripts/check-release-input-version.mjs
+          scripts/check-release-tag.mjs
+          scripts/install-pinned-gitleaks.mjs
+          scripts/run-release-step.mjs
+          scripts/write-pack-output.mjs
+          scripts/record-web-npm-alpha-artifacts.mjs
+          scripts/verify-web-npm-alpha-release-record.mjs
+          scripts/verify-web-npm-alpha-publish.mjs
+          scripts/check-pack-contents.mjs
+          scripts/check-package-boundaries.mjs
+          scripts/check-web-sdk-unlock.mjs
+          scripts/check-ui-module-budget.mjs
+          scripts/check-publication-history.mjs
+          scripts/check-hosted-release-surfaces.mjs
+          scripts/create-source-review-archive.mjs
+          scripts/check-quality-gate-drift.mjs
+          scripts/check-release-surface.mjs
+          scripts/check-release-gates.test.mjs
+          scripts/check-runtime-c-abi-link.mjs
+          scripts/check-runtime-c-abi.mjs
+          scripts/check-runtime-wasm-browser.mjs
+          scripts/check-secrets.mjs
+          scripts/check-security-patterns.mjs
+          scripts/check-security-patterns.test.mjs
+          scripts/generate-third-party-notices.mjs
+          scripts/generate-web-sdk-basic-fixture.mjs
+          scripts/generate-sbom.mjs
+          scripts/check-workspace-layout.mjs
+          scripts/check-user-docs.mjs
+          scripts/lib/source-hygiene.mjs
+          scripts/lib/content-safety-patterns.mjs
+          scripts/lib/repo.test.mjs
+          scripts/lib/repo.mjs
+          scripts/run-quality-gates.mjs
+      - run: npx tsc --noEmit
+      - run: npm run check:packages-types
+      - run: npm run check:workspace-layout
+      - run: npm run check:docs-architecture
+      - run: npm run check:task-guide-paths
+      - run: npm run check:task-guide-gates
+      - run: npm run check:pr-recipe-gates
+      - run: npm run check:troubleshooting-content
+      - run: npm run check:content-safety-integrity
+      - run: npm run check:escalation-template
+      - run: npm run docs:user:check
+      - run: npm run docs:user:check:release
+      - run: npm run check:docs-public-surface
+      - run: npm run check:quality-gate-drift
+      - run: npm run test
+      - run: npm run i18n:check:all
+      - run: npm run check:ipc-contract
+      - run: npm run check:ipc-contract-sync
+      - run: npm run check:ip-markers
+      - run: npm run check:ip-product-profile
+      - run: npm run check:local-motion-marker-catalogs
+      - run: npm run check:local-motion-private-markers
+      - run: npm run check:local-motion-worker-fixtures
+      - run: npm run check:clean-room-coverage
+      - run: npm run check:auto-setup-ip-compliance
+      - run: npm run check:architecture-boundaries
+      - run: npm run check:direct-model-mutations
+      - run: npm run check:ui-module-budget
+      - run: npm run check:import-cycles
+      - run: npm run check:license-policy
+      - run: npm run check:secrets
+      - run: npm run check:history-secrets
+      - run: npm run check:source-comments
+      - run: npm run check:viewer-tests
+      - run: npm run check:provider-conformance
+      - run: npm run check:core-model-current-fixtures
+      - run: npm run check:model-fixtures
+      - run: npm run check:samples:static
+      - run: npm run check:samples-public-surface
+      - run: npm run check:security-patterns
+      - run: npm run check:package-boundaries
+      - run: npm run check:sdk-unlock:web -- --self-only
+      - run: npm run check:publication-history
+      - run: npm run check:hosted-release-surfaces
+      - run: npm run check:workflow-artifact-safety
+      - run: npm run check:source-review-archive
+      - run: npm run build
+      - run: npm run build:packages
+      - run: npm run check:bundle
+      - run: npm run check:pack-contents
+      - run: npm run check:release-surface
+      - run: npm run check:runtime-c-abi
+      - run: npm run check:native-artifact-policy
+      - run: npm run notices:check
+      - run: npm run check:sbom
+      - run: npm run audit:all
+      - run: npm run audit:prod
+      - run: npm run check:npm-token-hygiene
+      - run: npm run check:environment-protection
+      - run: npm run check:web-npm-alpha-release
+      - run: npm run check:github-release-alpha
+      - run: npm run check:oss-readiness

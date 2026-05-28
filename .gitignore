@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+packages/runtime-native/target/
+*.tsbuildinfo
+
+# Test and report outputs
+coverage/
+test-results/
+playwright-report/
+test-screenshots/
+e2e/screenshots/
+e2e/specs/__screenshots__/
+packages/viewer/test-screenshots/
+artifacts/
+transcripts/
+
+# Local planning and generated scratch data
+docs/backlog/
+tmp/
+
+# Python caches
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo

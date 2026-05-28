@@ -1,0 +1,96 @@
+{
+  "generatedBy": "npm run check:ui-module-budget -- --write",
+  "note": "Production UI/local-API modules over the Q4 first-pass line budget plus named Q4/Q7 split targets. maxLines is a ratchet: modules may shrink without refreshing the baseline, but growth needs review.",
+  "version": 2,
+  "defaultLimit": 1000,
+  "exceptions": [
+    {
+      "limit": 1000,
+      "currentLines": 985,
+      "maxLines": 985,
+      "path": "src/components/AutoSetupDialog.tsx",
+      "tracked": true,
+      "owner": "pre-public-refactor",
+      "target": "Q4 auto-setup dialog split",
+      "reason": "Auto setup is a high-change workflow and should be split before SDK work.",
+      "reviewBy": "Q8 hardening pass"
+    },
+    {
+      "limit": 1000,
+      "currentLines": 856,
+      "maxLines": 856,
+      "path": "packages/viewer/src/App.tsx",
+      "tracked": true,
+      "owner": "pre-public-refactor",
+      "target": "Q4 viewer shell split",
+      "reason": "Viewer shell owns several panes and should move toward smaller feature slices.",
+      "reviewBy": "Q8 hardening pass"
+    },
+    {
+      "limit": 1000,
+      "currentLines": 833,
+      "maxLines": 833,
+      "path": "src/components/ManualPngSplitDialog.tsx",
+      "tracked": true,
+      "owner": "pre-public-refactor",
+      "target": "Q4 manual split dialog split",
+      "reason": "Manual layer splitting is a high-change authoring workflow and should stay on the Q4 split radar.",
+      "reviewBy": "Q8 hardening pass"
+    },
+    {
+      "limit": 1000,
+      "currentLines": 683,
+      "maxLines": 683,
+      "path": "src/hooks/useMeshOverlay.ts",
+      "tracked": true,
+      "owner": "pre-public-refactor",
+      "target": "Q4 mesh overlay hook split",
+      "reason": "Mesh overlay is a rendering/editor boundary hotspot and should not grow silently.",
+      "reviewBy": "Q8 hardening pass"
+    },
+    {
+      "limit": 1000,
+      "currentLines": 602,
+      "maxLines": 602,
+      "path": "src/components/PropertiesPanel.tsx",
+      "tracked": true,
+      "owner": "pre-public-refactor",
+      "target": "Q4 properties panel split",
+      "reason": "Properties panel is an editor hotspot even if it is currently under the global limit.",
+      "reviewBy": "Q8 hardening pass"
+    },
+    {
+      "limit": 1000,
+      "currentLines": 591,
+      "maxLines": 591,
+      "path": "src/components/menu/useMenuQuickActionsRegistration.ts",
+      "tracked": true,
+      "owner": "pre-public-refactor",
+      "target": "Q4 command/menu registration split",
+      "reason": "Menu quick actions are command-boundary plumbing and should not grow silently.",
+      "reviewBy": "Q8 hardening pass"
+    },
+    {
+      "limit": 1000,
+      "currentLines": 491,
+      "maxLines": 491,
+      "path": "packages/viewer/electron/viewer-api-server.cjs",
+      "tracked": true,
+      "owner": "pre-public-refactor",
+      "target": "Q7 local API split",
+      "reason": "Viewer API server is the main Q7 security-boundary split target.",
+      "reviewBy": "Q7 exit"
+    },
+    {
+      "limit": 1000,
+      "currentLines": 33,
+      "maxLines": 33,
+      "path": "src/lib/layer-occlusion-cleanup.ts",
+      "tracked": true,
+      "owner": "pre-public-refactor",
+      "target": "Q3/Q4 occlusion cleanup command split",
+      "reason": "Layer occlusion cleanup remains a mutation-heavy workflow hotspot.",
+      "reviewBy": "Q8 hardening pass"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "environment": "npm-alpha",
+  "purpose": "Protected environment for @vivi2d/web npm alpha Trusted Publishing.",
+  "requiredReviewersMinimum": 2,
+  "adminBypassDisabled": true,
+  "deploymentBranchPolicy": {
+    "customBranchPolicies": true,
+    "protectedBranches": false,
+    "allowedRefs": ["web-v*"]
+  },
+  "requiredSecrets": [],
+  "notes": [
+    "The real GitHub environment must be configured to match this tracked policy before publishing.",
+    "The publish workflow also verifies GITHUB_REF against the requested web-v* release tag."
+  ]
+}

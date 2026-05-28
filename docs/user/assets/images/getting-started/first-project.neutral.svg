@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Placeholder first project screenshot">
+  <rect width="960" height="540" rx="32" fill="#ebe9f7"/>
+  <rect x="96" y="72" width="768" height="396" rx="24" fill="#ffffff" stroke="#9f9ad1" stroke-width="6"/>
+  <rect x="150" y="126" width="260" height="288" rx="18" fill="#dad7ee"/>
+  <circle cx="585" cy="228" r="72" fill="#8a7be8"/>
+  <path d="M500 392c58-76 119-88 194-38" fill="none" stroke="#403b7d" stroke-width="20" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,64 @@
+{
+  "recordedAt": "2026-05-05T11:47:32.759Z",
+  "platform": "win32",
+  "arch": "x64",
+  "node": "v24.14.0",
+  "loops": 10,
+  "warmupLoops": 2,
+  "layersPerLoop": 50,
+  "parametersPerLoop": 100,
+  "samples": [
+    {
+      "loop": 0,
+      "usedJsHeapBytes": 11755848
+    },
+    {
+      "loop": 1,
+      "usedJsHeapBytes": 11677968
+    },
+    {
+      "loop": 2,
+      "usedJsHeapBytes": 11826180
+    },
+    {
+      "loop": 3,
+      "usedJsHeapBytes": 12032008
+    },
+    {
+      "loop": 4,
+      "usedJsHeapBytes": 12059588
+    },
+    {
+      "loop": 5,
+      "usedJsHeapBytes": 12146272
+    },
+    {
+      "loop": 6,
+      "usedJsHeapBytes": 12168332
+    },
+    {
+      "loop": 7,
+      "usedJsHeapBytes": 12180396
+    },
+    {
+      "loop": 8,
+      "usedJsHeapBytes": 12187592
+    },
+    {
+      "loop": 9,
+      "usedJsHeapBytes": 12191416
+    },
+    {
+      "loop": 10,
+      "usedJsHeapBytes": 12225752
+    },
+    {
+      "loop": 11,
+      "usedJsHeapBytes": 12226680
+    }
+  ],
+  "firstMeasuredHeapBytes": 11826180,
+  "lastMeasuredHeapBytes": 12226680,
+  "deltaBytes": 400500,
+  "heapIncreaseMBPerLoop": 0.042
+}

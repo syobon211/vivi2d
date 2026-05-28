@@ -1,0 +1,48 @@
+name: Runtime WASM Browser
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/runtime-wasm-browser.yml"
+      - "docs/developer/api/spec/runtime-spec-v1.md"
+      - "docs/developer/quality/public-api-status.md"
+      - "docs/developer/quality/release-policy.md"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/core/**"
+      - "packages/runtime/**"
+      - "packages/runtime-native/**"
+      - "packages/runtime-wasm/**"
+      - "scripts/check-runtime-native-wasm.mjs"
+      - "scripts/check-native-artifact-policy.mjs"
+      - "scripts/check-runtime-wasm-browser.mjs"
+      - "scripts/run-quality-gates.mjs"
+      - "scripts/generate-runtime-native-wasm-module.mjs"
+      - "tests/conformance/runtime-v1/**"
+      - "tsconfig.json"
+      - "tsconfig.packages.json"
+      - "vite.aliases.ts"
+      - "vite.config.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-wasm-browser-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-smoke:
+    name: Runtime WASM Browser Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - run: npm run test:runtime-wasm:browser

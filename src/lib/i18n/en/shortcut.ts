@@ -1,0 +1,22 @@
+// Shortcut settings dialog
+export const shortcut = {
+  "shortcut.title": "Shortcut Settings",
+  "shortcut.action": "Action",
+  "shortcut.shortcutCol": "Shortcut",
+  "shortcut.clickToChange": "Click to change key",
+  "shortcut.pressKey": "Press a key...",
+  "shortcut.restoreDefault": "Restore Default",
+  "shortcut.resetAll": "Reset All",
+  "shortcut.conflictPrefix": "Conflict:",
+  "shortcut.action.undo": "Undo",
+  "shortcut.action.redo": "Redo",
+  "shortcut.action.save": "Save",
+  "shortcut.action.saveAs": "Save As",
+  "shortcut.action.moveLayerUp": "Move Layer Up",
+  "shortcut.action.moveLayerDown": "Move Layer Down",
+  "shortcut.action.selectAll": "Select All",
+  "shortcut.action.toolSelect": "Select Tool",
+  "shortcut.action.toolPan": "Pan Tool",
+  "shortcut.action.toolMeshEdit": "Mesh Edit Tool",
+  "shortcut.action.tempPan": "Temporary Pan (hold)",
+} as const;

@@ -1,0 +1,16 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "asset_unavailable",
+    "message": "asset unavailable",
+    "retryable": false,
+    "details": {
+      "reason": "unauthorized"
+    }
+  },
+  "id": "request-id"
+}

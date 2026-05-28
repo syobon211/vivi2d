@@ -1,0 +1,13 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "internal_error",
+    "message": "internal error",
+    "retryable": true
+  },
+  "id": "request-id"
+}

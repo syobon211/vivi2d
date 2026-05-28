@@ -1,0 +1,17 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "rate_limited",
+    "message": "rate limited",
+    "retryable": true,
+    "details": {
+      "retryAfterMs": 1000,
+      "bucket": "origin"
+    }
+  },
+  "id": "request-id"
+}

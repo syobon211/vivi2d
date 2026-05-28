@@ -1,0 +1,17 @@
+{
+  "name": "vivi2d-web-sdk-basic-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --host 127.0.0.1",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@vivi2d/web": "file:../../packages/web"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vite": "6.4.2"
+  }
+}

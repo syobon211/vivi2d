@@ -1,0 +1,13 @@
+# Normalize text files to LF for reproducible diffs across platforms.
+* text=auto eol=lf
+
+*.apng binary
+*.gif binary
+*.jpeg binary
+*.jpg binary
+*.mp4 binary
+*.png binary
+*.psd binary
+*.vivb binary
+*.webm binary
+*.webp binary

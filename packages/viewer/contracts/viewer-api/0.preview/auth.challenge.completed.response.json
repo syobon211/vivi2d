@@ -1,0 +1,16 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.auth.challenge.completed",
+  "ok": true,
+  "data": {
+    "phase": "completed",
+    "grantId": "grant-fixture",
+    "fingerprint": "fingerprint",
+    "token": "<token-redacted>",
+    "scopes": [
+      "read:state"
+    ]
+  },
+  "id": "request-id"
+}

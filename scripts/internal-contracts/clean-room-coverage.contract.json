@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "sourcePublicationRule": "Tracked algorithm implementation source must be publicOssAllowed or explicitly quarantined before OSS publication.",
+  "algorithms": [
+    {
+      "id": "legacy-bbw-authoring-weights",
+      "status": "internalOnly",
+      "trackedSourcePolicy": "legacyQuarantinedUntilReview",
+      "allowedTrackedSourcePrefixes": [
+        "packages/core/src/bbw-weights.ts",
+        "packages/core/src/__tests__/bbw-weights.test.ts",
+        "src/lib/workers/bbw-weights-client.ts",
+        "src/lib/workers/__tests__/bbw-weights-client.test.ts",
+        "src/workers/bbw-weights.worker.ts",
+        "src/workers/__tests__/bbw-weights.worker.test.ts",
+        "e2e/specs/bbw-auto-weights.spec.ts"
+      ],
+      "requiredAbsentPatterns": [],
+      "sourcePublicationQuarantine": {
+        "status": "explicitQuarantine",
+        "rationale": "Legacy internal authoring helper remains tracked only as editor-side source while public runtime, public package, project serialization, and documentation surfaces remain blocked from reaching it.",
+        "ftoStatus": "notPublicApiOrRuntime; release requires publicOssAllowed promotion or private-source removal before exposing this algorithm as a public feature.",
+        "publicReachabilityGate": "check:release-surface",
+        "codeownersApprovalRequired": true
+      },
+      "notes": "Existing internal authoring path; public runtime/profile exposure remains blocked by safe-plan and release-surface scanners."
+    },
+    {
+      "id": "local-motion-editor-preview",
+      "status": "internalOnly",
+      "trackedSourcePolicy": "editorOnlyNoPublicPackage",
+      "allowedTrackedSourcePrefixes": [
+        "packages/editor-core/src/local-motion.ts",
+        "packages/editor-core/src/local-motion-worker.ts",
+        "packages/editor-core/src/motion-handles.ts",
+        "packages/editor-core/src/__tests__/local-motion.test.ts",
+        "packages/editor-core/src/__tests__/local-motion-worker.test.ts"
+      ],
+      "requiredAbsentPatterns": [],
+      "sourcePublicationQuarantine": {
+        "status": "explicitQuarantine",
+        "rationale": "Editor-only preview implementation remains tracked for local authoring review while saved project, workflow recording, public package, runtime, and docs projections are blocked from private preview data.",
+        "ftoStatus": "notPublicApiOrRuntime; release requires publicOssAllowed promotion or private-source removal before exposing broader algorithmic behavior as a public feature.",
+        "publicReachabilityGate": "check:auto-setup-ip-compliance",
+        "codeownersApprovalRequired": true
+      },
+      "notes": "Editor-only preview/draft data; serializer/provider/runtime/public-profile guards must keep it out of persisted and public surfaces."
+    },
+    {
+      "id": "mask-shape-handle-suggestions",
+      "status": "publicOssAllowed",
+      "trackedSourcePolicy": "cleanRoomPublicHelperNoRuntimeSurface",
+      "allowedTrackedSourcePrefixes": [
+        "packages/editor-core/src/motion-handle-suggestions.ts",
+        "packages/editor-core/src/__tests__/motion-handle-suggestions.test.ts"
+      ],
+      "requiredAbsentPatterns": [
+        "inferRootTipFromMaskShape",
+        "RootTipInferenceResult",
+        "farthestGeodesicPair",
+        "maskSkeletonEndpoint",
+        "motionHandleInference"
+      ],
+      "notes": "Clean-room bounded handle suggestion helper approved for public OSS source after Claude/GPT review. Public/runtime/provider surfaces remain blocked from private preview data."
+    },
+    {
+      "id": "motion-stress-diagnostics",
+      "status": "publicOssAllowed",
+      "trackedSourcePolicy": "cleanRoomPublicHelperNoRuntimeSurface",
+      "allowedTrackedSourcePrefixes": [
+        "packages/editor-core/src/motion-stress-diagnostics.ts",
+        "packages/editor-core/src/__tests__/motion-stress-diagnostics.test.ts"
+      ],
+      "requiredAbsentPatterns": [
+        "MotionStressPreviewResult in public profile",
+        "diagnosticHash in workflow recording"
+      ],
+      "notes": "Clean-room pixel-difference diagnostics. Results are editor-preview only and public projections must redact scalar values, thresholds, affected IDs, hashes, and paths."
+    },
+    {
+      "id": "motion-occlusion-cleanup-apply",
+      "status": "publicOssAllowed",
+      "trackedSourcePolicy": "cleanRoomPublicHelperNoRuntimeSurface",
+      "allowedTrackedSourcePrefixes": [
+        "packages/editor-core/src/motion-occlusion-cleanup.ts",
+        "packages/editor-core/src/__tests__/motion-occlusion-cleanup.test.ts"
+      ],
+      "requiredAbsentPatterns": [
+        "cleanup precondition fingerprint in public projection",
+        "protected review proof in workflow recording"
+      ],
+      "notes": "Clean-room cleanup apply boundary. Kind-specific stale preconditions and protected-region proofs are editor-only; public projections contain only coarse operation summaries."
+    }
+  ]
+}

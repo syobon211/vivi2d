@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "specVersion": "runtime-v1",
+  "fixtures": [
+    {
+      "file": "basic-mesh.fixture.json",
+      "category": "minimal-mesh",
+      "expected": "success"
+    },
+    {
+      "file": "binding-skinning.fixture.json",
+      "category": "binding-skinning",
+      "expected": "success"
+    },
+    {
+      "file": "draw-hit-culling.fixture.json",
+      "category": "draw-hit-culling",
+      "expected": "success"
+    },
+    {
+      "file": "ik-two-bone.fixture.json",
+      "category": "ik",
+      "expected": "success"
+    },
+    {
+      "file": "physics-pendulum.fixture.json",
+      "category": "physics",
+      "expected": "success"
+    },
+    {
+      "file": "limit-max-meshes.fixture.json",
+      "category": "limits",
+      "expected": "VIVI_ERR_LIMIT_EXCEEDED"
+    },
+    {
+      "file": "private-profile-raw-key.fixture.json",
+      "category": "profile-boundary",
+      "expected": "VIVI_ERR_PRIVATE_PROFILE"
+    },
+    {
+      "file": "texture-missing-atlas-entry.fixture.json",
+      "category": "texture-binding",
+      "expected": "VIVI_ERR_TEXTURE"
+    },
+    {
+      "file": "texture-duplicate-atlas-entry.fixture.json",
+      "category": "texture-binding",
+      "expected": "VIVI_ERR_TEXTURE"
+    }
+  ]
+}

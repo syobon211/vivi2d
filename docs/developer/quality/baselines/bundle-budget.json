@@ -1,0 +1,28 @@
+{
+  "description": "Chunk-level bundle budgets used by scripts/check-bundle-budget.mjs. These values were refreshed from docs/developer/quality/baselines/perf-bundle-2026-04-30.json with modest headroom so intentional growth can land without turning the budget into constant noise. The allChunks total was later raised to match the current lazy-split layout. The App CSS budget was refreshed after the dialog-style consolidation and Auto Setup diagnostics/rig-map preview styling. The AutoSetupDialog budget was refreshed after adding public-profile safety validation, managed controller-rig bindings, occlusion cleanup preview reporting, the measured 86,944-byte editor-core See-through command extraction build, the store-owned Auto Setup apply workflow, the 88,971-byte editor-core Auto Setup apply command extraction build, the visible Layer Graph/Safe Plan diagnostics preview, the Q3/Q4 layer occlusion cleanup command/module split, the Auto Setup step-rendering UI extraction, the Auto Setup detect see-through/generation panel split, safety visualization for saved operations versus discarded preview-only data, public-safe motion stress warning projection, action-oriented cleanup comparison copy, and the contributor-facing Auto Setup preview responsibility split measured in docs/developer/quality/baselines/perf-bundle-2026-05-21.json. These values should now be treated as the new regression guardrail.",
+  "lastUpdated": "2026-05-21",
+  "baselineSource": "docs/developer/quality/baselines/perf-bundle-2026-05-21.json",
+  "chunks": {
+    "index": { "raw": 525000, "gzip": 145000 },
+    "vendor-pixi": { "raw": 530000 },
+    "vendor-psd": { "raw": 270000 },
+    "vendor-react": { "raw": 210000 },
+    "vendor-zod": { "raw": 80000 },
+    "vendor-state": { "raw": 25000 },
+    "vendor-msgpack": { "raw": 28000 },
+    "vendor-delaunator": { "raw": 10000 },
+    "glb-exporter": { "raw": 180000 },
+    "psd-parse.worker": { "raw": 230000 },
+    "auto-mesh.worker": { "raw": 14000 },
+    "bbw-weights.worker": { "raw": 8000 },
+    "project-serializer": { "raw": 20000 },
+    "AutoSetupDialog": { "raw": 175000 },
+    "AIGenerateDialog": { "raw": 30000 }
+  },
+  "css": {
+    "App": { "raw": 95000 }
+  },
+  "totals": {
+    "allChunks": { "raw": 3350000 }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["e2e/**/*.ts"],
+  "exclude": [],
+  "compilerOptions": {
+    "types": ["node", "@playwright/test"],
+    "strict": false,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false
+  }
+}

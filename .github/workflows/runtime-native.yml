@@ -1,0 +1,52 @@
+name: Runtime Native
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/runtime-native.yml"
+      - "docs/developer/api/spec/runtime-spec-v1.md"
+      - "docs/developer/quality/public-api-status.md"
+      - "docs/developer/quality/release-policy.md"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/runtime-native/Cargo.lock"
+      - "packages/runtime-c-abi/**"
+      - "packages/runtime-native/**"
+      - "scripts/check-runtime-c-abi-link.mjs"
+      - "scripts/check-native-artifact-policy.mjs"
+      - "scripts/check-runtime-native-wasm.mjs"
+      - "scripts/generate-runtime-native-wasm-module.mjs"
+      - "scripts/run-quality-gates.mjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-native-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-check:
+    name: Native Check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: rustup toolchain install 1.89.0 --profile minimal --component rustfmt --component clippy
+      - run: rustup default 1.89.0
+      - run: rustup target add wasm32-unknown-unknown
+      - run: rustup show
+      - run: npm run check:runtime-native
+      - run: npm run check:runtime-c-abi-link
+      - run: cargo build --manifest-path packages/runtime-native/Cargo.toml --workspace --release
+      - run: npm run check:native-artifact-policy

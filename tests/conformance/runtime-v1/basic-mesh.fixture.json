@@ -1,0 +1,151 @@
+{
+  "name": "basic-mesh",
+  "description": "Minimal public runtime mesh with host atlas, scalar parameter, expression preset, and mesh collider.",
+  "fileData": {
+    "version": 10,
+    "profile": "publicProfileV1",
+    "atlases": [
+      {
+        "image": "host-atlas-0",
+        "width": 16,
+        "height": 16,
+        "entries": [
+          {
+            "layerId": "mesh-body",
+            "x": 0,
+            "y": 0,
+            "width": 10,
+            "height": 10
+          }
+        ]
+      }
+    ],
+    "project": {
+      "name": "runtime-fixture",
+      "width": 64,
+      "height": 64,
+      "layers": [
+        {
+          "id": "mesh-body",
+          "name": "Body",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 10,
+          "height": 10,
+          "blendMode": "normal",
+          "expanded": true,
+          "kind": "viviMesh",
+          "children": [],
+          "drawOrder": 10,
+          "mesh": {
+            "vertices": [0, 0, 10, 0, 0, 10],
+            "uvs": [0, 0, 1, 0, 0, 1],
+            "indices": [0, 1, 2],
+            "divisionsX": 1,
+            "divisionsY": 1
+          }
+        }
+      ],
+      "parameters": [
+        {
+          "id": "vivi.head.yaw",
+          "name": "Head Yaw",
+          "minValue": -1,
+          "maxValue": 1,
+          "defaultValue": 0
+        }
+      ],
+      "clips": [],
+      "scenes": [],
+      "physicsGroups": [],
+      "lipsyncConfig": {
+        "enabled": false,
+        "targetParameterId": null,
+        "source": "microphone",
+        "threshold": 0.02,
+        "smoothing": 0.7,
+        "gain": 2
+      },
+      "skins": {},
+      "colliders": [
+        {
+          "id": "body-hit",
+          "name": "Body Hit",
+          "enabled": true,
+          "shape": {
+            "type": "mesh",
+            "meshId": "mesh-body"
+          }
+        }
+      ],
+      "stateMachines": [],
+      "expressionPresets": [
+        {
+          "id": "neutral",
+          "name": "Neutral",
+          "values": {
+            "vivi.head.yaw": 0.25
+          },
+          "color": "#ffffff",
+          "hotkey": 1
+        }
+      ]
+    }
+  },
+  "actions": [
+    {
+      "type": "setInput",
+      "id": "vivi.head.yaw",
+      "value": 2
+    },
+    {
+      "type": "applyExpressionPreset",
+      "id": "neutral"
+    },
+    {
+      "type": "update",
+      "deltaSeconds": 0
+    }
+  ],
+  "expect": {
+    "parameters": {
+      "vivi.head.yaw": 0.25
+    },
+    "textures": [
+      {
+        "id": "atlas:0",
+        "width": 16,
+        "height": 16,
+        "format": "rgba8-straight",
+        "colorSpace": "srgb",
+        "source": "hostImage"
+      }
+    ],
+    "renderList": [
+      {
+        "id": "mesh-body",
+        "textureId": "atlas:0",
+        "visible": true,
+        "culled": false,
+        "blendMode": "normal",
+        "drawOrder": 10,
+        "vertices": [0, 0, 10, 0, 0, 10],
+        "uvs": [0, 0, 1, 0, 0, 1],
+        "indices": [0, 1, 2]
+      }
+    ],
+    "hitTests": [
+      {
+        "x": 2,
+        "y": 2,
+        "hit": {
+          "colliderId": "body-hit",
+          "layerId": "mesh-body",
+          "meshId": "mesh-body"
+        }
+      }
+    ]
+  }
+}

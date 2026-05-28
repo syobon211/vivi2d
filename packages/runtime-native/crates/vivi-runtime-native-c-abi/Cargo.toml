@@ -1,0 +1,16 @@
+[package]
+name = "vivi-runtime-native-c-abi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "vivi_runtime_native_c_abi"
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+vivi-runtime-native-core = { path = "../vivi-runtime-native-core" }

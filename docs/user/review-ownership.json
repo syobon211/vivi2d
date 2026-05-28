@@ -1,0 +1,10 @@
+{
+  "locales": {
+    "ja": ["@vivi2d/docs-ja"],
+    "zh-Hans": ["@vivi2d/docs-zh-hans"],
+    "ko-KR": ["@vivi2d/docs-ko"]
+  },
+  "media": {
+    "reviewers": ["@vivi2d/docs-media"]
+  }
+}

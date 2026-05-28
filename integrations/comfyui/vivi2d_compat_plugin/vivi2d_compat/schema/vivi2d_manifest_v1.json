@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vivi2d.dev/schemas/vivi2d_manifest_v1.json",
+  "title": "Vivi2D See-through Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generator", "canvas", "layers"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "generator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugin", "plugin_version", "model", "model_version"],
+      "properties": {
+        "plugin": {
+          "type": "string",
+          "const": "vivi2d-compat-comfyui"
+        },
+        "plugin_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "model_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "label",
+          "order",
+          "psd_leaf_token",
+          "image_path",
+          "bbox",
+          "confidence",
+          "left_right_split",
+          "front_back_split",
+          "depth_stats"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "order": { "type": "integer" },
+          "psd_leaf_token": { "type": "string", "minLength": 1 },
+          "image_path": { "type": "string", "minLength": 1 },
+          "bbox": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": { "type": "integer", "minimum": 0 }
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "left_right_split": {
+            "type": "string",
+            "enum": ["left", "right", "center", "unknown"]
+          },
+          "front_back_split": {
+            "type": "string",
+            "enum": ["front", "back", "middle", "unknown"]
+          },
+          "depth_stats": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["min", "max", "mean"],
+            "properties": {
+              "min": { "type": "number" },
+              "max": { "type": "number" },
+              "mean": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "id": "request-id",
+  "type": "viewer.prop.load",
+  "data": {
+    "name": "User Approved Badge",
+    "visible": true,
+    "source": {
+      "kind": "filePickerAsset",
+      "assetId": "vpa_fixture-asset-id",
+      "mimeType": "image/png",
+      "bytes": 123456
+    }
+  }
+}

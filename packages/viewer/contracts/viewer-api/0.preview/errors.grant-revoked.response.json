@@ -1,0 +1,13 @@
+{
+  "api": "ViviViewerApi",
+  "version": "0.preview",
+  "type": "viewer.error",
+  "ok": false,
+  "data": {},
+  "error": {
+    "code": "grant_revoked",
+    "message": "grant revoked",
+    "retryable": false
+  },
+  "id": "request-id"
+}

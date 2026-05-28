@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "npm run vendor:viewer-mediapipe-assets",
+  "tasksVisionVersion": "0.10.35",
+  "publicRoot": "packages/viewer/public",
+  "vendorRoot": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35",
+  "assets": [
+    {
+      "id": "wasm/vision_wasm_internal.js",
+      "path": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35/wasm/vision_wasm_internal.js",
+      "source": "node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_internal.js",
+      "sourceType": "npm-package-file",
+      "sizeBytes": 322044,
+      "sha256": "sha256:e7fd9858e8e8f221d9b96eddc11f8e077f263e0b7bbd79d3cbe882b134274f8c"
+    },
+    {
+      "id": "wasm/vision_wasm_internal.wasm",
+      "path": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35/wasm/vision_wasm_internal.wasm",
+      "source": "node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_internal.wasm",
+      "sourceType": "npm-package-file",
+      "sizeBytes": 11153617,
+      "sha256": "sha256:6a5c64584c2ab61c763b6e204afbdbc7ce1caf7f5216187322bca8df94f646bc"
+    },
+    {
+      "id": "wasm/vision_wasm_module_internal.js",
+      "path": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35/wasm/vision_wasm_module_internal.js",
+      "source": "node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_module_internal.js",
+      "sourceType": "npm-package-file",
+      "sizeBytes": 322082,
+      "sha256": "sha256:1f1d6215324a1fe62f6742d49a3db911170987ca18ad8c1b75f1a1c82acf2b44"
+    },
+    {
+      "id": "wasm/vision_wasm_module_internal.wasm",
+      "path": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35/wasm/vision_wasm_module_internal.wasm",
+      "source": "node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_module_internal.wasm",
+      "sourceType": "npm-package-file",
+      "sizeBytes": 11153641,
+      "sha256": "sha256:617b8e0248dbd27e9d7ece4218004eae4cefb499196d1bb4fa0e3fef21708756"
+    },
+    {
+      "id": "wasm/vision_wasm_nosimd_internal.js",
+      "path": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35/wasm/vision_wasm_nosimd_internal.js",
+      "source": "node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_nosimd_internal.js",
+      "sourceType": "npm-package-file",
+      "sizeBytes": 321847,
+      "sha256": "sha256:438d1fe8ff7f4d946025bc211c291543c037d8a3785ed4eee60f1f521b236296"
+    },
+    {
+      "id": "wasm/vision_wasm_nosimd_internal.wasm",
+      "path": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35/wasm/vision_wasm_nosimd_internal.wasm",
+      "source": "node_modules/@mediapipe/tasks-vision/wasm/vision_wasm_nosimd_internal.wasm",
+      "sourceType": "npm-package-file",
+      "sizeBytes": 10481398,
+      "sha256": "sha256:8a3092d34c79d3f57e6ba8592105e8a90f6b07c27891ffecd14cca428bfd3e31"
+    },
+    {
+      "id": "models/face_landmarker.task",
+      "path": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35/models/face_landmarker.task",
+      "source": "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      "sourceType": "https-download",
+      "sizeBytes": 3758596,
+      "sha256": "sha256:64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff"
+    },
+    {
+      "id": "models/hand_landmarker.task",
+      "path": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35/models/hand_landmarker.task",
+      "source": "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+      "sourceType": "https-download",
+      "sizeBytes": 7819105,
+      "sha256": "sha256:fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1"
+    },
+    {
+      "id": "models/pose_landmarker_lite.task",
+      "path": "packages/viewer/public/vendor/mediapipe/tasks-vision-0.10.35/models/pose_landmarker_lite.task",
+      "source": "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+      "sourceType": "https-download",
+      "sizeBytes": 5777746,
+      "sha256": "sha256:59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a"
+    }
+  ]
+}

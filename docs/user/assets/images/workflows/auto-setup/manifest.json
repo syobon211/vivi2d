@@ -1,0 +1,25 @@
+{
+  "id": "auto-setup.preview-panel",
+  "kind": "image",
+  "status": "placeholder",
+  "topicSlugs": [
+    "workflows/auto-setup"
+  ],
+  "variants": {
+    "neutral": {
+      "path": "docs/user/assets/images/workflows/auto-setup/preview-panel.neutral.svg",
+      "alt": {
+        "en": "Placeholder showing the Auto Setup review panel with saved operations and warnings.",
+        "ja": "保存される操作と警告を表示する Auto Setup レビューパネルのプレースホルダー。",
+        "zh-Hans": "显示已保存操作和警告的 Auto Setup 审查面板占位图。",
+        "ko-KR": "저장되는 작업과 경고를 보여 주는 Auto Setup 검토 패널 자리 표시자입니다."
+      },
+      "caption": {
+        "en": "Review saved operations, discarded preview data, and warnings before applying Auto Setup.",
+        "ja": "Auto Setup を適用する前に、保存される操作、破棄されるプレビュー情報、警告を確認します。",
+        "zh-Hans": "应用 Auto Setup 前，请检查将保存的操作、会丢弃的预览信息和警告。",
+        "ko-KR": "Auto Setup을 적용하기 전에 저장되는 작업, 버려지는 미리보기 정보, 경고를 확인합니다."
+      }
+    }
+  }
+}

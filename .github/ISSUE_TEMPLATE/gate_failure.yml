@@ -1,0 +1,118 @@
+name: Gate failure review
+description: Request maintainer review for a possible safe gate failure.
+title: "[Gate]: "
+labels: ["gate-false-positive", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template when a documented gate appears to reject a safe change.
+        Do not paste raw terminal output, local paths, credentials, private assets, or project files.
+
+  - type: dropdown
+    id: gate-name
+    attributes:
+      label: Gate name
+      description: Select the public gate identifier that failed.
+      options:
+        - npx tsc --noEmit
+        - check:quality
+        - check:packages-types
+        - check:workspace-layout
+        - check:docs-architecture
+        - check:task-guide-paths
+        - check:task-guide-gates
+        - check:pr-recipe-gates
+        - check:troubleshooting-content
+        - check:content-safety-integrity
+        - check:escalation-template
+        - docs:user:check
+        - docs:user:check:release
+        - check:docs-public-surface
+        - check:quality-gate-drift
+        - test
+        - i18n:check:all
+        - check:ipc-contract
+        - check:ipc-contract-sync
+        - check:ip-markers
+        - check:ip-product-profile
+        - check:auto-setup-ip-compliance
+        - check:architecture-boundaries
+        - check:direct-model-mutations
+        - check:ui-module-budget
+        - check:import-cycles
+        - check:license-policy
+        - check:secrets
+        - check:history-secrets
+        - check:source-comments
+        - check:viewer-tests
+        - check:provider-conformance
+        - check:core-model-current-fixtures
+        - check:model-fixtures
+        - check:samples:static
+        - check:samples-public-surface
+        - check:security-patterns
+        - check:package-boundaries
+        - check:sdk-unlock:web
+        - check:publication-history
+        - check:hosted-release-surfaces
+        - check:workflow-artifact-safety
+        - check:source-review-archive
+        - build
+        - build:packages
+        - check:bundle
+        - check:pack-contents
+        - check:release-surface
+        - check:runtime-c-abi
+        - check:runtime-c-abi-link
+        - check:runtime-native
+        - check:native-artifact-policy
+        - test:runtime-wasm:browser
+        - notices:check
+        - check:sbom
+        - audit:all
+        - audit:prod
+        - check:npm-token-hygiene
+        - check:environment-protection
+        - check:web-npm-alpha-release
+        - check:github-release-alpha
+        - check:oss-readiness
+        - Other documented gate
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        If an Auto Setup sub-check fails, select `check:auto-setup-ip-compliance`.
+        Maintainers use that public gate to route the lower-level review.
+
+  - type: input
+    id: reproduction-command
+    attributes:
+      label: Focused reproduction command
+      description: Use a repository command only. Do not include machine-specific paths.
+      placeholder: "npm run check:quality -- --help"
+    validations:
+      required: true
+
+  - type: input
+    id: error-code
+    attributes:
+      label: Sanitized error code or summary
+      description: Provide only the stable code, check name, or sanitized one-line summary.
+      placeholder: "docs-public-surface: forbidden-term"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Safety checklist
+      options:
+        - label: I did not paste raw terminal output.
+          required: true
+        - label: I removed credentials, local paths, private assets, and project data.
+          required: true
+        - label: I used the smallest focused command that reproduces the failure.
+          required: true

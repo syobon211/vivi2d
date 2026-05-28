@@ -1,0 +1,4 @@
+name: Vivi2D CodeQL config
+
+paths-ignore:
+  - packages/runtime-wasm/src/native-wasm-bytes.ts

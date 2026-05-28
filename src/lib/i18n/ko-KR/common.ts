@@ -1,0 +1,26 @@
+import { common as enCommon } from "../en/common";
+
+export const common = {
+  ...enCommon,
+  "common.save": "저장",
+  "common.cancel": "취소",
+  "common.close": "닫기",
+  "common.delete": "삭제",
+  "common.reset": "초기화",
+  "common.ok": "확인",
+  "common.export": "내보내기",
+  "common.import": "가져오기",
+  "common.enabled": "켜짐",
+  "common.disabled": "꺼짐",
+  "common.apply": "적용",
+  "common.add": "+ 추가",
+  "common.search": "검색...",
+  "common.exporting": "내보내는 중...",
+  "common.selectAll": "전체 선택",
+  "common.deselectAll": "선택 해제",
+  "common.error": "오류",
+  "common.warning": "경고",
+  "common.info": "정보",
+  "common.versus": "비교",
+  "canvas.editorCanvas": "편집기 캔버스",
+} as const satisfies Record<keyof typeof enCommon, string>;

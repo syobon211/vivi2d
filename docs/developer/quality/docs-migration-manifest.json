@@ -1,0 +1,306 @@
+{
+  "schemaVersion": 1,
+  "archivedAt": "2026-05-23",
+  "archivedFiles": [
+    {
+      "source": "docs/accepted-mask-auto-setup-integration-plan.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/accepted-mask-auto-setup-integration-plan.md",
+      "promotedTargets": [
+        "docs/developer/architecture/editor-runtime-boundary.md",
+        "docs/developer/quality/public-api-status.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "phase-by-phase implementation notes",
+          "reason": "completed planning material; current behavior is covered by tracked architecture, API status, and tests"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/i18n-four-locale-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/i18n-four-locale-roadmap.md",
+      "promotedTargets": [
+        "docs/developer/contributing/documentation.md",
+        "docs/developer/contributing/i18n/README.md",
+        "docs/user/index.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "implementation sequencing notes",
+          "reason": "superseded by current i18n checks and documentation architecture"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/import-cycle-audit.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/import-cycle-audit.md",
+      "promotedTargets": [
+        "docs/developer/quality/baselines/import-cycles.json",
+        "docs/developer/architecture/package-graph.md"
+      ],
+      "droppedSections": [],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/ip-safe-precision-rigging-design.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/ip-safe-precision-rigging-design.md",
+      "promotedTargets": [
+        "docs/developer/ip/policy.md",
+        "docs/developer/architecture/editor-runtime-boundary.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "exploratory precision-improvement roadmap",
+          "reason": "non-canonical design exploration; public-safe boundaries are now tracked in policy and architecture docs"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/local-bone-constrained-motion-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/local-bone-constrained-motion-roadmap.md",
+      "promotedTargets": [
+        "docs/developer/ip/clean-room-notes/mask-shape-handle-suggestions.md",
+        "docs/developer/architecture/editor-runtime-boundary.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "roadmap milestones",
+          "reason": "implementation planning is not canonical public documentation"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/manual-layer-split-lasso-smoothing-plan.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/manual-layer-split-lasso-smoothing-plan.md",
+      "promotedTargets": [
+        "docs/user/en/workflows/manual-image-split.md",
+        "docs/developer/architecture/editor-runtime-boundary.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "implementation plan details",
+          "reason": "completed design notes archived; user workflow and boundary guidance remain tracked"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/manual-layer-split-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/manual-layer-split-roadmap.md",
+      "promotedTargets": [
+        "docs/user/en/workflows/manual-image-split.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "roadmap checklist",
+          "reason": "user-facing workflow docs now carry the canonical user guidance"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/motion-stress-cleanup-precision-tuning-plan.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/motion-stress-cleanup-precision-tuning-plan.md",
+      "promotedTargets": [
+        "docs/user/en/workflows/auto-setup.md",
+        "docs/developer/architecture/editor-runtime-boundary.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "threshold tuning plan",
+          "reason": "implementation details are covered by tests and current Auto Setup UX docs"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/motion-stress-cleanup-review-panel-implementation-plan.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/motion-stress-cleanup-review-panel-implementation-plan.md",
+      "promotedTargets": [
+        "docs/user/en/workflows/auto-setup.md",
+        "docs/developer/architecture/editor-runtime-boundary.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "review-loop implementation plan",
+          "reason": "completed planning material; current behavior is documented at workflow and boundary level"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/native-runtime-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/native-runtime-roadmap.md",
+      "promotedTargets": [
+        "docs/developer/quality/public-api-status.md",
+        "docs/developer/quality/release-policy.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "future native publication sequence",
+          "reason": "native runtime remains internal; publication gates are tracked in API status and release policy"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/oss-quality-refactor-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/oss-quality-refactor-roadmap.md",
+      "promotedTargets": [
+        "docs/developer/contributing/package-boundaries.md",
+        "docs/developer/quality/public-release-checklist.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "refactor backlog",
+          "reason": "historical refactor plan is not canonical contributor guidance"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/oss-refactor-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/oss-refactor-roadmap.md",
+      "promotedTargets": [
+        "docs/developer/contributing/package-boundaries.md",
+        "docs/developer/quality/public-release-checklist.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "historical refactor sequencing",
+          "reason": "current contribution and release docs now carry the canonical rules"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/refactor-hotspot-split-plan.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/refactor-hotspot-split-plan.md",
+      "promotedTargets": [
+        "docs/developer/quality/baselines/ui-module-budget.json",
+        "docs/developer/contributing/testing.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "hotspot split backlog",
+          "reason": "module budgets and tests now enforce the current state"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/runtime-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/runtime-roadmap.md",
+      "promotedTargets": [
+        "docs/developer/api/spec/runtime-spec-v1.md",
+        "docs/developer/quality/public-api-status.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "future runtime extraction sequence",
+          "reason": "runtime spec and package status are now the canonical tracked references"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/sdk-development-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/sdk-development-roadmap.md",
+      "promotedTargets": [
+        "docs/developer/api/web-sdk.md",
+        "docs/developer/api/viewer-api.md",
+        "docs/developer/api/provider-sdk.md",
+        "docs/developer/quality/public-api-status.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "implementation roadmap",
+          "reason": "preview API references and public status ledger are now canonical"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/sdk-unlock-audit.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/sdk-unlock-audit.md",
+      "promotedTargets": [
+        "docs/developer/api/web-sdk.md",
+        "docs/developer/quality/public-api-status.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "point-in-time audit",
+          "reason": "current unlock constraints are tracked in Web SDK preview docs and package status"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/viewer-api-preview-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/viewer-api-preview-roadmap.md",
+      "promotedTargets": [
+        "docs/developer/api/viewer-api.md",
+        "docs/developer/security/ipc-and-local-api.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "preview stabilization roadmap",
+          "reason": "current preview protocol reference and security boundary docs are canonical"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/viewer-context-toolbar-side-sheet-plan.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/viewer-context-toolbar-side-sheet-plan.md",
+      "promotedTargets": [
+        "docs/user/en/workflows/viewer.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "UI redesign plan",
+          "reason": "historical UI planning is not canonical documentation"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    },
+    {
+      "source": "docs/web-sdk-samples-roadmap.md",
+      "archivedToIgnoredBacklog": "docs/backlog/2026-05/web-sdk-samples-roadmap.md",
+      "promotedTargets": [
+        "docs/developer/api/web-sdk.md",
+        "examples/web-sdk-basic/README.md"
+      ],
+      "droppedSections": [
+        {
+          "section": "sample implementation plan",
+          "reason": "sample docs and gates now represent the current state"
+        }
+      ],
+      "reviewedBy": "codex",
+      "reviewDate": "2026-05-23"
+    }
+  ]
+}

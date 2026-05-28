@@ -1,0 +1,59 @@
+{
+  "name": "limit-max-meshes",
+  "description": "Runtime must reject payloads that exceed host-configured structural limits.",
+  "runtimeOptions": {
+    "limits": {
+      "maxMeshes": 0
+    }
+  },
+  "fileData": {
+    "version": 10,
+    "profile": "publicProfileV1",
+    "atlases": [],
+    "project": {
+      "name": "limit-fixture",
+      "width": 64,
+      "height": 64,
+      "layers": [
+        {
+          "id": "mesh-body",
+          "name": "Body",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 10,
+          "height": 10,
+          "blendMode": "normal",
+          "expanded": true,
+          "kind": "viviMesh",
+          "children": [],
+          "drawOrder": 10,
+          "mesh": {
+            "vertices": [0, 0, 10, 0, 0, 10],
+            "uvs": [0, 0, 1, 0, 0, 1],
+            "indices": [0, 1, 2],
+            "divisionsX": 1,
+            "divisionsY": 1
+          }
+        }
+      ],
+      "parameters": [],
+      "clips": [],
+      "scenes": [],
+      "physicsGroups": [],
+      "lipsyncConfig": {
+        "enabled": false,
+        "targetParameterId": null,
+        "source": "microphone",
+        "threshold": 0.02,
+        "smoothing": 0.7,
+        "gain": 2
+      },
+      "skins": {},
+      "colliders": [],
+      "stateMachines": []
+    }
+  },
+  "expectError": "VIVI_ERR_LIMIT_EXCEEDED"
+}

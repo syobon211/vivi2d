@@ -1,0 +1,62 @@
+# Replace @syobon211 if the publication owner or maintainer team changes.
+* @syobon211
+
+# The specific rows below intentionally repeat the default owner. They act as a
+# public review map for high-risk surfaces, satisfy release-readiness checks, and
+# make future team splits straightforward without changing protected paths.
+
+# Repository governance and public-facing docs.
+/README.md @syobon211
+/CHANGELOG.md @syobon211
+/LICENSE @syobon211
+/NOTICE @syobon211
+/SECURITY.md @syobon211
+/CONTRIBUTING.md @syobon211
+/CODE_OF_CONDUCT.md @syobon211
+/.github/ @syobon211
+/.github/workflows/ @syobon211
+/.github/ISSUE_TEMPLATE/ @syobon211
+
+# Release, security, and policy scripts.
+/scripts/ @syobon211
+/package.json @syobon211
+/package-lock.json @syobon211
+/THIRD_PARTY_NOTICES @syobon211
+
+# Electron privileged boundaries.
+/electron/ @syobon211
+/packages/viewer/electron/ @syobon211
+
+# Public and release policy documentation.
+/docs/developer/ @syobon211
+/docs/user/ @syobon211
+/docs/user/ja/ @syobon211
+/docs/user/zh-Hans/ @syobon211
+/docs/user/ko-KR/ @syobon211
+/docs/user/assets/ @syobon211
+/docs/user/review-ownership.json @syobon211
+/docs/developer/adr/ @syobon211
+/docs/developer/contributing/package-boundaries.md @syobon211
+/docs/developer/quality/release-policy.md @syobon211
+
+# Public, experimental, and renderer package surfaces.
+/packages/web/ @syobon211
+# Keep runtime*/ as a glob so new runtime-family packages remain owner-reviewed.
+/packages/runtime*/ @syobon211
+/packages/renderer-pixi/ @syobon211
+/packages/renderer-three/ @syobon211
+/packages/renderer-phaser/ @syobon211
+
+# Provider and local-service boundaries.
+/packages/provider-sdk/ @syobon211
+/packages/provider-comfyui/ @syobon211
+
+# Viewer automation and external integration surfaces.
+/packages/viewer/src/api/ @syobon211
+/packages/viewer/src/actions/ @syobon211
+/packages/viewer/src/calibration/ @syobon211
+/packages/viewer/src/props/ @syobon211
+/packages/viewer/contracts/ @syobon211
+/packages/viewer/e2e/ @syobon211
+/examples/viewer-api-browser-client/ @syobon211
+/examples/viewer-api-node-client/ @syobon211

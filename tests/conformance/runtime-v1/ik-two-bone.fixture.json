@@ -1,0 +1,182 @@
+{
+  "name": "ik-two-bone",
+  "description": "Two-bone IK rotates a public bone chain and exposes the result through skinned mesh vertices. Expected vertices derive from upper local +pi/2 and lower local -pi/2; the lower bind-pose inverse [-10,0] maps the lower tip to (10,10).",
+  "fileData": {
+    "version": 10,
+    "profile": "publicProfileV1",
+    "atlases": [
+      {
+        "image": "host-atlas-0",
+        "width": 32,
+        "height": 32,
+        "entries": [
+          {
+            "layerId": "mesh-arm",
+            "x": 0,
+            "y": 0,
+            "width": 20,
+            "height": 10
+          }
+        ]
+      }
+    ],
+    "project": {
+      "name": "ik-fixture",
+      "width": 64,
+      "height": 64,
+      "layers": [
+        {
+          "id": "bone-upper",
+          "name": "Upper",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "blendMode": "normal",
+          "expanded": true,
+          "kind": "bone",
+          "children": [],
+          "drawOrder": 0,
+          "bone": {
+            "angle": 0,
+            "length": 10,
+            "scaleX": 1,
+            "scaleY": 1
+          }
+        },
+        {
+          "id": "bone-lower",
+          "name": "Lower",
+          "visible": true,
+          "opacity": 1,
+          "x": 10,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "blendMode": "normal",
+          "expanded": true,
+          "kind": "bone",
+          "children": [],
+          "drawOrder": 0,
+          "parentBoneId": "bone-upper",
+          "bone": {
+            "angle": 0,
+            "length": 10,
+            "scaleX": 1,
+            "scaleY": 1
+          }
+        },
+        {
+          "id": "mesh-arm",
+          "name": "Arm Mesh",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 20,
+          "height": 10,
+          "blendMode": "normal",
+          "expanded": true,
+          "kind": "viviMesh",
+          "children": [],
+          "drawOrder": 10,
+          "mesh": {
+            "vertices": [10, 0, 20, 0, 10, 1],
+            "uvs": [0, 0, 1, 0, 0, 1],
+            "indices": [0, 1, 2],
+            "divisionsX": 1,
+            "divisionsY": 1
+          }
+        }
+      ],
+      "parameters": [],
+      "clips": [],
+      "scenes": [],
+      "physicsGroups": [],
+      "lipsyncConfig": {
+        "enabled": false,
+        "targetParameterId": null,
+        "source": "microphone",
+        "threshold": 0.02,
+        "smoothing": 0.7,
+        "gain": 2
+      },
+      "skins": {
+        "mesh-arm": {
+          "weights": [
+            [{ "boneId": "bone-upper", "weight": 1 }],
+            [{ "boneId": "bone-lower", "weight": 1 }],
+            [{ "boneId": "bone-upper", "weight": 1 }]
+          ],
+          "bindPoseInverse": {
+            "bone-upper": [1, 0, 0, 1, 0, 0],
+            "bone-lower": [1, 0, 0, 1, -10, 0]
+          }
+        }
+      },
+      "ikControllers": [
+        {
+          "id": "ik-arm",
+          "name": "Arm IK",
+          "solverType": "twoBone",
+          "boneChain": [
+            {
+              "boneId": "bone-upper",
+              "minAngle": -3.141592653589793,
+              "maxAngle": 3.141592653589793
+            },
+            {
+              "boneId": "bone-lower",
+              "minAngle": -3.141592653589793,
+              "maxAngle": 3.141592653589793
+            }
+          ],
+          "targetX": 10,
+          "targetY": 10,
+          "influence": 1,
+          "poleTargetX": 0,
+          "poleTargetY": 10,
+          "parameterMappings": []
+        }
+      ],
+      "colliders": [],
+      "stateMachines": [],
+      "expressionPresets": []
+    }
+  },
+  "actions": [
+    {
+      "type": "update",
+      "deltaSeconds": 0
+    }
+  ],
+  "expect": {
+    "parameters": {},
+    "textures": [
+      {
+        "id": "atlas:0",
+        "width": 32,
+        "height": 32,
+        "format": "rgba8-straight",
+        "colorSpace": "srgb",
+        "source": "hostImage"
+      }
+    ],
+    "renderList": [
+      {
+        "id": "mesh-arm",
+        "textureId": "atlas:0",
+        "visible": true,
+        "culled": false,
+        "blendMode": "normal",
+        "drawOrder": 10,
+        "vertices": [0, 10, 10, 10, -1, 10],
+        "uvs": [0, 0, 1, 0, 0, 1],
+        "indices": [0, 1, 2]
+      }
+    ],
+    "hitTests": []
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@vivi2d/core": ["../core/src/index.ts"],
+      "@vivi2d/core/*": ["../core/src/*"],
+      "@vivi2d/model": ["../model/src/index.ts"],
+      "@vivi2d/model/*": ["../model/src/*"],
+      "@vivi2d/runtime": ["../runtime/src/index.ts"],
+      "@vivi2d/runtime/*": ["../runtime/src/*"],
+      "@vivi2d/renderer-pixi": ["../renderer-pixi/src/index.ts"],
+      "@vivi2d/renderer-pixi/*": ["../renderer-pixi/src/*"],
+      "@vivi2d/viewer-api-client": ["../viewer-api-client/src/index.ts"],
+      "@vivi2d/viewer-api-client/browser": ["../viewer-api-client/src/browser.ts"],
+      "@vivi2d/viewer-api-client/node": ["../viewer-api-client/src/node.ts"],
+      "@vivi2d/viewer-api-client/testing": ["../viewer-api-client/src/testing.ts"],
+      "@vivi2d/viewer-api-client/*": ["../viewer-api-client/src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["src/__tests__"]
+}

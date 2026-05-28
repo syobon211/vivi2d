@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      background: #1e1e2e;
+      color: #e0e0e0;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 16px;
+    }
+    h1 { font-size: 1.5em; margin: 0; }
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      padding: 8px 16px;
+      background: #4a4a6a;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover { background: #5a5a7a; }
+    vivi-model {
+      width: 400px;
+      height: 500px;
+      border: 1px solid #333;
+      border-radius: 8px;
+    }
+    #log {
+      font-family: monospace;
+      font-size: 12px;
+      opacity: 0.7;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+    .note {
+      max-width: 520px;
+      text-align: center;
+      font-size: 13px;
+      opacity: 0.82;
+    }
+    .note a { color: #a7b7ff; }
+  </style>
+</head>
+<body>
+  <h1>&lt;vivi-model&gt; WebComponent</h1>
+  <p class="note">
+    Programmatic SDK users should start with
+    <a href="../../examples/web-sdk-basic/README.md">examples/web-sdk-basic/README.md</a>.
+    This link is for the monorepo dev server; npm consumers should use the
+    package README instead.
+  </p>
+
+  <vivi-model id="model"></vivi-model>
+
+  <div class="controls">
+    <button onclick="document.getElementById('file').click()">
+      Load .vivi file
+    </button>
+    <input type="file" id="file" accept=".vivi" style="display:none"
+      onchange="loadFile(this.files[0])">
+  </div>
+
+  <div id="presets" class="controls"></div>
+  <div id="log"></div>
+
+  <script type="module">
+    import "./dist/vivi2d.es.js";
+
+    const el = document.getElementById("model");
+    const log = document.getElementById("log");
+
+    function appendLog(msg) {
+      log.textContent += msg + "\n";
+      log.scrollTop = log.scrollHeight;
+    }
+
+    el.addEventListener("load", (e) => {
+      const presets = el.getExpressionPresets();
+      const container = document.getElementById("presets");
+      container.replaceChildren();
+      for (const p of presets) {
+        const btn = document.createElement("button");
+        btn.textContent = p.hotkey ? `${p.hotkey}: ${p.name}` : p.name;
+        btn.onclick = () => el.applyExpressionPreset(p.id);
+        container.appendChild(btn);
+      }
+      const params = el.getParameters();
+      appendLog(`Loaded ${params.length} parameters.`);
+    });
+
+    el.addEventListener("error", (e) => {
+      appendLog("Failed to load the model.");
+    });
+
+    window.loadFile = async (file) => {
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      el.setAttribute("src", url);
+    };
+
+    window.resetParams = () => {
+      el.resetParameters();
+    };
+  </script>
+</body>
+</html>

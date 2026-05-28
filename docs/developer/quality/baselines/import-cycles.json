@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "cycles": [
+    [
+      "src/stores/editorStore.ts",
+      "src/stores/projectMutator.ts"
+    ],
+    [
+      "src/stores/editorStore.ts",
+      "src/stores/puppetWarpStore.ts"
+    ]
+  ]
+}

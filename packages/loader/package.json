@@ -1,0 +1,16 @@
+{
+  "name": "@vivi2d/loader",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "vivi2d": {
+    "publication": "internal"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@vivi2d/model": "^0.1.0"
+  }
+}

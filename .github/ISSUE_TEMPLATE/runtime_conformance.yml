@@ -1,0 +1,65 @@
+name: Runtime conformance
+description: Report or propose Runtime Spec, WASM, native, C ABI, or renderer snapshot parity work.
+title: "[Runtime]: "
+labels: ["runtime", "conformance", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Runtime conformance issues should use minimal, sanitized fixtures. Do not attach private production models, unreleased third-party assets, or files with unclear redistribution rights.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What runtime behavior or parity gap should be specified?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Runtime Spec v1
+        - TypeScript reference runtime
+        - WASM runtime
+        - Native runtime
+        - C ABI
+        - Renderer adapter snapshot
+        - Viewer API runtime bridge
+    validations:
+      required: true
+
+  - type: textarea
+    id: fixture
+    attributes:
+      label: Fixture or reproduction
+      description: Link the conformance fixture, expected snapshot, or smallest model payload that demonstrates the behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Describe the reference TypeScript behavior or the spec text that should define it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Describe the observed mismatch, including runtime, platform, and command if relevant.
+
+  - type: checkboxes
+    id: expectations
+    attributes:
+      label: Expected coverage
+      description: Check what is already covered. Leave items unchecked when the missing coverage is the reason for this issue.
+      options:
+        - label: TypeScript reference behavior is defined first.
+        - label: Public-profile constraints are preserved.
+        - label: WASM/native/C ABI parity is covered or explicitly out of scope.
+        - label: Fixture data is sanitized and redistributable.
