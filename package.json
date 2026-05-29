@@ -132,7 +132,7 @@
   },
   "overrides": {
     "@xmldom/xmldom": "0.8.13",
-    "axios": "1.15.2",
+    "axios": "1.16.0",
     "ws": "8.21.0"
   },
   "dependencies": {
@@ -169,6 +169,6 @@
     "typescript": "^5.9.3",
     "vite": "^6.4.2",
     "vitest": "^4.1.2",
-    "wait-on": "^8.0.5"
+    "wait-on": "^9.0.10"
   }
 }
