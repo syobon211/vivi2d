@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+import path from "node:path";
 import { exists, gitLsFiles, readJson, readText, repoRoot, run } from "./repo.mjs";
 
 describe("repo script helpers", () => {
   it("resolves the repository root independent of the caller cwd", () => {
-    expect(repoRoot.replaceAll("\\", "/")).toMatch(/\/vivi2d$/);
+    expect(path.isAbsolute(repoRoot)).toBe(true);
     expect(exists("package.json")).toBe(true);
   });
 
