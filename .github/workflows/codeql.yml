@@ -2,17 +2,6 @@ name: CodeQL
 
 on:
   pull_request:
-    paths:
-      - ".github/workflows/codeql.yml"
-      - "electron/**"
-      - "package.json"
-      - "package-lock.json"
-      - "packages/**"
-      - "scripts/**"
-      - "src/**"
-      - "vite.aliases.ts"
-      - "vite.config.ts"
-      - "vitest.config.ts"
   push:
     branches:
       - main
