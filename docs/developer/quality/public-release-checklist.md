@@ -78,7 +78,7 @@ Governance decisions for the initial OSS release:
 
 ## Security Controls
 
-- [x] `SECURITY.md` is complete for the current pre-public support model.
+- [x] `SECURITY.md` is complete for the current alpha support model.
 - [x] `SECURITY.md` explicitly covers SDK package vulnerabilities, Viewer API
   token handling bugs, provider boundary escapes, and public package
   supply-chain reports.

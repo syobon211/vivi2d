@@ -11,24 +11,25 @@ that a fix or mitigation is available and disclosure timing is coordinated.
 
 ## Supported Versions
 
-Vivi2D is pre-public and pre-1.0. Until the first public release, security fixes
-target the current `main` branch only.
+Vivi2D is pre-1.0. During the alpha period, security fixes target the current
+`main` branch and any alpha releases explicitly listed below.
 
-After the first public release, this table must be updated explicitly:
+This table must be updated explicitly whenever release support changes:
 
 | Version | Supported |
 | --- | --- |
-| `main` (pre-public) | Yes |
-| All tags, local snapshots, and older commits | No |
+| `main` | Yes |
+| `v0.1.0-alpha.1` | Yes |
+| Local snapshots and older commits | No |
 
 Forks are maintained by their fork owners and are outside the Vivi2D security
 support boundary.
 
 ## Reporting a Vulnerability
 
-After the repository becomes public, use GitHub Private Vulnerability Reporting
-for this repository. Do not open a public issue, pull request, Discussion, or
-chat thread for vulnerability details.
+Use GitHub Private Vulnerability Reporting for this repository. Do not open a
+public issue, pull request, Discussion, or chat thread for vulnerability
+details.
 
 If GitHub Private Vulnerability Reporting is not available, public release is
 blocked until maintainers publish an equivalent monitored private contact path
