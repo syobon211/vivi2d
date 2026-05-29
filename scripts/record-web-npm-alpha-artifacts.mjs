@@ -98,13 +98,19 @@ function validatePackEntry(entry, allowlist) {
     failures.push(`${packAllowlistPath} schemaVersion must be 1.`);
   }
   if (entry.name !== allowlist.packageName) {
-    failures.push(`Pack result package ${entry.name} does not match ${allowlist.packageName}.`);
+    failures.push(
+      `Pack result package ${entry.name} does not match ${allowlist.packageName}.`,
+    );
   }
   if (entry.version !== allowlist.version) {
-    failures.push(`Pack result version ${entry.version} does not match ${allowlist.version}.`);
+    failures.push(
+      `Pack result version ${entry.version} does not match ${allowlist.version}.`,
+    );
   }
   if (entry.size > allowlist.maxTarballBytes) {
-    failures.push(`Packed tarball is too large: ${entry.size} > ${allowlist.maxTarballBytes}.`);
+    failures.push(
+      `Packed tarball is too large: ${entry.size} > ${allowlist.maxTarballBytes}.`,
+    );
   }
   if (entry.unpackedSize > allowlist.maxUnpackedBytes) {
     failures.push(

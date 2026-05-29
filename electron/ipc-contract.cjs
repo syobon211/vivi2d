@@ -104,7 +104,11 @@ function assertBinary(value, channel, field, { optional = false } = {}) {
 
 function validateSaveFile(channel, args) {
   const payload = assertObjectArg(channel, args);
-  assertOnlyKeys(payload, channel, new Set(["data", "binary", "defaultName", "filePath"]));
+  assertOnlyKeys(
+    payload,
+    channel,
+    new Set(["data", "binary", "defaultName", "filePath"]),
+  );
   assertString(payload.data, channel, "data", { optional: true, allowEmpty: true });
   assertBinary(payload.binary, channel, "binary", { optional: true });
   assertString(payload.defaultName, channel, "defaultName");
@@ -113,10 +117,20 @@ function validateSaveFile(channel, args) {
     throw new Error(`Invalid IPC payload for ${channel}: data or binary is required.`);
   }
   if (payload.data !== undefined) {
-    assertMaxBytes(Buffer.byteLength(payload.data, "utf8"), channel, "data", MAX_SAVE_TEXT_BYTES);
+    assertMaxBytes(
+      Buffer.byteLength(payload.data, "utf8"),
+      channel,
+      "data",
+      MAX_SAVE_TEXT_BYTES,
+    );
   }
   if (payload.binary !== undefined) {
-    assertMaxBytes(binaryByteLength(payload.binary), channel, "binary", MAX_SAVE_BINARY_BYTES);
+    assertMaxBytes(
+      binaryByteLength(payload.binary),
+      channel,
+      "binary",
+      MAX_SAVE_BINARY_BYTES,
+    );
   }
 }
 
@@ -125,7 +139,12 @@ function validateSaveVividFile(channel, args) {
   assertOnlyKeys(payload, channel, new Set(["binary", "defaultName"]));
   assertBinary(payload.binary, channel, "binary");
   assertString(payload.defaultName, channel, "defaultName");
-  assertMaxBytes(binaryByteLength(payload.binary), channel, "binary", MAX_SAVE_BINARY_BYTES);
+  assertMaxBytes(
+    binaryByteLength(payload.binary),
+    channel,
+    "binary",
+    MAX_SAVE_BINARY_BYTES,
+  );
 }
 
 function validateReadAudioFile(channel, args) {
@@ -157,11 +176,7 @@ function validateWriteExportFiles(channel, args) {
         `Invalid IPC payload for ${channel}: files[${index}] must be an object.`,
       );
     }
-    assertOnlyKeys(
-      file,
-      channel,
-      new Set(["path", "content", "isBlob"]),
-    );
+    assertOnlyKeys(file, channel, new Set(["path", "content", "isBlob"]));
     assertString(file.path, channel, `files[${index}].path`);
     assertString(file.content, channel, `files[${index}].content`, { allowEmpty: true });
     assertBoolean(file.isBlob, channel, `files[${index}].isBlob`, { optional: true });
@@ -201,7 +216,12 @@ function validateComfyUploadImageBuffer(channel, args) {
   assertOnlyKeys(payload, channel, new Set(["baseUrl", "data", "filename"]));
   assertBinary(payload.data, channel, "data");
   assertString(payload.filename, channel, "filename");
-  assertMaxBytes(binaryByteLength(payload.data), channel, "data", MAX_COMFYUI_UPLOAD_BYTES);
+  assertMaxBytes(
+    binaryByteLength(payload.data),
+    channel,
+    "data",
+    MAX_COMFYUI_UPLOAD_BYTES,
+  );
 }
 
 function validateComfyEnqueue(channel, args) {

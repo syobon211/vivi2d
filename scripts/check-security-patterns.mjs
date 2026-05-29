@@ -55,15 +55,17 @@ function runGit(args) {
 }
 
 function listSourceFiles() {
-  return runGit(["ls-files"])
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .filter((relativePath) => relativePath !== "scripts/check-security-patterns.mjs")
-    .filter((relativePath) => SOURCE_EXTENSIONS.has(path.extname(relativePath)))
-    .filter((relativePath) => !TEST_FILE_PATTERN.test(relativePath))
-    // Locked third-party MediaPipe files are verified by check:viewer-mediapipe-assets.
-    .filter((relativePath) => !LOCKED_MEDIAPIPE_VENDOR_PATH.test(relativePath))
-    .filter((relativePath) => !SKIP_PATH.test(relativePath));
+  return (
+    runGit(["ls-files"])
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .filter((relativePath) => relativePath !== "scripts/check-security-patterns.mjs")
+      .filter((relativePath) => SOURCE_EXTENSIONS.has(path.extname(relativePath)))
+      .filter((relativePath) => !TEST_FILE_PATTERN.test(relativePath))
+      // Locked third-party MediaPipe files are verified by check:viewer-mediapipe-assets.
+      .filter((relativePath) => !LOCKED_MEDIAPIPE_VENDOR_PATH.test(relativePath))
+      .filter((relativePath) => !SKIP_PATH.test(relativePath))
+  );
 }
 
 function addFailure(relativePath, lineNumber, message, line) {

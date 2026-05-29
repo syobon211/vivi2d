@@ -1,6 +1,6 @@
+import path from "node:path";
 import { chromium, firefox, webkit } from "@playwright/test";
 import { createServer } from "vite";
-import path from "node:path";
 
 const root = process.cwd();
 const checkPagePath = "/__runtime-wasm-browser-check.html";
@@ -17,13 +17,11 @@ const server = await createServer({
     {
       name: "runtime-wasm-browser-check-page",
       configureServer(viteServer) {
-        viteServer.middlewares.use(
-          checkPagePath,
-          (request, response, next) => {
-            void (async () => {
-              const html = await viteServer.transformIndexHtml(
-                checkPagePath,
-                `<!doctype html>
+        viteServer.middlewares.use(checkPagePath, (_request, response, next) => {
+          void (async () => {
+            const html = await viteServer.transformIndexHtml(
+              checkPagePath,
+              `<!doctype html>
 <title>Runtime WASM Browser Check</title>
 <script type="module">
   import {
@@ -100,13 +98,12 @@ const server = await createServer({
 
   runRuntimeWasmBrowserCheck();
 </script>`,
-              );
+            );
             response.statusCode = 200;
             response.setHeader("Content-Type", "text/html; charset=utf-8");
             response.end(html);
           })().catch(next);
-          },
-        );
+        });
       },
     },
   ],
@@ -135,8 +132,7 @@ try {
       await page.goto(new URL("__runtime-wasm-browser-check.html", baseUrl).href);
       await page.waitForFunction(() => {
         return Boolean(
-          window.__runtimeWasmBrowserResult ||
-            window.__runtimeWasmBrowserError,
+          window.__runtimeWasmBrowserResult || window.__runtimeWasmBrowserError,
         );
       });
       const checkState = await page.evaluate(() => ({

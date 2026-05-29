@@ -107,10 +107,7 @@ if (!cargoConfig.includes("--max-memory=67108864")) {
 const rustToolchain = exists("rust-toolchain.toml")
   ? readText("rust-toolchain.toml")
   : "";
-for (const needle of [
-  'channel = "1.94.1"',
-  'targets = ["wasm32-unknown-unknown"]',
-]) {
+for (const needle of ['channel = "1.94.1"', 'targets = ["wasm32-unknown-unknown"]']) {
   if (!rustToolchain.includes(needle)) {
     fail(`rust-toolchain.toml must pin native/WASM toolchain setting: ${needle}`);
   }

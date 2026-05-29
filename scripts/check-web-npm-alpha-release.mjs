@@ -254,9 +254,7 @@ function checkVerifierContracts() {
     "maxUnpackedBytes",
   ]) {
     if (!recordBuilder.includes(phrase)) {
-      failures.push(
-        `scripts/record-web-npm-alpha-artifacts.mjs must record ${phrase}.`,
-      );
+      failures.push(`scripts/record-web-npm-alpha-artifacts.mjs must record ${phrase}.`);
     }
   }
 

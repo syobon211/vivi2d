@@ -47,15 +47,8 @@ export function gitLsFiles(args = []) {
 
 export function gitLsFilesIncludingUntracked(args = []) {
   const tracked = gitLsFiles(args);
-  const untracked = run("git", [
-    "ls-files",
-    "--others",
-    "--exclude-standard",
-    ...args,
-  ])
+  const untracked = run("git", ["ls-files", "--others", "--exclude-standard", ...args])
     .stdout.split(/\r?\n/)
     .filter(Boolean);
-  return [...new Set([...tracked, ...untracked])].sort((a, b) =>
-    a.localeCompare(b),
-  );
+  return [...new Set([...tracked, ...untracked])].sort((a, b) => a.localeCompare(b));
 }

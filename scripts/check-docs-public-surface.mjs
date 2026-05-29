@@ -242,9 +242,9 @@ for (const file of listRepoFiles()) {
     if (
       COMFYUI_INTEGRATION_ALLOWED_FILES.has(file) &&
       file.endsWith("/integrations/comfyui.md") &&
-      !(
-        COMFYUI_REQUIRED_PUBLIC_COPY_BY_LOCALE[localeFromUserDocFile(file)] ?? []
-      ).every((pattern) => pattern.test(text))
+      !(COMFYUI_REQUIRED_PUBLIC_COPY_BY_LOCALE[localeFromUserDocFile(file)] ?? []).every(
+        (pattern) => pattern.test(text),
+      )
     ) {
       fail(
         `${file}: ComfyUI user page must describe the integration as optional/local, warn that custom nodes run local code, require review before applying results, and show the sibling plugin layout.`,

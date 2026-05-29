@@ -8,12 +8,7 @@ const isCi = process.env.CI === "true";
 const testCommand = ["npm", ["run", includeCoverage ? "test:coverage" : "test"]];
 
 if (isCi && !includeCoverage) {
-  testCommand[1].push(
-    "--",
-    "--maxWorkers=2",
-    "--reporter=dot",
-    "--silent=passed-only",
-  );
+  testCommand[1].push("--", "--maxWorkers=2", "--reporter=dot", "--silent=passed-only");
 }
 
 const commands = [

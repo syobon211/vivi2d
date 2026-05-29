@@ -1,4 +1,3 @@
-
 const { BrowserWindow, shell } = require("electron");
 const path = require("node:path");
 const { pathToFileURL } = require("node:url");

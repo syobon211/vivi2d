@@ -273,6 +273,20 @@ describe("evaluateBoneTracksAtFrame", () => {
     const values = evaluateBoneTracksAtFrame(boneTracks, 0);
     expect(values.bone1).toBeUndefined();
   });
+
+  it("does not mutate Object.prototype for hostile bone ids", () => {
+    const boneTracks: BoneTrack[] = [
+      {
+        boneId: "__proto__",
+        property: "angle",
+        keyframes: [{ frame: 0, value: 30, interpolation: "linear" }],
+      },
+    ];
+
+    const values = evaluateBoneTracksAtFrame(boneTracks, 0);
+    expect(values.__proto__!.angle).toBe(30);
+    expect(({} as Record<string, unknown>).angle).toBeUndefined();
+  });
 });
 
 

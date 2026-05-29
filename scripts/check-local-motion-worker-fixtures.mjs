@@ -139,12 +139,6 @@ function assertFiniteNumber(value, path) {
   }
 }
 
-function assertPositiveInteger(value, path) {
-  if (!Number.isInteger(value) || value <= 0) {
-    fail(`${path} must be a positive integer`);
-  }
-}
-
 function assertNonNegativeInteger(value, path) {
   if (!Number.isInteger(value) || value < 0) {
     fail(`${path} must be a non-negative integer`);
@@ -194,7 +188,7 @@ function validateWorkerRequest(request) {
     "layerTextureHash",
     "solverOptionsHash",
   ]) {
-  if (!isSha256V1(request[key])) fail(`request.${key} must be sha256:v1`);
+    if (!isSha256V1(request[key])) fail(`request.${key} must be sha256:v1`);
   }
   if (typeof request.operationId !== "string" || request.operationId === "") {
     fail("request.operationId must be a non-empty string");
@@ -223,7 +217,9 @@ function validateWorkerRequest(request) {
   if (!Array.isArray(request.handles) || request.handles.length === 0) {
     fail("request.handles must be a non-empty array");
   } else {
-    if (request.handles.length > CODE_CEILINGS[request.options.codeCeilingId].maxHandleCount) {
+    if (
+      request.handles.length > CODE_CEILINGS[request.options.codeCeilingId].maxHandleCount
+    ) {
       fail("request.handles exceeds code ceiling");
     }
     for (const [index, handle] of request.handles.entries()) {
@@ -351,11 +347,15 @@ function validateWorkerResponse(response, request) {
   }
   validateBounds(response.bounds, "response.bounds");
   assertNonNegativeInteger(response.vertexCount, "response.vertexCount");
-  if (response.vertexCount > CODE_CEILINGS[request.options.codeCeilingId].maxVertexCount) {
+  if (
+    response.vertexCount > CODE_CEILINGS[request.options.codeCeilingId].maxVertexCount
+  ) {
     fail("response.vertexCount exceeds code ceiling");
   }
   assertNonNegativeInteger(response.byteLength, "response.byteLength");
-  if (response.byteLength > CODE_CEILINGS[request.options.codeCeilingId].maxResponseBytes) {
+  if (
+    response.byteLength > CODE_CEILINGS[request.options.codeCeilingId].maxResponseBytes
+  ) {
     fail("response.byteLength exceeds code ceiling");
   }
   assertFiniteNumber(response.maxDisplacementPx, "response.maxDisplacementPx");
@@ -365,8 +365,14 @@ function validateWorkerResponse(response, request) {
   if (!isRecord(response.finiteRangeSummary)) {
     fail("response.finiteRangeSummary must be an object");
   } else {
-    assertFiniteNumber(response.finiteRangeSummary.min, "response.finiteRangeSummary.min");
-    assertFiniteNumber(response.finiteRangeSummary.max, "response.finiteRangeSummary.max");
+    assertFiniteNumber(
+      response.finiteRangeSummary.min,
+      "response.finiteRangeSummary.min",
+    );
+    assertFiniteNumber(
+      response.finiteRangeSummary.max,
+      "response.finiteRangeSummary.max",
+    );
   }
 }
 

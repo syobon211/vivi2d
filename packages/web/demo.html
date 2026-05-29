@@ -107,7 +107,11 @@
     window.loadFile = async (file) => {
       if (!file) return;
       const url = URL.createObjectURL(file);
-      el.setAttribute("src", url);
+      try {
+        await el.load(url);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
     };
 
     window.resetParams = () => {

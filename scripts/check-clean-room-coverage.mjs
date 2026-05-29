@@ -1,15 +1,28 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 
 const root = process.cwd();
 const contractPath = "scripts/internal-contracts/clean-room-coverage.contract.json";
 const contract = readJson(contractPath);
 const failures = [];
 
-const TEXT_EXTENSIONS = new Set([".c", ".cpp", ".h", ".hpp", ".js", ".mjs", ".ts", ".tsx"]);
+const TEXT_EXTENSIONS = new Set([
+  ".c",
+  ".cpp",
+  ".h",
+  ".hpp",
+  ".js",
+  ".mjs",
+  ".ts",
+  ".tsx",
+]);
 const SOURCE_PREFIXES = ["electron/", "packages/", "scripts/", "src/", "e2e/"];
-const PUBLICATION_BLOCKING_STATUSES = new Set(["researchOnly", "privateRepoOnly", "blocked"]);
+const PUBLICATION_BLOCKING_STATUSES = new Set([
+  "researchOnly",
+  "privateRepoOnly",
+  "blocked",
+]);
 const ALLOWED_STATUSES = new Set([
   "researchOnly",
   "privateRepoOnly",
@@ -83,7 +96,10 @@ function assertContract(value) {
       algorithm.allowedTrackedSourcePrefixes,
       `${algorithm.id}.allowedTrackedSourcePrefixes`,
     );
-    assertStringList(algorithm.requiredAbsentPatterns, `${algorithm.id}.requiredAbsentPatterns`);
+    assertStringList(
+      algorithm.requiredAbsentPatterns,
+      `${algorithm.id}.requiredAbsentPatterns`,
+    );
     assertString(algorithm.notes, `${algorithm.id}.notes`);
   }
 }
@@ -101,11 +117,15 @@ function assertStringList(value, label) {
 }
 
 function listRepoFiles() {
-  const result = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard"], {
-    cwd: root,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  const result = spawnSync(
+    "git",
+    ["ls-files", "--cached", "--others", "--exclude-standard"],
+    {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
   if (result.status !== 0) {
     throw new Error(result.stderr || "git ls-files failed");
   }

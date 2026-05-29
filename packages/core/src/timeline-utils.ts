@@ -86,7 +86,7 @@ export function evaluateClipAtFrame(
   clip: AnimationClip,
   frame: number,
 ): Record<string, number> {
-  const values: Record<string, number> = {};
+  const values = Object.create(null) as Record<string, number>;
   for (const track of clip.tracks) {
     const value = interpolateTrack(track, frame);
     if (value !== null) values[track.parameterId] = value;
@@ -114,7 +114,7 @@ export function evaluateBoneTracksAtFrame(
   boneTracks: BoneTrack[],
   frame: number,
 ): BoneTrackValues {
-  const values: BoneTrackValues = {};
+  const values = Object.create(null) as BoneTrackValues;
   for (const track of boneTracks) {
     const value = interpolateKeyframes(track.keyframes, frame);
     if (value === null) continue;
@@ -198,7 +198,7 @@ export function evaluateIKControllerTracksAtFrame(
   ikTracks: IKControllerTrack[],
   frame: number,
 ): IKControllerTrackValues {
-  const values: IKControllerTrackValues = {};
+  const values = Object.create(null) as IKControllerTrackValues;
   for (const track of ikTracks) {
     const targetX = interpolateKeyframes(track.targetXKeyframes, frame);
     const targetY = interpolateKeyframes(track.targetYKeyframes, frame);
