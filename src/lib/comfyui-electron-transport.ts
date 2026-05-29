@@ -5,6 +5,20 @@ import type {
   QueueResponse,
 } from "@vivi2d/provider-comfyui";
 
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1;
+  return value.slice(0, end);
+}
+
+function toWebSocketBaseUrl(value: string): string {
+  const trimmed = trimTrailingSlashes(value);
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith("https:")) return `wss:${trimmed.slice(6)}`;
+  if (lower.startsWith("http:")) return `ws:${trimmed.slice(5)}`;
+  return trimmed;
+}
+
 export class ElectronComfyUITransport implements ComfyUITransport {
   constructor(private readonly baseUrl: string) {}
 
@@ -65,7 +79,7 @@ export class ElectronComfyUITransport implements ComfyUITransport {
   }
 
   getWebSocketUrl(clientId = "vivi2d"): string | null {
-    const wsBaseUrl = this.baseUrl.replace(/\/+$/, "").replace(/^http/i, "ws");
+    const wsBaseUrl = toWebSocketBaseUrl(this.baseUrl);
     return `${wsBaseUrl}/ws?clientId=${encodeURIComponent(clientId)}`;
   }
 }

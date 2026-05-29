@@ -14,7 +14,8 @@ const nativeManifest = path.join(root, "packages/runtime-native/Cargo.toml");
 const includeDir = path.join(root, "packages/runtime-c-abi/include");
 const samplePath = path.join(root, "packages/runtime-c-abi/samples/minimal-host.c");
 const targetDir = path.join(root, "packages/runtime-native/target/debug");
-const tmpDir = path.join(root, "tmp/runtime-c-abi-link");
+const tmpDirRelative = path.join("tmp", "runtime-c-abi-link");
+const tmpDir = path.join(root, tmpDirRelative);
 
 run("cargo", [
   "build",
@@ -233,7 +234,8 @@ function runMsvc(compiler, args) {
     run(compiler.command, args);
     return;
   }
-  const cmdPath = path.join(tmpDir, "build-c-host.cmd");
+  const cmdRelativePath = path.join(tmpDirRelative, "build-c-host.cmd");
+  const cmdPath = path.join(root, cmdRelativePath);
   writeFileSync(
     cmdPath,
     [
@@ -243,7 +245,8 @@ function runMsvc(compiler, args) {
       "",
     ].join("\r\n"),
   );
-  const result = spawnSync("cmd.exe", ["/d", "/c", cmdPath], {
+  const result = spawnSync("cmd.exe", ["/d", "/c", cmdRelativePath], {
+    cwd: root,
     stdio: "inherit",
   });
   if (result.status !== 0) {

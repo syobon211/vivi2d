@@ -140,7 +140,7 @@ function safeReadSinglePackEntry(file) {
 }
 
 async function readRegistryMetadata(name, version) {
-  const url = `https://registry.npmjs.org/${encodeURIComponent(name).replace("%40", "@")}/${encodeURIComponent(version)}`;
+  const url = `https://registry.npmjs.org/${encodeNpmPackageName(name)}/${encodeURIComponent(version)}`;
   const response = await fetch(url, { headers: { accept: "application/json" } });
   if (!response.ok) {
     throw new Error(`Registry metadata request failed with ${response.status}.`);
@@ -157,7 +157,7 @@ async function fetchBytes(url) {
 async function readNpmAttestations(name, version) {
   const candidates = [
     `https://registry.npmjs.org/-/npm/v1/attestations/${encodeURIComponent(`${name}@${version}`)}`,
-    `https://registry.npmjs.org/-/npm/v1/attestations/${name.replace("/", "%2F")}@${encodeURIComponent(version)}`,
+    `https://registry.npmjs.org/-/npm/v1/attestations/${encodeNpmPackageName(name)}@${encodeURIComponent(version)}`,
   ];
   const errors = [];
   for (const url of candidates) {
@@ -166,6 +166,10 @@ async function readNpmAttestations(name, version) {
     errors.push(`${url}: HTTP ${response.status}`);
   }
   throw new Error(`Could not fetch npm attestations: ${errors.join("; ")}`);
+}
+
+function encodeNpmPackageName(name) {
+  return name.split("/").map(encodeURIComponent).join("%2F");
 }
 
 function normalizeAttestationResponse(value) {

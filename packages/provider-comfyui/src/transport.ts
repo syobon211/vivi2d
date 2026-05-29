@@ -21,12 +21,26 @@ export interface HttpTransportOptions {
   timeout: number;
 }
 
+function trimTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1;
+  return value.slice(0, end);
+}
+
+function toWebSocketBaseUrl(value: string): string {
+  const trimmed = trimTrailingSlashes(value);
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith("https:")) return `wss:${trimmed.slice(6)}`;
+  if (lower.startsWith("http:")) return `ws:${trimmed.slice(5)}`;
+  return trimmed;
+}
+
 export class HttpTransport implements ComfyUITransport {
   private baseUrl: string;
   private timeout: number;
 
   constructor(options: HttpTransportOptions) {
-    this.baseUrl = options.baseUrl.replace(/\/+$/, "");
+    this.baseUrl = trimTrailingSlashes(options.baseUrl);
     this.timeout = options.timeout;
   }
 
@@ -103,7 +117,7 @@ export class HttpTransport implements ComfyUITransport {
   }
 
   getWebSocketUrl(clientId = "vivi2d"): string | null {
-    return `${this.baseUrl.replace(/^http/, "ws")}/ws?clientId=${encodeURIComponent(clientId)}`;
+    return `${toWebSocketBaseUrl(this.baseUrl)}/ws?clientId=${encodeURIComponent(clientId)}`;
   }
 
   private async fetch(
