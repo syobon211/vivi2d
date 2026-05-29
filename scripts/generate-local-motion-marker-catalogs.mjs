@@ -4,7 +4,8 @@ import path from "node:path";
 const root = process.cwd();
 const checkOnly = process.argv.includes("--check");
 
-const contractPath = "scripts/internal-contracts/local-motion-forbidden-markers.contract.json";
+const contractPath =
+  "scripts/internal-contracts/local-motion-forbidden-markers.contract.json";
 const contract = readJson(contractPath);
 
 assertContract(contract);
@@ -18,14 +19,19 @@ const generated = new Map([
     "packages/provider-sdk/src/generated/private-local-motion-markers.ts",
     renderProviderCatalog(contract),
   ],
-  ["scripts/generated/local-motion-marker-scan-catalog.json", renderScannerCatalog(contract)],
+  [
+    "scripts/generated/local-motion-marker-scan-catalog.json",
+    renderScannerCatalog(contract),
+  ],
 ]);
 
 let driftFound = false;
 for (const [relativePath, content] of generated) {
   const absolutePath = path.join(root, relativePath);
   if (checkOnly) {
-    const current = fs.existsSync(absolutePath) ? fs.readFileSync(absolutePath, "utf8") : "";
+    const current = fs.existsSync(absolutePath)
+      ? fs.readFileSync(absolutePath, "utf8")
+      : "";
     if (current !== content) {
       console.error(`[local-motion-marker-catalogs] ${relativePath} is out of date`);
       driftFound = true;
@@ -130,10 +136,7 @@ export const PROVIDER_LOCAL_MOTION_FORBIDDEN_KEYS = new Set<string>([
 ${forbiddenKeys.map((key) => `  ${JSON.stringify(key)},`).join("\n")}
 ]);
 
-${renderPartsArray(
-  "PROVIDER_LOCAL_MOTION_FORBIDDEN_MARKERS",
-  forbiddenMarkerParts,
-)}
+${renderPartsArray("PROVIDER_LOCAL_MOTION_FORBIDDEN_MARKERS", forbiddenMarkerParts)}
 `;
 }
 

@@ -136,7 +136,9 @@ function parseHeartbeatMs(value) {
   if (value === undefined || value === "") return 60_000;
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 5_000 || parsed > 300_000) {
-    console.error("[release-step] VIVI2D_RELEASE_STEP_HEARTBEAT_MS must be 5000..300000.");
+    console.error(
+      "[release-step] VIVI2D_RELEASE_STEP_HEARTBEAT_MS must be 5000..300000.",
+    );
     process.exit(1);
   }
   return parsed;

@@ -147,7 +147,9 @@ function checkProviderSdkPublicationGuard(pkg) {
     }
   }
   if (!pkg.types || !pkg.files?.includes("dist")) {
-    failures.push("@vivi2d/provider-sdk must declare dist types and a dist files allowlist.");
+    failures.push(
+      "@vivi2d/provider-sdk must declare dist types and a dist files allowlist.",
+    );
   }
   if (pkg.main || pkg.module) {
     failures.push(

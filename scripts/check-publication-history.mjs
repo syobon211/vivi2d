@@ -5,8 +5,7 @@ const suspiciousPathPattern =
 const privateAssetPattern =
   /(^|[/\\])(models|weights|checkpoints|private-assets|proprietary|third[-_ ]party)([/\\]|$)|\.(ckpt|safetensors|onnx|pt|pth)$/i;
 const generatedMediaPattern = /\.(mp4|mov|webm|wav|mp3|ogg)$/i;
-const zundamonPattern =
-  /(zundamon|zunmon|zunda|\u305a\u3093\u3060|\u7e3a\u58f9\uff53)/i;
+const zundamonPattern = /(zundamon|zunmon|zunda|\u305a\u3093\u3060|\u7e3a\u58f9\uff53)/i;
 const lockedMediapipeModelPattern =
   /(^|[/\\])packages[/\\]viewer[/\\]public[/\\]vendor[/\\]mediapipe[/\\]tasks-vision-0\.10\.35[/\\]models[/\\](?:face_landmarker|hand_landmarker|pose_landmarker_lite)\.task$/;
 

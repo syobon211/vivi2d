@@ -369,7 +369,9 @@ describe("packages/viewer/electron/security.cjs", () => {
     });
 
     it("rejects malformed viewer payloads", () => {
-      expect(() => validateIpcArgs("test-channel", [])).toThrow("has no payload contract");
+      expect(() => validateIpcArgs("test-channel", [])).toThrow(
+        "has no payload contract",
+      );
       expect(() =>
         validateIpcArgs("viewer-api:set-enabled", [
           { enabled: true, port: 37145, debug: true },
@@ -430,9 +432,7 @@ describe("packages/viewer/electron/security.cjs", () => {
         ]),
       ).toThrow("assetId is invalid");
       expect(() =>
-        validateIpcArgs("viewer-api:open-pairing-window", [
-          { origins: [""] },
-        ]),
+        validateIpcArgs("viewer-api:open-pairing-window", [{ origins: [""] }]),
       ).toThrow("origins is invalid");
       expect(() =>
         validateIpcArgs("viewer-api:publish-event", [

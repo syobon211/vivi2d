@@ -16,11 +16,8 @@ const {
   publicEventRegistry,
   splitBySurface,
 } = dispatch;
-const {
-  ViewerApiEventQueue,
-  createViewerApiClientState,
-  serializeGrantRevokedEvent,
-} = eventQueue;
+const { ViewerApiEventQueue, createViewerApiClientState, serializeGrantRevokedEvent } =
+  eventQueue;
 const {
   isGrantAllowedForOrigin,
   isLoopbackHostHeader,
@@ -29,15 +26,8 @@ const {
   parseHostHeader,
 } = origin;
 const { consumeRateLimitBudget, hasRateLimitBudget, pruneTimestamps } = rateLimit;
-const {
-  hasScopeAlternatives,
-  publicScopeDeniedDetails,
-} = scopeResolver;
-const {
-  extractMessageId,
-  extractSafeMessageContext,
-  responseTypeFor,
-} = transport;
+const { hasScopeAlternatives, publicScopeDeniedDetails } = scopeResolver;
+const { extractMessageId, extractSafeMessageContext, responseTypeFor } = transport;
 
 describe("Viewer API origin boundary helpers", () => {
   it("normalizes browser origins with URL canonicalization", () => {
@@ -120,10 +110,12 @@ describe("Viewer API transport helpers", () => {
   });
 
   it("uses preview result envelopes only for negotiated preview messages", () => {
-    expect(responseTypeFor({ version: "0.preview", type: "viewer.state.get" }))
-      .toBe("viewer.state.get.result");
-    expect(responseTypeFor({ version: "0.experimental", type: "viewer.state.get" }))
-      .toBe("viewer.error");
+    expect(responseTypeFor({ version: "0.preview", type: "viewer.state.get" })).toBe(
+      "viewer.state.get.result",
+    );
+    expect(responseTypeFor({ version: "0.experimental", type: "viewer.state.get" })).toBe(
+      "viewer.error",
+    );
     expect(responseTypeFor(null, "viewer.auth.result")).toBe("viewer.auth.result");
   });
 });
@@ -157,17 +149,22 @@ describe("Viewer API auth and scope helpers", () => {
     expect(
       hasScopeAlternatives(grant, [["read:state"], ["write:signals", "write:props"]]),
     ).toBe(true);
-    expect(hasScopeAlternatives({ scopes: ["write:signals"] }, [
-      ["write:signals", "run:actions:safe"],
-    ])).toBe(false);
-    expect(hasScopeAlternatives({ scopes: ["write:signals", "run:actions:safe"] }, [
-      ["write:signals", "run:actions:safe"],
-    ])).toBe(true);
+    expect(
+      hasScopeAlternatives({ scopes: ["write:signals"] }, [
+        ["write:signals", "run:actions:safe"],
+      ]),
+    ).toBe(false);
+    expect(
+      hasScopeAlternatives({ scopes: ["write:signals", "run:actions:safe"] }, [
+        ["write:signals", "run:actions:safe"],
+      ]),
+    ).toBe(true);
     expect(hasScopeAlternatives(grant, [[]])).toBe(true);
     expect(hasScopeAlternatives(grant, [])).toBe(true);
     expect(hasScopeAlternatives(grant, [["read:actions"]])).toBe(false);
-    expect(publicScopeDeniedDetails([["write:props", "read:state"], ["read:state"]]))
-      .toEqual({ requiredScopes: ["read:state", "write:props"] });
+    expect(
+      publicScopeDeniedDetails([["write:props", "read:state"], ["read:state"]]),
+    ).toEqual({ requiredScopes: ["read:state", "write:props"] });
   });
 });
 

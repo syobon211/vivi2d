@@ -1,10 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import {
-  gitLsFilesIncludingUntracked,
-  readJson,
-  resolveRepoPath,
-} from "./lib/repo.mjs";
+import { gitLsFilesIncludingUntracked, readJson, resolveRepoPath } from "./lib/repo.mjs";
 
 const baselinePath = "docs/developer/quality/baselines/ui-module-budget.json";
 const writeBaseline = process.argv.includes("--write");
