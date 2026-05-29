@@ -1,9 +1,8 @@
 # Public API Status
 
-Vivi2D is still pre-public and pre-1.0. Package boundaries may change before
-the first OSS release. This document records the current publication intent so
-contributors do not accidentally treat internal workspace entry points as stable
-APIs.
+Vivi2D is public and pre-1.0. Package boundaries may change during the alpha
+period. This document records the current publication intent so contributors do
+not accidentally treat internal workspace entry points as stable APIs.
 
 ## Public Terminology
 
@@ -73,7 +72,7 @@ Current SDK sample gates are:
 
 The current `@vivi2d/web` implementation unlock is enforced by
 `npm run check:sdk-unlock:web`; it permits only Phase 1 programmatic SDK
-implementation, not npm publication or stable compatibility promises.
+implementation, not stable compatibility promises.
 `npm run check:web-npm-alpha-release` covers the additional alpha publication
 scaffolding: protected environment policy, trusted-publisher/token hygiene,
 release workflow shape, pack/record/verify scripts, release notes template, and

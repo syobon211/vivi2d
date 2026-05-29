@@ -158,7 +158,7 @@ See-through paper as requested by its upstream project.
 
 ## Contact
 
-- Bugs and feature requests: use GitHub Issues after the repository is public.
+- Bugs and feature requests: use GitHub Issues.
 - Questions and community chat: a public community space is planned.
 - Security reports: follow [SECURITY.md](SECURITY.md). Do not report
   vulnerabilities in public issues, discussions, chat, screenshots, or logs.
