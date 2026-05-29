@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import path from "node:path";
+import { describe, expect, it } from "vitest";
 import { exists, gitLsFiles, readJson, readText, repoRoot, run } from "./repo.mjs";
 
 describe("repo script helpers", () => {
