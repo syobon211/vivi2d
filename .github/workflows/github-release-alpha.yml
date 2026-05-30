@@ -207,4 +207,5 @@ jobs:
             --verify-tag \
             --title "Vivi2D $VERSION" \
             --notes-file tmp/github-release-assets/release-notes.md \
-            --draft
+            --draft \
+            --prerelease

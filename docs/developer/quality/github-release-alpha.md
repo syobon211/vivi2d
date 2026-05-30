@@ -25,9 +25,9 @@ Rules:
 - GitHub release tags use `v<semver>`, for example `v0.1.0-alpha.1`.
 - npm package release tags use the package-specific `web-v<semver>` form
   defined in the Web SDK npm alpha contract.
-- The initial alpha workflow always creates a draft GitHub Release. Publishing
-  the draft is a separate owner action after hosted security settings and
-  release notes are confirmed.
+- The initial alpha workflow always creates a draft pre-release GitHub Release.
+  Publishing the draft is a separate owner action after hosted security settings
+  and release notes are confirmed.
 - Do not reuse a tag after publication. If a release is wrong, publish a new
   alpha and deprecate or mark the old release as superseded.
 - Narrow exception for the first alpha launch window: if `v0.1.0-alpha.1` has
@@ -196,7 +196,7 @@ Required properties:
 - `actions/upload-artifact` stores the generated asset set for review with
   retention of at most 14 days.
 - The release job consumes the exact generated and verified asset artifact and
-  always creates a draft GitHub Release.
+  always creates a draft pre-release GitHub Release.
 - Release creation uses the repository token only inside a single shell step;
   no long-lived personal token is allowed. That same step downloads the
   previously verified artifact with `gh run download`, rechecks the tag and
