@@ -26,6 +26,11 @@ const electronBuilderArtifactNameLine = [
   ["$", "{ext}"].join(""),
   '"',
 ].join("");
+const manualReviewJsonEnvLine = [
+  "MANUAL_REVIEW_JSON: '",
+  ["$", "{{ toJSON(fromJSON(inputs.manualReviewJson)) }}"].join(""),
+  "'",
+].join("");
 const bashAlphaThresholdCheck = `${["$", "{BASH_REMATCH[4]}"].join("")}" -lt 2`;
 const packageJson = readJson("package.json");
 const toolManifest = readJson("scripts/release-tool-versions.json");
@@ -141,6 +146,7 @@ function checkWorkflow() {
     "chromiumMajorVersion:",
     "electronEmbeddedNodeVersion:",
     "manualReviewJson:",
+    manualReviewJsonEnvLine,
     "permissions:\n  contents: read",
     "linux-validation:",
     "windows-packaging:",
