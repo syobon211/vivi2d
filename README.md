@@ -88,9 +88,13 @@ Releases and the user documentation.
 
 Requirements:
 
-- Node.js 22
-- npm 10+
+- Node.js 22 for local development and CI project commands
+- npm 10+ for local development
 - Playwright browsers for browser/Electron checks
+
+GitHub Actions are pinned to Node 24-compatible action releases. Vivi2D project
+commands still run on Node.js 22, with release publication workflows pinning
+Node.js 22.14.0 and npm 11.5.1 or newer where npm provenance is required.
 
 Install dependencies:
 
