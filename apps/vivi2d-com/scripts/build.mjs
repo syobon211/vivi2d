@@ -8,12 +8,13 @@ const defaultOutDir = path.join(siteRoot, "dist");
 const locales = ["en", "ja", "zh-Hans", "ko-KR"];
 const docsBaseUrl = argValue("--docs-base-url") ?? process.env.VIVI_DOCS_BASE_URL ?? "";
 const siteUrl = "https://vivi2d.com";
+const docsHostUrl = "https://docs.vivi2d.com";
 const githubUrl = "https://github.com/syobon211/vivi2d";
 const releaseVersion = "0.1.0-alpha.1";
 const releaseTag = `v${releaseVersion}`;
 const releaseUrl = `${githubUrl}/releases/tag/${releaseTag}`;
 const releasesUrl = `${githubUrl}/releases`;
-const portalDocsUrl = docsBaseUrl ? docsUrl("en", "") : `${githubUrl}/tree/main/docs`;
+const portalDocsUrl = docsBaseUrl ? docsUrl("en", "") : `${docsHostUrl}/`;
 const localeLabels = {
   en: "English",
   ja: "\u65e5\u672c\u8a9e",
@@ -674,7 +675,7 @@ function rootHtml() {
           <div class="ledger-row"><strong>Checksums</strong><span class="ledger-ok">Yes</span></div>
           <div class="ledger-row"><strong>SBOM</strong><span class="ledger-ok">Yes</span></div>
           <div class="ledger-row"><strong>Installer</strong><span class="ledger-warn">Later</span></div>
-          <div class="ledger-row"><strong>Docs</strong><span class="ledger-ok">GitHub</span></div>
+          <div class="ledger-row"><strong>Docs</strong><span class="ledger-ok">Reserved</span></div>
         </div>
         <p class="console-note">The current alpha is source/provenance-only. One-click app packages will be added after installer gates are reviewed.</p>
       </aside>

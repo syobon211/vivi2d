@@ -4,6 +4,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const outDir = path.join(root, "tmp", "vivi2d-com-check");
+const docsHostUrl = "https://docs.vivi2d.com/";
 const failures = [];
 
 function fail(message) {
@@ -81,7 +82,7 @@ if (!fs.existsSync(path.join(outDir, "index.html"))) {
   const requiredRootSnippets = [
     "https://github.com/syobon211/vivi2d",
     "https://github.com/syobon211/vivi2d/releases/tag/v0.1.0-alpha.1",
-    "https://github.com/syobon211/vivi2d/tree/main/docs",
+    docsHostUrl,
     "pre-1.0 alpha",
     "source/provenance-only alpha",
     "Coming Soon",
@@ -106,7 +107,7 @@ if (!fs.existsSync(docsRedirect)) {
   fail("vivi2d.com/docs compatibility redirect was not generated.");
 } else {
   const redirectHtml = fs.readFileSync(docsRedirect, "utf8");
-  const expectedDocsUrl = new URL("https://github.com/syobon211/vivi2d/tree/main/docs").href;
+  const expectedDocsUrl = new URL(docsHostUrl).href;
   const canonicalHref = htmlAttributeValue(
     redirectHtml,
     /<link rel="canonical" href="([^"]+)">/,
