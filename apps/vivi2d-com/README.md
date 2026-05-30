@@ -40,6 +40,24 @@ Local and early public builds may leave `VIVI_DOCS_BASE_URL` empty; the portal
 then links to the GitHub `docs/` tree so the public Docs link does not point at
 unpublished generated routes.
 
+## Cloudflare Workers Deploy
+
+The portal is configured for Cloudflare Workers static assets through the root
+`wrangler.jsonc`. The dashboard's Git deploy setup should use:
+
+```text
+Project name: vivi2d
+Root directory: /
+Build command: npm run docs:site:build
+Deploy command: npx wrangler deploy
+Variables: none required
+```
+
+`wrangler.jsonc` intentionally has no Worker script entry point. Wrangler uploads
+the generated files from `apps/vivi2d-com/dist/` as static assets, keeping the
+initial portal deployment to HTML/CSS only. After the first successful deploy,
+attach the custom domain `vivi2d.com` from the Worker's Settings > Domains page.
+
 ## Hosting Plan
 
 The planned public deployment is:
@@ -50,7 +68,8 @@ The planned public deployment is:
 - `docs.vivi2d.com` as the user documentation host,
 - `vivi2d.com/docs` as a compatibility redirect to
   `docs.vivi2d.com/en/latest/` once hosted docs are published,
-- initial static hosting on Cloudflare Pages or Vercel,
+- initial static hosting through Cloudflare Workers static assets,
 - optional future subdomains such as `api.vivi2d.com` and `cdn.vivi2d.com`.
 
-No deployment is configured in this scaffold yet.
+The current deployment surface is the root portal only. Hosted user docs remain
+unpublished until the documentation media/review pass is complete.
