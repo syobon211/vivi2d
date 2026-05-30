@@ -14,6 +14,8 @@ intentionally avoids a CMS or copied page data.
 - Emit `/{locale}/latest/{slug}/` documentation routes only when a manifest route is
   `published: true`.
 - Emit canonical `robots.txt` and `sitemap.xml` files for `https://vivi2d.com`.
+- Emit Cloudflare Workers static assets `_headers` with reviewed security
+  headers for the public portal.
 - Keep draft and placeholder documentation unroutable until the final media and
   release-candidate pass.
 - Keep generated route metadata deterministic so public-surface scanners can
@@ -58,6 +60,12 @@ Variables: none required
 the generated files from `apps/vivi2d-com/dist/` as static assets, keeping the
 initial portal deployment to HTML/CSS only. After the first successful deploy,
 attach the custom domain `vivi2d.com` from the Worker's Settings > Domains page.
+
+The generated `_headers` file applies a strict static-site security profile:
+`nosniff`, strict referrer policy, permissions restrictions, frame denial, HSTS
+without `includeSubDomains`, and a CSP with `script-src 'none'`. If hosted docs
+routes later need client-side scripts, remove those scripts or update the CSP in
+the same change that publishes the routes.
 
 ## Hosting Plan
 

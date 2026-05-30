@@ -221,6 +221,17 @@ ${entries}
 `;
 }
 
+function securityHeaders() {
+  return `/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()
+  X-Frame-Options: DENY
+  Strict-Transport-Security: max-age=31536000
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'none'; connect-src 'none'; font-src 'self'; manifest-src 'self'; upgrade-insecure-requests
+`;
+}
+
 function pageHtml(locale, slug) {
   const file = pagePath(locale, slug);
   const { data, body } = parseFrontmatter(readText(file), file);
@@ -738,6 +749,7 @@ function main() {
   writeOutput("route-metadata.json", `${JSON.stringify(metadata, null, 2)}\n`);
   writeOutput("robots.txt", robotsTxt());
   writeOutput("sitemap.xml", sitemapXml(metadata));
+  writeOutput("_headers", securityHeaders());
 
   for (const route of manifest.routes.filter((route) => route.published)) {
     for (const locale of locales) {
