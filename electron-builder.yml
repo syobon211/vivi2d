@@ -11,6 +11,7 @@ files:
     filter:
       - "**/*"
       - "!**/*.map"
+      - "!windows-installer/**"
   - from: electron
     to: electron
     filter:
