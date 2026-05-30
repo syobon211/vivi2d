@@ -336,3 +336,22 @@ release machine uses a different `gitleaks` version, record `gitleaks version`
 and the exact history-scan command in the release notes, and confirm the command
 exits with code `0` while reporting that at least one reachable commit was
 scanned.
+
+## First Alpha Tag Recreation Exception
+
+The normal release policy is that published tags are immutable. For the first
+public alpha only, the owner may recreate `v0.1.0-alpha.1` from the latest
+`main` if all of the following are true:
+
+- [ ] The release has not been announced externally.
+- [ ] The old tag is not referenced from package metadata, documentation,
+  issue/PR guidance, social posts, or downstream instructions.
+- [ ] The replacement commit is the current `origin/main` head.
+- [ ] The old and replacement release scopes are source/provenance-only.
+- [ ] The owner records that this is a launch-preparation correction, not normal
+  release policy.
+
+If any item is false, cut `v0.1.0-alpha.2` instead. When the exception is used,
+follow the deletion, tag recreation, workflow dispatch, draft review, and
+publish sequence in
+`docs/developer/quality/github-release-alpha.md#recreating-v010-alpha1-during-launch-preparation`.
