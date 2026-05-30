@@ -15,6 +15,7 @@ export function buildImageToLayersWorkflow(
   const useLama = options?.useLama ?? true;
   const quantMode = options?.quantMode ?? "none";
   const groupOffload = options?.groupOffload ?? false;
+  const filenamePrefix = options?.filenamePrefix ?? `vivi2d_seethrough_${Date.now()}`;
 
   return {
     "1": {
@@ -78,7 +79,7 @@ export function buildImageToLayersWorkflow(
       class_type: "SeeThrough_SavePSD",
       inputs: {
         parts: ["6", 0],
-        filename_prefix: "vivi2d_seethrough",
+        filename_prefix: filenamePrefix,
       },
     },
   };

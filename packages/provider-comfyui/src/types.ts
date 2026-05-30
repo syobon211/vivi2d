@@ -42,6 +42,8 @@ export interface HistoryOutput {
 export interface HistoryEntry {
   outputs: Record<string, HistoryOutput>;
 
+  prompt?: unknown;
+
   status: {
     completed?: boolean;
     status_str?: string;
@@ -96,6 +98,8 @@ export interface DecomposeOptions {
   quantMode?: "none" | "nf4";
 
   groupOffload?: boolean;
+
+  filenamePrefix?: string;
 }
 
 export interface PromptGenerateOptions extends DecomposeOptions {

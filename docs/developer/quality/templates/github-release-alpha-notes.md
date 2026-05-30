@@ -53,6 +53,9 @@ package tarball.
   before 1.0.
 - Native/WASM binary distribution requires separate checksum, signing,
   sanitizer, and legal/API review.
+- ComfyUI automation requires a matching local Vivi2D compat plugin when it is
+  used as a supported path. The direct See-through workflow remains a
+  best-effort local fallback, not a bundled or release-supported integration.
 - ComfyUI and See-through bundle distribution requires separate license,
   provenance, dependency, and source/weight review.
 

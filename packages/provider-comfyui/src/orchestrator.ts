@@ -591,6 +591,11 @@ async function downloadPsdFromHistory(
     }
   }
 
+  const legacyLayerPsd = await tryDownloadLegacySeeThroughLayerInfoPsd(client, history);
+  if (legacyLayerPsd) {
+    return legacyLayerPsd;
+  }
+
   const layers = await collectLayerImages(client, history);
   if (layers.length === 0) {
     throw new Error("No output retrieved from ComfyUI");
@@ -599,6 +604,187 @@ async function downloadPsdFromHistory(
   const firstDecoded = await decodeImageSize(layers[0]!.imageData);
 
   return assemblePsd(layers, firstDecoded.width, firstDecoded.height);
+}
+
+async function tryDownloadLegacySeeThroughLayerInfoPsd(
+  client: ComfyUIClient,
+  history: HistoryEntry,
+): Promise<ArrayBuffer | null> {
+  const prefix = findLegacySeeThroughSavePrefix(history);
+  if (!prefix) return null;
+
+  let infoFilename: string;
+  try {
+    const logBuffer = await client.downloadOutput(
+      "seethrough_psd_info.log",
+      "",
+      "output",
+    );
+    infoFilename = new TextDecoder().decode(new Uint8Array(logBuffer)).trim();
+  } catch {
+    return null;
+  }
+
+  assertLegacySeeThroughInfoFilename(infoFilename, prefix);
+  const infoBuffer = await client.downloadOutput(infoFilename, "", "output");
+  const info = parseLegacySeeThroughLayerInfo(infoBuffer, infoFilename);
+  const layers: PositionedSeethroughLayer[] = [];
+
+  for (const [index, layer] of info.layers.entries()) {
+    assertLegacyOutputFilename(layer.filename, infoFilename);
+    const imageData = await client.downloadOutput(layer.filename, "", "output");
+    layers.push({
+      name: layer.name,
+      imageData,
+      order: index,
+      left: layer.left,
+      top: layer.top,
+      right: layer.right,
+      bottom: layer.bottom,
+    });
+  }
+
+  if (layers.length === 0) {
+    throw new Error(`Legacy See-through layer info has no layers: ${infoFilename}`);
+  }
+
+  return assemblePositionedPsd(layers, info.width, info.height);
+}
+
+function findLegacySeeThroughSavePrefix(history: HistoryEntry): string | null {
+  const prompt = history.prompt;
+  const workflow = Array.isArray(prompt) ? prompt[2] : null;
+  if (!workflow || typeof workflow !== "object") return null;
+
+  for (const node of Object.values(workflow as Record<string, unknown>)) {
+    if (!node || typeof node !== "object") continue;
+    const record = node as Record<string, unknown>;
+    if (record.class_type !== "SeeThrough_SavePSD") continue;
+
+    const inputs = record.inputs;
+    if (!inputs || typeof inputs !== "object") continue;
+    const prefix = (inputs as Record<string, unknown>).filename_prefix;
+    if (typeof prefix === "string" && prefix.trim()) {
+      return prefix.trim();
+    }
+  }
+
+  return null;
+}
+
+function assertLegacySeeThroughInfoFilename(filename: string, prefix: string): void {
+  assertLegacyOutputFilename(filename, "seethrough_psd_info.log");
+  if (!filename.endsWith("_layers.json")) {
+    throw new Error(`Unexpected legacy See-through info file: ${filename}`);
+  }
+  if (!filename.startsWith(`${prefix}_`)) {
+    throw new Error(
+      `Legacy See-through info file does not match the requested prefix: ${filename}`,
+    );
+  }
+}
+
+function assertLegacyOutputFilename(filename: string, source: string): void {
+  const normalized = filename.replace(/\\/g, "/").trim();
+  if (!normalized || normalized.includes("/") || normalized.includes("..")) {
+    throw new Error(`Invalid legacy See-through output filename in ${source}`);
+  }
+}
+
+interface LegacySeeThroughLayerInfo {
+  width: number;
+  height: number;
+  layers: Array<{
+    name: string;
+    filename: string;
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+  }>;
+}
+
+function parseLegacySeeThroughLayerInfo(
+  buffer: ArrayBuffer,
+  filename: string,
+): LegacySeeThroughLayerInfo {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(new TextDecoder().decode(new Uint8Array(buffer)));
+  } catch (error) {
+    throw new Error(`Invalid legacy See-through layer info JSON: ${filename}`, {
+      cause: error,
+    });
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error(`Legacy See-through layer info must be an object: ${filename}`);
+  }
+  const record = parsed as Record<string, unknown>;
+  const width = readLegacyPositiveInteger(record.width, "width", filename);
+  const height = readLegacyPositiveInteger(record.height, "height", filename);
+  if (!Array.isArray(record.layers)) {
+    throw new Error(`Legacy See-through layer info must contain layers: ${filename}`);
+  }
+
+  return {
+    width,
+    height,
+    layers: record.layers.map((layer, index) =>
+      parseLegacySeeThroughLayer(layer, index, filename),
+    ),
+  };
+}
+
+function parseLegacySeeThroughLayer(
+  value: unknown,
+  index: number,
+  filename: string,
+): LegacySeeThroughLayerInfo["layers"][number] {
+  if (!value || typeof value !== "object") {
+    throw new Error(`Legacy See-through layer ${index} must be an object: ${filename}`);
+  }
+  const layer = value as Record<string, unknown>;
+  const name =
+    typeof layer.name === "string" && layer.name.trim()
+      ? layer.name.trim()
+      : `Layer ${index + 1}`;
+  const outputFilename = readLegacyString(layer.filename, "filename", filename);
+
+  return {
+    name,
+    filename: outputFilename,
+    left: readLegacyInteger(layer.left, "left", filename),
+    top: readLegacyInteger(layer.top, "top", filename),
+    right: readLegacyInteger(layer.right, "right", filename),
+    bottom: readLegacyInteger(layer.bottom, "bottom", filename),
+  };
+}
+
+function readLegacyString(value: unknown, field: string, filename: string): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`Legacy See-through ${field} must be a string: ${filename}`);
+  }
+  return value.trim();
+}
+
+function readLegacyPositiveInteger(
+  value: unknown,
+  field: string,
+  filename: string,
+): number {
+  const integer = readLegacyInteger(value, field, filename);
+  if (integer <= 0 || integer > 16_384) {
+    throw new Error(`Legacy See-through ${field} is out of bounds: ${filename}`);
+  }
+  return integer;
+}
+
+function readLegacyInteger(value: unknown, field: string, filename: string): number {
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    throw new Error(`Legacy See-through ${field} must be an integer: ${filename}`);
+  }
+  return value;
 }
 
 function findTextOutputByExtension(

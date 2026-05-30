@@ -79,6 +79,9 @@ Releases and the user documentation.
 - No npm package is published yet.
 - ComfyUI, ComfyUI-See-through, model weights, and custom-node bundles are not
   bundled with Vivi2D.
+- ComfyUI automation is supported through Vivi2D's compat plugin. The legacy
+  direct See-through workflow is maintained only as a best-effort local
+  fallback because upstream custom-node outputs can change.
 - Public packages and release artifacts are limited to reviewed Vivi2D
   public-profile surfaces.
 - Demo media uses synthetic project assets and is not a compatibility claim for
@@ -155,7 +158,9 @@ npm run check:quality:e2e-workflow-record
 Vivi2D's optional local decomposition workflow can consume outputs from
 [See-through](https://github.com/shitagaki-lab/see-through), an independent
 open-source research project for single-image anime layer decomposition.
-See-through is not bundled with Vivi2D.
+See-through is not bundled with Vivi2D. Current ComfyUI use should install the
+Vivi2D compat plugin alongside ComfyUI-See-through so Vivi2D can verify node
+contracts and import reviewed layer manifests directly.
 
 If you use See-through results in academic or published work, please cite the
 See-through paper as requested by its upstream project.
