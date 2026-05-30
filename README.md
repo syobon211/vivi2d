@@ -3,9 +3,10 @@
 [![Status: pre-1.0 alpha](https://img.shields.io/badge/status-pre--1.0%20alpha-f0b429)](#getting-started)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Release: source/provenance only](https://img.shields.io/badge/release-source%2Fprovenance%20only-6f42c1)](#releases)
+[![Website: vivi2d.com](https://img.shields.io/badge/website-vivi2d.com-0f6e8f)](https://vivi2d.com)
 
-Source-preserving 2D character rigging and runtime tooling for layered artwork,
-viewer workflows, and embeddable web integrations.
+2D creation for everyone. Vivi2D is an experimental editor, viewer, and web SDK
+tooling for layered artwork workflows and embeddable web integrations.
 
 <p align="center">
   <a href="docs/assets/readme/vivi2d-workflow-demo.webm">
@@ -19,6 +20,9 @@ viewer workflows, and embeddable web integrations.
 
 Vivi2D is pre-1.0. APIs, file formats, package boundaries, and release policy
 may change before the first public release.
+
+The public portal is [vivi2d.com](https://vivi2d.com). Release artifacts remain
+canonical on [GitHub Releases](https://github.com/syobon211/vivi2d/releases).
 
 Vivi2D uses its own source-preserving project and runtime formats. Public
 packages and docs should not imply compatibility with unrelated animation
@@ -132,6 +136,7 @@ npm run check:quality:e2e-workflow-record
 
 ## Documentation
 
+- [Project portal](https://vivi2d.com)
 - [Developer documentation](docs/developer/index.md)
 - [User documentation index](docs/user/index.md)
 - [Contributing guide](CONTRIBUTING.md)
