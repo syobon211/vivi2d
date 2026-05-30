@@ -30,6 +30,14 @@ Rules:
   release notes are confirmed.
 - Do not reuse a tag after publication. If a release is wrong, publish a new
   alpha and deprecate or mark the old release as superseded.
+- Narrow exception for the first alpha launch window: if `v0.1.0-alpha.1` has
+  been published only for owner verification, has not been announced, and has no
+  expected external consumers, the owner may delete and recreate that same tag
+  once from the latest `main` instead of cutting `v0.1.0-alpha.2`. This is a
+  launch-preparation exception, not normal release policy.
+- If `v0.1.0-alpha.1` has been shared in release notes, social posts, package
+  metadata, downstream docs, or issue/PR guidance, the exception is closed and
+  fixes must ship as `v0.1.0-alpha.2` or later.
 
 ## Initial Asset Set
 
@@ -93,6 +101,66 @@ gitleaks git --log-opts="--all" .
 The workflow must run the same gate family before creating a release. It may
 skip installer/package publication work because no binary package is part of the
 initial GitHub Release asset set.
+
+## Recreating `v0.1.0-alpha.1` During Launch Preparation
+
+Use this procedure only for the narrow exception above. The goal is to make the
+public release tag and release assets match the latest `main` before the first
+external announcement, while preserving a clear audit trail that this was a
+pre-announcement correction.
+
+Before deleting anything, confirm and record:
+
+- `v0.1.0-alpha.1` has not been announced or linked from external channels.
+- No downstream package, installer, documentation page, or issue response treats
+  the old tag as canonical.
+- The replacement commit is the current `origin/main` head.
+- CodeQL, release workflow, security settings, and release notes have been
+  reviewed for the replacement commit.
+- The old release asset list is source/provenance-only and contains no package,
+  installer, binary, model, ComfyUI bundle, or private artifact.
+
+Then run from Git Bash or another POSIX-compatible shell:
+
+```sh
+git fetch origin --tags --prune
+git switch main
+git pull --ff-only origin main
+
+gh release view v0.1.0-alpha.1 --repo syobon211/vivi2d
+gh release delete v0.1.0-alpha.1 --repo syobon211/vivi2d --cleanup-tag --yes
+
+if git rev-parse -q --verify refs/tags/v0.1.0-alpha.1 >/dev/null; then
+  git tag -d v0.1.0-alpha.1
+fi
+git fetch origin --tags --prune
+if git ls-remote --tags origin refs/tags/v0.1.0-alpha.1 | grep -q .; then
+  echo "remote v0.1.0-alpha.1 tag still exists after cleanup" >&2
+  exit 1
+fi
+
+git tag -a v0.1.0-alpha.1 -m "Vivi2D 0.1.0-alpha.1" origin/main
+git push origin v0.1.0-alpha.1
+```
+
+After the replacement tag is pushed:
+
+1. Run `.github/workflows/github-release-alpha.yml` with
+   `version=0.1.0-alpha.1` and `ref=v0.1.0-alpha.1`.
+2. Wait for `validate-and-package-github-release`,
+   `verify-github-release-assets`, and `create-github-release` to pass.
+3. Review the draft release in GitHub before publishing:
+   - tag is `v0.1.0-alpha.1`
+   - source commit is the current `origin/main` head
+   - release is a pre-release
+   - exactly the six downloadable source/provenance assets are attached
+   - `release-notes.md` is not attached as a downloadable asset
+   - `checksums.txt` verifies all attached downloadable assets except itself
+4. Publish the draft only after the review packet and hosted security settings
+   are confirmed.
+
+Do not use this exception again after `v0.1.0-alpha.1` is announced. Follow-up
+fixes must be shipped as a new alpha tag.
 
 ## Workflow Shape
 
