@@ -6,7 +6,8 @@ checkEnvironment(".github/release-environments/npm-alpha.json", {
   allowedRef: "web-v*",
   environment: "npm-alpha",
   minimumReviewers: 2,
-  noSecretsMessage: "npm-alpha environment must not require long-lived npm token secrets.",
+  noSecretsMessage:
+    "npm-alpha environment must not require long-lived npm token secrets.",
 });
 checkEnvironment(".github/release-environments/desktop-installer-alpha.json", {
   allowedRef: "v*-alpha.*",
@@ -38,10 +39,14 @@ function checkEnvironment(policyPath, options) {
     );
   }
   if (policy.adminBypassDisabled !== true) {
-    failures.push(`${policy.environment}: environment must disable admin bypass when supported.`);
+    failures.push(
+      `${policy.environment}: environment must disable admin bypass when supported.`,
+    );
   }
   if (policy.deploymentBranchPolicy?.customBranchPolicies !== true) {
-    failures.push(`${policy.environment}: environment must use custom branch/tag policies.`);
+    failures.push(
+      `${policy.environment}: environment must use custom branch/tag policies.`,
+    );
   }
   if (policy.deploymentBranchPolicy?.protectedBranches !== false) {
     failures.push(
