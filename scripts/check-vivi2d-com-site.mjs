@@ -27,6 +27,14 @@ function htmlAttributeValue(html, pattern) {
   return match?.[1] ?? null;
 }
 
+function compareStringSet(name, actual, expected) {
+  const actualText = [...actual].sort().join("\n");
+  const expectedText = [...expected].sort().join("\n");
+  if (actualText !== expectedText) {
+    fail(`${name} mismatch.\nExpected:\n${expectedText}\nActual:\n${actualText}`);
+  }
+}
+
 fs.rmSync(outDir, { recursive: true, force: true });
 
 const result = spawnSync(
@@ -111,6 +119,41 @@ if (!fs.existsSync(docsRedirect)) {
 
 if (normalizeJson(metadata) !== normalizeJson(trackedMetadata)) {
   fail("apps/vivi2d-com/route-metadata.json is out of sync with generated metadata.");
+}
+
+const robotsPath = path.join(outDir, "robots.txt");
+if (!fs.existsSync(robotsPath)) {
+  fail("robots.txt was not generated.");
+} else {
+  const robots = fs.readFileSync(robotsPath, "utf8");
+  const expectedRobots = "User-agent: *\nAllow: /\nSitemap: https://vivi2d.com/sitemap.xml\n";
+  if (robots !== expectedRobots) {
+    fail("robots.txt must allow the portal and point at the canonical sitemap.");
+  }
+}
+
+const sitemapPath = path.join(outDir, "sitemap.xml");
+if (!fs.existsSync(sitemapPath)) {
+  fail("sitemap.xml was not generated.");
+} else {
+  const sitemap = fs.readFileSync(sitemapPath, "utf8");
+  const actualUrls = new Set(
+    [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]),
+  );
+  const expectedUrls = new Set([
+    "https://vivi2d.com/",
+    "https://vivi2d.com/docs/",
+    ...metadata.routes.flatMap((route) =>
+      route.paths.map((routePath) => `https://vivi2d.com${routePath}`),
+    ),
+  ]);
+  compareStringSet("sitemap.xml URL set", actualUrls, expectedUrls);
+  for (const sitemapUrl of actualUrls) {
+    const parsedUrl = new URL(sitemapUrl);
+    if (parsedUrl.origin !== "https://vivi2d.com") {
+      fail(`sitemap.xml must only include canonical vivi2d.com URLs: ${sitemapUrl}`);
+    }
+  }
 }
 
 const metadataSlugs = new Set(metadata.routes.map((route) => route.slug));
