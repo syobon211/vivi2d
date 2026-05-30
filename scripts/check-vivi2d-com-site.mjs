@@ -148,8 +148,11 @@ if (!fs.existsSync(sitemapPath)) {
     ),
   ]);
   compareStringSet("sitemap.xml URL set", actualUrls, expectedUrls);
-  if (sitemap.includes("www.vivi2d.com") || sitemap.includes("github.com")) {
-    fail("sitemap.xml must only include canonical vivi2d.com URLs.");
+  for (const sitemapUrl of actualUrls) {
+    const parsedUrl = new URL(sitemapUrl);
+    if (parsedUrl.origin !== "https://vivi2d.com") {
+      fail(`sitemap.xml must only include canonical vivi2d.com URLs: ${sitemapUrl}`);
+    }
   }
 }
 
