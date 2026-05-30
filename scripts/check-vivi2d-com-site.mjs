@@ -22,6 +22,11 @@ function routeFile(locale, slug) {
   return path.join(outDir, locale, "latest", slug || "", "index.html");
 }
 
+function htmlAttributeValue(html, pattern) {
+  const match = pattern.exec(html);
+  return match?.[1] ?? null;
+}
+
 fs.rmSync(outDir, { recursive: true, force: true });
 
 const result = spawnSync(
@@ -46,6 +51,29 @@ const trackedMetadata = readJson("apps/vivi2d-com/route-metadata.json");
 
 if (!fs.existsSync(path.join(outDir, "index.html"))) {
   fail("root portal was not generated.");
+} else {
+  const rootHtml = fs.readFileSync(path.join(outDir, "index.html"), "utf8");
+  const requiredRootSnippets = [
+    "https://github.com/syobon211/vivi2d",
+    "https://github.com/syobon211/vivi2d/releases/tag/v0.1.0-alpha.1",
+    "https://github.com/syobon211/vivi2d/tree/main/docs",
+    "pre-1.0 alpha",
+    "source/provenance-only alpha",
+    "Coming Soon",
+  ];
+  for (const snippet of requiredRootSnippets) {
+    if (!rootHtml.includes(snippet)) {
+      fail(`root portal is missing expected public-alpha content: ${snippet}`);
+    }
+  }
+  for (const removedDemoSnippet of [
+    "/assets/readme/vivi2d-workflow-demo.gif",
+    "/assets/readme/vivi2d-workflow-demo.webm",
+  ]) {
+    if (rootHtml.includes(removedDemoSnippet)) {
+      fail(`root portal should not include README workflow demo media: ${removedDemoSnippet}`);
+    }
+  }
 }
 
 const docsRedirect = path.join(outDir, "docs", "index.html");
@@ -53,8 +81,14 @@ if (!fs.existsSync(docsRedirect)) {
   fail("vivi2d.com/docs compatibility redirect was not generated.");
 } else {
   const redirectHtml = fs.readFileSync(docsRedirect, "utf8");
-  if (!redirectHtml.includes("/en/latest/")) {
-    fail("vivi2d.com/docs compatibility redirect must target the English latest docs route.");
+  const expectedDocsUrl = new URL("https://github.com/syobon211/vivi2d/tree/main/docs").href;
+  const canonicalHref = htmlAttributeValue(
+    redirectHtml,
+    /<link rel="canonical" href="([^"]+)">/,
+  );
+  const bodyHref = htmlAttributeValue(redirectHtml, /<a href="([^"]+)">Vivi2D documentation<\/a>/);
+  if (canonicalHref !== expectedDocsUrl || bodyHref !== expectedDocsUrl) {
+    fail("vivi2d.com/docs compatibility redirect must target the public docs entry point.");
   }
 }
 
