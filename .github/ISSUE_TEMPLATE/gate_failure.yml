@@ -76,6 +76,7 @@ body:
         - check:environment-protection
         - check:web-npm-alpha-release
         - check:github-release-alpha
+        - check:windows-installer-alpha
         - check:oss-readiness
         - Other documented gate
     validations:

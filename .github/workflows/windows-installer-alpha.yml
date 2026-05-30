@@ -1,0 +1,313 @@
+name: Windows Installer Alpha
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Expected installer alpha version, for example 0.1.0-alpha.2"
+        required: true
+      ref:
+        description: "Release tag to publish, for example v0.1.0-alpha.2"
+        required: true
+      chromiumMajorVersion:
+        description: "Chromium major version embedded by Electron"
+        required: true
+      electronEmbeddedNodeVersion:
+        description: "Node.js version embedded by Electron"
+        required: true
+      manualReviewJson:
+        description: "Manual Windows VM review JSON. Use pending for draft-only builds."
+        required: true
+        default: '{"status":"pending","reviewedBy":"","reviewDate":"","windowsVersion":"","installPassed":false,"firstLaunchNetworkPassed":false,"uninstallPassed":false,"intentionalRemnants":[]}'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-installer-alpha
+  cancel-in-progress: false
+
+jobs:
+  linux-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_REF: ${{ inputs.ref }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - name: Verify installer release tag before scripts run
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)-alpha\.([0-9]+)$ ]]
+          if [ "${BASH_REMATCH[4]}" -lt 2 ]; then
+            echo "v0.1.0-alpha.1 is source/provenance-only; installer alpha versions must be alpha.2 or later." >&2
+            exit 1
+          fi
+          test "$RELEASE_REF" = "v$VERSION"
+          test "$GITHUB_REF" = "refs/tags/$RELEASE_REF"
+          if ! git rev-parse -q --verify "refs/tags/$RELEASE_REF^{tag}" >/dev/null; then
+            echo "Release tag must be annotated." >&2
+            exit 1
+          fi
+          test "$(git rev-list -n 1 "$RELEASE_REF")" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - run: npm ci
+      - run: node scripts/run-release-step.mjs --name playwright-install-browsers -- npx playwright install --with-deps chromium firefox webkit
+      - run: node scripts/run-release-step.mjs --name rust-wasm-target -- rustup target add wasm32-unknown-unknown
+      - run: xvfb-run -a node scripts/run-release-step.mjs --name check-quality -- npm run check:quality
+      - run: xvfb-run -a node scripts/run-release-step.mjs --name check-quality-e2e-workflow-record -- npm run check:quality:e2e-workflow-record
+      - run: node scripts/run-release-step.mjs --name check-oss-readiness -- npm run check:oss-readiness
+      - run: node scripts/run-release-step.mjs --name check-oss-publication -- npm run check:oss-publication
+      - run: node scripts/run-release-step.mjs --name check-release-surface -- npm run check:release-surface
+      - run: node scripts/run-release-step.mjs --name check-pack-contents -- npm run check:pack-contents
+      - run: node scripts/run-release-step.mjs --name check-license-policy -- npm run check:license-policy
+      - run: node scripts/run-release-step.mjs --name notices-check -- npm run notices:check
+      - run: node scripts/run-release-step.mjs --name check-sbom -- npm run check:sbom
+      - run: node scripts/run-release-step.mjs --name check-source-review-archive -- npm run check:source-review-archive
+      - run: node scripts/run-release-step.mjs --name check-viewer-mediapipe-assets -- npm run check:viewer-mediapipe-assets
+      - run: node scripts/install-pinned-gitleaks.mjs --manifest scripts/release-tool-versions.json
+      - run: node scripts/run-release-step.mjs --name check-history-secrets -- npm run check:history-secrets
+      - run: node scripts/run-release-step.mjs --name gitleaks-worktree -- gitleaks detect --source . --no-git
+      - run: node scripts/run-release-step.mjs --name gitleaks-history -- gitleaks git --log-opts="--all" .
+      - run: node scripts/run-release-step.mjs --name sbom-generate -- npm run sbom:generate
+      - run: node scripts/run-release-step.mjs --name archive-source-review -- npm run archive:source-review
+      - run: node scripts/run-release-step.mjs --name check-windows-installer-alpha -- npm run check:windows-installer-alpha
+      - run: node scripts/run-release-step.mjs --name release-windows-installer-review-packet -- npm run release:windows-installer:review-packet
+      - name: Stage Windows installer baseline assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf tmp/windows-installer-baseline
+          mkdir -p tmp/windows-installer-baseline
+          cp dist/sbom/vivi2d.cdx.json tmp/windows-installer-baseline/vivi2d.cdx.json
+          cp tmp/source-review/vivi2d-source-review.zip tmp/windows-installer-baseline/vivi2d-source-review.zip
+          cp tmp/source-review/vivi2d-source-review-manifest.json tmp/windows-installer-baseline/vivi2d-source-review-manifest.json
+          cp THIRD_PARTY_NOTICES tmp/windows-installer-baseline/THIRD_PARTY_NOTICES
+          cp -R transcripts tmp/windows-installer-baseline/transcripts
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-installer-alpha-baseline
+          retention-days: 14
+          if-no-files-found: error
+          path: tmp/windows-installer-baseline/
+
+  windows-packaging:
+    needs: linux-validation
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_REF: ${{ inputs.ref }}
+      CHROMIUM_MAJOR_VERSION: ${{ inputs.chromiumMajorVersion }}
+      ELECTRON_EMBEDDED_NODE_VERSION: ${{ inputs.electronEmbeddedNodeVersion }}
+      MANUAL_REVIEW_JSON: ${{ inputs.manualReviewJson }}
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - name: Verify installer release tag in Windows packaging job
+        shell: pwsh
+        run: |
+          if ($env:VERSION -notmatch '^([0-9]+)\.([0-9]+)\.([0-9]+)-alpha\.([0-9]+)$') { throw "Invalid version" }
+          if ([int]$Matches[4] -lt 2) { throw "v0.1.0-alpha.1 is source/provenance-only; installer alpha versions must be alpha.2 or later." }
+          if ($env:RELEASE_REF -ne "v$env:VERSION") { throw "Release ref mismatch" }
+          if ($env:GITHUB_REF -ne "refs/tags/$env:RELEASE_REF") { throw "GitHub ref mismatch" }
+          $annotatedTagRef = "refs/tags/$env:RELEASE_REF^{tag}"
+          git rev-parse -q --verify $annotatedTagRef | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "Release tag must be annotated" }
+          if ((git rev-list -n 1 $env:RELEASE_REF) -ne $env:GITHUB_SHA) { throw "Tag target mismatch" }
+          if ((git rev-parse HEAD) -ne $env:GITHUB_SHA) { throw "HEAD mismatch" }
+      - run: npm ci
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: windows-installer-alpha-baseline
+          path: tmp/windows-installer-baseline
+      - run: node scripts/run-release-step.mjs --name check-viewer-mediapipe-assets -- npm run check:viewer-mediapipe-assets
+      - run: node scripts/run-release-step.mjs --name build-editor -- npm run build
+      - run: node scripts/run-release-step.mjs --name windows-installer-build -- npx electron-builder --win nsis --x64 --publish never --config electron-builder.yml
+      - name: Prepare Windows installer release assets
+        shell: pwsh
+        run: |
+          $installer = "dist/windows-installer/vivi2d-$env:VERSION-windows-x64-setup.exe"
+          if (!(Test-Path $installer)) { throw "Missing installer: $installer" }
+          node scripts/run-release-step.mjs --name release-windows-installer-prepare -- npm run release:windows-installer:prepare -- --version $env:VERSION --tag $env:RELEASE_REF --installer $installer --source-review-zip tmp/windows-installer-baseline/vivi2d-source-review.zip --source-review-manifest tmp/windows-installer-baseline/vivi2d-source-review-manifest.json --sbom tmp/windows-installer-baseline/vivi2d.cdx.json --third-party-notices tmp/windows-installer-baseline/THIRD_PARTY_NOTICES --chromium-major-version $env:CHROMIUM_MAJOR_VERSION --electron-embedded-node-version $env:ELECTRON_EMBEDDED_NODE_VERSION
+      - run: node scripts/run-release-step.mjs --name verify-windows-installer-assets -- npm run verify:windows-installer-assets -- --asset-dir tmp/windows-installer-alpha-assets --version $env:VERSION --tag $env:RELEASE_REF --sha $env:GITHUB_SHA
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-installer-alpha-assets
+          retention-days: 14
+          if-no-files-found: error
+          path: tmp/windows-installer-alpha-assets/
+
+  verify-windows-installer-assets:
+    needs: windows-packaging
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_REF: ${{ inputs.ref }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: windows-installer-alpha-assets
+          path: tmp/windows-installer-alpha-assets
+      - run: node scripts/verify-windows-installer-assets.mjs --asset-dir tmp/windows-installer-alpha-assets --version "$VERSION" --tag "$RELEASE_REF" --sha "$GITHUB_SHA"
+
+  create-windows-installer-release:
+    needs: verify-windows-installer-assets
+    runs-on: ubuntu-latest
+    environment: desktop-installer-alpha
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_REF: ${{ inputs.ref }}
+    steps:
+      - name: Create Windows Installer Draft Release
+        shell: bash
+        env:
+          GH_REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)-alpha\.([0-9]+)$ ]]
+          if [ "${BASH_REMATCH[4]}" -lt 2 ]; then
+            echo "v0.1.0-alpha.1 is source/provenance-only; installer alpha versions must be alpha.2 or later." >&2
+            exit 1
+          fi
+          test "$RELEASE_REF" = "v$VERSION"
+          rm -rf tmp/windows-installer-alpha-assets
+          gh run download "$GITHUB_RUN_ID" \
+            --repo "$GH_REPO" \
+            --name windows-installer-alpha-assets \
+            --dir tmp/windows-installer-alpha-assets
+          pushd tmp/windows-installer-alpha-assets >/dev/null
+          expected_files=(
+            "THIRD_PARTY_NOTICES.txt"
+            "checksums.txt"
+            "release-notes.md"
+            "vivi2d-$VERSION-windows-installer-record.json"
+            "vivi2d-$VERSION-windows-x64-setup.exe"
+            "vivi2d-$VERSION-source-review.zip"
+            "vivi2d-$VERSION-source-review-manifest.json"
+            "vivi2d-$VERSION.cdx.json"
+          )
+          actual_files="$(find . -maxdepth 1 -type f -printf '%f\n' | sort)"
+          expected_text="$(printf '%s\n' "${expected_files[@]}" | sort)"
+          test "$actual_files" = "$expected_text"
+          node <<'NODE'
+          const crypto = require("node:crypto");
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const version = process.env.VERSION;
+          const sha = process.env.GITHUB_SHA;
+          const recordName = `vivi2d-${version}-windows-installer-record.json`;
+          const record = JSON.parse(fs.readFileSync(recordName, "utf8"));
+          function digest(file, algorithm) {
+            return `${algorithm}:${crypto.createHash(algorithm).update(fs.readFileSync(file)).digest("hex")}`;
+          }
+          const checksums = fs.readFileSync("checksums.txt", "utf8").trim().split(/\r?\n/);
+          const expectedChecksumNames = [
+            "THIRD_PARTY_NOTICES.txt",
+            `vivi2d-${version}-windows-installer-record.json`,
+            `vivi2d-${version}-windows-x64-setup.exe`,
+            `vivi2d-${version}-source-review.zip`,
+            `vivi2d-${version}-source-review-manifest.json`,
+            `vivi2d-${version}.cdx.json`,
+          ].sort();
+          const checksumsByAlgorithm = new Map([
+            ["sha256", new Map()],
+            ["sha512", new Map()],
+          ]);
+          for (const line of checksums) {
+            const match = /^(sha256|sha512) {2}([0-9a-f]+) {2}(.+)$/i.exec(line);
+            if (!match) throw new Error(`invalid checksum line: ${line}`);
+            const algorithm = match[1].toLowerCase();
+            const name = match[3];
+            if (path.basename(name) !== name || name.includes("/") || name.includes("\\")) {
+              throw new Error("checksum filename must be a basename.");
+            }
+            const bucket = checksumsByAlgorithm.get(algorithm);
+            if (bucket.has(name)) throw new Error(`${algorithm} duplicate checksum entry: ${name}`);
+            bucket.set(name, match[2].toLowerCase());
+            const actual = digest(name, algorithm).split(":")[1];
+            if (actual !== match[2].toLowerCase()) throw new Error(`${name} ${algorithm} mismatch`);
+          }
+          for (const algorithm of ["sha256", "sha512"]) {
+            const actualNames = [...checksumsByAlgorithm.get(algorithm).keys()].sort();
+            if (JSON.stringify(actualNames) !== JSON.stringify(expectedChecksumNames)) {
+              throw new Error(`${algorithm} checksums.txt entries mismatch.`);
+            }
+          }
+          if (record.sourceCommit !== sha) throw new Error("installer record sourceCommit mismatch.");
+          if (record.releaseNotesAttachedAsDownload !== false) throw new Error("release notes must not be downloadable.");
+          if ((record.downloadableAssetNames ?? []).includes("release-notes.md")) {
+            throw new Error("release-notes.md must not be downloadable.");
+          }
+          if (record.releaseNotes?.sha256 !== digest("release-notes.md", "sha256")) {
+            throw new Error("release notes sha256 mismatch.");
+          }
+          if (record.releaseNotes?.sha512 !== digest("release-notes.md", "sha512")) {
+            throw new Error("release notes sha512 mismatch.");
+          }
+          NODE
+          popd >/dev/null
+          tag_ref_json="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_REF")"
+          tag_type="$(printf '%s' "$tag_ref_json" | jq -r '.object.type')"
+          tag_sha="$(printf '%s' "$tag_ref_json" | jq -r '.object.sha')"
+          if [ "$tag_type" != "tag" ]; then
+            echo "Release tag must be annotated." >&2
+            exit 1
+          fi
+          peeled_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_sha" --jq '.object.sha')"
+          test "$peeled_sha" = "$GITHUB_SHA"
+          assets=(
+            "tmp/windows-installer-alpha-assets/THIRD_PARTY_NOTICES.txt"
+            "tmp/windows-installer-alpha-assets/checksums.txt"
+            "tmp/windows-installer-alpha-assets/vivi2d-$VERSION-windows-installer-record.json"
+            "tmp/windows-installer-alpha-assets/vivi2d-$VERSION-windows-x64-setup.exe"
+            "tmp/windows-installer-alpha-assets/vivi2d-$VERSION-source-review.zip"
+            "tmp/windows-installer-alpha-assets/vivi2d-$VERSION-source-review-manifest.json"
+            "tmp/windows-installer-alpha-assets/vivi2d-$VERSION.cdx.json"
+          )
+          for file in "${assets[@]}"; do
+            test -f "$file"
+          done
+          gh release create "$RELEASE_REF" \
+            --repo "$GH_REPO" \
+            "${assets[@]}" \
+            --verify-tag \
+            --title "Vivi2D $VERSION Windows Installer Alpha" \
+            --notes-file tmp/windows-installer-alpha-assets/release-notes.md \
+            --draft \
+            --prerelease

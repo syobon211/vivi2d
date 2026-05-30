@@ -17,6 +17,10 @@
     {
       "path": ".github/workflows/github-release-alpha.yml",
       "reason": "Manual protected GitHub Release workflow; checked by npm run check:github-release-alpha rather than mirrored as a normal quality gate."
+    },
+    {
+      "path": ".github/workflows/windows-installer-alpha.yml",
+      "reason": "Manual protected Windows installer release workflow; checked by npm run check:windows-installer-alpha rather than mirrored as a normal quality gate."
     }
   ],
   "lintCoverage": {
@@ -56,6 +60,11 @@
       "scripts/generate-github-release-alpha-review-packet.mjs",
       "scripts/prepare-github-release-assets.mjs",
       "scripts/verify-github-release-assets.mjs",
+      "scripts/check-windows-installer-alpha.mjs",
+      "scripts/generate-windows-installer-alpha-review-packet.mjs",
+      "scripts/prepare-windows-installer-assets.mjs",
+      "scripts/verify-windows-installer-assets.mjs",
+      "scripts/lib/windows-installer-alpha.mjs",
       "scripts/check-pack-contents.mjs",
       "scripts/check-package-boundaries.mjs",
       "scripts/check-web-sdk-unlock.mjs",
@@ -618,6 +627,17 @@
     {
       "npmScript": "check:github-release-alpha",
       "command": "npm run check:github-release-alpha",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "pathTriggerWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:windows-installer-alpha",
+      "command": "npm run check:windows-installer-alpha",
       "requiredWorkflows": [
         ".github/workflows/quality-gates.yml"
       ],

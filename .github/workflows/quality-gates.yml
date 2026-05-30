@@ -93,6 +93,11 @@ jobs:
           scripts/generate-github-release-alpha-review-packet.mjs
           scripts/prepare-github-release-assets.mjs
           scripts/verify-github-release-assets.mjs
+          scripts/check-windows-installer-alpha.mjs
+          scripts/generate-windows-installer-alpha-review-packet.mjs
+          scripts/prepare-windows-installer-assets.mjs
+          scripts/verify-windows-installer-assets.mjs
+          scripts/lib/windows-installer-alpha.mjs
           scripts/check-npm-token-hygiene.mjs
           scripts/check-environment-protection.mjs
           scripts/check-npm-cli-version.mjs
@@ -191,4 +196,5 @@ jobs:
       - run: npm run check:environment-protection
       - run: npm run check:web-npm-alpha-release
       - run: npm run check:github-release-alpha
+      - run: npm run check:windows-installer-alpha
       - run: npm run check:oss-readiness

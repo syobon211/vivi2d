@@ -98,6 +98,11 @@ jobs:
           scripts/generate-github-release-alpha-review-packet.mjs
           scripts/prepare-github-release-assets.mjs
           scripts/verify-github-release-assets.mjs
+          scripts/check-windows-installer-alpha.mjs
+          scripts/generate-windows-installer-alpha-review-packet.mjs
+          scripts/prepare-windows-installer-assets.mjs
+          scripts/verify-windows-installer-assets.mjs
+          scripts/lib/windows-installer-alpha.mjs
           scripts/check-pack-contents.mjs
           scripts/check-package-boundaries.mjs
           scripts/check-web-sdk-unlock.mjs

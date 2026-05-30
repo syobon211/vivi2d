@@ -83,6 +83,7 @@ const commands = [
   ["npm", ["run", "check:environment-protection"]],
   ["npm", ["run", "check:web-npm-alpha-release"]],
   ["npm", ["run", "check:github-release-alpha"]],
+  ["npm", ["run", "check:windows-installer-alpha"]],
   ["npm", ["run", "check:oss-readiness"]],
 ];
 

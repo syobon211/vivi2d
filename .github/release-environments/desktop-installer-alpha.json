@@ -1,0 +1,16 @@
+{
+  "environment": "desktop-installer-alpha",
+  "requiredReviewersMinimum": 1,
+  "adminBypassDisabled": true,
+  "deploymentBranchPolicy": {
+    "protectedBranches": false,
+    "customBranchPolicies": true,
+    "allowedRefs": ["v*-alpha.*"]
+  },
+  "requiredSecrets": [],
+  "notes": [
+    "Windows installer alpha releases are draft-first.",
+    "Unsigned builds require owner approval and clear release notes before publish.",
+    "Signing enablement requires a separate ADR and protected signing configuration."
+  ]
+}

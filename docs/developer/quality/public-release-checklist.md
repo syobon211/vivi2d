@@ -56,7 +56,8 @@ Still open before public release:
 - Legal or owner decisions remain open for bundled ComfyUI/See-through
   distribution and public native/WASM artifact signing.
 - Desktop installer packaging remains out of the initial GitHub Release alpha
-  asset set until a separate packaging/signing contract is approved.
+  asset set until `docs/developer/quality/windows-installer-alpha.md` is
+  implemented by workflow checks and owner-approved release records.
 
 ## Governance
 
@@ -200,6 +201,7 @@ License/legal decision tracking:
 | Decision | Owner | Deadline | Status |
 | --- | --- | --- | --- |
 | Initial GitHub Release asset channel | @syobon211 | Before first public alpha | Decided: GitHub Releases are the canonical source/provenance release record. The first `v0.1.0-alpha.1` asset set is source review archive, manifest, SBOM, notices, release record, checksums, and release notes only. |
+| Windows installer alpha channel | @syobon211 | Before first desktop installer alpha | Planned: Windows x64 NSIS installer in a later alpha, governed by `docs/developer/quality/windows-installer-alpha.md`. Unsigned alpha builds are allowed only with explicit release-note and website warnings. Auto-update metadata, MSI/MSIX, macOS, Linux, ComfyUI bundles, See-through bundles, and model weights remain blocked. |
 | CycloneDX SBOM generator and CI integration | @syobon211 | Before R5 implementation begins | Implemented for local and workflow validation with `@cyclonedx/cyclonedx-npm`, `npm run sbom:generate`, and `npm run check:sbom`; final release attachment must be regenerated from the release tag |
 | Native/WASM checksum and signing mechanism | @syobon211 | Before native or WASM artifacts are public | Open |
 | GitHub Actions SHA pinning policy | @syobon211 | Before repository publication | Implemented for current workflows: Actions are pinned to full commit SHAs with tag comments and checked by `npm run check:oss-readiness` |
