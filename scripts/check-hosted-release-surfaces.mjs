@@ -17,6 +17,8 @@ const ALLOWED_ARTIFACT_PATHS = new Set([
   "test-results/",
   "transcripts/",
   "tmp/github-release-assets/",
+  "tmp/windows-installer-baseline/",
+  "tmp/windows-installer-alpha-assets/",
   "web-npm-alpha-release-record.json",
   "web-pack-result.json",
 ]);
@@ -27,6 +29,8 @@ const ALLOWED_ARTIFACT_NAME_PREFIXES = [
   "perf-playwright-",
   "playwright-report-",
   "web-npm-alpha-release-record",
+  "windows-installer-alpha-assets",
+  "windows-installer-alpha-baseline",
 ];
 
 function fail(message) {

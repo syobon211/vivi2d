@@ -84,6 +84,13 @@ repository-wide SBOM, notices, release record, checksums, and release notes. It
 must not attach desktop installers, native/WASM binaries, ComfyUI bundles, or
 other package artifacts until those surfaces have their own release contract.
 
+Windows desktop installers may be added only after
+`docs/developer/quality/windows-installer-alpha.md` is implemented by tracked
+workflow checks, an installer release record, checksum verification, signing
+status disclosure, and owner approval in the protected release environment.
+Installer releases must remain draft pre-releases until a maintainer manually
+reviews the asset set and installs the build on a clean Windows machine or VM.
+
 ## GitHub And npm Requirements
 
 Future npm publication should use npm trusted publishing and GitHub OIDC

@@ -43,6 +43,7 @@ release gates, security boundaries, IP policy, and API/spec status.
 - [Public release checklist](quality/public-release-checklist.md)
 - [GitHub Release alpha contract](quality/github-release-alpha.md)
 - [Web SDK npm alpha release contract](quality/web-npm-alpha-release.md)
+- [Windows installer alpha contract](quality/windows-installer-alpha.md)
 
 ## ADRs And Baselines
 

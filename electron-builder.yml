@@ -1,0 +1,38 @@
+appId: com.vivi2d.editor
+productName: Vivi2D
+asar: false
+publish: null
+artifactName: "vivi2d-${env.VERSION}-windows-x64-setup.${ext}"
+directories:
+  output: dist/windows-installer
+files:
+  - from: dist
+    to: dist
+    filter:
+      - "**/*"
+      - "!**/*.map"
+  - from: electron
+    to: electron
+    filter:
+      - "**/*.cjs"
+  - package.json
+  - LICENSE
+  - from: THIRD_PARTY_NOTICES
+    to: THIRD_PARTY_NOTICES.txt
+extraMetadata:
+  main: electron/main.cjs
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  forceCodeSigning: false
+  signAndEditExecutable: false
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Vivi2D
