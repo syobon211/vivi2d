@@ -6,13 +6,11 @@ import {
   toLayerName,
 } from "../psd-assembler";
 
-
 vi.mock("ag-psd", () => ({
   writePsd: vi.fn(() => new ArrayBuffer(2048)),
 }));
 
 const { writePsd } = await import("ag-psd");
-
 
 describe("mapSeethroughCategory", () => {
   it("顔パーツが正しくマッピングされる", () => {
@@ -78,7 +76,6 @@ describe("toCompatPsdLayerName", () => {
     expect(toCompatPsdLayerName("layer_001", "face")).toBe("v2d[layer_001] face");
   });
 });
-
 
 function buildFakeOffscreenCanvas(width: number, height: number) {
   return class {
@@ -258,7 +255,6 @@ describe("assemblePsd (createImageBitmap + OffscreenCanvas 経路)", () => {
   });
 });
 
-
 describe("assemblePsd (DOM Canvas フォールバック)", () => {
   beforeEach(() => {
     vi.mocked(writePsd).mockClear();
@@ -350,9 +346,35 @@ describe("assemblePsd (DOM Canvas フォールバック)", () => {
     vi.stubGlobal("Image", FailingImage);
 
     const layer = { name: "broken", order: 0, imageData: new ArrayBuffer(4) };
-    await expect(assemblePsd([layer], 10, 10)).rejects.toThrow(
-      /Failed to decode image/,
-    );
+    await expect(assemblePsd([layer], 10, 10)).rejects.toThrow(/Failed to decode image/);
+  });
+});
+
+describe("assemblePsd (Node PNG fallback)", () => {
+  beforeEach(() => {
+    vi.mocked(writePsd).mockClear();
+    vi.stubGlobal("createImageBitmap", undefined);
+    vi.stubGlobal("Image", undefined);
+    vi.stubGlobal("document", undefined);
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("decodes PNG bytes without browser image globals", async () => {
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+      "base64",
+    );
+    const imageData = png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength);
+
+    await assemblePsd([{ name: "node", order: 0, imageData }], 1, 1);
+
+    const arg = vi.mocked(writePsd).mock.calls[0]![0] as {
+      children: Array<{ imageData: { width: number; height: number } }>;
+    };
+    expect(arg.children[0]!.imageData.width).toBe(1);
+    expect(arg.children[0]!.imageData.height).toBe(1);
+  });
 });

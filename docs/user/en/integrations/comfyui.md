@@ -51,7 +51,7 @@ ComfyUI/
 
 The Vivi2D compat plugin lives in the `vivi2d_compat_plugin/` directory or package for the Vivi2D build you are using. Do not copy ComfyUI-See-through into the Vivi2D compat plugin directory, and do not copy the Vivi2D compat plugin into the ComfyUI-See-through directory.
 
-If your build does not include the Vivi2D compat plugin, use the manual review path or the legacy workflow shown by Vivi2D.
+Use the compat plugin for the supported path. It gives Vivi2D a stable manifest contract instead of relying on upstream custom-node history output details. If your build does not include the Vivi2D compat plugin, use the manual review path or the legacy workflow shown by Vivi2D as a best-effort local fallback.
 
 ## Quick Folder Check
 
@@ -114,7 +114,7 @@ ComfyUI-See-through is third-party code. Use the upstream repository, verify wha
 6. Later, use Vivi2D's connection check to verify the local ComfyUI setup.
 7. If Vivi2D reports a missing or mismatched compat plugin, stop and use the documented package for your build.
 
-Do not mix compat plugin files from unrelated Vivi2D versions. If you do not have the `vivi2d_compat_plugin/` directory for your build, continue without it.
+Do not mix compat plugin files from unrelated Vivi2D versions. If you do not have the `vivi2d_compat_plugin/` directory for your build, continue without it. Legacy direct See-through workflows may still run for local experiments, but they are best-effort because upstream node names, model defaults, and output records can change.
 
 ## What Vivi2D Sends To ComfyUI
 
@@ -191,6 +191,7 @@ After a successful run, Vivi2D should show the imported proposal or returned fil
 - The plugin version may not match this Vivi2D build.
 - Do not mix compat plugin files from unrelated versions.
 - Go back to [Install The Vivi2D Compat Plugin](#install-the-vivi2d-compat-plugin), then run Vivi2D's connection check again.
+- Treat the legacy direct See-through path as local experimentation only. If a release lists a compat plugin checksum, prefer that supported path.
 
 ### The Result Looks Wrong
 

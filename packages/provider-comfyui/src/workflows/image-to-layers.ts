@@ -1,4 +1,8 @@
 import type { ComfyUIWorkflow, DecomposeOptions } from "../types";
+import {
+  DEFAULT_SEETHROUGH_DEPTH_MODEL,
+  DEFAULT_SEETHROUGH_LAYERDIFF_MODEL,
+} from "./seethrough-models";
 
 export function buildImageToLayersWorkflow(
   uploadedFilename: string,
@@ -11,6 +15,7 @@ export function buildImageToLayersWorkflow(
   const useLama = options?.useLama ?? true;
   const quantMode = options?.quantMode ?? "none";
   const groupOffload = options?.groupOffload ?? false;
+  const filenamePrefix = options?.filenamePrefix ?? `vivi2d_seethrough_${Date.now()}`;
 
   return {
     "1": {
@@ -23,7 +28,7 @@ export function buildImageToLayersWorkflow(
     "2": {
       class_type: "SeeThrough_LoadLayerDiffModel",
       inputs: {
-        model: "shitagaki-lab/see-through",
+        model: DEFAULT_SEETHROUGH_LAYERDIFF_MODEL,
         quant_mode: quantMode,
         cache_tag_embeds: true,
         group_offload: groupOffload,
@@ -33,7 +38,7 @@ export function buildImageToLayersWorkflow(
     "3": {
       class_type: "SeeThrough_LoadDepthModel",
       inputs: {
-        model: "shitagaki-lab/see-through",
+        model: DEFAULT_SEETHROUGH_DEPTH_MODEL,
         quant_mode: quantMode,
         cache_tag_embeds: true,
         group_offload: groupOffload,
@@ -74,7 +79,7 @@ export function buildImageToLayersWorkflow(
       class_type: "SeeThrough_SavePSD",
       inputs: {
         parts: ["6", 0],
-        filename_prefix: "vivi2d_seethrough",
+        filename_prefix: filenamePrefix,
       },
     },
   };

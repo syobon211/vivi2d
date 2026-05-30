@@ -2,16 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 import type { ComfyUIClient } from "../client";
 import type { GenerateProgress, HistoryEntry, PromptGenerateOptions } from "../types";
 
-
 vi.mock("../psd-assembler", () => ({
   assemblePsd: vi.fn(
     (layers: Array<unknown>, w: number, h: number) =>
       new ArrayBuffer(w * h * Math.max(1, layers.length)),
   ),
+  assemblePositionedPsd: vi.fn(async () => new ArrayBuffer(48)),
 }));
 
 const { decomposeImageToPsd, generateFromPromptToPsd } = await import("../orchestrator");
-const { assemblePsd } = await import("../psd-assembler");
+const { assemblePositionedPsd, assemblePsd } = await import("../psd-assembler");
 
 function buildFakePng(width = 64, height = 48): ArrayBuffer {
   const buf = new Uint8Array(24);
@@ -299,7 +299,6 @@ describe("orchestrator", () => {
   });
 
   describe("downloadPsdFromHistory (内部)", () => {
-
     it("複数ノードに分散していても最初に見つかった .psd を使う", async () => {
       const psd = new ArrayBuffer(8);
       const downloadOutput = vi
@@ -366,6 +365,88 @@ describe("orchestrator", () => {
       expect(assemblePsd).toHaveBeenCalledTimes(1);
       const call = vi.mocked(assemblePsd).mock.calls[0]!;
       expect((call[0] as Array<unknown>).length).toBe(1);
+    });
+
+    it("assembles current See-through layer JSON output before using preview images", async () => {
+      const prefix = "vivi2d_prompt_123";
+      const infoFilename = `${prefix}_20260530_abcd1234_layers.json`;
+      const legacyInfo = {
+        width: 768,
+        height: 768,
+        layers: [
+          {
+            name: "front hair",
+            filename: `${prefix}_front_hair.png`,
+            left: 10,
+            top: 20,
+            right: 210,
+            bottom: 420,
+          },
+        ],
+      };
+      const downloadOutput = vi
+        .fn<ComfyUIClient["downloadOutput"]>()
+        .mockResolvedValueOnce(new TextEncoder().encode(infoFilename).buffer)
+        .mockResolvedValueOnce(
+          new TextEncoder().encode(JSON.stringify(legacyInfo)).buffer,
+        )
+        .mockResolvedValueOnce(buildFakePng(200, 400));
+
+      const client = makeClientStub({
+        waitForCompletion: vi.fn(async () => ({
+          prompt: [
+            1,
+            "prompt-id",
+            {
+              "12": {
+                class_type: "SeeThrough_SavePSD",
+                inputs: { filename_prefix: prefix },
+              },
+            },
+          ],
+          outputs: {
+            sourcePreview: {
+              images: [
+                {
+                  filename: "generated_source.png",
+                  subfolder: "",
+                  type: "output",
+                },
+              ],
+            },
+          },
+          status: { completed: true },
+        })) as unknown as ComfyUIClient["waitForCompletion"],
+        downloadOutput: downloadOutput as unknown as ComfyUIClient["downloadOutput"],
+      });
+
+      vi.mocked(assemblePsd).mockClear();
+      vi.mocked(assemblePositionedPsd).mockClear();
+      const result = await generateFromPromptToPsd(client, { prompt: "test" });
+
+      expect(downloadOutput).toHaveBeenNthCalledWith(
+        1,
+        "seethrough_psd_info.log",
+        "",
+        "output",
+      );
+      expect(downloadOutput).toHaveBeenNthCalledWith(2, infoFilename, "", "output");
+      expect(downloadOutput).toHaveBeenNthCalledWith(
+        3,
+        `${prefix}_front_hair.png`,
+        "",
+        "output",
+      );
+      expect(assemblePsd).not.toHaveBeenCalled();
+      expect(assemblePositionedPsd).toHaveBeenCalledOnce();
+      const call = vi.mocked(assemblePositionedPsd).mock.calls[0]!;
+      expect(call[1]).toBe(768);
+      expect(call[2]).toBe(768);
+      expect((call[0] as Array<{ name: string; left: number }>)[0]).toMatchObject({
+        name: "front hair",
+        left: 10,
+      });
+      expect(result.byteLength).toBe(48);
     });
   });
 });
