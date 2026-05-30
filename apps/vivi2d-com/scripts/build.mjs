@@ -7,6 +7,7 @@ const repoRoot = path.resolve(siteRoot, "..", "..");
 const defaultOutDir = path.join(siteRoot, "dist");
 const locales = ["en", "ja", "zh-Hans", "ko-KR"];
 const docsBaseUrl = argValue("--docs-base-url") ?? process.env.VIVI_DOCS_BASE_URL ?? "";
+const siteUrl = "https://vivi2d.com";
 const githubUrl = "https://github.com/syobon211/vivi2d";
 const releaseVersion = "0.1.0-alpha.1";
 const releaseTag = `v${releaseVersion}`;
@@ -76,6 +77,15 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function escapeXml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");
+}
+
 function markdownToHtml(markdown) {
   const lines = markdown.split(/\n/);
   const chunks = [];
@@ -120,6 +130,10 @@ function routePath(locale, slug) {
 
 function docsUrl(locale, slug) {
   return `${docsBaseUrl.replace(/\/$/, "")}${routePath(locale, slug)}`;
+}
+
+function siteAbsoluteUrl(route) {
+  return `${siteUrl}${route.startsWith("/") ? route : `/${route}`}`;
 }
 
 function languageSelector({ locale = "en", slug = "", id = "language-selector", external = false } = {}) {
@@ -179,6 +193,31 @@ function redirectHtml(target) {
   <p>Redirecting to <a href="${escapeHtml(target)}">Vivi2D documentation</a>.</p>
 </body>
 </html>
+`;
+}
+
+function robotsTxt() {
+  return `User-agent: *
+Allow: /
+Sitemap: ${siteAbsoluteUrl("/sitemap.xml")}
+`;
+}
+
+function sitemapXml(metadata) {
+  const urls = new Set([siteAbsoluteUrl("/"), siteAbsoluteUrl("/docs/")]);
+  for (const publishedRoute of metadata.routes) {
+    for (const route of publishedRoute.paths) {
+      urls.add(siteAbsoluteUrl(route));
+    }
+  }
+  const entries = [...urls]
+    .sort()
+    .map((url) => `  <url>\n    <loc>${escapeXml(url)}</loc>\n  </url>`)
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries}
+</urlset>
 `;
 }
 
@@ -697,6 +736,8 @@ function main() {
   writeOutput("docs/index.html", redirectHtml(portalDocsUrl));
   const metadata = buildMetadata(manifest);
   writeOutput("route-metadata.json", `${JSON.stringify(metadata, null, 2)}\n`);
+  writeOutput("robots.txt", robotsTxt());
+  writeOutput("sitemap.xml", sitemapXml(metadata));
 
   for (const route of manifest.routes.filter((route) => route.published)) {
     for (const locale of locales) {

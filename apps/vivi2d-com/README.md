@@ -13,6 +13,7 @@ intentionally avoids a CMS or copied page data.
 - Read `docs/user/publication-manifest.json` as the only publication source.
 - Emit `/{locale}/latest/{slug}/` documentation routes only when a manifest route is
   `published: true`.
+- Emit canonical `robots.txt` and `sitemap.xml` files for `https://vivi2d.com`.
 - Keep draft and placeholder documentation unroutable until the final media and
   release-candidate pass.
 - Keep generated route metadata deterministic so public-surface scanners can
