@@ -124,6 +124,7 @@ function checkElectronBuilderConfig() {
     "publish: null",
     electronBuilderArtifactNameLine,
     "output: dist/windows-installer",
+    "!windows-installer/**",
     "electron/main.cjs",
     "THIRD_PARTY_NOTICES.txt",
     "target: nsis",
