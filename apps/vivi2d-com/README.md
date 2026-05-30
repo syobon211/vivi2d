@@ -7,8 +7,9 @@ intentionally avoids a CMS or copied page data.
 ## Current Scope
 
 - Build a root portal page for `vivi2d.com`.
-- Link the portal to the dedicated documentation host.
-- Emit `/docs/` as a compatibility redirect to the English latest docs entry.
+- Link the portal to the public docs entry point. Until hosted docs are
+  published, this points to the GitHub `docs/` tree.
+- Emit `/docs/` as a compatibility redirect to the same public docs entry point.
 - Read `docs/user/publication-manifest.json` as the only publication source.
 - Emit `/{locale}/latest/{slug}/` documentation routes only when a manifest route is
   `published: true`.
@@ -28,14 +29,16 @@ npm run docs:site:check
 build output. `docs:site:check` builds into `tmp/`, verifies publication rules,
 and confirms the tracked route metadata matches the current manifest.
 
-For a portal deployment, set the documentation target explicitly:
+For a portal deployment with a dedicated documentation host, set the
+documentation target explicitly:
 
 ```sh
 VIVI_DOCS_BASE_URL=https://docs.vivi2d.com npm run docs:site:build
 ```
 
-Local builds leave `VIVI_DOCS_BASE_URL` empty so generated links can be tested on
-the same preview host.
+Local and early public builds may leave `VIVI_DOCS_BASE_URL` empty; the portal
+then links to the GitHub `docs/` tree so the public Docs link does not point at
+unpublished generated routes.
 
 ## Hosting Plan
 
@@ -46,7 +49,7 @@ The planned public deployment is:
 - `vivi2d.com` as the product portal,
 - `docs.vivi2d.com` as the user documentation host,
 - `vivi2d.com/docs` as a compatibility redirect to
-  `docs.vivi2d.com/en/latest/`,
+  `docs.vivi2d.com/en/latest/` once hosted docs are published,
 - initial static hosting on Cloudflare Pages or Vercel,
 - optional future subdomains such as `api.vivi2d.com` and `cdn.vivi2d.com`.
 
