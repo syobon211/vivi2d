@@ -156,6 +156,25 @@ if (!fs.existsSync(sitemapPath)) {
   }
 }
 
+const headersPath = path.join(outDir, "_headers");
+if (!fs.existsSync(headersPath)) {
+  fail("_headers was not generated.");
+} else {
+  const headers = fs.readFileSync(headersPath, "utf8");
+  const expectedHeaders = [
+    "/*",
+    "  X-Content-Type-Options: nosniff",
+    "  Referrer-Policy: strict-origin-when-cross-origin",
+    "  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()",
+    "  X-Frame-Options: DENY",
+    "  Strict-Transport-Security: max-age=31536000",
+    "  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'none'; connect-src 'none'; font-src 'self'; manifest-src 'self'; upgrade-insecure-requests",
+  ].join("\n") + "\n";
+  if (headers !== expectedHeaders) {
+    fail("_headers must pin the reviewed vivi2d.com security headers.");
+  }
+}
+
 const metadataSlugs = new Set(metadata.routes.map((route) => route.slug));
 for (const route of manifest.routes) {
   if (!route.published && metadataSlugs.has(route.slug)) {
