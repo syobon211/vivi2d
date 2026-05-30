@@ -22,6 +22,11 @@ function routeFile(locale, slug) {
   return path.join(outDir, locale, "latest", slug || "", "index.html");
 }
 
+function htmlAttributeValue(html, pattern) {
+  const match = pattern.exec(html);
+  return match?.[1] ?? null;
+}
+
 fs.rmSync(outDir, { recursive: true, force: true });
 
 const result = spawnSync(
@@ -76,7 +81,13 @@ if (!fs.existsSync(docsRedirect)) {
   fail("vivi2d.com/docs compatibility redirect was not generated.");
 } else {
   const redirectHtml = fs.readFileSync(docsRedirect, "utf8");
-  if (!redirectHtml.includes("https://github.com/syobon211/vivi2d/tree/main/docs")) {
+  const expectedDocsUrl = new URL("https://github.com/syobon211/vivi2d/tree/main/docs").href;
+  const canonicalHref = htmlAttributeValue(
+    redirectHtml,
+    /<link rel="canonical" href="([^"]+)">/,
+  );
+  const bodyHref = htmlAttributeValue(redirectHtml, /<a href="([^"]+)">Vivi2D documentation<\/a>/);
+  if (canonicalHref !== expectedDocsUrl || bodyHref !== expectedDocsUrl) {
     fail("vivi2d.com/docs compatibility redirect must target the public docs entry point.");
   }
 }

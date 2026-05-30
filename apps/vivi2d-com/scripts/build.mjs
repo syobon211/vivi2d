@@ -215,7 +215,7 @@ function rootHtml() {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vivi2D</title>
-  <meta name="description" content="Vivi2D public alpha portal for releases, documentation, GitHub, and workflow demos.">
+  <meta name="description" content="Vivi2D public alpha portal for releases, documentation, and GitHub.">
   <style>
     :root {
       color-scheme: light;
@@ -660,7 +660,7 @@ function rootHtml() {
         <div class="soon-card">
           <p class="soon-kicker">New Character</p>
           <h1 class="soon-title">Coming Soon</h1>
-          <p class="soon-copy">A new Vivi2D portal character is being prepared. Until then, the portal stays focused on release links, docs, and the README workflow demo.</p>
+          <p class="soon-copy">A new Vivi2D portal character is being prepared. Until then, the portal stays focused on release links, docs, and alpha status.</p>
         </div>
       </section>
     </section>
