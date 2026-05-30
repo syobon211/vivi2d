@@ -137,6 +137,7 @@ npm run check:quality:e2e-workflow-record
 ## Documentation
 
 - [Project portal](https://vivi2d.com)
+- [Public docs entry point](https://docs.vivi2d.com)
 - [Developer documentation](docs/developer/index.md)
 - [User documentation index](docs/user/index.md)
 - [Contributing guide](CONTRIBUTING.md)
