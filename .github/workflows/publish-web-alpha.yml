@@ -33,12 +33,12 @@ jobs:
     outputs:
       tarball-name: ${{ steps.pack.outputs.filename }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 22.14.0
           registry-url: https://registry.npmjs.org
@@ -81,7 +81,7 @@ jobs:
           npm pack --workspace @vivi2d/web --json > web-pack-result.json
           node scripts/write-pack-output.mjs --pack-result web-pack-result.json >> "$GITHUB_OUTPUT"
       - run: node scripts/record-web-npm-alpha-artifacts.mjs --pack-result web-pack-result.json --gate-transcript transcripts --workspace @vivi2d/web --output web-npm-alpha-release-record.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: web-npm-alpha-release-record
           retention-days: 14
@@ -105,7 +105,7 @@ jobs:
       VERSION: ${{ inputs.version }}
       RELEASE_REF: ${{ inputs.ref }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -121,12 +121,12 @@ jobs:
           test "$GITHUB_REF" = "refs/tags/$RELEASE_REF"
           git rev-parse -q --verify "refs/tags/$RELEASE_REF^{tag}" >/dev/null
           test "$(git rev-list -n 1 "$RELEASE_REF")" = "$(git rev-parse HEAD)"
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 22.14.0
           registry-url: https://registry.npmjs.org
       - run: npm install -g npm@11.5.1 --ignore-scripts
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: web-npm-alpha-release-record
       - run: node scripts/check-npm-cli-version.mjs --min-node 22.14.0 --min-npm 11.5.1

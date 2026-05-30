@@ -142,7 +142,7 @@ function checkWorkflowShape() {
   }
 
   for (const text of [
-    "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2",
+    "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1",
     "retention-days: 14",
     "if-no-files-found: error",
     "path: tmp/github-release-assets/",
@@ -151,7 +151,7 @@ function checkWorkflowShape() {
   }
 
   for (const text of [
-    "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0",
+    "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1",
     "contents: read",
     "Verify downloaded release assets",
     "node scripts/verify-github-release-assets.mjs --asset-dir tmp/github-release-assets --version",
