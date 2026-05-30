@@ -1,4 +1,8 @@
 import type { ComfyUIWorkflow, DecomposeOptions } from "../types";
+import {
+  DEFAULT_SEETHROUGH_DEPTH_MODEL,
+  DEFAULT_SEETHROUGH_LAYERDIFF_MODEL,
+} from "./seethrough-models";
 
 export function buildImageToLayersWorkflow(
   uploadedFilename: string,
@@ -23,7 +27,7 @@ export function buildImageToLayersWorkflow(
     "2": {
       class_type: "SeeThrough_LoadLayerDiffModel",
       inputs: {
-        model: "shitagaki-lab/see-through",
+        model: DEFAULT_SEETHROUGH_LAYERDIFF_MODEL,
         quant_mode: quantMode,
         cache_tag_embeds: true,
         group_offload: groupOffload,
@@ -33,7 +37,7 @@ export function buildImageToLayersWorkflow(
     "3": {
       class_type: "SeeThrough_LoadDepthModel",
       inputs: {
-        model: "shitagaki-lab/see-through",
+        model: DEFAULT_SEETHROUGH_DEPTH_MODEL,
         quant_mode: quantMode,
         cache_tag_embeds: true,
         group_offload: groupOffload,

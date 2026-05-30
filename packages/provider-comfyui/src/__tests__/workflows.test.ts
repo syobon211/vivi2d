@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { buildImageToLayersWorkflow } from "../workflows/image-to-layers";
 import { buildPromptToLayersWorkflow } from "../workflows/prompt-to-layers";
-
+import {
+  DEFAULT_SEETHROUGH_DEPTH_MODEL,
+  DEFAULT_SEETHROUGH_LAYERDIFF_MODEL,
+} from "../workflows/seethrough-models";
 
 describe("buildImageToLayersWorkflow", () => {
-  it("デフォルトオプションで7ノードのワークフローを生成する", () => {
+  it("builds the seven-node legacy image decomposition workflow", () => {
     const wf = buildImageToLayersWorkflow("test.png");
 
     expect(Object.keys(wf)).toHaveLength(7);
@@ -17,12 +20,13 @@ describe("buildImageToLayersWorkflow", () => {
     expect(wf["7"]!.class_type).toBe("SeeThrough_SavePSD");
   });
 
-  it("アップロードファイル名がLoadImageノードに設定される", () => {
+  it("passes the uploaded filename to LoadImage", () => {
     const wf = buildImageToLayersWorkflow("my-character.png");
+
     expect(wf["1"]!.inputs.image).toBe("my-character.png");
   });
 
-  it("カスタムオプションが反映される", () => {
+  it("applies custom decomposition options", () => {
     const wf = buildImageToLayersWorkflow("test.png", {
       seed: 123,
       resolution: 1024,
@@ -42,7 +46,7 @@ describe("buildImageToLayersWorkflow", () => {
     expect(wf["2"]!.inputs.group_offload).toBe(true);
   });
 
-  it("ノード間のリンクが正しい", () => {
+  it("links the legacy image workflow nodes correctly", () => {
     const wf = buildImageToLayersWorkflow("test.png");
 
     expect(wf["4"]!.inputs.image).toEqual(["1", 0]);
@@ -55,18 +59,23 @@ describe("buildImageToLayersWorkflow", () => {
 
     expect(wf["7"]!.inputs.parts).toEqual(["6", 0]);
   });
+
+  it("uses current upstream See-through model names for the legacy fallback", () => {
+    const wf = buildImageToLayersWorkflow("test.png");
+
+    expect(wf["2"]!.inputs.model).toBe(DEFAULT_SEETHROUGH_LAYERDIFF_MODEL);
+    expect(wf["3"]!.inputs.model).toBe(DEFAULT_SEETHROUGH_DEPTH_MODEL);
+  });
 });
 
 describe("buildPromptToLayersWorkflow", () => {
-  it("12ノードのワークフローを生成する", () => {
+  it("builds the twelve-node legacy prompt workflow", () => {
     const wf = buildPromptToLayersWorkflow({ prompt: "anime girl" });
 
-    // Stage1: 1(Checkpoint) + 2(Positive) + 3(Negative) + 4(KSampler) + 5(VAEDecode) + 10(EmptyLatent)
-    // Stage2: 6(LayerDiff) + 7(Depth) + 8(GenLayers) + 9(GenDepth) + 11(PostProcess) + 12(SavePSD)
     expect(Object.keys(wf)).toHaveLength(12);
   });
 
-  it("プロンプトがCLIPTextEncodeに設定される", () => {
+  it("passes prompt text to CLIPTextEncode", () => {
     const wf = buildPromptToLayersWorkflow({
       prompt: "anime girl, full body",
       negativePrompt: "bad quality",
@@ -76,15 +85,23 @@ describe("buildPromptToLayersWorkflow", () => {
     expect(wf["3"]!.inputs.text).toBe("bad quality");
   });
 
-  it("画像生成→See-throughのリンクが正しい", () => {
+  it("links the generated image into the See-through stage", () => {
     const wf = buildPromptToLayersWorkflow({ prompt: "test" });
 
     expect(wf["8"]!.inputs.image).toEqual(["5", 0]);
   });
 
-  it("解像度がEmptyLatentImageに反映される", () => {
+  it("passes resolution to EmptyLatentImage", () => {
     const wf = buildPromptToLayersWorkflow({ prompt: "test", resolution: 1024 });
+
     expect(wf["10"]!.inputs.width).toBe(1024);
     expect(wf["10"]!.inputs.height).toBe(1024);
+  });
+
+  it("uses current upstream See-through model names for prompt fallback", () => {
+    const wf = buildPromptToLayersWorkflow({ prompt: "test" });
+
+    expect(wf["6"]!.inputs.model).toBe(DEFAULT_SEETHROUGH_LAYERDIFF_MODEL);
+    expect(wf["7"]!.inputs.model).toBe(DEFAULT_SEETHROUGH_DEPTH_MODEL);
   });
 });

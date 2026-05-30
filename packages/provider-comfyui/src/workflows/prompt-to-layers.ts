@@ -1,4 +1,8 @@
 import type { ComfyUIWorkflow, PromptGenerateOptions } from "../types";
+import {
+  DEFAULT_SEETHROUGH_DEPTH_MODEL,
+  DEFAULT_SEETHROUGH_LAYERDIFF_MODEL,
+} from "./seethrough-models";
 
 export function buildPromptToLayersWorkflow(
   options: PromptGenerateOptions,
@@ -75,7 +79,7 @@ export function buildPromptToLayersWorkflow(
     "6": {
       class_type: "SeeThrough_LoadLayerDiffModel",
       inputs: {
-        model: "shitagaki-lab/see-through",
+        model: DEFAULT_SEETHROUGH_LAYERDIFF_MODEL,
         quant_mode: quantMode,
         cache_tag_embeds: true,
         group_offload: groupOffload,
@@ -85,7 +89,7 @@ export function buildPromptToLayersWorkflow(
     "7": {
       class_type: "SeeThrough_LoadDepthModel",
       inputs: {
-        model: "shitagaki-lab/see-through",
+        model: DEFAULT_SEETHROUGH_DEPTH_MODEL,
         quant_mode: quantMode,
         cache_tag_embeds: true,
         group_offload: groupOffload,
