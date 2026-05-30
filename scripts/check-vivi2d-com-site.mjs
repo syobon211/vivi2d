@@ -46,8 +46,25 @@ if (result.status !== 0) {
 }
 
 const manifest = readJson("docs/user/publication-manifest.json");
+const wranglerConfig = readJson("wrangler.jsonc");
 const metadata = JSON.parse(fs.readFileSync(path.join(outDir, "route-metadata.json"), "utf8"));
 const trackedMetadata = readJson("apps/vivi2d-com/route-metadata.json");
+
+if (wranglerConfig.name !== "vivi2d") {
+  fail("wrangler.jsonc must deploy the vivi2d Worker.");
+}
+if (!/^\d{4}-\d{2}-\d{2}$/.test(wranglerConfig.compatibility_date ?? "")) {
+  fail("wrangler.jsonc must pin a compatibility_date.");
+}
+if (typeof wranglerConfig.main !== "undefined") {
+  fail("vivi2d.com should remain a static-assets-only Worker until a Worker script is reviewed.");
+}
+if (wranglerConfig.assets?.directory !== "./apps/vivi2d-com/dist") {
+  fail("wrangler.jsonc must deploy apps/vivi2d-com/dist as the static assets directory.");
+}
+if (typeof wranglerConfig.assets?.binding !== "undefined") {
+  fail("wrangler.jsonc should not expose an assets binding without a reviewed Worker script.");
+}
 
 if (!fs.existsSync(path.join(outDir, "index.html"))) {
   fail("root portal was not generated.");

@@ -1,0 +1,7 @@
+{
+  "name": "vivi2d",
+  "compatibility_date": "2026-05-31",
+  "assets": {
+    "directory": "./apps/vivi2d-com/dist"
+  }
+}
