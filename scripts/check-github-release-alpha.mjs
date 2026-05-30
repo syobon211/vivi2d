@@ -113,6 +113,7 @@ function checkWorkflowShape() {
     "gh release create",
     "--verify-tag",
     "--draft",
+    "--prerelease",
   ]) {
     requireWorkflowText(text);
   }
@@ -276,7 +277,7 @@ function checkContract() {
     "must not attach",
     "release:github:prepare",
     "checksums.txt",
-    "always creates a draft GitHub Release",
+    "always creates a draft pre-release GitHub Release",
     "downloaded asset set with",
     "read-only verification job",
     "repository token only inside a single shell step",
@@ -631,6 +632,9 @@ function assertReleaseCreationOrder(releaseSteps) {
   }
   if (!releaseRun.includes("--draft")) {
     failures.push("initial alpha workflow must create a draft release.");
+  }
+  if (!releaseRun.includes("--prerelease")) {
+    failures.push("initial alpha workflow must mark the release as a pre-release.");
   }
   if (!releaseRun.includes('test "$peeled_sha" = "$GITHUB_SHA"')) {
     failures.push("create-github-release must recheck tag target before publishing.");
