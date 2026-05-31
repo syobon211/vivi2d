@@ -27,3 +27,4 @@ __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
+integrations/comfyui/vivi2d_compat_plugin/build/
