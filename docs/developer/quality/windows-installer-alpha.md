@@ -328,6 +328,13 @@ Acceptable evidence includes a clean VM baseline plus Windows Resource Monitor,
 reviewed capture method. The review packet must record the process name, PID,
 destination, reason, tool used, and reviewer for each observed connection.
 
+Post-publish smoke tests should install the released `.exe` files with the same
+quiet install mode documented for users, for example
+`Start-Process -ArgumentList '/S' -Wait -PassThru`, and should not add
+`-WindowStyle Hidden`. The hidden window flag is not part of the user-facing
+install path and has triggered an NSIS helper crash in local alpha.3
+verification even though the normal quiet install completed successfully.
+
 ## Forbidden Installer Assets
 
 The verifier must first assert that the downloadable asset directory exactly

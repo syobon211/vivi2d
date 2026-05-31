@@ -96,3 +96,11 @@ npm run release:windows-installer:review-packet
 After any README, portal, installer documentation, release-note, or
 asset-generation change, delete and recreate the current installer alpha
 draft/tag from the latest `main` rather than reusing stale release assets.
+
+After publishing an installer alpha, run a post-publish smoke test from the
+public GitHub Release assets and record the result in the installer feedback
+issue. The record should include checksum verification, Editor install, Viewer
+install, first-launch process/network observations, uninstall result, and any
+expected user-data remnants. Use the normal quiet installer path (`/S`) for
+automation; do not add `-WindowStyle Hidden` to the installer process because it
+is not part of the supported user or CI path.
