@@ -269,11 +269,18 @@ function checkVerifierContracts() {
     "alpha",
     "--provenance",
     "VIVI2D_VERIFIED_WEB_NPM_ALPHA_PUBLISH",
+    "assertHostedPublishContext",
+    "GITHUB_ACTIONS",
+    "GITHUB_REF",
+    "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
+    "ACTIONS_ID_TOKEN_REQUEST_URL",
+    "refs/tags/web-v",
   ]) {
     if (!publisher.includes(phrase)) {
       failures.push(`scripts/publish-web-npm-alpha.mjs must include ${phrase}.`);
     }
   }
+  checkPublishWrapperHostedGuard(publisher);
 
   const guard = readText("scripts/guard-web-npm-alpha-direct-publish.mjs");
   if (!guard.includes("VIVI2D_VERIFIED_WEB_NPM_ALPHA_PUBLISH")) {
@@ -286,6 +293,37 @@ function checkVerifierContracts() {
     "node ../../scripts/guard-web-npm-alpha-direct-publish.mjs"
   ) {
     failures.push("@vivi2d/web prepublishOnly must block direct npm publish.");
+  }
+}
+
+function checkPublishWrapperHostedGuard(publisherSource) {
+  const publisher = stripJsComments(publisherSource);
+  const guardCall = "assertHostedPublishContext({ dryRun, version });";
+  const guardCallIndex = publisher.indexOf(guardCall);
+  const npmPublishIndex = publisher.indexOf('run("npm", publishArgs');
+  if (guardCallIndex < 0) {
+    failures.push(
+      "scripts/publish-web-npm-alpha.mjs must call assertHostedPublishContext({ dryRun, version }).",
+    );
+  }
+  if (npmPublishIndex < 0) {
+    failures.push('scripts/publish-web-npm-alpha.mjs must call run("npm", publishArgs, ...).');
+  }
+  if (guardCallIndex >= 0 && npmPublishIndex >= 0 && guardCallIndex > npmPublishIndex) {
+    failures.push("assertHostedPublishContext must run before npm publish.");
+  }
+  for (const required of [
+    "if (dryRun) return;",
+    'process.env.GITHUB_ACTIONS !== "true"',
+    'process.env.GITHUB_REPOSITORY !== "syobon211/vivi2d"',
+    'process.env.GITHUB_REF_TYPE !== "tag"',
+    "process.env.GITHUB_REF !== expectedRef",
+    "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
+    "ACTIONS_ID_TOKEN_REQUEST_URL",
+  ]) {
+    if (!publisher.includes(required)) {
+      failures.push(`assertHostedPublishContext must enforce ${required}.`);
+    }
   }
 }
 
@@ -307,4 +345,10 @@ function assertOrder(first, second) {
   if (firstIndex > secondIndex) {
     failures.push(`${workflowPath}: ${first} must run before ${second}.`);
   }
+}
+
+function stripJsComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
