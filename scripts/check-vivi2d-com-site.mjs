@@ -81,7 +81,7 @@ if (!fs.existsSync(path.join(outDir, "index.html"))) {
   const rootHtml = fs.readFileSync(path.join(outDir, "index.html"), "utf8");
   const requiredRootSnippets = [
     "https://github.com/syobon211/vivi2d",
-    "https://github.com/syobon211/vivi2d/releases/tag/v0.1.0-alpha.2",
+    "https://github.com/syobon211/vivi2d/releases/tag/v0.1.0-alpha.3",
     docsHostUrl,
     "pre-1.0 alpha",
     "unsigned Windows installer",

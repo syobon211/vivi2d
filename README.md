@@ -62,9 +62,10 @@ Pre-1.0 alpha releases are published on
 release artifacts only from the release page and verify them with
 `checksums.txt`.
 
-The current public release is `v0.1.0-alpha.2`, a Windows installer alpha for
-early testing. It includes an unsigned Windows x64 NSIS installer, source review
-archive, SBOM, third-party notices, checksums, and installer release record.
+The current public release is `v0.1.0-alpha.3`, a Windows installer alpha for
+early testing. It includes separate unsigned Windows x64 NSIS installers for
+the Editor and Vivi2D Viewer, plus the source review archive, SBOM, third-party
+notices, checksums, and installer release record.
 
 The first `v0.1.0-alpha.1` release remains the source/provenance-only baseline.
 Published npm packages, native/WASM standalone binaries, and ComfyUI bundles are not
@@ -74,15 +75,16 @@ The Windows installer alpha is unsigned. It may show browser, `Unknown
 publisher`, or Microsoft Defender SmartScreen warnings. Download installers only
 from GitHub Releases and verify `checksums.txt` before running them. Please add
 installer feedback to
-[#29](https://github.com/syobon211/vivi2d/issues/29) or follow the alpha.3
-installer improvement track in
+[#29](https://github.com/syobon211/vivi2d/issues/29). Follow-up installer
+improvements, including code signing and first-launch polish, are tracked in
 [#30](https://github.com/syobon211/vivi2d/issues/30).
 
 ## Getting Started
 
 For the quickest local trial, use the Windows x64 installer from
-`v0.1.0-alpha.2` on GitHub Releases. It is unsigned and intended for early
-testing, so verify `checksums.txt` and use test artwork first.
+`v0.1.0-alpha.3` on GitHub Releases. It is unsigned and intended for early
+testing, so verify `checksums.txt`, install the Editor and Viewer one at a time
+with a short pause between installers, and use test artwork first.
 
 If you prefer to run from source, use the developer setup below. If you only
 want to follow progress, watch GitHub Releases and the user documentation.
@@ -159,9 +161,9 @@ npm run check:quality:e2e-workflow-record
 
 ## Roadmap
 
-- Prepare the Windows installer alpha.3 track: Editor and Viewer installers,
-  code-signing decision, clearer SmartScreen guidance, first-launch onboarding
-  evidence, and uninstall wording.
+- Continue the Windows installer alpha track with code-signing decisions,
+  clearer SmartScreen guidance, first-launch onboarding evidence, and installer
+  UX polish.
 - Prepare an `@vivi2d/web` npm alpha for reviewed public-profile playback.
 - Add macOS/Linux or store-distributed desktop builds only after separate
   installer contracts are reviewed.

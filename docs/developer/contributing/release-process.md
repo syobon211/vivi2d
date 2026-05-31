@@ -80,11 +80,13 @@ after owner-managed GitHub security settings are confirmed.
 
 ## Windows Installer Alpha
 
-The `v0.1.0-alpha.2` line uses the Windows installer contract in
-[`windows-installer-alpha.md`](../quality/windows-installer-alpha.md). It is
-Windows x64 NSIS only, unsigned unless release notes explicitly say otherwise,
-and must stay a draft pre-release until the final tag, asset set, release
-record, checksums, website copy, and manual Windows review are aligned.
+The `v0.1.0-alpha.2` line introduced the Windows installer contract in
+[`windows-installer-alpha.md`](../quality/windows-installer-alpha.md), and
+`v0.1.0-alpha.3` extends that channel with a separate Vivi2D Viewer installer.
+The installer channel is Windows x64 NSIS only, unsigned unless release notes
+explicitly say otherwise, and must stay a draft pre-release until the final tag,
+asset set, release record, checksums, website copy, and manual Windows review
+are aligned.
 
 ```bash
 npm run check:windows-installer-alpha
@@ -92,5 +94,5 @@ npm run release:windows-installer:review-packet
 ```
 
 After any README, portal, installer documentation, release-note, or
-asset-generation change, delete and recreate the `v0.1.0-alpha.2` draft/tag
-from the latest `main` rather than reusing stale release assets.
+asset-generation change, delete and recreate the current installer alpha
+draft/tag from the latest `main` rather than reusing stale release assets.

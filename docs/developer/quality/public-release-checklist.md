@@ -28,15 +28,16 @@ Implemented and locally verified:
 - Source review archive tooling is implemented: `npm run check:source-review-archive`
   validates tracked files and `npm run archive:source-review` requires a clean
   working tree before producing the archive.
-- Windows installer alpha release tooling is implemented for `v0.1.0-alpha.2`:
+- Windows installer alpha release tooling is implemented for `v0.1.0-alpha.3`:
   `.github/workflows/windows-installer-alpha.yml`,
   `docs/developer/quality/windows-installer-alpha.md`,
   `scripts/check-windows-installer-alpha.mjs`,
   `scripts/prepare-windows-installer-assets.mjs`,
   `scripts/verify-windows-installer-assets.mjs`, and
   `scripts/generate-windows-installer-review-packet.mjs`. The current installer
-  channel is Windows x64 NSIS only, unsigned, draft/pre-release first, and
-  guarded by explicit release-note and website warnings.
+  channel is Windows x64 NSIS only, includes separate Editor and Vivi2D Viewer
+  installers, is unsigned, draft/pre-release first, and is guarded by explicit
+  release-note and website warnings.
 - `@vivi2d/web` alpha release dry-run tooling is implemented and locally
   exercised through `npm pack`, release-record generation, release-record
   verification, and `npm publish --dry-run`.
@@ -65,7 +66,7 @@ Still open before public release:
   tag before any real publish.
 - Legal or owner decisions remain open for bundled ComfyUI/See-through
   distribution and public native/WASM artifact signing.
-- The `v0.1.0-alpha.2` Windows installer draft/release path must be regenerated
+- The current Windows installer draft/release path must be regenerated
   from the final tag after any README, portal, release-note, or installer-copy
   change so the installer record, source review archive, SBOM, notices,
   checksums, and release body all point at the same commit.
@@ -212,7 +213,7 @@ License/legal decision tracking:
 | Decision | Owner | Deadline | Status |
 | --- | --- | --- | --- |
 | Initial GitHub Release asset channel | @syobon211 | Before first public alpha | Decided: GitHub Releases are the canonical repository release record. The first `v0.1.0-alpha.1` asset set remains source review archive, manifest, SBOM, notices, release record, checksums, and release notes only. |
-| Windows installer alpha channel | @syobon211 | Before first desktop installer alpha | Implemented for `v0.1.0-alpha.2`: Windows x64 NSIS installer alpha governed by `docs/developer/quality/windows-installer-alpha.md`. The initial installer is unsigned and must keep release-note, README, docs, and website warnings visible. Auto-update metadata, MSI/MSIX, macOS, Linux, ComfyUI bundles, See-through bundles, and model weights remain blocked. |
+| Windows installer alpha channel | @syobon211 | Before first desktop installer alpha | Implemented for `v0.1.0-alpha.3`: Windows x64 NSIS installer alpha governed by `docs/developer/quality/windows-installer-alpha.md`, with separate Editor and Vivi2D Viewer installers. The current installers are unsigned and must keep release-note, README, docs, and website warnings visible. Auto-update metadata, MSI/MSIX, macOS, Linux, ComfyUI bundles, See-through bundles, and model weights remain blocked. |
 | CycloneDX SBOM generator and CI integration | @syobon211 | Before R5 implementation begins | Implemented for local and workflow validation with `@cyclonedx/cyclonedx-npm`, `npm run sbom:generate`, and `npm run check:sbom`; final release attachment must be regenerated from the release tag |
 | Native/WASM checksum and signing mechanism | @syobon211 | Before native or WASM artifacts are public | Open |
 | GitHub Actions SHA pinning policy | @syobon211 | Before repository publication | Implemented for current workflows: Actions are pinned to full commit SHAs with tag comments and checked by `npm run check:oss-readiness` |
