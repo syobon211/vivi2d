@@ -32,7 +32,7 @@ const sbomPath = "dist/sbom/vivi2d.cdx.json";
 const sbomDigest = fs.existsSync(sbomPath) ? sha256File(sbomPath) : null;
 const webPackage = readJson("packages/web/package.json");
 const packAllowlist = readJson(packAllowlistPath);
-validatePackEntry(packEntry, packAllowlist);
+validatePackEntry(packEntry, packAllowlist, webPackage.version);
 const packFiles = describePackFiles(packEntry.files ?? []);
 if (failures.length > 0) finish();
 const record = {
@@ -93,7 +93,7 @@ function sha256File(file) {
   return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 }
 
-function validatePackEntry(entry, allowlist) {
+function validatePackEntry(entry, allowlist, expectedVersion) {
   if (allowlist.schemaVersion !== 1) {
     failures.push(`${packAllowlistPath} schemaVersion must be 1.`);
   }
@@ -102,9 +102,14 @@ function validatePackEntry(entry, allowlist) {
       `Pack result package ${entry.name} does not match ${allowlist.packageName}.`,
     );
   }
-  if (entry.version !== allowlist.version) {
+  if (allowlist.versionPolicy !== "checked-against-package-json-and-release-input") {
     failures.push(
-      `Pack result version ${entry.version} does not match ${allowlist.version}.`,
+      `${packAllowlistPath} versionPolicy must be checked-against-package-json-and-release-input.`,
+    );
+  }
+  if (entry.version !== expectedVersion) {
+    failures.push(
+      `Pack result version ${entry.version} does not match ${expectedVersion}.`,
     );
   }
   if (entry.size > allowlist.maxTarballBytes) {

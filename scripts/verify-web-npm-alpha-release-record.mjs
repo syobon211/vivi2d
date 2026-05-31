@@ -9,6 +9,7 @@ const tarballPath = args.tarball;
 const version = args.version;
 const packAllowlistPath = "docs/developer/quality/web-npm-alpha-pack-allowlist.json";
 const packAllowlist = readJson(packAllowlistPath);
+const webPackage = readJson("packages/web/package.json");
 const failures = [];
 
 if (!packResultPath) failures.push("--pack-result is required.");
@@ -27,8 +28,13 @@ if (tarballPath && !fs.existsSync(tarballPath)) {
 if (packEntry && packEntry.version !== version) {
   failures.push(`Pack result version ${packEntry.version} does not match ${version}.`);
 }
+if (webPackage.version !== version) {
+  failures.push(
+    `packages/web/package.json version ${webPackage.version} does not match ${version}.`,
+  );
+}
 if (packEntry) {
-  validatePackEntry(packEntry, packAllowlist);
+  validatePackEntry(packEntry, packAllowlist, version);
 }
 
 if (fs.existsSync("web-npm-alpha-release-record.json") && tarballPath) {
@@ -82,7 +88,7 @@ function sha256File(file) {
   return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 }
 
-function validatePackEntry(entry, allowlist) {
+function validatePackEntry(entry, allowlist, expectedVersion) {
   if (allowlist.schemaVersion !== 1) {
     failures.push(`${packAllowlistPath} schemaVersion must be 1.`);
   }
@@ -91,9 +97,14 @@ function validatePackEntry(entry, allowlist) {
       `Pack result package ${entry.name} does not match ${allowlist.packageName}.`,
     );
   }
-  if (entry.version !== allowlist.version) {
+  if (allowlist.versionPolicy !== "checked-against-package-json-and-release-input") {
     failures.push(
-      `Pack result version ${entry.version} does not match ${allowlist.version}.`,
+      `${packAllowlistPath} versionPolicy must be checked-against-package-json-and-release-input.`,
+    );
+  }
+  if (entry.version !== expectedVersion) {
+    failures.push(
+      `Pack result version ${entry.version} does not match ${expectedVersion}.`,
     );
   }
   if (entry.size > allowlist.maxTarballBytes) {

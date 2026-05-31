@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "packageName": "@vivi2d/web",
-  "version": "0.1.0-alpha.0",
+  "versionPolicy": "checked-against-package-json-and-release-input",
   "maxTarballBytes": 2097152,
   "maxUnpackedBytes": 8388608,
   "files": [
