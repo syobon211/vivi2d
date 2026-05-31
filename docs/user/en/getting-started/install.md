@@ -36,7 +36,8 @@ SmartScreen warnings are expected for this release. Do not disable SmartScreen
 globally. Instead, confirm that the installer came from the official GitHub
 Release page and verify the checksum before launching. The `v0.1.0-alpha.3`
 installer release includes separate Windows x64 installers for the Editor and
-Vivi2D Viewer. Code signing is still planned for a later installer alpha.
+Vivi2D Viewer. Code signing is deferred until beta, stable, or a separate
+signing track.
 
 On Windows, you can verify the installer SHA-256 from PowerShell or Command
 Prompt:

@@ -53,5 +53,6 @@ and signature-verification evidence.
   release records, public GitHub Releases, and manual Windows smoke review.
 - The release workflow must reject signed-build claims unless a later ADR
   enables signing.
-- Follow-up work can focus on first-launch clarity, installer guidance, and QA
-  automation instead of prematurely adding certificate infrastructure.
+- Follow-up work can focus on installer smoke automation, checksum-first
+  download guidance, and uninstall guidance instead of prematurely adding
+  certificate infrastructure.
