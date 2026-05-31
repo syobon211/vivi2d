@@ -175,7 +175,7 @@ function checkReleaseDocuments() {
     : "";
   if (notices.includes("release placeholder")) {
     warn(
-      "THIRD_PARTY_NOTICES is still a placeholder; generate artifact-specific notices before public release.",
+      "THIRD_PARTY_NOTICES is still a placeholder; generate artifact-specific notices before any public release surface.",
     );
   }
 }

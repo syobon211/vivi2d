@@ -86,7 +86,7 @@ function checkPackageLock() {
 
 function checkReleaseNoticePlaceholders() {
   if (!fileExists("THIRD_PARTY_NOTICES")) {
-    fail("THIRD_PARTY_NOTICES is required before public release planning.");
+    fail("THIRD_PARTY_NOTICES is required for public release-surface planning.");
     return;
   }
   const notices = readText("THIRD_PARTY_NOTICES");

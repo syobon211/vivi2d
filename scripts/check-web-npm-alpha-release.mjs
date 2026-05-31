@@ -67,6 +67,7 @@ function checkRequiredFiles() {
   for (const file of [
     workflowPath,
     contractPath,
+    "docs/developer/quality/web-npm-alpha-bootstrap-record.md",
     releaseNotesTemplate,
     ".github/release-environments/npm-alpha.json",
     "scripts/release-tool-versions.json",
@@ -303,6 +304,8 @@ function checkBootstrapPublisher() {
   const bootstrap = readText("scripts/bootstrap-web-npm-alpha-publish.mjs");
   for (const phrase of [
     "BOOTSTRAP_WEB_NPM_ALPHA_0.1.0-alpha.0",
+    "has already been published through the one-time bootstrap path",
+    "Use npm Trusted Publishing through .github/workflows/publish-web-alpha.yml",
     "Bootstrap publish is allowed only",
     "assertPackageDoesNotExist",
     "assertNpmAuthenticated",

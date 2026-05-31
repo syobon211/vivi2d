@@ -35,15 +35,20 @@ as npm dependencies.
 - `npm run check:web-npm-alpha-release`
 - `npm run check:ip-product-profile`
 
-The current unlock state permits Phase 1 programmatic SDK implementation only.
-It does not approve npm publication or stable compatibility promises. npm alpha
-publication also requires the release contract in
+The current unlock state permits Phase 1 programmatic SDK implementation and
+the reviewed experimental npm alpha surface. It does not approve stable
+compatibility promises or additional package promotion. Later npm alpha
+publication requires the release contract in
 `docs/developer/quality/web-npm-alpha-release.md`, the protected npm publisher
 configuration, and a final release-tag dry-run/publish record.
 
 ## Alpha Release Shape
 
-The current alpha version is `0.1.0-alpha.0`. A valid npm alpha dry-run records:
+The current alpha version is `0.1.0-alpha.0`. It was published through the
+documented one-time bootstrap path and has no npm provenance attestation. Later
+versions must use GitHub Actions OIDC Trusted Publishing.
+
+A valid npm alpha dry-run records:
 
 - the exact packed tarball from `npm pack --workspace @vivi2d/web --json`
 - the tarball SHA-256, npm integrity, package version, git commit, and alpha
@@ -54,7 +59,9 @@ The current alpha version is `0.1.0-alpha.0`. A valid npm alpha dry-run records:
 
 Dry-run artifacts are local review evidence only. They should be regenerated
 from the final release tag immediately before publication so the source commit,
-tarball digest, provenance, SBOM, and release notes match.
+tarball digest, provenance, SBOM, and release notes match. For
+`0.1.0-alpha.0`, the bootstrap audit record is tracked in
+`docs/developer/quality/web-npm-alpha-bootstrap-record.md`.
 
 ## Examples
 

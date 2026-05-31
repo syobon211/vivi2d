@@ -61,7 +61,7 @@ locale, media, frontmatter, and future website route contract is tracked in
   but must not depend on React, Electron, renderer adapters, providers, or
   Zustand stores.
 - `packages/core` is intentionally kept as a private runtime/math
-  compatibility package for the pre-public refactor. Schema, parser,
+  compatibility package during the alpha refactor. Schema, parser,
   public-profile, load-limit, Runtime Spec, and model-owned parameter sanitizer
   exports live in `packages/model`; editor mutation commands live in
   `packages/editor-core`. `packages/core` may keep narrow compatibility shims

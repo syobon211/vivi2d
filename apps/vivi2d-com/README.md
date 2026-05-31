@@ -1,14 +1,13 @@
-# vivi2d.com Scaffold
+# vivi2d.com Portal
 
-This is the first minimal scaffold for the future Vivi2D portal and user
-documentation site. It consumes tracked content from `docs/user/` and
-intentionally avoids a CMS or copied page data.
+This is the current minimal Vivi2D portal and reserved user-documentation host
+scaffold. It consumes tracked content from `docs/user/` and intentionally avoids
+a CMS or copied page data.
 
 ## Current Scope
 
 - Build a root portal page for `vivi2d.com`.
-- Link the portal to `https://docs.vivi2d.com/` as the reserved public docs
-  entry point.
+- Link the portal to `https://docs.vivi2d.com/` as the public docs entry point.
 - Emit `/docs/` as a compatibility redirect to the same public docs entry point.
 - Read `docs/user/publication-manifest.json` as the only publication source.
 - Emit `/{locale}/latest/{slug}/` documentation routes only when a manifest route is
@@ -32,16 +31,17 @@ npm run docs:site:check
 build output. `docs:site:check` builds into `tmp/`, verifies publication rules,
 and confirms the tracked route metadata matches the current manifest.
 
-The public Docs link points at `https://docs.vivi2d.com/`. Until hosted docs are
-published there, configure that hostname in Cloudflare as a temporary redirect
-to the GitHub `docs/` tree. For a later deployment that publishes generated docs
-routes directly, set the documentation target explicitly:
+The public Docs link points at `https://docs.vivi2d.com/`. The current public
+host is live as a temporary redirect to the GitHub `docs/` tree while generated
+user-doc routes remain unpublished in `docs/user/publication-manifest.json`. For
+a later deployment that publishes generated docs routes directly, set the
+documentation target explicitly:
 
 ```sh
 VIVI_DOCS_BASE_URL=https://docs.vivi2d.com npm run docs:site:build
 ```
 
-Local and early public builds leave `VIVI_DOCS_BASE_URL` empty so the portal
+Local and current public builds leave `VIVI_DOCS_BASE_URL` empty so the portal
 does not link directly to unpublished generated docs routes.
 
 ## Cloudflare Workers Deploy
@@ -59,10 +59,11 @@ Variables: none required
 
 `wrangler.jsonc` intentionally has no Worker script entry point. Wrangler uploads
 the generated files from `apps/vivi2d-com/dist/` as static assets, keeping the
-initial portal deployment to HTML/CSS only. After the first successful deploy,
-attach the custom domain `vivi2d.com` from the Worker's Settings > Domains page.
+portal deployment to HTML/CSS only. The current public deployment has
+`vivi2d.com` attached from the Worker's Settings > Domains page; repeat that
+domain attachment step only when recreating the Worker or moving the deployment.
 
-For the reserved docs host before hosted docs are published:
+For the current reserved docs host before generated docs routes are published:
 
 ```text
 DNS record: CNAME docs -> vivi2d.com, proxied
@@ -86,11 +87,12 @@ The planned public deployment is:
 - domain registration through Cloudflare Registrar,
 - DNS through Cloudflare,
 - `vivi2d.com` as the product portal,
-- `docs.vivi2d.com` as the reserved user documentation host,
+- `docs.vivi2d.com` as the public docs hostname, currently redirecting to the
+  GitHub `docs/` tree until generated docs routes are published,
 - `vivi2d.com/docs` as a compatibility redirect to `docs.vivi2d.com/`,
 - initial static hosting through Cloudflare Workers static assets,
 - optional future subdomains such as `api.vivi2d.com` and `cdn.vivi2d.com`.
 
-The current deployment surface is the root portal plus a reserved docs hostname.
-Hosted user docs remain unpublished until the documentation media/review pass is
-complete.
+The current deployment surface is the root portal plus the reserved docs
+hostname. Generated user-doc routes remain unpublished until the documentation
+media/review pass is complete.

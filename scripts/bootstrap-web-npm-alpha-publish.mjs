@@ -8,6 +8,15 @@ const packageName = "@vivi2d/web";
 const bootstrapVersion = "0.1.0-alpha.0";
 const confirmToken = "BOOTSTRAP_WEB_NPM_ALPHA_0.1.0-alpha.0";
 
+console.error(
+  [
+    "[web-npm-alpha-bootstrap] disabled:",
+    `${packageName}@${bootstrapVersion} has already been published through the one-time bootstrap path.`,
+    "Use npm Trusted Publishing through .github/workflows/publish-web-alpha.yml for later versions.",
+  ].join("\n"),
+);
+process.exit(1);
+
 const args = parseArgs(process.argv.slice(2));
 const packResult = args["pack-result"];
 const tarball = args.tarball;

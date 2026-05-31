@@ -2,7 +2,7 @@
 
 Vivi2D is a desktop-first editor that opens user-controlled files, talks to
 local services, and generates release artifacts. This document captures the
-minimum threat model for the OSS-ready refactor.
+minimum threat model for the OSS alpha.
 
 ## Trust Boundaries
 
@@ -98,7 +98,8 @@ minimum threat model for the OSS-ready refactor.
 - Exported viewer configs must not contain credentials, API tokens, OBS
   passwords, bridge tokens, private paths by default, or local user/account
   identifiers.
-- Full git-history and hosted-surface review before public release.
+- Full git-history and hosted-surface review before new public release surfaces,
+  history rewrites, or security-sensitive publication changes.
 - Native/WASM runtime artifacts are built from reviewed source, validated before
   embedding or release, use copy-oriented host APIs by default, declare a bounded
   WASM linear-memory maximum for internal artifacts, and are covered by browser

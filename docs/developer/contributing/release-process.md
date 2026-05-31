@@ -56,8 +56,10 @@ are live. Reserve Cloudflare DNS records for future subdomains such as
 
 ## Git History Publication
 
-The first public release must choose either full-history publication or a clean
-public mirror/import. The selected model and required checks are tracked in
+The public repository is already published. Do not rewrite public history for
+routine release fixes; publish a new release, tag, or package version instead.
+If an emergency history rewrite is unavoidable, record the owner decision and
+rerun the history-surface checks in
 [`public-release-checklist.md`](../quality/public-release-checklist.md).
 
 ## GitHub Release Alpha

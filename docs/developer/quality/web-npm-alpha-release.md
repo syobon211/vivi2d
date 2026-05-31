@@ -1,9 +1,10 @@
 # Web SDK npm Alpha Release Contract
 
-This document defines the release design for the first `@vivi2d/web` npm alpha.
-It is a design contract, not permission to publish. The package may be published
-only after every exit gate in this document and the public release checklist is
-green on the final release tree.
+This document defines the release contract for the `@vivi2d/web` npm alpha
+channel. The one-time `0.1.0-alpha.0` bootstrap publication is complete and
+recorded below. Later package versions may be published only after every exit
+gate in this document and the public release checklist are green on the final
+release tree.
 
 ## Scope
 
@@ -117,28 +118,28 @@ Trusted publisher setup:
 - disable or revoke any long-lived automation tokens after trusted publishing is
   verified
 
-## Initial Bootstrap Exception
+## Completed Initial Bootstrap Exception
 
 npm Trusted Publisher settings are package-level settings. In the current npm
-UI/CLI model, maintainers may not be able to configure those settings until
-`@vivi2d/web` exists in the registry. That creates a first-publish bootstrap
+UI/CLI model, maintainers could not configure those settings until
+`@vivi2d/web` existed in the registry. That created a first-publish bootstrap
 exception.
 
-The bootstrap exception is intentionally narrow:
+The completed bootstrap exception was intentionally narrow:
 
 - it applies only to `@vivi2d/web@0.1.0-alpha.0`
-- it may run only from a local maintainer machine, never from GitHub Actions
-- it may run only when `@vivi2d/web@0.1.0-alpha.0` is absent from npm
-- it requires the `vivi2d` npm organization/scope to exist and be accessible
-- it requires the maintainer to be logged in to npm with account 2FA enabled
-- it must publish the exact tarball verified by
+- it ran only from a local maintainer machine, never from GitHub Actions
+- it ran only when `@vivi2d/web@0.1.0-alpha.0` was absent from npm
+- it required the `vivi2d` npm organization/scope to exist and be accessible
+- it required the maintainer to be logged in to npm with account 2FA enabled
+- it published the exact tarball verified by
   `scripts/verify-web-npm-alpha-release-record.mjs`
-- it must use the explicit `alpha` dist-tag
-- it must use `--provenance=false`, because this first package creation is not
+- it used the explicit `alpha` dist-tag
+- it used `--provenance=false`, because this first package creation was not
   the GitHub Actions OIDC Trusted Publishing path
-- it requires an explicit confirmation token so it cannot be run by accident
+- it required an explicit confirmation token so it could not be run by accident
 
-The only approved bootstrap command is the first-party wrapper:
+The historical approved bootstrap command was the first-party wrapper:
 
 ```sh
 npm run release:web-npm-alpha:bootstrap -- \
@@ -148,7 +149,7 @@ npm run release:web-npm-alpha:bootstrap -- \
   --confirm BOOTSTRAP_WEB_NPM_ALPHA_0.1.0-alpha.0
 ```
 
-Maintainers should run the same command with `--dry-run` first:
+Maintainers ran the same command with `--dry-run` first:
 
 ```sh
 npm run release:web-npm-alpha:bootstrap -- \
@@ -158,12 +159,36 @@ npm run release:web-npm-alpha:bootstrap -- \
   --dry-run
 ```
 
-After bootstrap succeeds, immediately configure npm Trusted Publishing for
+After bootstrap succeeded, npm Trusted Publishing was configured for
 `@vivi2d/web` with provider `GitHub Actions`, repository `syobon211/vivi2d`,
 workflow `publish-web-alpha.yml`, and environment `npm-alpha`. Every later
 alpha must use the normal GitHub Actions/OIDC publish path. The bootstrap
-script must fail once the package version exists, so it cannot be reused as a
-general local publish bypass.
+script exits before any publish path so it cannot be reused as a general local
+publish bypass.
+
+Bootstrap completion record:
+
+- `@vivi2d/web@0.1.0-alpha.0` was published through the one-time local
+  bootstrap path on 2026-05-31 UTC because npm Trusted Publisher settings are
+  available only after the package exists.
+- The short audit record is tracked in
+  `docs/developer/quality/web-npm-alpha-bootstrap-record.md`.
+- npm Trusted Publishing was configured immediately afterward for provider
+  `GitHub Actions`, repository `syobon211/vivi2d`, workflow
+  `publish-web-alpha.yml`, and environment `npm-alpha`.
+- `0.1.0-alpha.0` has no npm provenance attestation. Its tarball SHA-256 is
+  `982dc5369f35cb0246c04bcdaf9dbfbad5f3a720dc0db86434f16e581babea09`, npm
+  integrity is
+  `sha512-/I/WiO+HB4c8RxTS71aUYO16NJAJ5BKs92sSWVKRT1KD+pBoYQM0CLm8tnRsK9q0akBwdvEJdgmNsFqAj90yzA==`,
+  and npm shasum is `5a60a49f81c18fa8169569942a751d337e8ff977`.
+- The registry attached both `alpha` and `latest` dist-tags to the initial
+  package while it was the only published version. The owner attempted to
+  remove `latest`, but npm rejected the deletion. Treat `alpha` and exact
+  versions as the supported install surface until a separate stable-channel
+  review explicitly promotes `latest`.
+- `scripts/bootstrap-web-npm-alpha-publish.mjs` is intentionally disabled after
+  the bootstrap; it is retained only as an audit trail for the first package
+  creation path.
 
 Workflow requirements:
 
@@ -198,7 +223,7 @@ Workflow requirements:
   `scripts/publish-web-npm-alpha.mjs` wrapper, which runs the release-record
   verifier before invoking `npm publish`; do not use a third-party publish
   wrapper or hand-run `npm publish`
-- publish with the `alpha` dist-tag, never `latest`
+- publish with the `alpha` dist-tag and never intentionally promote `latest`
 - verify the registry tarball digest after publication
 
 The package `repository.url` must exactly match the GitHub repository used by
@@ -380,8 +405,11 @@ The first publish should use an explicit alpha semver version, for example:
 
 Rules:
 
-- never publish alpha builds under `latest`
+- never intentionally publish or promote alpha builds under `latest`
 - use `--tag alpha`
+- if npm auto-attaches `latest` to the first or only version and refuses
+  deletion, record the registry behavior and keep public install guidance on
+  `@alpha` or exact versions until the next reviewed release can retag
 - require a semver pre-release suffix such as `-alpha.0`; `0.1.0` is not a
   valid npm alpha publication version even if published under the `alpha` tag
 - do not reuse a version; npm package versions are immutable once published
@@ -515,10 +543,11 @@ The `@vivi2d/web` package also has a `prepublishOnly` guard that blocks direct
 manual publication unless the wrapper sets
 `VIVI2D_VERIFIED_WEB_NPM_ALPHA_PUBLISH=1`.
 
-The only exception is the initial package bootstrap documented above. It uses
-`scripts/bootstrap-web-npm-alpha-publish.mjs`, is limited to
-`@vivi2d/web@0.1.0-alpha.0`, and must be followed by npm Trusted Publisher
-configuration before any later alpha release.
+The only exception was the initial package bootstrap documented above. It used
+`scripts/bootstrap-web-npm-alpha-publish.mjs`, was limited to
+`@vivi2d/web@0.1.0-alpha.0`, and has been followed by npm Trusted Publisher
+configuration for later alpha releases. The script now exits before any npm
+publish path and is retained only for auditability.
 
 The final publish workflow should run the non-dry-run publish only after the
 same final tree passes all release gates.
@@ -591,13 +620,16 @@ includes:
 4. A first-party publish wrapper that runs the release-record verifier before
    invoking `npm publish`, plus a `prepublishOnly` guard that blocks direct
    manual publication.
-5. A one-time bootstrap publish wrapper for creating `@vivi2d/web@0.1.0-alpha.0`
-   when npm package-level Trusted Publisher settings are unavailable before the
-   package exists. This wrapper is local-only, requires the exact confirmation
-   token, verifies the release record, checks the npm organization, rejects
-   already-published package versions, and publishes with `--provenance=false`.
-6. A post-publish verifier that compares the registry tarball digest with
-   the locally recorded digest and confirms npm provenance is present.
+5. A completed one-time bootstrap publish wrapper record for
+   `@vivi2d/web@0.1.0-alpha.0`. npm package-level Trusted Publisher settings
+   were unavailable before the package existed. The wrapper was local-only,
+   required the exact confirmation token, verified the release record, checked
+   the npm organization, rejected already-published package versions, and
+   published with `--provenance=false`; it now exits before any publish attempt.
+6. A post-publish verifier that compares the registry tarball digest with the
+   locally recorded digest and confirms npm provenance is present for
+   OIDC-published versions. The documented `0.1.0-alpha.0` bootstrap package is
+   the only provenance exception.
 7. `check:web-npm-alpha-release`, which verifies the
    workflow, protected environment name, package metadata, trusted publisher
    owner/repository/workflow expectation, release notes template, SBOM command,
@@ -630,10 +662,10 @@ includes:
 The `@vivi2d/web` npm alpha is ready to publish only when:
 
 - package metadata names the correct public repository and npm organization
-- trusted publisher is configured on npmjs.com for the exact workflow, or the
-  owner is performing the one-time `@vivi2d/web@0.1.0-alpha.0` bootstrap step
-  because npm does not expose package-level Trusted Publisher settings before
-  the package exists
+- trusted publisher is configured on npmjs.com for the exact workflow. The
+  completed one-time `@vivi2d/web@0.1.0-alpha.0` bootstrap step is the only
+  exception, because npm did not expose package-level Trusted Publisher
+  settings before the package existed
 - trusted publisher settings are paired with token restrictions or a reviewed
   token-hygiene exception
 - release workflow is SHA-pinned and gives OIDC permission only to the minimal
@@ -656,7 +688,8 @@ The `@vivi2d/web` npm alpha is ready to publish only when:
   fixture input
 - full release gates pass on the final commit
 - the package is published with `--tag alpha`
-- npm provenance appears on the package page after publish
+- npm provenance appears on the package page after publish, except for the
+  documented `0.1.0-alpha.0` bootstrap package
 - post-publish registry tarball digest verification passes
 
 ## References

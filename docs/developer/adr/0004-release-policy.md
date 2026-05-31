@@ -2,11 +2,11 @@
 
 ## Status
 
-Accepted for the pre-public OSS refactor.
+Accepted for the OSS alpha release-engineering model.
 
 ## Context
 
-Vivi2D is planned for OSS publication, but not every workspace package or native
+Vivi2D is public as an OSS alpha, but not every workspace package or native
 artifact is ready for public support. Release automation must avoid long-lived
 secrets, broad workflow permissions, and ambiguous provenance.
 
