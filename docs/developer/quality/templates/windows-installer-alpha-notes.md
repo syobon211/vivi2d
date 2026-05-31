@@ -32,6 +32,10 @@ Manual review status: `<manual-review-status>`
 The release record contains the Windows VM review summary used for the draft or
 publish decision.
 
+Intentional uninstall remnants recorded for this review:
+
+<intentional-remnants>
+
 ## Verification
 
 Download `checksums.txt` from this release and compare the installer SHA-256
@@ -48,6 +52,11 @@ The installer release record also stores SHA-512 digests for release artifacts.
 Use Windows Settings -> Apps -> Installed apps -> Vivi2D -> Uninstall. The
 installer alpha does not include an auto-update channel, so uninstalling the
 application is the expected rollback path.
+
+The alpha uninstaller removes the installed app, shortcuts, and uninstall
+registration. It may leave `%APPDATA%/Vivi2D` user data and Chromium cache so a
+future alpha can preserve preferences. Delete that folder manually only if you
+want a fully clean test profile.
 
 ## What Is Not Included
 

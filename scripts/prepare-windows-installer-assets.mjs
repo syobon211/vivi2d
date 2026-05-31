@@ -121,7 +121,8 @@ const releaseNotes = fs
   .replaceAll("<electron-version>", electronPackage.version)
   .replaceAll("<chromium-major-version>", chromiumMajorVersion)
   .replaceAll("<signing-status>", signingStatus)
-  .replaceAll("<manual-review-status>", manualReview.status);
+  .replaceAll("<manual-review-status>", manualReview.status)
+  .replaceAll("<intentional-remnants>", formatIntentionalRemnants(manualReview));
 fs.writeFileSync(releaseNotesPath, releaseNotes);
 const releaseNotesAsset = describeFileForRecord(releaseNotesPath);
 
@@ -324,6 +325,20 @@ function parseManualReview(rawValue) {
     uninstallPassed: Boolean(value.uninstallPassed),
     windowsVersion: String(value.windowsVersion ?? ""),
   };
+}
+
+function formatIntentionalRemnants(manualReview) {
+  if (manualReview.intentionalRemnants.length === 0) return "- None recorded.";
+  return manualReview.intentionalRemnants
+    .map((entry) => `- ${singleLineMarkdownText(entry)}`)
+    .join("\n");
+}
+
+function singleLineMarkdownText(value) {
+  return String(value ?? "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function assertToolVersion(toolName, actualVersion) {

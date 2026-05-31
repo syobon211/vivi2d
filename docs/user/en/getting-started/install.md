@@ -85,6 +85,16 @@ This separation makes it much easier to undo experiments and avoid accidentally 
 4. Open a copied project first, not your only working file.
 5. If the project behaves differently, keep both builds and report the visible behavior.
 
+## Uninstalling The Windows Alpha
+
+Use Windows Settings -> Apps -> Installed apps -> Vivi2D -> Uninstall.
+
+The alpha uninstaller removes the installed application, Start Menu shortcut,
+desktop shortcut if one was created, and Windows uninstall registration. It may
+leave `%APPDATA%/Vivi2D` behind because that folder contains preferences,
+Chromium cache, and local editor state. Delete `%APPDATA%/Vivi2D` manually only
+if you want a fully clean test profile before reinstalling.
+
 ## Check Your Result
 
 You are ready for the next page when:
