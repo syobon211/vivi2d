@@ -13,6 +13,7 @@ const releasePolicyPath = "docs/developer/quality/release-policy.md";
 const checklistPath = "docs/developer/quality/public-release-checklist.md";
 const templatePath = "docs/developer/quality/templates/windows-installer-alpha-notes.md";
 const builderConfigPath = "electron-builder.yml";
+const viewerBuilderConfigPath = "electron-builder.viewer.yml";
 const prepareScriptPath = "scripts/prepare-windows-installer-assets.mjs";
 const verifyScriptPath = "scripts/verify-windows-installer-assets.mjs";
 const installerLibPath = "scripts/lib/windows-installer-alpha.mjs";
@@ -21,6 +22,13 @@ const reviewPacketScriptPath =
 const environmentPolicyPath = ".github/release-environments/desktop-installer-alpha.json";
 const electronBuilderArtifactNameLine = [
   'artifactName: "vivi2d-',
+  ["$", "{env.VERSION}"].join(""),
+  "-windows-x64-setup.",
+  ["$", "{ext}"].join(""),
+  '"',
+].join("");
+const electronBuilderViewerArtifactNameLine = [
+  'artifactName: "vivi2d-viewer-',
   ["$", "{env.VERSION}"].join(""),
   "-windows-x64-setup.",
   ["$", "{ext}"].join(""),
@@ -40,6 +48,7 @@ const releasePolicy = readRequired(releasePolicyPath);
 const checklist = readRequired(checklistPath);
 const template = readRequired(templatePath);
 const builderConfig = readRequired(builderConfigPath);
+const viewerBuilderConfig = readRequired(viewerBuilderConfigPath);
 const prepareScript = readRequired(prepareScriptPath);
 const verifierScript = readRequired(verifyScriptPath);
 const installerLib = readRequired(installerLibPath);
@@ -88,6 +97,7 @@ function checkRequiredFiles() {
     checklistPath,
     templatePath,
     builderConfigPath,
+    viewerBuilderConfigPath,
     prepareScriptPath,
     verifyScriptPath,
     reviewPacketScriptPath,
@@ -143,6 +153,33 @@ function checkElectronBuilderConfig() {
   if (builderConfig.includes("latest.yml") || builderConfig.includes("app-update.yml")) {
     failures.push(`${builderConfigPath}: must not configure auto-update metadata.`);
   }
+  for (const text of [
+    "appId: com.vivi2d.viewer",
+    "productName: Vivi2D Viewer",
+    "asar: false",
+    "publish: null",
+    electronBuilderViewerArtifactNameLine,
+    "output: dist/windows-installer-viewer",
+    "from: packages/viewer/dist",
+    "from: packages/viewer/electron",
+    "electron/main.cjs",
+    "THIRD_PARTY_NOTICES.txt",
+    "target: nsis",
+    "forceCodeSigning: false",
+    "signAndEditExecutable: false",
+    "oneClick: true",
+    "shortcutName: Vivi2D Viewer",
+  ]) {
+    if (!viewerBuilderConfig.includes(text)) {
+      failures.push(`${viewerBuilderConfigPath}: missing ${text}`);
+    }
+  }
+  if (
+    viewerBuilderConfig.includes("latest.yml") ||
+    viewerBuilderConfig.includes("app-update.yml")
+  ) {
+    failures.push(`${viewerBuilderConfigPath}: must not configure auto-update metadata.`);
+  }
 }
 
 function checkWorkflow() {
@@ -159,6 +196,9 @@ function checkWorkflow() {
     "create-windows-installer-release:",
     WINDOWS_INSTALLER_ARTIFACT_NAME,
     WINDOWS_INSTALLER_ENVIRONMENT,
+    "electron-builder.viewer.yml",
+    "vivi2d-viewer-$env:VERSION-windows-x64-setup.exe",
+    "vivi2d-viewer-$VERSION-windows-x64-setup.exe",
     "tmp/windows-installer-baseline",
     "gh release create",
     "--draft",
@@ -245,15 +285,26 @@ function checkWorkflow() {
 
   for (const command of [
     "npm run build",
+    "npm run build --workspace @vivi2d/viewer",
     "git rev-parse -q --verify $annotatedTagRef",
     "[int]$Matches[4] -lt 2",
     "npx electron-builder --win nsis --x64 --publish never --config electron-builder.yml",
+    "npx electron-builder --win nsis --x64 --publish never --config electron-builder.viewer.yml",
     "npm run release:windows-installer:prepare",
     "npm run verify:windows-installer-assets",
+    "--packaged-app-dir dist/windows-installer/win-unpacked",
+    "--viewer-installer $viewerInstaller",
+    "--viewer-packaged-app-dir dist/windows-installer-viewer/win-unpacked",
     "--sbom tmp/windows-installer-baseline/vivi2d.cdx.json",
   ]) {
     requireRunStep(windowsSteps, command, "windows-packaging");
   }
+  assertRunOrder(
+    windowsSteps,
+    "npm run build --workspace @vivi2d/viewer",
+    "npx electron-builder --win nsis --x64 --publish never --config electron-builder.viewer.yml",
+    "windows-packaging",
+  );
   assertRunOrder(
     windowsSteps,
     "npm run build",
@@ -263,6 +314,12 @@ function checkWorkflow() {
   assertRunOrder(
     windowsSteps,
     "npx electron-builder",
+    "npm run release:windows-installer:prepare",
+    "windows-packaging",
+  );
+  assertRunOrder(
+    windowsSteps,
+    "npx electron-builder --win nsis --x64 --publish never --config electron-builder.viewer.yml",
     "npm run release:windows-installer:prepare",
     "windows-packaging",
   );
@@ -285,6 +342,10 @@ function checkScripts() {
     "chromium-major-version",
     "electron-embedded-node-version",
     "dist/windows-installer/win-unpacked",
+    "dist/windows-installer-viewer/win-unpacked",
+    "viewerInstaller",
+    "viewer-packaged-app-dir",
+    "applicationScope",
     'options["third-party-notices"]',
     "MANUAL_REVIEW_JSON",
     "WINDOWS_INSTALLER_ENVIRONMENT",
@@ -302,6 +363,14 @@ function checkScripts() {
   }
   if (!installerLib.includes("alphaNumber < 2")) {
     failures.push(`${installerLibPath}: must reject alpha.1 installer versions.`);
+  }
+  if (!installerLib.includes("windowsInstallerIncludesViewer")) {
+    failures.push(
+      `${installerLibPath}: must gate Viewer installer inclusion by alpha version.`,
+    );
+  }
+  if (!installerLib.includes("vivi2d-viewer-")) {
+    failures.push(`${installerLibPath}: must define the Viewer installer asset name.`);
   }
   if (installerLib.includes("dev server env name")) {
     failures.push(
@@ -329,6 +398,8 @@ function checkScripts() {
     "parseChecksums",
     "releaseNotesAttachedAsDownload",
     "manualWindowsReview",
+    "applicationScope",
+    "viewer application scope",
     "publisherName",
     "sha512",
     "explicitAbsences",
@@ -350,6 +421,8 @@ function checkDocs() {
     "First-Launch Network Policy",
     "MediaPipe viewer assets must be bundled",
     "manual Windows VM review summary",
+    "Vivi2D Viewer",
+    "vivi2d-viewer-<version>-windows-x64-setup.exe",
     "Signed-build order fixtures",
   ]) {
     if (!contract.includes(text)) failures.push(`${contractPath}: missing ${text}`);
@@ -366,6 +439,7 @@ function checkDocs() {
     "Windows installer alpha",
     "Signing Status",
     "Manual Windows Review",
+    "Vivi2D Viewer",
     "What Is Not Included",
     "Uninstall",
     "certutil -hashfile",

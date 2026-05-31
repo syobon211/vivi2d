@@ -16,6 +16,7 @@ import {
   WINDOWS_INSTALLER_ENVIRONMENT,
   walkFiles,
   windowsInstallerAssetNames,
+  windowsInstallerIncludesViewer,
 } from "./lib/windows-installer-alpha.mjs";
 
 const options = parseArgs(process.argv.slice(2));
@@ -33,6 +34,18 @@ const installerInput = resolveInsideRepo(
 const packagedAppDir = resolveInsideRepo(
   options["packaged-app-dir"] ?? "dist/windows-installer/win-unpacked",
 );
+const includeViewerInstaller = windowsInstallerIncludesViewer(version);
+const viewerInstallerInput = includeViewerInstaller
+  ? resolveInsideRepo(
+      options["viewer-installer"] ??
+        `dist/windows-installer-viewer/${assetNames.viewerInstaller}`,
+    )
+  : null;
+const viewerPackagedAppDir = includeViewerInstaller
+  ? resolveInsideRepo(
+      options["viewer-packaged-app-dir"] ?? "dist/windows-installer-viewer/win-unpacked",
+    )
+  : null;
 const sourceReviewZip = resolveInsideRepo(
   options["source-review-zip"] ?? "tmp/source-review/vivi2d-source-review.zip",
 );
@@ -67,6 +80,7 @@ for (const required of [
   sbom,
   notices,
   releaseNotesTemplate,
+  ...(includeViewerInstaller ? [viewerInstallerInput, viewerPackagedAppDir] : []),
 ]) {
   if (!fs.existsSync(required)) {
     throw new Error(`Missing Windows installer release input: ${relative(required)}`);
@@ -82,6 +96,19 @@ if (installerInputStats.size > MAX_INSTALLER_BYTES) {
     `${relative(installerInput)} exceeds the 300 MiB installer alpha budget.`,
   );
 }
+const viewerInstallerInputStats = includeViewerInstaller
+  ? fs.statSync(viewerInstallerInput)
+  : null;
+if (viewerInstallerInputStats && !viewerInstallerInputStats.isFile()) {
+  throw new Error(
+    `Viewer installer input must be a file: ${relative(viewerInstallerInput)}`,
+  );
+}
+if (viewerInstallerInputStats?.size > MAX_INSTALLER_BYTES) {
+  throw new Error(
+    `${relative(viewerInstallerInput)} exceeds the 300 MiB installer alpha budget.`,
+  );
+}
 
 const installedFootprintBytes = directorySizeBytes(packagedAppDir);
 if (installedFootprintBytes > MAX_INSTALLED_FOOTPRINT_BYTES) {
@@ -90,12 +117,24 @@ if (installedFootprintBytes > MAX_INSTALLED_FOOTPRINT_BYTES) {
   );
 }
 scanPackagedApp(packagedAppDir);
+const viewerInstalledFootprintBytes = includeViewerInstaller
+  ? directorySizeBytes(viewerPackagedAppDir)
+  : 0;
+if (viewerInstalledFootprintBytes > MAX_INSTALLED_FOOTPRINT_BYTES) {
+  throw new Error(
+    `${relative(viewerPackagedAppDir)} exceeds the 700 MiB installed footprint budget.`,
+  );
+}
+if (includeViewerInstaller) scanPackagedApp(viewerPackagedAppDir);
 
 fs.rmSync(outputDir, { recursive: true, force: true });
 fs.mkdirSync(outputDir, { recursive: true });
 
 const copiedAssets = [
   copyAsset(installerInput, assetNames.installer),
+  ...(includeViewerInstaller
+    ? [copyAsset(viewerInstallerInput, assetNames.viewerInstaller)]
+    : []),
   copyAsset(sourceReviewZip, assetNames.sourceReviewZip),
   copyAsset(sourceReviewManifest, assetNames.sourceReviewManifest),
   copyAsset(sbom, assetNames.sbom),
@@ -139,6 +178,24 @@ const releaseRecord = {
     architecture: "x64",
     installerFormat: "nsis",
   },
+  applicationScope: [
+    {
+      id: "editor",
+      name: "Vivi2D Editor",
+      installerName: assetNames.installer,
+      packagedAppDir: "dist/windows-installer/win-unpacked",
+    },
+    ...(includeViewerInstaller
+      ? [
+          {
+            id: "viewer",
+            name: "Vivi2D Viewer",
+            installerName: assetNames.viewerInstaller,
+            packagedAppDir: "dist/windows-installer-viewer/win-unpacked",
+          },
+        ]
+      : []),
+  ],
   packageVersion: rootPackage.version,
   runtimeVersions: {
     electron: electronPackage.version,
@@ -188,8 +245,12 @@ const releaseRecord = {
   sizeBudgets: {
     maxInstallerBytes: MAX_INSTALLER_BYTES,
     installerBytes: installerInputStats.size,
+    viewerInstallerBytes: viewerInstallerInputStats?.size ?? null,
     maxInstalledFootprintBytes: MAX_INSTALLED_FOOTPRINT_BYTES,
     installedFootprintBytes,
+    viewerInstalledFootprintBytes: includeViewerInstaller
+      ? viewerInstalledFootprintBytes
+      : null,
   },
   explicitAbsences: {
     autoUpdateMetadata: true,

@@ -1,0 +1,51 @@
+appId: com.vivi2d.viewer
+productName: Vivi2D Viewer
+asar: false
+publish: null
+artifactName: "vivi2d-viewer-${env.VERSION}-windows-x64-setup.${ext}"
+directories:
+  output: dist/windows-installer-viewer
+files:
+  - from: packages/viewer/dist
+    to: dist
+    filter:
+      - "**/*"
+      - "!**/*.map"
+  - from: packages/viewer/electron
+    to: electron
+    filter:
+      - "**/*.cjs"
+  - package.json
+  - LICENSE
+  - from: THIRD_PARTY_NOTICES
+    to: THIRD_PARTY_NOTICES.txt
+  - "!node_modules/**"
+  - "!node_modules/**/*.map"
+  - "!node_modules/**/*.ts"
+  - "!node_modules/**/src/**"
+  - "!node_modules/**/test/**"
+  - "!node_modules/**/tests/**"
+  - "!node_modules/**/__tests__/**"
+  - "!node_modules/**/__mocks__/**"
+  - "!node_modules/**/coverage/**"
+  - "!node_modules/**/docs/**"
+  - "!node_modules/**/doc/**"
+  - "!node_modules/**/example/**"
+  - "!node_modules/**/examples/**"
+extraMetadata:
+  main: electron/main.cjs
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  forceCodeSigning: false
+  signAndEditExecutable: false
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Vivi2D Viewer

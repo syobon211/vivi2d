@@ -72,7 +72,11 @@ included until they are explicitly announced in release notes.
 
 The Windows installer alpha is unsigned. It may show browser, `Unknown
 publisher`, or Microsoft Defender SmartScreen warnings. Download installers only
-from GitHub Releases and verify `checksums.txt` before running them.
+from GitHub Releases and verify `checksums.txt` before running them. Please add
+installer feedback to
+[#29](https://github.com/syobon211/vivi2d/issues/29) or follow the alpha.3
+installer improvement track in
+[#30](https://github.com/syobon211/vivi2d/issues/30).
 
 ## Getting Started
 
@@ -155,8 +159,9 @@ npm run check:quality:e2e-workflow-record
 
 ## Roadmap
 
-- Improve Windows installer signing, first-launch review evidence, and download
-  copy after the unsigned installer alpha.
+- Prepare the Windows installer alpha.3 track: Editor and Viewer installers,
+  code-signing decision, clearer SmartScreen guidance, first-launch onboarding
+  evidence, and uninstall wording.
 - Prepare an `@vivi2d/web` npm alpha for reviewed public-profile playback.
 - Add macOS/Linux or store-distributed desktop builds only after separate
   installer contracts are reviewed.

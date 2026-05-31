@@ -34,7 +34,10 @@ The current public Windows build is an unsigned alpha installer. Browser
 download warnings, an `Unknown publisher` prompt, or Microsoft Defender
 SmartScreen warnings are expected for this release. Do not disable SmartScreen
 globally. Instead, confirm that the installer came from the official GitHub
-Release page and verify the checksum before launching.
+Release page and verify the checksum before launching. The next installer
+improvement track is focused on adding a separate Vivi2D Viewer installer,
+code-signing decisions, clearer SmartScreen guidance, first-launch review
+evidence, and uninstall wording.
 
 On Windows, you can verify the installer SHA-256 from PowerShell or Command
 Prompt:
@@ -63,7 +66,9 @@ does not match exactly, delete the installer and do not run it.
 3. Confirm the first empty workspace opens without a project error.
 4. Confirm the default public UI is English and the default theme is dark.
 5. Open Settings only if you want to choose Japanese, Simplified Chinese, or Korean.
-6. Close and reopen the app once if you changed language or display settings.
+6. Confirm there is no account sign-in, updater prompt, telemetry prompt, or
+   unexpected network-access prompt.
+7. Close and reopen the app once if you changed language or display settings.
 
 ## Keep Projects Separate
 
@@ -109,6 +114,9 @@ You are ready for the next page when:
 - If the app does not open, move it to a normal user folder and try again.
 - If security software blocks launch, verify the build source before adding an exception.
 - If the UI opens but text is clipped or mixed-language, continue to [Language And Text Display](../troubleshooting/localization.md).
+- If first launch asks for sign-in, telemetry, updates, or unexpected network
+  access, report it in the alpha feedback issue:
+  https://github.com/syobon211/vivi2d/issues/29.
 - If you report a launch issue publicly, do not include full local paths, private artwork, access tokens, or client names.
 
 ## Next

@@ -6,6 +6,10 @@ feedback, not production use.
 ## What Is Included
 
 - Windows x64 NSIS installer: `vivi2d-<version>-windows-x64-setup.exe`
+- Windows x64 NSIS Viewer installer for alpha.3 and later:
+  `vivi2d-viewer-<version>-windows-x64-setup.exe`
+- The Vivi2D Viewer installer is allowlisted only for alpha.3 and later, after
+  the workflow, verifier, release record, and checksum gate cover both apps.
 - Source review archive, source review manifest, SBOM, notices, checksums, and
   installer release record regenerated from tag `<tag>`
 - Source commit: `<commit-sha>`
@@ -25,6 +29,10 @@ Before running the installer, confirm that it came from this GitHub Release and
 verify the SHA-256 entry in `checksums.txt`. Do not disable SmartScreen globally
 to install Vivi2D.
 
+Installer feedback is tracked in
+https://github.com/syobon211/vivi2d/issues/29. Follow-up work for the next
+installer alpha is tracked in https://github.com/syobon211/vivi2d/issues/30.
+
 ## Manual Windows Review
 
 Manual review status: `<manual-review-status>`
@@ -39,13 +47,21 @@ Intentional uninstall remnants recorded for this review:
 ## Verification
 
 Download `checksums.txt` from this release and compare the installer SHA-256
-entry before running the installer.
+entry before running the Editor or Vivi2D Viewer installer.
 
 ```sh
 certutil -hashfile vivi2d-<version>-windows-x64-setup.exe SHA256
+certutil -hashfile vivi2d-viewer-<version>-windows-x64-setup.exe SHA256
 ```
 
 The installer release record also stores SHA-512 digests for release artifacts.
+
+## First Launch
+
+After installation, Vivi2D should open to the empty editor workspace without an
+account sign-in prompt, updater prompt, telemetry prompt, or outbound network
+activity attributed to the app process. If first launch behaves differently,
+please report it in the alpha feedback issue.
 
 ## Uninstall
 

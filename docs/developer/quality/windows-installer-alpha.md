@@ -181,6 +181,44 @@ The installer release record must use this signing shape:
 Signed builds must replace the nullable certificate and timestamp fields with
 verified values. Unsigned builds must keep them `null`.
 
+## Alpha.3 Installer Improvement Track
+
+The `v0.1.0-alpha.3` installer track should improve the user-facing installer
+experience without weakening the release boundary established by `alpha.2`.
+Tracked work lives in
+[`#30`](https://github.com/syobon211/vivi2d/issues/30).
+
+Required decisions before an `alpha.3` installer is tagged:
+
+- Include both desktop apps only after the workflow can build, scan, verify, and
+  attach separate Windows x64 NSIS installers for the Editor and Vivi2D Viewer.
+  The Viewer installer must have its own app id, product name, output
+  directory, file name, packaged-app scan, release-record entry, and checksum
+  entries.
+- Decide whether `alpha.3` remains unsigned or enables a reviewed signing path.
+  Unsigned is allowed, but the release notes, website, and install docs must say
+  so above the fold.
+- If signing is enabled, merge an ADR that records certificate owner,
+  certificate storage, renewal, revocation response, timestamp authority,
+  workflow secret handling, and verification evidence. The workflow must verify
+  the Authenticode signature before checksums and release records are written.
+- Keep Microsoft Defender SmartScreen guidance checksum-first. Docs must not ask
+  users to disable SmartScreen globally, and the release must not claim improved
+  reputation until a signed installer has real distribution evidence.
+- Confirm first launch from an installed build still opens the empty editor
+  without account sign-in, telemetry prompt, updater prompt, or outbound network
+  activity attributed to the app process.
+- Keep uninstall behavior explicit. The default alpha behavior may preserve
+  `%APPDATA%/Vivi2D` user data and Chromium cache; any future "remove user
+  data" option must be explicit and opt-in.
+
+`alpha.3` may update copy, review evidence, and installer guidance without
+shipping a signed build. The alpha.3 workflow includes the separate Vivi2D
+Viewer installer only because the installer asset allowlist, workflow, release
+record, and verifier have been extended to cover both installers. It must not
+imply that signing or SmartScreen reputation work is complete until the release
+record proves it.
+
 ## Required Installer Artifacts
 
 Each Windows installer alpha release must produce:
@@ -188,6 +226,7 @@ Each Windows installer alpha release must produce:
 | Artifact | Required | Notes |
 | --- | --- | --- |
 | `vivi2d-<version>-windows-x64-setup.exe` | Yes | The NSIS installer. |
+| `vivi2d-viewer-<version>-windows-x64-setup.exe` | Yes for alpha.3+ | Separate Vivi2D Viewer NSIS installer. Required when the version is alpha.3 or later. |
 | `vivi2d-<version>-windows-installer-record.json` | Yes | Machine-readable release record. |
 | `checksums.txt` | Yes | Covers every attached downloadable artifact except itself with SHA-256 and SHA-512 entries where available. |
 | `vivi2d-<version>.cdx.json` | Yes | Repository-wide SBOM regenerated from the release tag. |
@@ -213,6 +252,8 @@ The installer release record must include:
   version, install result, first-launch network result, uninstall result, and
   intentional remnants
 - installer scope: Windows x64 NSIS only
+- application scope: exactly which app installers are included, starting with
+  Editor and adding Vivi2D Viewer for alpha.3 and later after verifier support
 - exact required gate transcript names or workflow run IDs
 - explicit absence of auto-update metadata
 - explicit absence of bundled ComfyUI, See-through, model weights, and Python
@@ -238,6 +279,12 @@ vivi2d-<version>-windows-x64-setup.exe
 vivi2d-<version>-source-review.zip
 vivi2d-<version>-source-review-manifest.json
 vivi2d-<version>.cdx.json
+```
+
+For the alpha.3 Viewer expansion, the allowlist must also include:
+
+```text
+vivi2d-viewer-<version>-windows-x64-setup.exe
 ```
 
 `release-notes.md` is used as the release body and must not be attached as a
@@ -398,6 +445,8 @@ Installer-specific checks must prove:
 - packaging config is present and reviewed
 - auto-update output is disabled or absent
 - only allowlisted installer assets are attached
+- both Editor and Viewer installers are built on Windows and scanned when the
+  alpha.3 Viewer expansion is enabled
 - installer record fields match the final tag and source commit
 - checksums verify the exact files attached to the release
 - the workflow step graph computes checksums only after any signing and
@@ -409,6 +458,8 @@ Installer-specific checks must prove:
 - packaged app contents do not include private surfaces or local artifacts
 - the packaged app directory or extracted installer payload is scanned before
   the installer is attached to a release
+- the Viewer packaged app scan uses the Viewer output directory and must not
+  accidentally scan or attach the Editor packaged app in its place
 - the packaged app does not contain concrete localhost dev-server URLs,
   sourcemaps unless explicitly allowlisted, update feed URLs, or telemetry
   endpoints. The Electron bootstrap may still contain the development
@@ -477,8 +528,10 @@ workflow is easier to audit for the first binary release.
 Installer release notes must include:
 
 - pre-1.0 alpha warning
-- Windows x64-only support statement
+- Windows x64-only support statement and whether the release contains Editor,
+  Viewer, or both installers
 - unsigned or signed status, including expected warnings
+- first-launch expectations for installed builds
 - Electron and Chromium major versions
 - SHA-256 verification instructions
 - source commit and release tag
