@@ -56,8 +56,11 @@ Still open before public release:
   Scanning, Push Protection, branch protection, required checks, and CodeQL
   code scanning enablement.
 - npm Trusted Publishing must be configured in the npm/GitHub UI for
-  `@vivi2d/web`; the tracked `npm-alpha` environment policy records the desired
-  settings but does not prove the hosted environment is configured.
+  `@vivi2d/web` after package creation. If npm does not expose package-level
+  Trusted Publisher settings before the package exists, the only approved first
+  publish is the one-time `@vivi2d/web@0.1.0-alpha.0` bootstrap wrapper; all
+  later alpha publishes must use GitHub Actions OIDC and the protected
+  `npm-alpha` environment.
 - Full git history and hosted surfaces still need a final release-machine scan
   and owner sign-off. After any final squash or public-history rewrite,
   `gitleaks git --log-opts="--all" . --redact` must pass before
@@ -229,9 +232,12 @@ These gates apply before publishing any npm package, including an
 `@vivi2d/web` alpha:
 
 - [ ] npm Trusted Publishing or equivalent provenance is configured for the
-  package.
+  package, except for the one-time `@vivi2d/web@0.1.0-alpha.0` bootstrap path
+  documented in `docs/developer/quality/web-npm-alpha-release.md`.
 - [ ] `@vivi2d/web` publication uses `scripts/publish-web-npm-alpha.mjs` or the
-  protected workflow, not direct `npm publish`.
+  protected workflow. For the first package creation only, it may use
+  `scripts/bootstrap-web-npm-alpha-publish.mjs`; direct `npm publish` remains
+  blocked.
 - [ ] npm Trusted Publishing dry-run has completed against the protected
   `npm-alpha` environment.
 - [x] Publish workflow actions are SHA-pinned, or an owner-approved exception is

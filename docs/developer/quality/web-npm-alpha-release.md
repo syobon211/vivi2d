@@ -102,8 +102,9 @@ token.
 
 Trusted publisher setup:
 
-- create the `@vivi2d/web` package or package placeholder under the Vivi2D npm
-  organization
+- create the `vivi2d` npm organization/scope
+- if npm does not expose Trusted Publisher settings before the package exists,
+  use the one-time bootstrap exception below to create `@vivi2d/web`
 - configure exactly one trusted publisher connection for the package on
   npmjs.com
 - set provider to GitHub Actions
@@ -115,6 +116,54 @@ Trusted publisher setup:
   maintainer approves the final publication with 2FA
 - disable or revoke any long-lived automation tokens after trusted publishing is
   verified
+
+## Initial Bootstrap Exception
+
+npm Trusted Publisher settings are package-level settings. In the current npm
+UI/CLI model, maintainers may not be able to configure those settings until
+`@vivi2d/web` exists in the registry. That creates a first-publish bootstrap
+exception.
+
+The bootstrap exception is intentionally narrow:
+
+- it applies only to `@vivi2d/web@0.1.0-alpha.0`
+- it may run only from a local maintainer machine, never from GitHub Actions
+- it may run only when `@vivi2d/web@0.1.0-alpha.0` is absent from npm
+- it requires the `vivi2d` npm organization/scope to exist and be accessible
+- it requires the maintainer to be logged in to npm with account 2FA enabled
+- it must publish the exact tarball verified by
+  `scripts/verify-web-npm-alpha-release-record.mjs`
+- it must use the explicit `alpha` dist-tag
+- it must use `--provenance=false`, because this first package creation is not
+  the GitHub Actions OIDC Trusted Publishing path
+- it requires an explicit confirmation token so it cannot be run by accident
+
+The only approved bootstrap command is the first-party wrapper:
+
+```sh
+npm run release:web-npm-alpha:bootstrap -- \
+  --pack-result web-pack-result.json \
+  --tarball vivi2d-web-0.1.0-alpha.0.tgz \
+  --version 0.1.0-alpha.0 \
+  --confirm BOOTSTRAP_WEB_NPM_ALPHA_0.1.0-alpha.0
+```
+
+Maintainers should run the same command with `--dry-run` first:
+
+```sh
+npm run release:web-npm-alpha:bootstrap -- \
+  --pack-result web-pack-result.json \
+  --tarball vivi2d-web-0.1.0-alpha.0.tgz \
+  --version 0.1.0-alpha.0 \
+  --dry-run
+```
+
+After bootstrap succeeds, immediately configure npm Trusted Publishing for
+`@vivi2d/web` with provider `GitHub Actions`, repository `syobon211/vivi2d`,
+workflow `publish-web-alpha.yml`, and environment `npm-alpha`. Every later
+alpha must use the normal GitHub Actions/OIDC publish path. The bootstrap
+script must fail once the package version exists, so it cannot be reused as a
+general local publish bypass.
 
 Workflow requirements:
 
@@ -466,6 +515,11 @@ The `@vivi2d/web` package also has a `prepublishOnly` guard that blocks direct
 manual publication unless the wrapper sets
 `VIVI2D_VERIFIED_WEB_NPM_ALPHA_PUBLISH=1`.
 
+The only exception is the initial package bootstrap documented above. It uses
+`scripts/bootstrap-web-npm-alpha-publish.mjs`, is limited to
+`@vivi2d/web@0.1.0-alpha.0`, and must be followed by npm Trusted Publisher
+configuration before any later alpha release.
+
 The final publish workflow should run the non-dry-run publish only after the
 same final tree passes all release gates.
 
@@ -537,31 +591,36 @@ includes:
 4. A first-party publish wrapper that runs the release-record verifier before
    invoking `npm publish`, plus a `prepublishOnly` guard that blocks direct
    manual publication.
-5. A post-publish verifier that compares the registry tarball digest with
+5. A one-time bootstrap publish wrapper for creating `@vivi2d/web@0.1.0-alpha.0`
+   when npm package-level Trusted Publisher settings are unavailable before the
+   package exists. This wrapper is local-only, requires the exact confirmation
+   token, verifies the release record, checks the npm organization, rejects
+   already-published package versions, and publishes with `--provenance=false`.
+6. A post-publish verifier that compares the registry tarball digest with
    the locally recorded digest and confirms npm provenance is present.
-6. `check:web-npm-alpha-release`, which verifies the
+7. `check:web-npm-alpha-release`, which verifies the
    workflow, protected environment name, package metadata, trusted publisher
    owner/repository/workflow expectation, release notes template, SBOM command,
    npm CLI version assertion, release tag rule, pre-release semver rule, pinned
    gitleaks installation, job-level OIDC isolation, required script invocations,
    and dist-tag rules are machine-checked.
-7. `check:pack-contents`, which requires the approved files and rejects
+8. `check:pack-contents`, which requires the approved files and rejects
    unexpected files, rather than only blocking known bad paths.
-8. A release notes template for `@vivi2d/web` alpha.
-9. A dry-run CI path that runs everything except `npm publish` on pull
+9. A release notes template for `@vivi2d/web` alpha.
+10. A dry-run CI path that runs everything except `npm publish` on pull
    requests or main-branch release-prep changes.
-10. A pinned release-tool manifest and installer for gitleaks so the release
+11. A pinned release-tool manifest and installer for gitleaks so the release
    workflow cannot depend on runner-preinstalled binaries.
-11. `check:npm-token-hygiene`, which
+12. `check:npm-token-hygiene`, which
    proves long-lived publish tokens are absent or explicitly revoked after
    trusted publishing is verified.
-12. `check:environment-protection`, which validates the tracked policy for the
+13. `check:environment-protection`, which validates the tracked policy for the
     `npm-alpha` environment: at least two required reviewers, deployment limited
     to `web-v*` release tags, admin bypass disabled when supported, and any wait
     timer or exception explicitly recorded.
-13. A remaining manual release step to confirm npm organization settings and
+14. A remaining manual release step to confirm npm organization settings and
     trusted publisher configuration before the first real publish.
-14. Release-gate alignment for same-origin vendored MediaPipe viewer assets:
+15. Release-gate alignment for same-origin vendored MediaPipe viewer assets:
     `check:viewer-mediapipe-assets` locks their bytes and provenance, while
     publication-history, native-artifact, and security-pattern gates allow only
     that locked third-party asset set.
@@ -571,7 +630,10 @@ includes:
 The `@vivi2d/web` npm alpha is ready to publish only when:
 
 - package metadata names the correct public repository and npm organization
-- trusted publisher is configured on npmjs.com for the exact workflow
+- trusted publisher is configured on npmjs.com for the exact workflow, or the
+  owner is performing the one-time `@vivi2d/web@0.1.0-alpha.0` bootstrap step
+  because npm does not expose package-level Trusted Publisher settings before
+  the package exists
 - trusted publisher settings are paired with token restrictions or a reviewed
   token-hygiene exception
 - release workflow is SHA-pinned and gives OIDC permission only to the minimal

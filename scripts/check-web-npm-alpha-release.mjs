@@ -32,6 +32,7 @@ function checkPackageScripts() {
     "check:web-npm-alpha-release",
     "check:npm-token-hygiene",
     "check:environment-protection",
+    "release:web-npm-alpha:bootstrap",
   ]) {
     if (!rootPackage.scripts?.[scriptName]) {
       failures.push(`package.json is missing script: ${scriptName}`);
@@ -77,6 +78,7 @@ function checkRequiredFiles() {
     "scripts/write-pack-output.mjs",
     "scripts/record-web-npm-alpha-artifacts.mjs",
     "scripts/verify-web-npm-alpha-release-record.mjs",
+    "scripts/bootstrap-web-npm-alpha-publish.mjs",
     "scripts/publish-web-npm-alpha.mjs",
     "scripts/guard-web-npm-alpha-direct-publish.mjs",
     "scripts/verify-web-npm-alpha-publish.mjs",
@@ -281,6 +283,7 @@ function checkVerifierContracts() {
     }
   }
   checkPublishWrapperHostedGuard(publisher);
+  checkBootstrapPublisher();
 
   const guard = readText("scripts/guard-web-npm-alpha-direct-publish.mjs");
   if (!guard.includes("VIVI2D_VERIFIED_WEB_NPM_ALPHA_PUBLISH")) {
@@ -293,6 +296,29 @@ function checkVerifierContracts() {
     "node ../../scripts/guard-web-npm-alpha-direct-publish.mjs"
   ) {
     failures.push("@vivi2d/web prepublishOnly must block direct npm publish.");
+  }
+}
+
+function checkBootstrapPublisher() {
+  const bootstrap = readText("scripts/bootstrap-web-npm-alpha-publish.mjs");
+  for (const phrase of [
+    "BOOTSTRAP_WEB_NPM_ALPHA_0.1.0-alpha.0",
+    "Bootstrap publish is allowed only",
+    "assertPackageDoesNotExist",
+    "assertNpmAuthenticated",
+    "assertNpmOrganizationAccessible",
+    '"org", "ls", "vivi2d"',
+    "vivi2d",
+    "--provenance=false",
+    "VIVI2D_VERIFIED_WEB_NPM_ALPHA_PUBLISH",
+    "VIVI2D_WEB_NPM_BOOTSTRAP_PUBLISH",
+    "process.env.GITHUB_ACTIONS",
+  ]) {
+    if (!bootstrap.includes(phrase)) {
+      failures.push(
+        `scripts/bootstrap-web-npm-alpha-publish.mjs must include ${phrase}.`,
+      );
+    }
   }
 }
 
