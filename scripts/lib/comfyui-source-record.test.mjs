@@ -223,6 +223,11 @@ describe("comfyui-source-record", () => {
       "integrations/comfyui/vivi2d_compat_plugin/vivi2d_compat_plugin.egg-info/PKG-INFO",
       "generated metadata",
     );
+    writeFile(
+      root,
+      "integrations/comfyui/vivi2d_compat_plugin/build/lib/vivi2d_compat/__init__.py",
+      "generated build copy",
+    );
 
     expect(
       validateComfyUiTrackedSourceRecord(
