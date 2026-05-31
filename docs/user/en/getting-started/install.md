@@ -23,20 +23,38 @@ Use the safest source available for your situation.
 
 | Situation | Recommended path |
 | --- | --- |
-| A public release is available | Download it from the official release page and keep the archive name unchanged. |
+| A public release is available | Download it from the official GitHub Releases page and keep the file name unchanged. |
 | You are testing a preview build | Use the exact build link and checksum from the release or test note. |
-| No packaged build is available yet | Follow the repository README and run a development build locally. |
+| You want to inspect source instead of installing | Use the source review archive or follow the repository README for a local development build. |
 | You found a mirror or repackaged build | Do not use it unless the Vivi2D project explicitly points to it. |
 
 If a release provides a checksum or signature, verify it before launching the app. If no checksum is listed, treat the build as a local test build and avoid private client artwork until you trust the source.
 
+The current public Windows build is an unsigned alpha installer. Browser
+download warnings, an `Unknown publisher` prompt, or Microsoft Defender
+SmartScreen warnings are expected for this release. Do not disable SmartScreen
+globally. Instead, confirm that the installer came from the official GitHub
+Release page and verify the checksum before launching.
+
+On Windows, you can verify the installer SHA-256 from PowerShell or Command
+Prompt:
+
+```powershell
+certutil -hashfile vivi2d-0.1.0-alpha.2-windows-x64-setup.exe SHA256
+```
+
+Compare the result with `checksums.txt` from the same release. If the digest
+does not match exactly, delete the installer and do not run it.
+
 ## Install Or Unpack
 
-1. Create a folder for Vivi2D builds, for example `C:/Users/<you>/Apps/Vivi2D/`.
-2. Move or extract the downloaded build into that folder.
-3. Do not run Vivi2D directly from a browser download cache, compressed archive preview, cloud sync conflict folder, or system-protected directory.
+1. Download the installer and `checksums.txt` from the same GitHub Release.
+2. Verify the installer checksum before running it.
+3. Run the installer from a normal Downloads or user folder, not from a cloud
+   sync conflict folder or system-protected directory.
 4. Keep builds separated by version if you are testing multiple builds.
-5. If Windows warns about an unsigned or unknown app, confirm that the build came from the expected Vivi2D source before allowing it.
+5. If Windows warns about an unsigned or unknown app, confirm the checksum and
+   release page again before allowing it.
 
 ## First Launch Check
 

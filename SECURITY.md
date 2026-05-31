@@ -19,6 +19,7 @@ This table must be updated explicitly whenever release support changes:
 | Version | Supported |
 | --- | --- |
 | `main` | Yes |
+| `v0.1.0-alpha.2` | Yes |
 | `v0.1.0-alpha.1` | Yes |
 | Local snapshots and older commits | No |
 

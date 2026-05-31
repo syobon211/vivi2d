@@ -1,8 +1,8 @@
 # Windows Installer Alpha Contract
 
-This document defines the release design for the first Vivi2D Windows desktop
-installer alpha. It is a design contract, not permission to publish. The
-installer may be attached to a GitHub Release only after this contract is
+This document defines the release contract for the first Vivi2D Windows desktop
+installer alpha. It is a release contract, not blanket permission to publish.
+The installer may be attached to a GitHub Release only after this contract is
 implemented, checked by release automation, and reviewed on the final release
 tag.
 
@@ -12,8 +12,8 @@ evidence that the desktop app API and project format are stable.
 
 ## Release Channel
 
-The first installer-capable repository release should use a new alpha tag after
-the source/provenance-only `v0.1.0-alpha.1` release:
+The first installer-capable repository release uses a new alpha tag after the
+source/provenance-only `v0.1.0-alpha.1` release:
 
 ```text
 v0.1.0-alpha.2
@@ -44,7 +44,7 @@ The first installer alpha is limited to:
 
 | Platform | Architecture | Installer format | Status |
 | --- | --- | --- | --- |
-| Windows | x64 | NSIS `.exe` setup installer | Planned first target |
+| Windows | x64 | NSIS `.exe` setup installer | Current first alpha target |
 
 Out of scope until separate contracts are written:
 
@@ -494,14 +494,14 @@ system warnings without checksum verification.
 
 ## Website Download Copy
 
-Before an installer is published, `vivi2d.com` should show:
+Before an installer exists, `vivi2d.com` should show:
 
 ```text
 Download for Windows: Coming soon
 ```
 
-After an installer is published, `vivi2d.com` may link to the GitHub Release
-asset only if:
+For `v0.1.0-alpha.2` and later installer alpha releases, `vivi2d.com` may link
+to the GitHub Release page only if:
 
 - the release is public and marked pre-release
 - the release notes include the signing status and checksum instructions

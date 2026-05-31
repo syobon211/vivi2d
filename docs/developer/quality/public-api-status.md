@@ -78,11 +78,14 @@ scaffolding: protected environment policy, trusted-publisher/token hygiene,
 release workflow shape, pack/record/verify scripts, release notes template, and
 required gates. A real publish still requires a final release tag and npm
 trusted publisher configuration outside the repository.
-`npm run check:github-release-alpha` covers the repository-level GitHub Release
-alpha scaffolding: source/provenance-only asset composition, the draft release
-workflow, release notes template, checksum generation, and required gates. A
-GitHub Release alpha does not publish desktop installers, native/WASM binaries,
-ComfyUI bundles, or npm package tarballs as canonical artifacts.
+`npm run check:github-release-alpha` covers the initial repository-level
+source/provenance GitHub Release scaffolding: source/provenance-only asset
+composition, the draft release workflow, release notes template, checksum
+generation, and required gates. That source/provenance workflow must not
+publish desktop installers, native/WASM binaries, ComfyUI bundles, or npm
+package tarballs as canonical artifacts. Windows installer alpha releases use
+the separate `docs/developer/quality/windows-installer-alpha.md` contract and
+`npm run check:windows-installer-alpha` gate.
 The previous `0.experimental` fixtures remain as migration references. The
 Viewer API preview reference defines the current `0.preview` behavior without
 changing the `@vivi2d/viewer` package status.

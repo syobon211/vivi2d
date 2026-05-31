@@ -13,7 +13,8 @@ Initial scope:
 
 - `@vivi2d/web` is the only experimental npm-style package.
 - GitHub Releases are the canonical repository-level distribution record for
-  source/provenance alpha artifacts.
+  source/provenance alpha artifacts and reviewed desktop installer alpha
+  artifacts.
 - Runtime, renderer, provider, native, and C ABI packages remain private until
   their own API, support, security, and legal gates are complete.
 - Native and WASM artifacts remain private implementation details unless a later
@@ -77,19 +78,24 @@ workflows or documented exceptions, SBOM attachment, and tarball digest recordin
 are release blockers. Native/WASM checksum and signing decisions are blockers
 only when native/WASM artifacts become public package artifacts.
 
-For a GitHub Release alpha, follow
-`docs/developer/quality/github-release-alpha.md`. The initial asset set is
-source/provenance only: source review archive, source review manifest,
+For the first GitHub Release alpha, follow
+`docs/developer/quality/github-release-alpha.md`. The `v0.1.0-alpha.1` asset
+set is source/provenance only: source review archive, source review manifest,
 repository-wide SBOM, notices, release record, checksums, and release notes. It
 must not attach desktop installers, native/WASM binaries, ComfyUI bundles, or
-other package artifacts until those surfaces have their own release contract.
+other package artifacts.
 
-Windows desktop installers may be added only after
-`docs/developer/quality/windows-installer-alpha.md` is implemented by tracked
-workflow checks, an installer release record, checksum verification, signing
-status disclosure, and owner approval in the protected release environment.
+Windows desktop installers use the separate contract in
+`docs/developer/quality/windows-installer-alpha.md`. The `v0.1.0-alpha.2`
+release line is the first installer-capable line: Windows x64 NSIS only,
+unsigned unless release notes explicitly say otherwise, with an installer
+release record, checksum verification, signing-status disclosure, source review
+archive, SBOM, notices, and owner approval in the protected release environment.
 Installer releases must remain draft pre-releases until a maintainer manually
 reviews the asset set and installs the build on a clean Windows machine or VM.
+After any release-copy, README, portal, installer-contract, or asset-generation
+change, recreate the draft release from the final tag instead of reusing stale
+assets.
 
 ## GitHub And npm Requirements
 
