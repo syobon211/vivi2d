@@ -16,8 +16,14 @@ feedback, not production use.
 
 Signing status: `<signing-status>`
 
-Unsigned alpha installers may trigger Microsoft Defender SmartScreen or browser
-download warnings. Verify checksums before running the installer.
+This Windows installer alpha is unsigned unless this section explicitly says
+otherwise. Unsigned alpha installers may trigger browser download warnings,
+`Unknown publisher`, or Microsoft Defender SmartScreen messages such as
+`Windows protected your PC`. That is expected for this alpha channel.
+
+Before running the installer, confirm that it came from this GitHub Release and
+verify the SHA-256 entry in `checksums.txt`. Do not disable SmartScreen globally
+to install Vivi2D.
 
 ## Manual Windows Review
 
