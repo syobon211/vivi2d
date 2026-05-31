@@ -50,4 +50,5 @@ release gates, security boundaries, IP policy, and API/spec status.
 - [ADR directory](adr/)
 - [ADR 0005: Documentation Contributor Guides](adr/0005-documentation-contributor-guides.md)
 - [ADR 0006: Public Surface Review Gates](adr/0006-public-surface-review-gates.md)
+- [ADR 0007: Windows Installer Alpha Signing Policy](adr/0007-windows-installer-alpha-signing.md)
 - [Quality baselines](quality/baselines/)
