@@ -745,8 +745,8 @@ function rootHtml() {
         <h2>Next Installer Work</h2>
         <p>
           The <a href="${escapeHtml(installerTrackUrl)}">installer follow-up track</a>
-          focuses on code-signing decisions, SmartScreen guidance,
-          first-launch evidence, and installer UX polish.
+          focuses on repeatable smoke automation, checksum-first download
+          guidance, and clearer uninstall notes for unsigned alpha installers.
         </p>
       </article>
     </section>

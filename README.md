@@ -76,7 +76,7 @@ publisher`, or Microsoft Defender SmartScreen warnings. Download installers only
 from GitHub Releases and verify `checksums.txt` before running them. Please add
 installer feedback to
 [#29](https://github.com/syobon211/vivi2d/issues/29). Follow-up installer
-improvements, including code signing and first-launch polish, are tracked in
+improvements for smoke automation, download guidance, and uninstall guidance are tracked in
 [#30](https://github.com/syobon211/vivi2d/issues/30).
 
 ## Getting Started
@@ -161,9 +161,8 @@ npm run check:quality:e2e-workflow-record
 
 ## Roadmap
 
-- Continue the Windows installer alpha track with code-signing decisions,
-  clearer SmartScreen guidance, first-launch onboarding evidence, and installer
-  UX polish.
+- Continue the unsigned Windows installer alpha track with repeatable smoke
+  automation, checksum-first download guidance, and clearer uninstall notes.
 - Prepare an `@vivi2d/web` npm alpha for reviewed public-profile playback.
 - Add macOS/Linux or store-distributed desktop builds only after separate
   installer contracts are reviewed.
