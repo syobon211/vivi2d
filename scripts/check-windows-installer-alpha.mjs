@@ -155,7 +155,7 @@ function checkElectronBuilderConfig() {
   }
   for (const text of [
     "appId: com.vivi2d.viewer",
-    "productName: Vivi2D Viewer",
+    "productName: Vivi2DViewer",
     "asar: false",
     "publish: null",
     electronBuilderViewerArtifactNameLine,
@@ -173,6 +173,15 @@ function checkElectronBuilderConfig() {
     if (!viewerBuilderConfig.includes(text)) {
       failures.push(`${viewerBuilderConfigPath}: missing ${text}`);
     }
+  }
+  if (
+    !viewerBuilderConfig.includes(
+      "extraMetadata:\n  name: vivi2d-viewer\n  productName: Vivi2DViewer",
+    )
+  ) {
+    failures.push(
+      `${viewerBuilderConfigPath}: viewer must use a distinct package name so it does not install over the Editor.`,
+    );
   }
   if (
     viewerBuilderConfig.includes("latest.yml") ||
