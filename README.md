@@ -2,7 +2,7 @@
 
 [![Status: pre-1.0 alpha](https://img.shields.io/badge/status-pre--1.0%20alpha-f0b429)](#getting-started)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Release: source/provenance only](https://img.shields.io/badge/release-source%2Fprovenance%20only-6f42c1)](#releases)
+[![Release: Windows installer alpha](https://img.shields.io/badge/release-Windows%20installer%20alpha-6f42c1)](#releases)
 [![Website: vivi2d.com](https://img.shields.io/badge/website-vivi2d.com-0f6e8f)](https://vivi2d.com)
 
 2D creation for everyone. Vivi2D is an experimental editor, viewer, and web SDK
@@ -62,29 +62,33 @@ Pre-1.0 alpha releases are published on
 release artifacts only from the release page and verify them with
 `checksums.txt`.
 
-The first alpha release is source/provenance-only. It includes the source review
-archive, SBOM, third-party notices, checksums, and release record. Installers,
-npm packages, native/WASM binaries, and ComfyUI bundles are not included until
-they are explicitly announced in release notes.
+The current public release is `v0.1.0-alpha.2`, a Windows installer alpha for
+early testing. It includes an unsigned Windows x64 NSIS installer, source review
+archive, SBOM, third-party notices, checksums, and installer release record.
 
-If a Windows installer alpha is announced, treat it as early test software.
-Unsigned installer builds may show browser, `Unknown publisher`, or Microsoft
-Defender SmartScreen warnings. Download installers only from GitHub Releases and
-verify `checksums.txt` before running them.
+The first `v0.1.0-alpha.1` release remains the source/provenance-only baseline.
+Published npm packages, native/WASM standalone binaries, and ComfyUI bundles are not
+included until they are explicitly announced in release notes.
+
+The Windows installer alpha is unsigned. It may show browser, `Unknown
+publisher`, or Microsoft Defender SmartScreen warnings. Download installers only
+from GitHub Releases and verify `checksums.txt` before running them.
 
 ## Getting Started
 
-Vivi2D is not yet distributed as a one-click app installer. The current public
-alpha is intended for source review, early developer evaluation, and release
-provenance checks.
+For the quickest local trial, use the Windows x64 installer from
+`v0.1.0-alpha.2` on GitHub Releases. It is unsigned and intended for early
+testing, so verify `checksums.txt` and use test artwork first.
 
-If you want to try the editor from source, use the developer setup below. If
-you only want to follow progress or wait for packaged builds, watch GitHub
-Releases and the user documentation.
+If you prefer to run from source, use the developer setup below. If you only
+want to follow progress, watch GitHub Releases and the user documentation.
 
 ## Current Limitations
 
-- No one-click desktop installer is published yet.
+- The Windows desktop installer is unsigned alpha software and may trigger
+  browser, `Unknown publisher`, or SmartScreen warnings.
+- No macOS, Linux, MSI, MSIX, Winget, or Microsoft Store installer is published
+  yet.
 - No npm package is published yet.
 - ComfyUI, ComfyUI-See-through, model weights, and custom-node bundles are not
   bundled with Vivi2D.
@@ -151,10 +155,11 @@ npm run check:quality:e2e-workflow-record
 
 ## Roadmap
 
-- Publish the first source/provenance-only GitHub alpha release.
+- Improve Windows installer signing, first-launch review evidence, and download
+  copy after the unsigned installer alpha.
 - Prepare an `@vivi2d/web` npm alpha for reviewed public-profile playback.
-- Add packaged desktop builds after installer signing, checksums, and release
-  gates are reviewed.
+- Add macOS/Linux or store-distributed desktop builds only after separate
+  installer contracts are reviewed.
 - Stabilize the public runtime/profile contract for external engine adapters.
 - Build a Unity SDK alpha for loading reviewed Vivi2D public-profile models.
 - Add Unity samples, package metadata, checksums, and release notes before

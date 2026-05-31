@@ -30,8 +30,9 @@ npm run check:oss-readiness
 
 - Root package remains private.
 - GitHub Releases are the canonical public record for repository-level
-  source/provenance alpha artifacts. Use the GitHub Release alpha contract
-  before creating `v*` releases.
+  source/provenance alpha artifacts and reviewed installer alpha artifacts. Use
+  the GitHub Release alpha or Windows installer alpha contract before creating
+  `v*` releases.
 - Only packages marked `experimental` or `public` in
   [`public-api-status.md`](../quality/public-api-status.md) can be considered
   for publication.
@@ -49,10 +50,9 @@ without revealing exploit details.
 ## Website Domain And Hosting Backlog
 
 `vivi2d.com` is registered through Cloudflare Registrar, with authoritative DNS
-kept on Cloudflare. Before launching public user documentation, choose and
-record the first hosting target, currently Cloudflare Pages or Vercel. Reserve
-Cloudflare DNS records for future subdomains such as `docs.vivi2d.com`,
-`api.vivi2d.com`, and `cdn.vivi2d.com` when those surfaces are ready.
+kept on Cloudflare. The public portal and `docs.vivi2d.com` documentation host
+are live. Reserve Cloudflare DNS records for future subdomains such as
+`api.vivi2d.com` and `cdn.vivi2d.com` when those surfaces are ready.
 
 ## Git History Publication
 
@@ -77,3 +77,20 @@ preparation from the final `v<version>` tag and creates a draft GitHub Release
 every time. Keep installer, native/WASM, and ComfyUI bundle artifacts out of the
 release until their separate contracts are approved, and publish the draft only
 after owner-managed GitHub security settings are confirmed.
+
+## Windows Installer Alpha
+
+The `v0.1.0-alpha.2` line uses the Windows installer contract in
+[`windows-installer-alpha.md`](../quality/windows-installer-alpha.md). It is
+Windows x64 NSIS only, unsigned unless release notes explicitly say otherwise,
+and must stay a draft pre-release until the final tag, asset set, release
+record, checksums, website copy, and manual Windows review are aligned.
+
+```bash
+npm run check:windows-installer-alpha
+npm run release:windows-installer:review-packet
+```
+
+After any README, portal, installer documentation, release-note, or
+asset-generation change, delete and recreate the `v0.1.0-alpha.2` draft/tag
+from the latest `main` rather than reusing stale release assets.

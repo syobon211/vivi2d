@@ -10,7 +10,7 @@ const docsBaseUrl = argValue("--docs-base-url") ?? process.env.VIVI_DOCS_BASE_UR
 const siteUrl = "https://vivi2d.com";
 const docsHostUrl = "https://docs.vivi2d.com";
 const githubUrl = "https://github.com/syobon211/vivi2d";
-const releaseVersion = "0.1.0-alpha.1";
+const releaseVersion = "0.1.0-alpha.2";
 const releaseTag = `v${releaseVersion}`;
 const releaseUrl = `${githubUrl}/releases/tag/${releaseTag}`;
 const releasesUrl = `${githubUrl}/releases`;
@@ -650,14 +650,15 @@ function rootHtml() {
         <div class="eyebrow-row" aria-label="Project status">
           <span class="badge badge-warning">pre-1.0 alpha</span>
           <span class="badge">Apache-2.0</span>
-          <span class="badge">source/provenance release</span>
+          <span class="badge">unsigned Windows installer</span>
           <span class="badge">character showcase coming soon</span>
         </div>
         <h1 id="portal-title">2D creation for everyone.</h1>
         <p class="hero-lede">
           Vivi2D is an experimental editor, viewer, and web SDK project for
-          layered artwork workflows. The current public release is intended for
-          source review, early developer evaluation, and docs-first exploration.
+          layered artwork workflows. The current public release adds an
+          unsigned Windows installer alpha alongside the source review,
+          checksum, SBOM, and notice artifacts.
         </p>
         <div class="actions" aria-label="Primary actions">
           <a class="button button-primary" href="${escapeHtml(githubUrl)}">Open GitHub</a>
@@ -674,35 +675,36 @@ function rootHtml() {
           <div class="ledger-row"><strong>Release</strong><span class="ledger-ok">Live</span></div>
           <div class="ledger-row"><strong>Checksums</strong><span class="ledger-ok">Yes</span></div>
           <div class="ledger-row"><strong>SBOM</strong><span class="ledger-ok">Yes</span></div>
-          <div class="ledger-row"><strong>Installer</strong><span class="ledger-warn">Later</span></div>
-          <div class="ledger-row"><strong>Docs</strong><span class="ledger-ok">Reserved</span></div>
+          <div class="ledger-row"><strong>Installer</strong><span class="ledger-warn">Unsigned</span></div>
+          <div class="ledger-row"><strong>Docs</strong><span class="ledger-ok">Live</span></div>
         </div>
-        <p class="console-note">The current alpha is source/provenance-only. One-click app packages will be added after installer gates are reviewed.</p>
+        <p class="console-note">The Windows installer alpha is unsigned and may trigger browser, Unknown publisher, or SmartScreen warnings. Download only from GitHub Releases and verify checksums before launch.</p>
       </aside>
     </main>
     <section class="info-grid" aria-label="Release information">
       <article class="info-card">
         <h2>Current Release</h2>
         <p>
-          <a href="${escapeHtml(releaseUrl)}">${escapeHtml(releaseTag)}</a> is a
-          source/provenance-only alpha with checksums, SBOM, third-party notices,
-          and a source review archive.
+          <a href="${escapeHtml(releaseUrl)}">${escapeHtml(releaseTag)}</a>
+          includes a Windows x64 NSIS installer alpha, checksums, SBOM,
+          third-party notices, installer release record, and a source review
+          archive.
         </p>
       </article>
       <article class="info-card">
         <h2>What To Try</h2>
         <ul>
-          <li>Read the docs and release notes.</li>
-          <li>Review source and package boundaries.</li>
-          <li>Try local development from GitHub if you are comfortable with alpha software.</li>
+          <li>Read the release notes before installing.</li>
+          <li>Verify the installer SHA-256 with <code>checksums.txt</code>.</li>
+          <li>Use test artwork first; this is still pre-1.0 alpha software.</li>
         </ul>
       </article>
       <article class="info-card">
         <h2>Not Yet Included</h2>
         <ul>
-          <li>One-click desktop installer.</li>
-          <li>Stable public API guarantees.</li>
-          <li>Bundled ComfyUI or model weights.</li>
+          <li>Signed publisher identity.</li>
+          <li>macOS, Linux, MSI/MSIX, Winget, or Store packages.</li>
+          <li>Bundled ComfyUI, See-through, or model weights.</li>
         </ul>
       </article>
     </section>

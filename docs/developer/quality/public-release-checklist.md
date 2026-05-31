@@ -4,12 +4,12 @@ This checklist must pass before making the repository public.
 
 ## Current Implementation Snapshot
 
-Last reconciled: 2026-05-29.
+Last reconciled: 2026-05-31.
 
 Implemented and locally verified:
 
-- GitHub Release alpha scaffolding is tracked for source/provenance-only
-  releases: `.github/workflows/github-release-alpha.yml`,
+- GitHub Release alpha scaffolding remains tracked for source/provenance-only
+  releases such as `v0.1.0-alpha.1`: `.github/workflows/github-release-alpha.yml`,
   `docs/developer/quality/github-release-alpha.md`,
   `docs/developer/quality/templates/github-release-alpha-notes.md`,
   `scripts/generate-github-release-alpha-review-packet.mjs`,
@@ -28,6 +28,15 @@ Implemented and locally verified:
 - Source review archive tooling is implemented: `npm run check:source-review-archive`
   validates tracked files and `npm run archive:source-review` requires a clean
   working tree before producing the archive.
+- Windows installer alpha release tooling is implemented for `v0.1.0-alpha.2`:
+  `.github/workflows/windows-installer-alpha.yml`,
+  `docs/developer/quality/windows-installer-alpha.md`,
+  `scripts/check-windows-installer-alpha.mjs`,
+  `scripts/prepare-windows-installer-assets.mjs`,
+  `scripts/verify-windows-installer-assets.mjs`, and
+  `scripts/generate-windows-installer-review-packet.mjs`. The current installer
+  channel is Windows x64 NSIS only, unsigned, draft/pre-release first, and
+  guarded by explicit release-note and website warnings.
 - `@vivi2d/web` alpha release dry-run tooling is implemented and locally
   exercised through `npm pack`, release-record generation, release-record
   verification, and `npm publish --dry-run`.
@@ -35,8 +44,9 @@ Implemented and locally verified:
   `security-events: write` so hosted analysis can query its workflow run and
   upload code-scanning results.
 - `vivi2d.com` is registered through Cloudflare Registrar, with authoritative
-  DNS on Cloudflare. The first public hosting target and subdomain records are
-  still open.
+  DNS on Cloudflare. The public portal and `docs.vivi2d.com` documentation host
+  are live and should continue to link to GitHub Releases rather than copied
+  stale asset URLs.
 
 Still open before public release:
 
@@ -55,9 +65,10 @@ Still open before public release:
   tag before any real publish.
 - Legal or owner decisions remain open for bundled ComfyUI/See-through
   distribution and public native/WASM artifact signing.
-- Desktop installer packaging remains out of the initial GitHub Release alpha
-  asset set until `docs/developer/quality/windows-installer-alpha.md` is
-  implemented by workflow checks and owner-approved release records.
+- The `v0.1.0-alpha.2` Windows installer draft/release path must be regenerated
+  from the final tag after any README, portal, release-note, or installer-copy
+  change so the installer record, source review archive, SBOM, notices,
+  checksums, and release body all point at the same commit.
 
 ## Governance
 
@@ -200,8 +211,8 @@ License/legal decision tracking:
 
 | Decision | Owner | Deadline | Status |
 | --- | --- | --- | --- |
-| Initial GitHub Release asset channel | @syobon211 | Before first public alpha | Decided: GitHub Releases are the canonical source/provenance release record. The first `v0.1.0-alpha.1` asset set is source review archive, manifest, SBOM, notices, release record, checksums, and release notes only. |
-| Windows installer alpha channel | @syobon211 | Before first desktop installer alpha | Planned: Windows x64 NSIS installer in a later alpha, governed by `docs/developer/quality/windows-installer-alpha.md`. Unsigned alpha builds are allowed only with explicit release-note and website warnings. Auto-update metadata, MSI/MSIX, macOS, Linux, ComfyUI bundles, See-through bundles, and model weights remain blocked. |
+| Initial GitHub Release asset channel | @syobon211 | Before first public alpha | Decided: GitHub Releases are the canonical repository release record. The first `v0.1.0-alpha.1` asset set remains source review archive, manifest, SBOM, notices, release record, checksums, and release notes only. |
+| Windows installer alpha channel | @syobon211 | Before first desktop installer alpha | Implemented for `v0.1.0-alpha.2`: Windows x64 NSIS installer alpha governed by `docs/developer/quality/windows-installer-alpha.md`. The initial installer is unsigned and must keep release-note, README, docs, and website warnings visible. Auto-update metadata, MSI/MSIX, macOS, Linux, ComfyUI bundles, See-through bundles, and model weights remain blocked. |
 | CycloneDX SBOM generator and CI integration | @syobon211 | Before R5 implementation begins | Implemented for local and workflow validation with `@cyclonedx/cyclonedx-npm`, `npm run sbom:generate`, and `npm run check:sbom`; final release attachment must be regenerated from the release tag |
 | Native/WASM checksum and signing mechanism | @syobon211 | Before native or WASM artifacts are public | Open |
 | GitHub Actions SHA pinning policy | @syobon211 | Before repository publication | Implemented for current workflows: Actions are pinned to full commit SHAs with tag comments and checked by `npm run check:oss-readiness` |
@@ -278,10 +289,11 @@ native/WASM binaries are absent from the published package.
 
 - [x] Acquire `vivi2d.com` through Cloudflare Registrar.
 - [x] Keep authoritative DNS on Cloudflare.
-- [ ] Choose the first user-docs host: Cloudflare Pages or Vercel.
-- [ ] Reserve Cloudflare DNS entries for future `docs.vivi2d.com`,
-  `api.vivi2d.com`, and `cdn.vivi2d.com` subdomains.
-- [ ] Confirm public website routes consume tracked `docs/user/` content rather
+- [x] Host the public portal on Cloudflare Pages/Workers.
+- [x] Host user docs at `docs.vivi2d.com`.
+- [ ] Reserve Cloudflare DNS entries for future `api.vivi2d.com` and
+  `cdn.vivi2d.com` subdomains when those surfaces have approved contracts.
+- [x] Confirm public website routes consume tracked `docs/user/` content rather
   than ignored backlog or private planning notes.
 
 ## Final Local Gate Runbook
