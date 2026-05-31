@@ -34,16 +34,16 @@ The current public Windows build is an unsigned alpha installer. Browser
 download warnings, an `Unknown publisher` prompt, or Microsoft Defender
 SmartScreen warnings are expected for this release. Do not disable SmartScreen
 globally. Instead, confirm that the installer came from the official GitHub
-Release page and verify the checksum before launching. The next installer
-improvement track is focused on adding a separate Vivi2D Viewer installer,
-code-signing decisions, clearer SmartScreen guidance, first-launch review
-evidence, and uninstall wording.
+Release page and verify the checksum before launching. The `v0.1.0-alpha.3`
+installer release includes separate Windows x64 installers for the Editor and
+Vivi2D Viewer. Code signing is still planned for a later installer alpha.
 
 On Windows, you can verify the installer SHA-256 from PowerShell or Command
 Prompt:
 
 ```powershell
-certutil -hashfile vivi2d-0.1.0-alpha.2-windows-x64-setup.exe SHA256
+certutil -hashfile vivi2d-0.1.0-alpha.3-windows-x64-setup.exe SHA256
+certutil -hashfile vivi2d-viewer-0.1.0-alpha.3-windows-x64-setup.exe SHA256
 ```
 
 Compare the result with `checksums.txt` from the same release. If the digest
@@ -58,6 +58,8 @@ does not match exactly, delete the installer and do not run it.
 4. Keep builds separated by version if you are testing multiple builds.
 5. If Windows warns about an unsigned or unknown app, confirm the checksum and
    release page again before allowing it.
+6. If you install both the Editor and Vivi2D Viewer, wait a few seconds after
+   the first installer finishes before starting the second one.
 
 ## First Launch Check
 

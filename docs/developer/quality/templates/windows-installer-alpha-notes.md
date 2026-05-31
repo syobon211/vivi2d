@@ -56,6 +56,11 @@ certutil -hashfile vivi2d-viewer-<version>-windows-x64-setup.exe SHA256
 
 The installer release record also stores SHA-512 digests for release artifacts.
 
+If you install both the Editor and Vivi2D Viewer from this release, install one
+app first, wait a few seconds after the installer finishes, and then run the
+other installer. This avoids a transient NSIS cleanup collision observed during
+rapid back-to-back silent install testing.
+
 ## First Launch
 
 After installation, Vivi2D should open to the empty editor workspace without an
