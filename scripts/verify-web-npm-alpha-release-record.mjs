@@ -29,7 +29,9 @@ if (packEntry && packEntry.version !== version) {
   failures.push(`Pack result version ${packEntry.version} does not match ${version}.`);
 }
 if (webPackage.version !== version) {
-  failures.push(`packages/web/package.json version ${webPackage.version} does not match ${version}.`);
+  failures.push(
+    `packages/web/package.json version ${webPackage.version} does not match ${version}.`,
+  );
 }
 if (packEntry) {
   validatePackEntry(packEntry, packAllowlist, version);
