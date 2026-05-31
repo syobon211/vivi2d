@@ -65,6 +65,7 @@ function isIgnoredSourceHashEntry(file) {
   return (
     normalized.includes("/__pycache__/") ||
     normalized.endsWith(".pyc") ||
+    normalized.includes(".egg-info/") ||
     normalized.includes("/.pytest_cache/") ||
     normalized.includes("/.tmp-tests/")
   );
