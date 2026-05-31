@@ -1,7 +1,8 @@
 # IP and License Policy
 
 This policy is an engineering control, not legal advice. Legal review is still
-required before public release.
+required before new public distribution surfaces, commercial promotion, or
+feature promotion that changes the IP-risk profile.
 
 ## Repository License
 
@@ -14,15 +15,15 @@ conditions for certain patent litigation.
 
 - ComfyUI is GPL-3.0.
 - ComfyUI provider plugins must not be treated as automatically covered by the
-  root Apache-2.0 distribution.
-- Before public release, maintainers must decide whether ComfyUI-side code is:
-  - moved to a separate repository
-  - kept in a separately licensed subtree
-  - replaced by a pure HTTP/provider contract with no bundled ComfyUI-side code
-- The pure provider contract is the cleanest default for the Apache-2.0
-  editor/runtime distribution unless legal review approves another path.
-- The current default is repo separation: this repository owns the provider
-  protocol/client; provider plugins live outside this repository.
+  root Apache-2.0 editor/runtime distribution.
+- The current repository may include source-only compatibility helpers under
+  `integrations/comfyui/` when they are reviewed, tested, and kept out of
+  installer, npm, wheel, model-weight, and bundled custom-node release assets
+  unless a dedicated release contract approves them.
+- The pure local provider contract remains the cleanest default for the
+  Apache-2.0 editor/runtime distribution. Any packaged ComfyUI-side bundle,
+  Python wheel, See-through bundle, or model-weight redistribution requires
+  explicit license and patent review before publication.
 - Do not bundle See-through source, model weights, or derivative assets without
   explicit license and patent review.
 

@@ -4,16 +4,16 @@ Experimental browser SDK for embedding Vivi2D public-profile `.vivi` models.
 
 ## Install / Import
 
-Before npm publication, use this package from the Vivi2D repository or from an
-explicit release tarball. After npm publication:
+The current Web SDK is published as an experimental alpha package:
 
 ```sh
 npm install @vivi2d/web@alpha
 ```
 
-Alpha releases are intentionally published under the `alpha` dist-tag, not
-`latest`. Pin an exact version in production experiments if reproducibility
-matters.
+Use the `alpha` dist-tag or pin an exact version in production experiments if
+reproducibility matters. The bootstrap package currently also has the `latest`
+dist-tag while it is the only npm version, but `latest` is not a stable-channel
+promise for Vivi2D until the release notes explicitly say so.
 
 ```ts
 import { createViviWebPlayer, loadViviWebModel } from "@vivi2d/web";

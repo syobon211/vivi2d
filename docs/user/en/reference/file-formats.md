@@ -12,7 +12,7 @@ Choose input and output files based on the workflow you are testing.
 
 ## Supported Inputs
 
-Use current app UI as the final source of truth, because support may change before public release. In general, Vivi2D workflows focus on artwork files that can become editable layers or accepted masks.
+Use current app UI and release notes as the final source of truth, because file support may change during the alpha series. In general, Vivi2D workflows focus on artwork files that can become editable layers or accepted masks.
 
 ## Good Source Artwork
 

@@ -305,7 +305,7 @@ The capture should teach what happens before Apply:
 If warnings are demonstrated, use a synthetic issue such as "outline may remain
 visible" or "review this motion area" rather than raw internal metric names.
 If the live UI itself displays forbidden public terminology, do not hide it with
-cropping or post-processing. Treat the UI copy as a pre-publication blocker,
+cropping or post-processing. Treat the UI copy as a release blocker,
 fix the UI first, and capture the corrected product surface.
 
 ### Viewer API Browser Sample

@@ -28,7 +28,7 @@ src/ and electron/
 | --- | --- |
 | `packages/model` | File/profile schemas, migrations, public-profile validation, runtime spec constants. |
 | `packages/editor-core` | UI-free editor domain commands, safe Auto Setup plans, and authoring safety helpers. |
-| `packages/core` | Runtime-neutral math/evaluation compatibility while pre-public refactors continue. |
+| `packages/core` | Runtime-neutral math/evaluation compatibility while alpha refactors continue. |
 | `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, and conformance surfaces. |
 | `packages/renderer-*` | Renderer adapters that consume runtime snapshots instead of editor project internals. |
 | `packages/web` | Experimental browser SDK and Web Component entry points. |

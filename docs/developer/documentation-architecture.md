@@ -218,8 +218,12 @@ Developer-doc files have these initial responsibilities:
 
 `@vivi2d/web` implementation work remains gated by
 `npm run check:sdk-unlock:web`. That command permits the current Phase 1
-programmatic SDK implementation work only; it does not approve npm publication
-or a stable compatibility promise.
+programmatic SDK implementation work only; it does not approve stable
+compatibility promises or additional package promotion. The current
+`@vivi2d/web@0.1.0-alpha.0` npm package is an experimental alpha publication
+covered by `docs/developer/quality/web-npm-alpha-release.md` and the bootstrap
+record in `docs/developer/quality/web-npm-alpha-bootstrap-record.md`; later npm
+alpha versions must use the GitHub Actions OIDC Trusted Publisher path.
 
 Localization contributor metadata under `docs/developer/contributing/i18n/`
 should preserve the current two-file shape unless a future i18n PR deliberately
@@ -396,10 +400,11 @@ Locale fallback rule:
 
 The minimal website shell lives under `apps/vivi2d-com/` and consumes tracked
 user-doc route metadata. The main domain, `vivi2d.com`, is the product portal;
-the long-form user documentation should live on `docs.vivi2d.com` when public
-hosting is enabled. That keeps localized user docs versioned in Git while
-allowing the portal, documentation routing, search index, and deployment config
-to evolve separately.
+`docs.vivi2d.com` is reserved as the public documentation host and currently
+redirects to the GitHub `docs/` tree until generated localized docs routes are
+published. That keeps localized user docs versioned in Git while allowing the
+portal, documentation routing, search index, and deployment config to evolve
+separately.
 
 Recommended website responsibilities:
 
@@ -435,17 +440,17 @@ reviewer, and review date. Every archived source must have exactly one manifest
 entry, and each entry must include at least one promoted target or an explicit
 drop rationale. The manifest must not claim `docs/backlog/` as canonical.
 
-Public-release history policy:
+Public-history policy:
 
 - `docs/developer/quality/public-release-checklist.md` must record the selected
-  Git history publication model before the first public OSS release.
-- Option A preserves full Git history. It requires a tracked
-  "pre-public historical docs are non-canonical" notice plus history-aware
-  public-copy, IP, and private-marker scans over reachable history.
-- Option B publishes through a clean public mirror or initial import. It
-  requires preserving private audit history internally and documenting who owns
-  the internal audit archive and provenance requests for public artifacts.
-- Public release is blocked until one model is selected and its checks pass.
+  Git history model before any future history rewrite or public mirror import.
+- The current public repository preserves its published history for routine
+  release fixes. Do not rewrite public history unless the owner records an
+  emergency decision and reruns history-aware public-copy, IP, private-marker,
+  and secret scans.
+- A future clean public mirror or initial import requires preserving private
+  audit history internally and documenting who owns the internal audit archive
+  and provenance requests for public artifacts.
 
 ## Migration Phases
 

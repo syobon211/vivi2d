@@ -14,6 +14,7 @@ const releaseVersion = "0.1.0-alpha.3";
 const releaseTag = `v${releaseVersion}`;
 const releaseUrl = `${githubUrl}/releases/tag/${releaseTag}`;
 const releasesUrl = `${githubUrl}/releases`;
+const npmWebUrl = "https://www.npmjs.com/package/@vivi2d/web";
 const feedbackUrl = `${githubUrl}/issues/29`;
 const installerTrackUrl = `${githubUrl}/issues/30`;
 const portalDocsUrl = docsBaseUrl ? docsUrl("en", "") : `${docsHostUrl}/`;
@@ -674,6 +675,7 @@ function rootHtml() {
           <span class="badge badge-warning">pre-1.0 alpha</span>
           <span class="badge">Apache-2.0</span>
           <span class="badge">unsigned Windows installer</span>
+          <span class="badge">Web SDK npm alpha</span>
           <span class="badge">character showcase coming soon</span>
         </div>
         <h1 id="portal-title">2D creation for everyone.</h1>
@@ -681,11 +683,14 @@ function rootHtml() {
           Vivi2D is an experimental editor, viewer, and web SDK project for
           layered artwork workflows. The current public release adds unsigned
           Windows installer alphas for the Editor and Viewer alongside the
-          source review, checksum, SBOM, and notice artifacts.
+          source review, checksum, SBOM, and notice artifacts. The
+          <code>@vivi2d/web</code> package is available as an experimental npm
+          alpha for public-profile playback.
         </p>
         <div class="actions" aria-label="Primary actions">
           <a class="button button-primary" href="${escapeHtml(githubUrl)}">Open GitHub</a>
           <a class="button" href="${escapeHtml(releaseUrl)}">View ${escapeHtml(releaseTag)}</a>
+          <a class="button" href="${escapeHtml(npmWebUrl)}">Web SDK npm</a>
           <a class="button" href="${escapeHtml(feedbackUrl)}">Send Feedback</a>
           <a class="button" href="${escapeHtml(portalDocsUrl)}">Read Docs</a>
         </div>
@@ -700,6 +705,7 @@ function rootHtml() {
           <div class="ledger-row"><strong>Checksums</strong><span class="ledger-ok">Yes</span></div>
           <div class="ledger-row"><strong>SBOM</strong><span class="ledger-ok">Yes</span></div>
           <div class="ledger-row"><strong>Installer</strong><span class="ledger-warn">Unsigned</span></div>
+          <div class="ledger-row"><strong>Web SDK</strong><span class="ledger-ok">npm alpha</span></div>
           <div class="ledger-row"><strong>Docs</strong><span class="ledger-ok">Live</span></div>
         </div>
         <p class="console-note">The Windows installer alpha is unsigned and may trigger browser, Unknown publisher, or SmartScreen warnings. Download only from GitHub Releases, verify checksums before launch, and share installer feedback on GitHub.</p>
@@ -740,6 +746,15 @@ function rootHtml() {
           <li>macOS, Linux, MSI/MSIX, Winget, or Store packages.</li>
           <li>Bundled ComfyUI, See-through, or model weights.</li>
         </ul>
+      </article>
+      <article class="info-card">
+        <h2>Web SDK Alpha</h2>
+        <p>
+          <a href="${escapeHtml(npmWebUrl)}"><code>@vivi2d/web@0.1.0-alpha.0</code></a>
+          is published for experimental browser playback of reviewed public-profile
+          <code>.vivi</code> models. Use <code>@alpha</code> or pin an exact
+          version; <code>latest</code> is not a stable-channel promise.
+        </p>
       </article>
       <article class="info-card">
         <h2>Next Installer Work</h2>

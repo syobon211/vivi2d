@@ -59,11 +59,11 @@ if (failures.length > 0) {
     console.error(`- ${finding.kind}: ${finding.filePath}`);
   }
   console.error(
-    "\nThis lightweight check reviews historical file names only. Run npm run check:secrets for the current tree, then run gitleaks or trufflehog before public release, rotate any historical secrets, and re-scan after any history rewrite.",
+    "\nThis lightweight check reviews historical file names only. Run npm run check:secrets for the current tree, then run gitleaks or trufflehog before new public release surfaces or any history rewrite, rotate any historical secrets, and re-scan after any history rewrite.",
   );
   process.exit(1);
 }
 
 console.log(
-  "[publication-history] passed lightweight historical path review. Run npm run check:secrets for the current tree and gitleaks/trufflehog for full history before public release.",
+  "[publication-history] passed lightweight historical path review. Run npm run check:secrets for the current tree and gitleaks/trufflehog for full history before new public release surfaces or any history rewrite.",
 );

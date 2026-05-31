@@ -18,8 +18,8 @@ tooling for layered artwork workflows and embeddable web integrations.
   <strong>Image -> See-through decomposition -> reviewed Auto Setup -> motion preview.</strong>
 </p>
 
-Vivi2D is pre-1.0. APIs, file formats, package boundaries, and release policy
-may change before the first public release.
+Vivi2D is pre-1.0 alpha software. APIs, file formats, package boundaries, and
+release policy may change during the alpha series.
 
 The public portal is [vivi2d.com](https://vivi2d.com). Release artifacts remain
 canonical on [GitHub Releases](https://github.com/syobon211/vivi2d/releases).
@@ -68,8 +68,9 @@ the Editor and Vivi2D Viewer, plus the source review archive, SBOM, third-party
 notices, checksums, and installer release record.
 
 The first `v0.1.0-alpha.1` release remains the source/provenance-only baseline.
-Published npm packages, native/WASM standalone binaries, and ComfyUI bundles are not
-included until they are explicitly announced in release notes.
+GitHub Release assets do not include npm tarballs, native/WASM standalone
+binaries, or ComfyUI bundles unless they are explicitly announced in release
+notes.
 
 The Windows installer alpha is unsigned. It may show browser, `Unknown
 publisher`, or Microsoft Defender SmartScreen warnings. Download installers only
@@ -95,7 +96,11 @@ want to follow progress, watch GitHub Releases and the user documentation.
   browser, `Unknown publisher`, or SmartScreen warnings.
 - No macOS, Linux, MSI, MSIX, Winget, or Microsoft Store installer is published
   yet.
-- No npm package is published yet.
+- `@vivi2d/web@0.1.0-alpha.0` is published as an experimental npm alpha for
+  public-profile model playback. Use `npm install @vivi2d/web@alpha` or pin the
+  exact version; this is not a stable API commitment. npm currently points both
+  `alpha` and `latest` at `0.1.0-alpha.0` while it is the only package version,
+  but `latest` is not a stable-channel promise.
 - ComfyUI, ComfyUI-See-through, model weights, and custom-node bundles are not
   bundled with Vivi2D.
 - ComfyUI automation is supported through Vivi2D's compat plugin. The legacy
@@ -163,7 +168,8 @@ npm run check:quality:e2e-workflow-record
 
 - Continue the unsigned Windows installer alpha track with repeatable smoke
   automation, checksum-first download guidance, and clearer uninstall notes.
-- Prepare an `@vivi2d/web` npm alpha for reviewed public-profile playback.
+- Continue the `@vivi2d/web` npm alpha through Trusted Publishing and reviewed
+  public-profile playback examples.
 - Add macOS/Linux or store-distributed desktop builds only after separate
   installer contracts are reviewed.
 - Stabilize the public runtime/profile contract for external engine adapters.

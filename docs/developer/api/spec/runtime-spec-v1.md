@@ -65,7 +65,7 @@ facade for:
 
 The facade intentionally hides editor project mutation from host code. WASM and
 future C ABI implementations must match the facade through the conformance
-suite before public release.
+suite before any public native, WASM, or C ABI release.
 
 The current C ABI artifact lives under `packages/runtime-c-abi/` as a private
 header-only design boundary. It mirrors Runtime Spec v1 names and error codes

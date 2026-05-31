@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for the pre-public OSS refactor.
+Accepted for the OSS alpha provider-boundary model.
 
 ## Context
 

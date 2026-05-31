@@ -197,8 +197,19 @@ function checkDocsReferenceAudit() {
       "docs/developer/api/web-sdk.md must scope the decision to Phase 1 programmatic SDK implementation.",
     );
   }
-  if (!webSdk.includes("does not approve npm publication")) {
-    fail("docs/developer/api/web-sdk.md must keep npm publication as a separate gate.");
+  if (
+    !/does not approve stable\s+compatibility promises or additional package promotion/.test(
+      webSdk,
+    )
+  ) {
+    fail(
+      "docs/developer/api/web-sdk.md must keep stable compatibility and additional package promotion as separate gates.",
+    );
+  }
+  if (!/Later\s+versions must use GitHub Actions OIDC Trusted Publishing/.test(webSdk)) {
+    fail(
+      "docs/developer/api/web-sdk.md must describe the Trusted Publishing gate for later npm alpha versions.",
+    );
   }
 
   for (const doc of docs.filter((doc) => doc !== "docs/developer/api/web-sdk.md")) {

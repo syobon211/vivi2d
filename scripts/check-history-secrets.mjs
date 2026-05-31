@@ -317,7 +317,7 @@ if (failures.length > 0) {
     "\nIf a finding is real, rotate it before publishing and rewrite history if needed.",
   );
   console.error(
-    "This check is a repository-local baseline; still run gitleaks or trufflehog before public release.",
+    "This check is a repository-local baseline; still run gitleaks or trufflehog before new public release surfaces or any history rewrite.",
   );
   process.exit(1);
 }

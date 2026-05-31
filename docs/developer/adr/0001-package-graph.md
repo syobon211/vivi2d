@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for the pre-public OSS refactor.
+Accepted for the OSS alpha package-boundary model.
 
 ## Context
 
@@ -22,6 +22,6 @@ source exports only while `private: true` and `vivi2d.publication` is
 ## Consequences
 
 - `check:package-boundaries` is the enforcement point for publication intent.
-- Package names may still change before public release.
+- Internal and experimental package names may still change during alpha.
 - Public API reviews should happen before flipping any package from internal to
   experimental or public.

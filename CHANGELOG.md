@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-06-01
+
+### Web SDK npm alpha bootstrap
+
+- Published `@vivi2d/web@0.1.0-alpha.0` through the one-time local bootstrap
+  path because npm Trusted Publisher settings require the package to exist
+  before configuration.
+- Recorded that `0.1.0-alpha.0` has no npm provenance attestation. The
+  published tarball SHA-256 is
+  `982dc5369f35cb0246c04bcdaf9dbfbad5f3a720dc0db86434f16e581babea09`, npm
+  integrity is
+  `sha512-/I/WiO+HB4c8RxTS71aUYO16NJAJ5BKs92sSWVKRT1KD+pBoYQM0CLm8tnRsK9q0akBwdvEJdgmNsFqAj90yzA==`,
+  and npm shasum is `5a60a49f81c18fa8169569942a751d337e8ff977`.
+- Configured npm Trusted Publishing for later Web SDK alpha releases through
+  GitHub Actions OIDC with repository `syobon211/vivi2d`, workflow
+  `publish-web-alpha.yml`, and environment `npm-alpha`.
+- Disabled the bootstrap publish script after the one-time package creation so
+  future Web SDK publishes must use the Trusted Publishing workflow.
+- Noted npm registry behavior for the first package version: both `alpha` and
+  `latest` currently point at `0.1.0-alpha.0` because npm rejected removal of
+  `latest` while it is the only version. Public install guidance remains
+  `@vivi2d/web@alpha` or an exact pinned version; `latest` is not a stable
+  channel promise.
+
 ## 2026-05-23
 
 ### OSS publication defaults

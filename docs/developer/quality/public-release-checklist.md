@@ -1,10 +1,13 @@
 # Public Release Checklist
 
-This checklist must pass before making the repository public.
+This checklist records the public-release baseline and ongoing public-operation
+gates. Items that were one-time pre-publication blockers are retained as audit
+history; open items describe follow-up work or checks that must be revalidated
+before future public release surfaces.
 
 ## Current Implementation Snapshot
 
-Last reconciled: 2026-05-31.
+Last reconciled: 2026-06-01.
 
 Implemented and locally verified:
 
@@ -38,9 +41,14 @@ Implemented and locally verified:
   channel is Windows x64 NSIS only, includes separate Editor and Vivi2D Viewer
   installers, is unsigned, draft/pre-release first, and is guarded by explicit
   release-note and website warnings.
-- `@vivi2d/web` alpha release dry-run tooling is implemented and locally
-  exercised through `npm pack`, release-record generation, release-record
-  verification, and `npm publish --dry-run`.
+- `@vivi2d/web@0.1.0-alpha.0` is published on npm through the documented
+  one-time local bootstrap path. The package is public, the tarball digest was
+  verified against the registry copy, npm Trusted Publishing is configured for
+  later releases, and the bootstrap script is disabled for future use.
+- GitHub hosted security settings are enabled for the public repository as of
+  2026-06-01: Private Vulnerability Reporting, Secret Scanning, Push
+  Protection, main branch protection with required checks, and CodeQL code
+  scanning.
 - The CodeQL workflow grants `actions: read`, `contents: read`, and
   `security-events: write` so hosted analysis can query its workflow run and
   upload code-scanning results.
@@ -49,18 +57,20 @@ Implemented and locally verified:
   are live and should continue to link to GitHub Releases rather than copied
   stale asset URLs.
 
-Still open before public release:
+Still open or revalidated before future public release surfaces:
 
-- GitHub repository settings that cannot be completed from the source tree:
-  Private Vulnerability Reporting or equivalent private contact path, Secret
-  Scanning, Push Protection, branch protection, required checks, and CodeQL
-  code scanning enablement.
-- npm Trusted Publishing must be configured in the npm/GitHub UI for
-  `@vivi2d/web` after package creation. If npm does not expose package-level
-  Trusted Publisher settings before the package exists, the only approved first
-  publish is the one-time `@vivi2d/web@0.1.0-alpha.0` bootstrap wrapper; all
-  later alpha publishes must use GitHub Actions OIDC and the protected
-  `npm-alpha` environment.
+- GitHub hosted security settings must stay enabled and be rechecked before
+  security-sensitive release changes. Current API-verified state: repository is
+  public, Private Vulnerability Reporting is enabled, Secret Scanning is
+  enabled, Push Protection is enabled, main branch protection is enabled with
+  required checks, and CodeQL has a recent analysis on `main`. Signed commits
+  are not required for the current alpha branch-protection rule.
+- npm Trusted Publishing is configured in the npm UI for `@vivi2d/web` with
+  GitHub Actions, repository `syobon211/vivi2d`, workflow
+  `publish-web-alpha.yml`, and environment `npm-alpha`. The completed
+  `0.1.0-alpha.0` bootstrap remains the only local-publish exception; all later
+  alpha publishes must use GitHub Actions OIDC and the protected `npm-alpha`
+  environment.
 - Full git history and hosted surfaces still need a final release-machine scan
   and owner sign-off. After any final squash or public-history rewrite,
   `gitleaks git --log-opts="--all" . --redact` must pass before
@@ -88,8 +98,8 @@ Governance decisions for the initial OSS release:
 | --- | --- | --- | --- |
 | Contribution terms | @syobon211 | DCO, no CLA for the initial public release | Add DCO automation before accepting outside PRs |
 | Trademark owner | @syobon211 | Vivi2D project owner controls the Vivi2D name and logo until a formal entity exists | Revisit before commercial trademark registration |
-| npm organization owner | @syobon211 | Keep root package private; publish only packages marked `experimental` or `public` in `docs/developer/quality/public-api-status.md` | Configure npm trusted publishing before first npm release |
-| Code-signing and release-key owner | @syobon211 | No public native binary signing until native/WASM artifact policy is complete | Finish R5 artifact signing/provenance policy |
+| npm organization owner | @syobon211 | Keep root package private; publish only packages marked `experimental` or `public` in `docs/developer/quality/public-api-status.md` | `@vivi2d/web@0.1.0-alpha.0` bootstrap complete; later publishes require npm Trusted Publishing |
+| Code-signing and release-key owner | @syobon211 | No public native binary code-signing until native/WASM artifact policy is complete; current Windows installer alphas are intentionally unsigned | Finish R5 artifact signing/provenance policy |
 | Initial publication intent | @syobon211 | `@vivi2d/web` remains experimental; all other workspace packages remain internal or internal-app | Update `docs/developer/quality/public-api-status.md` before changing any package status |
 
 ## Security Controls
@@ -101,11 +111,11 @@ Governance decisions for the initial OSS release:
 - [x] `.github/CODEOWNERS` covers workflows, Electron IPC/security code,
   scripts, release automation, runtime/native packages, and public package
   surfaces.
-- [ ] GitHub Private Vulnerability Reporting is enabled or equivalent is documented.
-- [ ] GitHub Secret Scanning is enabled or equivalent is documented.
-- [ ] GitHub Push Protection is enabled or equivalent is documented.
-- [ ] Branch protection and required checks are enabled.
-- [ ] CodeQL code scanning is enabled and passing.
+- [x] GitHub Private Vulnerability Reporting is enabled or equivalent is documented.
+- [x] GitHub Secret Scanning is enabled or equivalent is documented.
+- [x] GitHub Push Protection is enabled or equivalent is documented.
+- [x] Branch protection and required checks are enabled.
+- [x] CodeQL code scanning is enabled and passing.
 - [ ] `npm run check:secrets` passes for the current working tree.
 - [ ] `npm run check:history-secrets` passes for the reachable git history.
 - [ ] No telemetry, crash reporting, update pings, or remote upload are enabled by default.
@@ -114,11 +124,11 @@ Exception tracking for controls that cannot be enabled immediately:
 
 | Control | Reason | Owner | Deadline | Status |
 | --- | --- | --- | --- | --- |
-| GitHub Private Vulnerability Reporting | Enable when the repository is prepared for public visibility, or publish an equivalent monitored private contact path. Public release is blocked if neither exists. | @syobon211 | Before publication | Open |
-| GitHub Secret Scanning | Enable for the private repository if the account plan supports it, or document unavailable account plan limitations | @syobon211 | Before R1 exit | Open |
-| GitHub Push Protection | Enable for the private repository if the account plan supports it, or document unavailable account plan limitations | @syobon211 | Before R1 exit | Open |
-| Branch protection and required checks | Configure after repository visibility and default branch policy are final; source-side runbooks and required gate names are tracked, but hosted enforcement is not proved locally. | @syobon211 | Before publication | Open |
-| CodeQL code scanning | Workflow exists and is SHA-pinned; hosted code scanning must be enabled and passing after repository publication settings are finalized. | @syobon211 | Before publication | Open |
+| GitHub Private Vulnerability Reporting | Enabled for the public repository. Recheck before security-sensitive release changes. | @syobon211 | 2026-06-01 | Complete |
+| GitHub Secret Scanning | Enabled for the public repository. Non-provider pattern and validity checks remain optional follow-up. | @syobon211 | 2026-06-01 | Complete |
+| GitHub Push Protection | Enabled for the public repository. | @syobon211 | 2026-06-01 | Complete |
+| Branch protection and required checks | Enabled on `main` with strict required status checks for Build/Test/Audit and CodeQL. Signed commits are not required for the current alpha rule. | @syobon211 | 2026-06-01 | Complete |
+| CodeQL code scanning | Enabled and producing hosted analyses for `main`. | @syobon211 | 2026-06-01 | Complete |
 
 ## History and Hosted Surfaces
 
@@ -208,7 +218,7 @@ License/legal decision tracking:
 | --- | --- | --- | --- |
 | ComfyUI GPL-3.0 distribution boundary | @syobon211, with legal counsel if distribution remains in scope | Before bundled custom-node pack or binary artifact | Open for bundled artifacts; not blocking source-only publication |
 | Vivi2D ComfyUI compat plugin license/SPDX | @syobon211 | Before public source publication | Decided: Apache-2.0 source, tracked in `comfyui-plugin-source-record.json` |
-| See-through source, weights, and derivative asset policy | @syobon211, with legal counsel if bundled artifacts remain in scope | Before publication | Open |
+| See-through source, weights, and derivative asset policy | @syobon211, with legal counsel if bundled artifacts remain in scope | Before any bundled See-through/source/weight publication | Open |
 | Internal skin-weight source-publication record | @syobon211, with legal counsel before promotion | Before public repository publication | Decided for `v0.1.0-alpha.1`: tracked source remains allowed only under the explicit internal record in `docs/developer/ip/policy.md`; not a public API/runtime feature and not legal clearance |
 
 ## Release Artifact Decisions
@@ -231,13 +241,13 @@ lockfile, and the release-surface scanners.
 These gates apply before publishing any npm package, including an
 `@vivi2d/web` alpha:
 
-- [ ] npm Trusted Publishing or equivalent provenance is configured for the
+- [x] npm Trusted Publishing or equivalent provenance is configured for the
   package, except for the one-time `@vivi2d/web@0.1.0-alpha.0` bootstrap path
   documented in `docs/developer/quality/web-npm-alpha-release.md`.
-- [ ] `@vivi2d/web` publication uses `scripts/publish-web-npm-alpha.mjs` or the
-  protected workflow. For the first package creation only, it may use
-  `scripts/bootstrap-web-npm-alpha-publish.mjs`; direct `npm publish` remains
-  blocked.
+- [x] `@vivi2d/web` publication uses `scripts/publish-web-npm-alpha.mjs` or the
+  protected workflow. The first package creation used the completed
+  `scripts/bootstrap-web-npm-alpha-publish.mjs` exception; that script is now
+  disabled and direct `npm publish` remains blocked.
 - [ ] npm Trusted Publishing dry-run has completed against the protected
   `npm-alpha` environment.
 - [x] Publish workflow actions are SHA-pinned, or an owner-approved exception is
@@ -297,7 +307,9 @@ native/WASM binaries are absent from the published package.
 - [x] Acquire `vivi2d.com` through Cloudflare Registrar.
 - [x] Keep authoritative DNS on Cloudflare.
 - [x] Host the public portal on Cloudflare Pages/Workers.
-- [x] Host user docs at `docs.vivi2d.com`.
+- [x] Keep `docs.vivi2d.com` live as the public docs hostname. It currently
+  redirects to the GitHub `docs/` tree until generated user-doc routes are
+  approved for publication.
 - [ ] Reserve Cloudflare DNS entries for future `api.vivi2d.com` and
   `cdn.vivi2d.com` subdomains when those surfaces have approved contracts.
 - [x] Confirm public website routes consume tracked `docs/user/` content rather
@@ -305,9 +317,9 @@ native/WASM binaries are absent from the published package.
 
 ## Final Local Gate Runbook
 
-Run this local gate sequence immediately before making the repository public or
-before publishing an experimental package. Record the command output location in
-the release notes or owner checklist.
+Run this local gate sequence immediately before publishing an experimental
+package, installer, or repository-level release. Record the command output
+location in the release notes or owner checklist.
 
 ```sh
 npm run check:quality

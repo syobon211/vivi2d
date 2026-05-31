@@ -76,8 +76,9 @@ implementation, not stable compatibility promises.
 `npm run check:web-npm-alpha-release` covers the additional alpha publication
 scaffolding: protected environment policy, trusted-publisher/token hygiene,
 release workflow shape, pack/record/verify scripts, release notes template, and
-required gates. A real publish still requires a final release tag and npm
-trusted publisher configuration outside the repository.
+required gates. The one-time `@vivi2d/web@0.1.0-alpha.0` bootstrap is complete;
+later npm alpha publishes still require a final package release tag and the
+configured npm Trusted Publisher path through GitHub Actions OIDC.
 `npm run check:github-release-alpha` covers the initial repository-level
 source/provenance GitHub Release scaffolding: source/provenance-only asset
 composition, the draft release workflow, release notes template, checksum
