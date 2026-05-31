@@ -87,7 +87,8 @@ other package artifacts.
 
 Windows desktop installers use the separate contract in
 `docs/developer/quality/windows-installer-alpha.md`. The `v0.1.0-alpha.2`
-release line is the first installer-capable line: Windows x64 NSIS only,
+release line is the first installer-capable line, and `v0.1.0-alpha.3` extends
+it with separate Editor and Vivi2D Viewer installers: Windows x64 NSIS only,
 unsigned unless release notes explicitly say otherwise, with an installer
 release record, checksum verification, signing-status disclosure, source review
 archive, SBOM, notices, and owner approval in the protected release environment.

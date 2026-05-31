@@ -10,7 +10,7 @@ const docsBaseUrl = argValue("--docs-base-url") ?? process.env.VIVI_DOCS_BASE_UR
 const siteUrl = "https://vivi2d.com";
 const docsHostUrl = "https://docs.vivi2d.com";
 const githubUrl = "https://github.com/syobon211/vivi2d";
-const releaseVersion = "0.1.0-alpha.2";
+const releaseVersion = "0.1.0-alpha.3";
 const releaseTag = `v${releaseVersion}`;
 const releaseUrl = `${githubUrl}/releases/tag/${releaseTag}`;
 const releasesUrl = `${githubUrl}/releases`;
@@ -658,9 +658,9 @@ function rootHtml() {
         <h1 id="portal-title">2D creation for everyone.</h1>
         <p class="hero-lede">
           Vivi2D is an experimental editor, viewer, and web SDK project for
-          layered artwork workflows. The current public release adds an
-          unsigned Windows installer alpha alongside the source review,
-          checksum, SBOM, and notice artifacts.
+          layered artwork workflows. The current public release adds unsigned
+          Windows installer alphas for the Editor and Viewer alongside the
+          source review, checksum, SBOM, and notice artifacts.
         </p>
         <div class="actions" aria-label="Primary actions">
           <a class="button button-primary" href="${escapeHtml(githubUrl)}">Open GitHub</a>
@@ -689,9 +689,9 @@ function rootHtml() {
         <h2>Current Release</h2>
         <p>
           <a href="${escapeHtml(releaseUrl)}">${escapeHtml(releaseTag)}</a>
-          includes a Windows x64 NSIS installer alpha, checksums, SBOM,
-          third-party notices, installer release record, and a source review
-          archive.
+          includes separate Windows x64 NSIS installer alphas for the Editor
+          and Viewer, checksums, SBOM, third-party notices, installer release
+          record, and a source review archive.
         </p>
       </article>
       <article class="info-card">
@@ -699,6 +699,7 @@ function rootHtml() {
         <ul>
           <li>Read the release notes before installing.</li>
           <li>Verify the installer SHA-256 with <code>checksums.txt</code>.</li>
+          <li>If installing both apps, wait a few seconds after one installer finishes before starting the other.</li>
           <li>Report install, first-launch, or uninstall issues in the <a href="${escapeHtml(feedbackUrl)}">alpha feedback thread</a>.</li>
           <li>Use test artwork first; this is still pre-1.0 alpha software.</li>
         </ul>
@@ -714,9 +715,9 @@ function rootHtml() {
       <article class="info-card">
         <h2>Next Installer Work</h2>
         <p>
-          The <a href="${escapeHtml(installerTrackUrl)}">alpha.3 installer track</a>
-          focuses on adding a Viewer installer, code-signing decisions,
-          SmartScreen guidance, first-launch evidence, and uninstall wording.
+          The <a href="${escapeHtml(installerTrackUrl)}">installer follow-up track</a>
+          focuses on code-signing decisions, SmartScreen guidance,
+          first-launch evidence, and installer UX polish.
         </p>
       </article>
     </section>
