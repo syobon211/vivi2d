@@ -486,6 +486,7 @@ Installer release notes must include:
 - explicit non-goals for auto-update, macOS, Linux, MSI/MSIX, ComfyUI bundles,
   See-through bundles, model weights, and stable API guarantees
 - uninstall instructions or a link to user docs
+- any intentional user-data, cache, or settings remnants left after uninstall
 - security reporting path
 
 The release notes must not imply that the installer is production-ready,

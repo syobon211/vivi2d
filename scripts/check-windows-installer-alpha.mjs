@@ -290,6 +290,8 @@ function checkScripts() {
     "WINDOWS_INSTALLER_ENVIRONMENT",
     "MAX_INSTALLER_BYTES",
     "MAX_INSTALLED_FOOTPRINT_BYTES",
+    "formatIntentionalRemnants",
+    "<intentional-remnants>",
   ]) {
     if (!prepareScript.includes(text)) {
       failures.push(`${prepareScriptPath}: missing ${text}`);
@@ -367,6 +369,8 @@ function checkDocs() {
     "What Is Not Included",
     "Uninstall",
     "certutil -hashfile",
+    "<intentional-remnants>",
+    "%APPDATA%/Vivi2D",
   ]) {
     if (!template.includes(text)) failures.push(`${templatePath}: missing ${text}`);
   }
