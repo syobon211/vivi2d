@@ -235,6 +235,13 @@ Each Windows installer alpha release must produce:
 | build-provenance attestation status | Yes | Recorded in the release record. A downloadable attestation file is optional until its exact filename is added to the allowlist. |
 | `release-notes.md` | Generated only | Used as release body, not attached as a downloadable asset. |
 
+The Viewer installer must use a distinct package identity (`vivi2d-viewer`)
+instead of inheriting the Editor package name (`vivi2d`). Its NSIS product name
+is `Vivi2DViewer` for alpha.3 so the installer remains stable with the separated
+package identity, while shortcuts may still use the user-facing label
+`Vivi2D Viewer`. This keeps the Viewer from installing into the Editor's
+per-user install directory or replacing the Editor uninstall registration.
+
 The installer release record must include:
 
 - schema version and release kind

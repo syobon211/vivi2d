@@ -1,5 +1,5 @@
 appId: com.vivi2d.viewer
-productName: Vivi2D Viewer
+productName: Vivi2DViewer
 asar: false
 publish: null
 artifactName: "vivi2d-viewer-${env.VERSION}-windows-x64-setup.${ext}"
@@ -33,6 +33,8 @@ files:
   - "!node_modules/**/example/**"
   - "!node_modules/**/examples/**"
 extraMetadata:
+  name: vivi2d-viewer
+  productName: Vivi2DViewer
   main: electron/main.cjs
 win:
   target:
