@@ -61,8 +61,8 @@ jobs:
       - run: node scripts/check-release-input-version.mjs --workspace @vivi2d/web --version "$VERSION" --dist-tag alpha
       - run: node scripts/check-release-tag.mjs --tag "web-v$VERSION" --ref "$RELEASE_REF" --sha "$(git rev-parse HEAD)"
       - run: node scripts/run-release-step.mjs --name test-fuzz-parsers -- npm run test:fuzz:parsers
-      - run: node scripts/run-release-step.mjs --name check-quality -- npm run check:quality
-      - run: node scripts/run-release-step.mjs --name check-quality-e2e-workflow-record -- npm run check:quality:e2e-workflow-record
+      - run: xvfb-run -a node scripts/run-release-step.mjs --name check-quality -- npm run check:quality
+      - run: xvfb-run -a node scripts/run-release-step.mjs --name check-quality-e2e-workflow-record -- npm run check:quality:e2e-workflow-record
       - run: node scripts/run-release-step.mjs --name check-sdk-unlock-web -- npm run check:sdk-unlock:web
       - run: node scripts/run-release-step.mjs --name check-oss-readiness -- npm run check:oss-readiness
       - run: node scripts/run-release-step.mjs --name check-oss-publication -- npm run check:oss-publication
