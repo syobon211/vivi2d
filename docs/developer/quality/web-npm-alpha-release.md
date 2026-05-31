@@ -43,7 +43,7 @@ ready for release review.
 
 Current local dry-run posture:
 
-- `@vivi2d/web` is configured as `0.1.0-alpha.0`.
+- `@vivi2d/web` is configured as `0.1.0-alpha.1`.
 - Local dry-run artifacts are written under the ignored
   `tmp/web-alpha-dry-run/` directory when maintainers exercise the release
   commands manually.
@@ -453,11 +453,14 @@ It must not contain:
 The pack-content gate must inspect the actual `npm pack --dry-run --json`
 output for `@vivi2d/web`. The release workflow must also record the real tarball
 name, size, SHA-256 digest, and npm integrity value when available.
-For the initial alpha, `docs/developer/quality/web-npm-alpha-pack-allowlist.json`
-is the reviewed deterministic pack allowlist. `record-web-npm-alpha-artifacts.mjs`
-must reject pack outputs whose file list or size budgets drift from that
-allowlist, and it must record each packed file's size and SHA-256 digest in the
-release record consumed by the publish job.
+`docs/developer/quality/web-npm-alpha-pack-allowlist.json` is the reviewed
+deterministic pack file/size allowlist. Version binding is checked separately
+against package metadata, the workflow input, and the release tag so that later
+`alpha` versions can reuse the same file-shape contract without weakening the
+tag/version gate. `record-web-npm-alpha-artifacts.mjs` must reject pack outputs
+whose file list or size budgets drift from that allowlist, and it must record
+each packed file's size and SHA-256 digest in the release record consumed by the
+publish job.
 
 The release workflow must not record a digest for one tarball and publish a
 freshly packed second tarball. The allowed patterns are:
