@@ -67,6 +67,11 @@ archive, SBOM, third-party notices, checksums, and release record. Installers,
 npm packages, native/WASM binaries, and ComfyUI bundles are not included until
 they are explicitly announced in release notes.
 
+If a Windows installer alpha is announced, treat it as early test software.
+Unsigned installer builds may show browser, `Unknown publisher`, or Microsoft
+Defender SmartScreen warnings. Download installers only from GitHub Releases and
+verify `checksums.txt` before running them.
+
 ## Getting Started
 
 Vivi2D is not yet distributed as a one-click app installer. The current public
