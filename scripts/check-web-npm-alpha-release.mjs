@@ -307,7 +307,9 @@ function checkPublishWrapperHostedGuard(publisherSource) {
     );
   }
   if (npmPublishIndex < 0) {
-    failures.push('scripts/publish-web-npm-alpha.mjs must call run("npm", publishArgs, ...).');
+    failures.push(
+      'scripts/publish-web-npm-alpha.mjs must call run("npm", publishArgs, ...).',
+    );
   }
   if (guardCallIndex >= 0 && npmPublishIndex >= 0 && guardCallIndex > npmPublishIndex) {
     failures.push("assertHostedPublishContext must run before npm publish.");
@@ -348,7 +350,5 @@ function assertOrder(first, second) {
 }
 
 function stripJsComments(source) {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 }

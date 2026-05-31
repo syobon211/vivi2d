@@ -141,7 +141,13 @@ function resolveCommand(command, commandArgs) {
   // Windows resolves npm through shell shims; run the JS entrypoint directly.
   const candidateNpmCliPaths = [
     process.env.npm_execpath ||
-      path.join(path.dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"),
+      path.join(
+        path.dirname(process.execPath),
+        "node_modules",
+        "npm",
+        "bin",
+        "npm-cli.js",
+      ),
   ];
   const fallbackNpmCli = path.join(
     path.dirname(process.execPath),
@@ -159,7 +165,11 @@ function resolveCommand(command, commandArgs) {
     candidateNpmCliPaths.push(fallbackNpmCli);
   }
   const npmCli = candidateNpmCliPaths.find((candidate) => {
-    return typeof candidate === "string" && candidate.endsWith(".js") && isExistingFile(candidate);
+    return (
+      typeof candidate === "string" &&
+      candidate.endsWith(".js") &&
+      isExistingFile(candidate)
+    );
   });
   if (!npmCli) {
     console.error(
