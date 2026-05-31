@@ -91,6 +91,7 @@ are aligned.
 ```bash
 npm run check:windows-installer-alpha
 npm run release:windows-installer:review-packet
+npm run smoke:windows-installer -- -Version 0.1.0-alpha.3
 ```
 
 After any README, portal, installer documentation, release-note, or
@@ -103,4 +104,7 @@ issue. The record should include checksum verification, Editor install, Viewer
 install, first-launch process/network observations, uninstall result, and any
 expected user-data remnants. Use the normal quiet installer path (`/S`) for
 automation; do not add `-WindowStyle Hidden` to the installer process because it
-is not part of the supported user or CI path.
+is not part of the supported user or CI path. The
+`scripts/windows-installer-smoke.ps1` helper performs the public Release
+download, checksum verification, install, launch/network check, and uninstall
+sequence on a clean Windows VM.
