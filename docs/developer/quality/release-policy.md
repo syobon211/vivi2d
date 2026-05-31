@@ -98,6 +98,10 @@ After any release-copy, README, portal, installer-contract, or asset-generation
 change, recreate the draft release from the final tag instead of reusing stale
 assets.
 
+ADR 0007 keeps the Windows installer alpha channel unsigned. Code signing is
+deferred until beta, stable, or a later explicitly approved signing track, and
+any signed installer release requires a new or amended ADR before publication.
+
 ## GitHub And npm Requirements
 
 Future npm publication should use npm trusted publishing and GitHub OIDC

@@ -120,19 +120,9 @@ added to this document and to the verifier allowlist.
 
 ## Signing Policy
 
-Signed installers are preferred, but not required for the first public Windows
-installer alpha if a signing certificate is not yet available.
-
-The default for the first installer alpha is unsigned publication. Before
-signing is enabled, the owner must choose one of:
-
-- a cloud signing service, such as Azure Trusted Signing, DigiCert KeyLocker, or
-  SignPath, with OIDC or another auditable non-exportable key flow
-- an HSM or USB token on a self-hosted Windows release machine with documented
-  physical custody and recovery procedures
-- deferred signing, with all installer copy clearly marked unsigned
-
-Cloud signing and HSM/self-hosted signing both require an ADR before enablement.
+The Windows installer alpha channel is unsigned by policy. ADR 0007 records the
+decision to defer code signing until beta, stable, or a later explicitly
+approved signing track. Signing is not an alpha release goal.
 
 If the installer is unsigned:
 
@@ -148,6 +138,8 @@ If the installer is unsigned:
 
 If signing is enabled later:
 
+- A later ADR must replace or amend ADR 0007 before any signed installer is
+  published.
 - The certificate owner, storage mechanism, renewal process, and revocation
   response must be recorded before use.
 - The signing step must run only in the protected release environment.
@@ -195,13 +187,8 @@ Required decisions before an `alpha.3` installer is tagged:
   The Viewer installer must have its own app id, product name, output
   directory, file name, packaged-app scan, release-record entry, and checksum
   entries.
-- Decide whether `alpha.3` remains unsigned or enables a reviewed signing path.
-  Unsigned is allowed, but the release notes, website, and install docs must say
-  so above the fold.
-- If signing is enabled, merge an ADR that records certificate owner,
-  certificate storage, renewal, revocation response, timestamp authority,
-  workflow secret handling, and verification evidence. The workflow must verify
-  the Authenticode signature before checksums and release records are written.
+- Keep `alpha.3` unsigned under ADR 0007. The release notes, website, and
+  install docs must say so above the fold.
 - Keep Microsoft Defender SmartScreen guidance checksum-first. Docs must not ask
   users to disable SmartScreen globally, and the release must not claim improved
   reputation until a signed installer has real distribution evidence.
