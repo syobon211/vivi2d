@@ -76,9 +76,11 @@ Required packager settings:
   `latest*.yml` nor packaged `app-update.yml` metadata is generated.
 - Disable first-launch update checks, telemetry, crash uploads, or remote
   diagnostics unless a separate privacy/security contract approves them.
-- Exclude `node_modules/.cache`, `coverage`, `playwright-report`,
-  `test-results`, `tmp`, `docs/backlog`, local logs, source review archives, and
-  private workflow recordings from packaged app contents.
+- Exclude root `node_modules`, `node_modules/.cache`, `coverage`,
+  `playwright-report`, `test-results`, `tmp`, `docs/backlog`, local logs,
+  source review archives, and private workflow recordings from packaged app
+  contents. The alpha desktop shell must rely on Vite-bundled renderer assets
+  and first-party Electron `.cjs` files only.
 - Include `LICENSE` and `THIRD_PARTY_NOTICES.txt` in the packaged app or
   installer resources.
 - The packaged app may include only the locked third-party MediaPipe viewer
@@ -407,9 +409,12 @@ Installer-specific checks must prove:
 - packaged app contents do not include private surfaces or local artifacts
 - the packaged app directory or extracted installer payload is scanned before
   the installer is attached to a release
-- the packaged app does not contain `VITE_DEV_SERVER_URL`, localhost dev-server
-  URLs, sourcemaps unless explicitly allowlisted, update feed URLs, or telemetry
-  endpoints
+- the packaged app does not contain concrete localhost dev-server URLs,
+  sourcemaps unless explicitly allowlisted, update feed URLs, or telemetry
+  endpoints. The Electron bootstrap may still contain the development
+  environment-variable name used by local `npm run dev`; the release gate must
+  verify that packaged launches do not use it and that no concrete dev-server
+  URL is embedded.
 - `vivi2d.com` download copy matches the release state
 - sourcemaps are forbidden in installer alpha builds unless a later contract
   names an exact sourcemap allowlist file and explains why it is public-safe

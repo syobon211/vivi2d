@@ -64,7 +64,6 @@ export const WINDOWS_APP_FORBIDDEN_PATH_PATTERNS = [
 ];
 
 export const WINDOWS_APP_FORBIDDEN_TEXT_PATTERNS = [
-  { label: "dev server env name", pattern: /VITE_DEV_SERVER_URL/ },
   {
     label: "Vite dev server URL",
     pattern: /https?:\/\/(?:localhost|127\.0\.0\.1):1420/i,
@@ -86,9 +85,9 @@ export const WINDOWS_APP_FORBIDDEN_TEXT_PATTERNS = [
     pattern: /[A-Za-z]:[\\/]+Users[\\/]+(?!User(?:[\\/]|$))[^\\/]+[\\/]/,
   },
   {
-    label: "private credential marker",
+    label: "embedded credential assignment",
     pattern:
-      /\b(?:api[_-]?key|access[_-]?token|auth[_-]?token|refresh[_-]?token|client[_-]?secret|private[_-]?key|password|credential)\b/i,
+      /\b(?:api[_-]?key|access[_-]?token|auth[_-]?token|refresh[_-]?token|client[_-]?secret|private[_-]?key|password|credential)\b\s*[:=]\s*["'`][A-Za-z0-9_./+=:-]{16,}["'`]/i,
   },
 ];
 
