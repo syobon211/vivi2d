@@ -55,6 +55,7 @@ jobs:
           test "$(git rev-list -n 1 "$RELEASE_REF")" = "$(git rev-parse HEAD)"
       - run: npm install -g npm@11.5.1 --ignore-scripts
       - run: npm ci
+      - run: python -m pip install --disable-pip-version-check pytest==8.4.2
       - run: node scripts/check-npm-cli-version.mjs --min-node 22.14.0 --min-npm 11.5.1
       - run: node scripts/check-release-input-version.mjs --workspace @vivi2d/web --version "$VERSION" --dist-tag alpha
       - run: node scripts/check-release-tag.mjs --tag "web-v$VERSION" --ref "$RELEASE_REF" --sha "$(git rev-parse HEAD)"
