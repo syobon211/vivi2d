@@ -85,6 +85,7 @@
     "check:oss-readiness": "node scripts/check-oss-readiness.mjs",
     "check:oss-publication": "node scripts/check-oss-readiness.mjs --public-source-publication",
     "check:web-npm-alpha-release": "node scripts/check-web-npm-alpha-release.mjs",
+    "release:web-npm-alpha:bootstrap": "node scripts/bootstrap-web-npm-alpha-publish.mjs",
     "release:web-npm-alpha:publish": "node scripts/publish-web-npm-alpha.mjs",
     "check:github-release-alpha": "node scripts/check-github-release-alpha.mjs",
     "release:github:prepare": "node scripts/prepare-github-release-assets.mjs",
