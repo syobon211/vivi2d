@@ -14,6 +14,8 @@ const releaseVersion = "0.1.0-alpha.2";
 const releaseTag = `v${releaseVersion}`;
 const releaseUrl = `${githubUrl}/releases/tag/${releaseTag}`;
 const releasesUrl = `${githubUrl}/releases`;
+const feedbackUrl = `${githubUrl}/issues/29`;
+const installerTrackUrl = `${githubUrl}/issues/30`;
 const portalDocsUrl = docsBaseUrl ? docsUrl("en", "") : `${docsHostUrl}/`;
 const localeLabels = {
   en: "English",
@@ -663,6 +665,7 @@ function rootHtml() {
         <div class="actions" aria-label="Primary actions">
           <a class="button button-primary" href="${escapeHtml(githubUrl)}">Open GitHub</a>
           <a class="button" href="${escapeHtml(releaseUrl)}">View ${escapeHtml(releaseTag)}</a>
+          <a class="button" href="${escapeHtml(feedbackUrl)}">Send Feedback</a>
           <a class="button" href="${escapeHtml(portalDocsUrl)}">Read Docs</a>
         </div>
       </section>
@@ -678,7 +681,7 @@ function rootHtml() {
           <div class="ledger-row"><strong>Installer</strong><span class="ledger-warn">Unsigned</span></div>
           <div class="ledger-row"><strong>Docs</strong><span class="ledger-ok">Live</span></div>
         </div>
-        <p class="console-note">The Windows installer alpha is unsigned and may trigger browser, Unknown publisher, or SmartScreen warnings. Download only from GitHub Releases and verify checksums before launch.</p>
+        <p class="console-note">The Windows installer alpha is unsigned and may trigger browser, Unknown publisher, or SmartScreen warnings. Download only from GitHub Releases, verify checksums before launch, and share installer feedback on GitHub.</p>
       </aside>
     </main>
     <section class="info-grid" aria-label="Release information">
@@ -696,6 +699,7 @@ function rootHtml() {
         <ul>
           <li>Read the release notes before installing.</li>
           <li>Verify the installer SHA-256 with <code>checksums.txt</code>.</li>
+          <li>Report install, first-launch, or uninstall issues in the <a href="${escapeHtml(feedbackUrl)}">alpha feedback thread</a>.</li>
           <li>Use test artwork first; this is still pre-1.0 alpha software.</li>
         </ul>
       </article>
@@ -706,6 +710,14 @@ function rootHtml() {
           <li>macOS, Linux, MSI/MSIX, Winget, or Store packages.</li>
           <li>Bundled ComfyUI, See-through, or model weights.</li>
         </ul>
+      </article>
+      <article class="info-card">
+        <h2>Next Installer Work</h2>
+        <p>
+          The <a href="${escapeHtml(installerTrackUrl)}">alpha.3 installer track</a>
+          focuses on adding a Viewer installer, code-signing decisions,
+          SmartScreen guidance, first-launch evidence, and uninstall wording.
+        </p>
       </article>
     </section>
     <section class="stage-shell">

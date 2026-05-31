@@ -23,6 +23,16 @@ Look for these areas:
 - **Parameters and timeline area:** the lower area used for parameter values, clips, and preview controls.
 - **Status and warnings:** messages that explain why an action is disabled or needs review.
 
+## After Installing The Windows Alpha
+
+The unsigned Windows installer alpha should open the same empty editor
+workspace after installation. It should not ask you to create an account, enable
+telemetry, install updates, or connect to a remote service on first launch.
+
+If Windows or browser security warnings appeared before installation, that is
+expected for the unsigned alpha. After launch, focus on whether the Vivi2D
+window appears, stays responsive, and matches the layout below.
+
 ## Default Settings
 
 - The default public UI language is English.
@@ -43,7 +53,7 @@ If you see mixed language in common UI, note the visible label and the locale, t
 ## What Not To Worry About
 
 - A blank canvas is normal before loading a project.
-- A message such as “No project loaded” is normal.
+- A message such as "No project loaded" is normal.
 - Empty parameter or timeline panels are normal.
 - Some optional integrations may be hidden if the build does not include them.
 
@@ -62,6 +72,9 @@ You are ready to continue when:
 - If text is unreadable, change language once, reopen the dialog, and restart if needed.
 - If the app opens on the wrong monitor or scale, check your OS display scaling and [Display And GPU](../troubleshooting/display-and-gpu.md).
 - If a dialog is too small, try a larger window before reporting layout clipping.
+- If the installed app prompts for sign-in, telemetry, updates, or unexpected
+  network access, report it in the alpha feedback issue:
+  https://github.com/syobon211/vivi2d/issues/29.
 
 ## Next
 

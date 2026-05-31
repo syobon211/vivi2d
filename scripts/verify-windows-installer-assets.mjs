@@ -137,8 +137,35 @@ function assertRecord(record) {
   if (record.sizeBudgets?.installerBytes > MAX_INSTALLER_BYTES) {
     throw new Error("installer exceeds size budget.");
   }
+  if (
+    record.sizeBudgets?.viewerInstallerBytes !== null &&
+    record.sizeBudgets?.viewerInstallerBytes > MAX_INSTALLER_BYTES
+  ) {
+    throw new Error("viewer installer exceeds size budget.");
+  }
   if (record.sizeBudgets?.installedFootprintBytes > MAX_INSTALLED_FOOTPRINT_BYTES) {
     throw new Error("installed app footprint exceeds size budget.");
+  }
+  if (
+    record.sizeBudgets?.viewerInstalledFootprintBytes !== null &&
+    record.sizeBudgets?.viewerInstalledFootprintBytes > MAX_INSTALLED_FOOTPRINT_BYTES
+  ) {
+    throw new Error("viewer installed app footprint exceeds size budget.");
+  }
+  const appScopeIds = (record.applicationScope ?? []).map((entry) => entry?.id);
+  if (!appScopeIds.includes("editor")) {
+    throw new Error("installer record must include editor application scope.");
+  }
+  if (expectedDownloadable.includes(assetNames.viewerInstaller)) {
+    if (!appScopeIds.includes("viewer")) {
+      throw new Error("installer record must include viewer application scope.");
+    }
+    const viewerScope = (record.applicationScope ?? []).find(
+      (entry) => entry?.id === "viewer",
+    );
+    if (viewerScope?.installerName !== assetNames.viewerInstaller) {
+      throw new Error("viewer application scope installer name mismatch.");
+    }
   }
   if (record.explicitAbsences?.autoUpdateMetadata !== true) {
     throw new Error("installer record must state auto-update metadata absence.");

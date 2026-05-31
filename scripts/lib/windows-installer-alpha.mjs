@@ -121,6 +121,13 @@ export function assertWindowsInstallerVersion(version) {
   }
 }
 
+export function windowsInstallerIncludesViewer(version) {
+  if (version === "$VERSION" || version === "<version>") return true;
+  const match = WINDOWS_INSTALLER_VERSION_PATTERN.exec(version);
+  if (!match) return false;
+  return Number(match[4]) >= 3;
+}
+
 export function assertWindowsInstallerTag(version, tag) {
   assertWindowsInstallerVersion(version);
   if (tag !== `v${version}`) {
@@ -138,12 +145,13 @@ export function windowsInstallerAssetNames(version) {
     sbom: `vivi2d-${version}.cdx.json`,
     sourceReviewManifest: `vivi2d-${version}-source-review-manifest.json`,
     sourceReviewZip: `vivi2d-${version}-source-review.zip`,
+    viewerInstaller: `vivi2d-viewer-${version}-windows-x64-setup.exe`,
   };
 }
 
 export function expectedWindowsInstallerDownloadableAssetNames(version) {
   const names = windowsInstallerAssetNames(version);
-  return [
+  const assets = [
     names.checksums,
     names.installer,
     names.installerRecord,
@@ -151,7 +159,9 @@ export function expectedWindowsInstallerDownloadableAssetNames(version) {
     names.sbom,
     names.sourceReviewManifest,
     names.sourceReviewZip,
-  ].sort((a, b) => a.localeCompare(b));
+  ];
+  if (windowsInstallerIncludesViewer(version)) assets.push(names.viewerInstaller);
+  return assets.sort((a, b) => a.localeCompare(b));
 }
 
 export function expectedWindowsInstallerFilesOnDisk(version) {

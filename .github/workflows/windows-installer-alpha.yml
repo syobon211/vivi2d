@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Expected installer alpha version, for example 0.1.0-alpha.2"
+        description: "Expected installer alpha version, for example 0.1.0-alpha.3"
         required: true
       ref:
-        description: "Release tag to publish, for example v0.1.0-alpha.2"
+        description: "Release tag to publish, for example v0.1.0-alpha.3"
         required: true
       chromiumMajorVersion:
         description: "Chromium major version embedded by Electron"
@@ -145,13 +145,17 @@ jobs:
           path: tmp/windows-installer-baseline
       - run: node scripts/run-release-step.mjs --name check-viewer-mediapipe-assets -- npm run check:viewer-mediapipe-assets
       - run: node scripts/run-release-step.mjs --name build-editor -- npm run build
+      - run: node scripts/run-release-step.mjs --name build-viewer -- npm run build --workspace @vivi2d/viewer
       - run: node scripts/run-release-step.mjs --name windows-installer-build -- npx electron-builder --win nsis --x64 --publish never --config electron-builder.yml
+      - run: node scripts/run-release-step.mjs --name windows-viewer-installer-build -- npx electron-builder --win nsis --x64 --publish never --config electron-builder.viewer.yml
       - name: Prepare Windows installer release assets
         shell: pwsh
         run: |
           $installer = "dist/windows-installer/vivi2d-$env:VERSION-windows-x64-setup.exe"
           if (!(Test-Path $installer)) { throw "Missing installer: $installer" }
-          node scripts/run-release-step.mjs --name release-windows-installer-prepare -- npm run release:windows-installer:prepare -- --version $env:VERSION --tag $env:RELEASE_REF --installer $installer --source-review-zip tmp/windows-installer-baseline/vivi2d-source-review.zip --source-review-manifest tmp/windows-installer-baseline/vivi2d-source-review-manifest.json --sbom tmp/windows-installer-baseline/vivi2d.cdx.json --third-party-notices tmp/windows-installer-baseline/THIRD_PARTY_NOTICES --chromium-major-version $env:CHROMIUM_MAJOR_VERSION --electron-embedded-node-version $env:ELECTRON_EMBEDDED_NODE_VERSION
+          $viewerInstaller = "dist/windows-installer-viewer/vivi2d-viewer-$env:VERSION-windows-x64-setup.exe"
+          if (!(Test-Path $viewerInstaller)) { throw "Missing viewer installer: $viewerInstaller" }
+          node scripts/run-release-step.mjs --name release-windows-installer-prepare -- npm run release:windows-installer:prepare -- --version $env:VERSION --tag $env:RELEASE_REF --installer $installer --packaged-app-dir dist/windows-installer/win-unpacked --viewer-installer $viewerInstaller --viewer-packaged-app-dir dist/windows-installer-viewer/win-unpacked --source-review-zip tmp/windows-installer-baseline/vivi2d-source-review.zip --source-review-manifest tmp/windows-installer-baseline/vivi2d-source-review-manifest.json --sbom tmp/windows-installer-baseline/vivi2d.cdx.json --third-party-notices tmp/windows-installer-baseline/THIRD_PARTY_NOTICES --chromium-major-version $env:CHROMIUM_MAJOR_VERSION --electron-embedded-node-version $env:ELECTRON_EMBEDDED_NODE_VERSION
       - run: node scripts/run-release-step.mjs --name verify-windows-installer-assets -- npm run verify:windows-installer-assets -- --asset-dir tmp/windows-installer-alpha-assets --version $env:VERSION --tag $env:RELEASE_REF --sha $env:GITHUB_SHA
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -218,6 +222,7 @@ jobs:
             "release-notes.md"
             "vivi2d-$VERSION-windows-installer-record.json"
             "vivi2d-$VERSION-windows-x64-setup.exe"
+            "vivi2d-viewer-$VERSION-windows-x64-setup.exe"
             "vivi2d-$VERSION-source-review.zip"
             "vivi2d-$VERSION-source-review-manifest.json"
             "vivi2d-$VERSION.cdx.json"
@@ -241,6 +246,7 @@ jobs:
             "THIRD_PARTY_NOTICES.txt",
             `vivi2d-${version}-windows-installer-record.json`,
             `vivi2d-${version}-windows-x64-setup.exe`,
+            `vivi2d-viewer-${version}-windows-x64-setup.exe`,
             `vivi2d-${version}-source-review.zip`,
             `vivi2d-${version}-source-review-manifest.json`,
             `vivi2d-${version}.cdx.json`,
@@ -296,6 +302,7 @@ jobs:
             "tmp/windows-installer-alpha-assets/checksums.txt"
             "tmp/windows-installer-alpha-assets/vivi2d-$VERSION-windows-installer-record.json"
             "tmp/windows-installer-alpha-assets/vivi2d-$VERSION-windows-x64-setup.exe"
+            "tmp/windows-installer-alpha-assets/vivi2d-viewer-$VERSION-windows-x64-setup.exe"
             "tmp/windows-installer-alpha-assets/vivi2d-$VERSION-source-review.zip"
             "tmp/windows-installer-alpha-assets/vivi2d-$VERSION-source-review-manifest.json"
             "tmp/windows-installer-alpha-assets/vivi2d-$VERSION.cdx.json"

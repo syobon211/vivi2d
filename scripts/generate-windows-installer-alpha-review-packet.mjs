@@ -13,12 +13,13 @@ const outputPath = resolveRepoPath(
     ? process.argv[process.argv.indexOf("--output") + 1]
     : "tmp/windows-installer-alpha-review-packet.md",
 );
-const version = "0.1.0-alpha.2";
+const version = "0.1.0-alpha.3";
 const tag = `v${version}`;
 const sourceCommit = "0123456789abcdef0123456789abcdef01234567";
 const reviewFiles = [
   ".github/workflows/windows-installer-alpha.yml",
   "electron-builder.yml",
+  "electron-builder.viewer.yml",
   "scripts/check-windows-installer-alpha.mjs",
   "scripts/prepare-windows-installer-assets.mjs",
   "scripts/verify-windows-installer-assets.mjs",
@@ -365,6 +366,7 @@ function createValidFixture(dir) {
   const names = windowsInstallerAssetNames(version);
   const bodies = {
     [names.installer]: "installer\n",
+    [names.viewerInstaller]: "viewer installer\n",
     [names.notices]: "notices\n",
     [names.sbom]: '{"bomFormat":"CycloneDX"}\n',
     [names.sourceReviewManifest]: '{"ok":true}\n',
@@ -384,6 +386,20 @@ function createValidFixture(dir) {
     tag,
     sourceCommit,
     generatedAt: "2026-05-31T00:00:00.000Z",
+    applicationScope: [
+      {
+        id: "editor",
+        name: "Vivi2D Editor",
+        installerName: names.installer,
+        packagedAppDir: "dist/windows-installer/win-unpacked",
+      },
+      {
+        id: "viewer",
+        name: "Vivi2D Viewer",
+        installerName: names.viewerInstaller,
+        packagedAppDir: "dist/windows-installer-viewer/win-unpacked",
+      },
+    ],
     primaryAssets,
     downloadableAssetNames: expectedWindowsInstallerDownloadableAssetNames(version),
     checksumFile: names.checksums,
@@ -412,6 +428,8 @@ function createValidFixture(dir) {
     sizeBudgets: {
       installerBytes: bodies[names.installer].length,
       installedFootprintBytes: 1024,
+      viewerInstallerBytes: bodies[names.viewerInstaller].length,
+      viewerInstalledFootprintBytes: 1024,
     },
     explicitAbsences: {
       autoUpdateMetadata: true,
@@ -435,6 +453,7 @@ function createPreparerFixture(dir) {
   const names = windowsInstallerAssetNames(version);
   const files = new Map([
     [path.join("input", names.installer), "installer\n"],
+    [path.join("input", names.viewerInstaller), "viewer installer\n"],
     [
       path.join("win-unpacked", "resources", "app", "package.json"),
       '{"name":"vivi2d"}\n',
@@ -442,6 +461,14 @@ function createPreparerFixture(dir) {
     [
       path.join("win-unpacked", "resources", "app", "main.js"),
       'console.log("vivi2d");\n',
+    ],
+    [
+      path.join("viewer-win-unpacked", "resources", "app", "package.json"),
+      '{"name":"vivi2d-viewer"}\n',
+    ],
+    [
+      path.join("viewer-win-unpacked", "resources", "app", "electron", "main.cjs"),
+      'console.log("vivi2d viewer");\n',
     ],
     [path.join("source-review", "vivi2d-source-review.zip"), "zip\n"],
     [
@@ -511,6 +538,12 @@ function runPreparer(dir, fixtureVersion = version) {
       relative(path.join(dir, "input", windowsInstallerAssetNames(version).installer)),
       "--packaged-app-dir",
       relative(path.join(dir, "win-unpacked")),
+      "--viewer-installer",
+      relative(
+        path.join(dir, "input", windowsInstallerAssetNames(version).viewerInstaller),
+      ),
+      "--viewer-packaged-app-dir",
+      relative(path.join(dir, "viewer-win-unpacked")),
       "--source-review-zip",
       relative(path.join(dir, "source-review", "vivi2d-source-review.zip")),
       "--source-review-manifest",
