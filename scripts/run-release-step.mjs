@@ -89,6 +89,14 @@ const transcript = [
 fs.writeFileSync(path.join("transcripts", `${name}.log`), transcript);
 
 if (status !== 0) {
+  const transcriptPath = path.join("transcripts", `${name}.log`);
+  console.error(
+    `[release-step:${name}] failed with status ${status ?? "unknown"}${
+      signal ? ` and signal ${signal}` : ""
+    }. Transcript written to ${transcriptPath}.`,
+  );
+  printTail("stdout", stdout.text());
+  printTail("stderr", stderr.text());
   process.exit(status ?? 1);
 }
 
@@ -142,6 +150,21 @@ function parseHeartbeatMs(value) {
     process.exit(1);
   }
   return parsed;
+}
+
+function printTail(label, text) {
+  const redacted = redact(text).trimEnd();
+  if (redacted.length === 0) {
+    console.error(`[release-step:${name}] ${label} tail: <empty>`);
+    return;
+  }
+
+  const maxTailChars = 16_000;
+  const tail =
+    redacted.length > maxTailChars
+      ? `[release-step] showing last ${maxTailChars} characters.\n${redacted.slice(-maxTailChars)}`
+      : redacted;
+  console.error(`[release-step:${name}] ${label} tail:\n${tail}`);
 }
 
 function createTranscriptBuffer() {
