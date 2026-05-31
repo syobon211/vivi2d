@@ -125,6 +125,10 @@ function checkElectronBuilderConfig() {
     electronBuilderArtifactNameLine,
     "output: dist/windows-installer",
     "!windows-installer/**",
+    "!node_modules/**",
+    "!node_modules/**/*.map",
+    "!node_modules/**/src/**",
+    "!node_modules/**/tests/**",
     "electron/main.cjs",
     "THIRD_PARTY_NOTICES.txt",
     "target: nsis",
@@ -296,6 +300,16 @@ function checkScripts() {
   }
   if (!installerLib.includes("alphaNumber < 2")) {
     failures.push(`${installerLibPath}: must reject alpha.1 installer versions.`);
+  }
+  if (installerLib.includes("dev server env name")) {
+    failures.push(
+      `${installerLibPath}: packaged app scan must not reject harmless dev env variable names.`,
+    );
+  }
+  if (!installerLib.includes("embedded credential assignment")) {
+    failures.push(
+      `${installerLibPath}: packaged app scan must look for embedded credential assignments.`,
+    );
   }
   for (const text of [
     "lstatSync",
