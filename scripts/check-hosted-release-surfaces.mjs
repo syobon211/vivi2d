@@ -28,6 +28,7 @@ const ALLOWED_ARTIFACT_NAME_PREFIXES = [
   "github-release-alpha-assets",
   "perf-playwright-",
   "playwright-report-",
+  "web-npm-alpha-validation-diagnostics",
   "web-npm-alpha-release-record",
   "windows-installer-alpha-assets",
   "windows-installer-alpha-baseline",
