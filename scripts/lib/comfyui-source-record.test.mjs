@@ -205,7 +205,7 @@ describe("comfyui-source-record", () => {
     ).toContain("compatPlugin.sha256 does not match");
   });
 
-  it("ignores transient Python cache files when hashing tracked source", () => {
+  it("ignores transient Python build metadata when hashing tracked source", () => {
     const root = makeTempRoot();
     writeFile(
       root,
@@ -217,6 +217,11 @@ describe("comfyui-source-record", () => {
       root,
       "integrations/comfyui/vivi2d_compat_plugin/__pycache__/module.pyc",
       "cache",
+    );
+    writeFile(
+      root,
+      "integrations/comfyui/vivi2d_compat_plugin/vivi2d_compat_plugin.egg-info/PKG-INFO",
+      "generated metadata",
     );
 
     expect(
