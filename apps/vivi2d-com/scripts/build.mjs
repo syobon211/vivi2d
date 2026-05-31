@@ -520,6 +520,12 @@ function rootHtml() {
       background: var(--panel);
       backdrop-filter: blur(14px);
     }
+    .info-card-download {
+      border-color: rgba(180, 114, 33, 0.28);
+      background:
+        linear-gradient(145deg, rgba(255, 250, 240, 0.94), rgba(244, 232, 204, 0.82)),
+        var(--panel);
+    }
     .info-card h2 {
       margin: 0 0 12px;
       font-size: 1.05rem;
@@ -534,6 +540,21 @@ function rootHtml() {
     }
     .info-card ul {
       padding-left: 1.1rem;
+    }
+    .download-steps {
+      display: grid;
+      gap: 8px;
+      padding-left: 0 !important;
+      list-style: none;
+    }
+    .download-steps li {
+      display: flex;
+      gap: 9px;
+    }
+    .download-steps li::before {
+      content: "•";
+      color: var(--gold);
+      font-weight: 900;
     }
     .info-card a {
       color: var(--accent);
@@ -685,6 +706,14 @@ function rootHtml() {
       </aside>
     </main>
     <section class="info-grid" aria-label="Release information">
+      <article class="info-card info-card-download">
+        <h2>Download Safely</h2>
+        <ul class="download-steps">
+          <li>Use the Windows alpha installers only from <a href="${escapeHtml(releaseUrl)}">GitHub Releases</a>.</li>
+          <li>They are unsigned and may show browser, Unknown publisher, or SmartScreen warnings.</li>
+          <li>Before running either installer, compare its SHA-256 with <code>checksums.txt</code>.</li>
+        </ul>
+      </article>
       <article class="info-card">
         <h2>Current Release</h2>
         <p>

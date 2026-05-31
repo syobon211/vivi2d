@@ -85,6 +85,11 @@ if (!fs.existsSync(path.join(outDir, "index.html"))) {
     docsHostUrl,
     "pre-1.0 alpha",
     "unsigned Windows installer",
+    "Download Safely",
+    "Windows alpha installers",
+    "GitHub Releases",
+    "checksums.txt",
+    "SmartScreen warnings",
     "verify checksums",
     "Coming Soon",
   ];

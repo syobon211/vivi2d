@@ -320,7 +320,9 @@ quiet install mode documented for users, for example
 `Start-Process -ArgumentList '/S' -Wait -PassThru`, and should not add
 `-WindowStyle Hidden`. The hidden window flag is not part of the user-facing
 install path and has triggered an NSIS helper crash in local alpha.3
-verification even though the normal quiet install completed successfully.
+verification even though the normal quiet install completed successfully. Use
+`scripts/windows-installer-smoke.ps1` for the standard post-publish download,
+checksum, install, launch/network, and uninstall sequence.
 
 ## Forbidden Installer Assets
 

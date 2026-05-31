@@ -90,6 +90,7 @@
     "release:github:prepare": "node scripts/prepare-github-release-assets.mjs",
     "release:github:review-packet": "node scripts/generate-github-release-alpha-review-packet.mjs",
     "check:windows-installer-alpha": "node scripts/check-windows-installer-alpha.mjs",
+    "smoke:windows-installer": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows-installer-smoke.ps1",
     "release:windows-installer:prepare": "node scripts/prepare-windows-installer-assets.mjs",
     "release:windows-installer:review-packet": "node scripts/generate-windows-installer-alpha-review-packet.mjs",
     "verify:windows-installer-assets": "node scripts/verify-windows-installer-assets.mjs",
