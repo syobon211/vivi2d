@@ -43,9 +43,9 @@ configuration, and a final release-tag dry-run/publish record.
 
 ## Alpha Release Shape
 
-The current alpha version is `0.1.0-alpha.1`. It was published through GitHub
+The current alpha version is `0.1.0-alpha.2`. It is published through GitHub
 Actions OIDC Trusted Publishing and has npm provenance attestation. Use
-`npm install @vivi2d/web@alpha` or pin `@vivi2d/web@0.1.0-alpha.1` for
+`npm install @vivi2d/web@alpha` or pin `@vivi2d/web@0.1.0-alpha.2` for
 experiments.
 
 `0.1.0-alpha.0` was the documented one-time bootstrap package. It has no npm

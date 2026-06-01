@@ -2,8 +2,8 @@
 
 This document defines the release contract for the `@vivi2d/web` npm alpha
 channel. The one-time `0.1.0-alpha.0` bootstrap publication is complete and
-recorded below. The current `alpha` dist-tag points to `0.1.0-alpha.1`, which
-was published through GitHub Actions OIDC Trusted Publishing with npm
+recorded below. The current `alpha` dist-tag points to `0.1.0-alpha.2`, which
+is published through GitHub Actions OIDC Trusted Publishing with npm
 provenance. Later package versions may be published only after every exit gate
 in this document and the public release checklist are green on the final
 release tree.
@@ -45,7 +45,7 @@ ready for release review.
 
 Current local dry-run posture:
 
-- `@vivi2d/web` is configured as `0.1.0-alpha.1`.
+- `@vivi2d/web` is configured as `0.1.0-alpha.2`.
 - Local dry-run artifacts are written under the ignored
   `tmp/web-alpha-dry-run/` directory when maintainers exercise the release
   commands manually.
@@ -185,8 +185,8 @@ Bootstrap completion record:
   and npm shasum is `5a60a49f81c18fa8169569942a751d337e8ff977`.
 - The registry initially attached both `alpha` and `latest` dist-tags to the
   initial package while it was the only published version. After
-  `0.1.0-alpha.1` was published through Trusted Publishing, `alpha` points to
-  `0.1.0-alpha.1`. `0.1.0-alpha.0` is deprecated, but `latest` currently
+  `0.1.0-alpha.2` was published through Trusted Publishing, `alpha` points to
+  `0.1.0-alpha.2`. `0.1.0-alpha.0` is deprecated, but `latest` currently
   points at that bootstrap package. npm rejected the initial `latest` deletion,
   and a post-`0.1.0-alpha.1` removal attempt still returned a registry
   `400 Bad Request`. Treat `alpha` and exact versions as the supported install
@@ -230,6 +230,41 @@ Workflow requirements:
   wrapper or hand-run `npm publish`
 - publish with the `alpha` dist-tag and never intentionally promote `latest`
 - verify the registry tarball digest after publication
+
+## `0.1.0-alpha.2` Release Record
+
+`@vivi2d/web@0.1.0-alpha.2` is intentionally a small Trusted Publishing
+follow-up, not a feature-expansion release. It records:
+
+- a second OIDC/provenance-backed publish path after the bootstrap and
+  `0.1.0-alpha.1` publication
+- the public install path on `npm install @vivi2d/web@alpha`
+- package metadata, package README, portal copy, and developer docs updated so
+  the Web SDK alpha points at the current version
+- copied-out sample guidance that prevents external users from accidentally installing
+  the deprecated `latest` bootstrap package
+
+It does not add new runtime files, package entry points, public API methods,
+native/WASM standalone assets, Viewer API promises, provider promises, or
+third-party compatibility claims. Future API or tarball-shape changes must be
+cut as separate alphas after review instead of being treated as part of this
+maintenance patch.
+
+The `latest` registry behavior is handled conservatively:
+
+- Do not intentionally add or move `latest` to `0.1.0-alpha.2`.
+- The post-publish registry check records `alpha: 0.1.0-alpha.2` as the
+  supported Web SDK alpha channel.
+- No `latest` promotion is part of this release. If a maintainer retests
+  `npm dist-tag rm @vivi2d/web latest` after `0.1.0-alpha.2`, the exact
+  command/output must be added to this record before public install guidance
+  changes.
+- Until such a retest is recorded, `latest` remains unsupported and public
+  guidance stays on `@alpha` or exact version pins.
+
+The release notes for `0.1.0-alpha.2` describe this as a metadata/docs and
+sample-guidance alpha. They explicitly say that `latest` is not the supported
+Vivi2D alpha channel.
 
 The package `repository.url` must exactly match the GitHub repository used by
 the trusted publisher. If a fork or mirror is used, the package metadata and npm
@@ -554,8 +589,9 @@ manual publication unless the wrapper sets
 The only exception was the initial package bootstrap documented above. It used
 `scripts/bootstrap-web-npm-alpha-publish.mjs`, was limited to
 `@vivi2d/web@0.1.0-alpha.0`, and has been followed by npm Trusted Publisher
-configuration for later alpha releases. The first OIDC-published follow-up is
-`@vivi2d/web@0.1.0-alpha.1` on the `alpha` dist-tag. The script now exits
+configuration for later alpha releases. The first OIDC-published follow-up was
+`@vivi2d/web@0.1.0-alpha.1`; the current OIDC-published follow-up is
+`@vivi2d/web@0.1.0-alpha.2` on the `alpha` dist-tag. The script now exits
 before any npm publish path and is retained only for auditability.
 
 The final publish workflow should run the non-dry-run publish only after the
