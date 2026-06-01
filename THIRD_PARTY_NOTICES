@@ -44,7 +44,7 @@ generation, or provenance review before public distribution.
 | tiny-lru | 11.4.7 | BSD-3-Clause | git://github.com/avoidwork/tiny-lru.git | LICENSE |
 | ws | 8.21.0 | MIT | git+https://github.com/websockets/ws.git | LICENSE |
 | zod | 4.4.3 | MIT | git+https://github.com/colinhacks/zod.git | LICENSE |
-| zustand | 5.0.13 | MIT | git+https://github.com/pmndrs/zustand.git | LICENSE |
+| zustand | 5.0.14 | MIT | git+https://github.com/pmndrs/zustand.git | LICENSE |
 
 ## External Provider Plugins
 
@@ -977,7 +977,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### zustand@5.0.13 - LICENSE
+### zustand@5.0.14 - LICENSE
 
 Source path: `node_modules/zustand/LICENSE`
 

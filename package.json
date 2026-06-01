@@ -150,7 +150,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "zod": "4.4.3",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.2",
