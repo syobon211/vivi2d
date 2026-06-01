@@ -76,9 +76,9 @@ implementation, not stable compatibility promises.
 `npm run check:web-npm-alpha-release` covers the additional alpha publication
 scaffolding: protected environment policy, trusted-publisher/token hygiene,
 release workflow shape, pack/record/verify scripts, release notes template, and
-required gates. `@vivi2d/web@0.1.0-alpha.2` is the current npm alpha published
+required gates. `@vivi2d/web@0.1.0-alpha.3` is the current npm alpha published
 through GitHub Actions OIDC Trusted Publishing with npm provenance. The `alpha`
-and `latest` npm dist-tags currently both resolve to `0.1.0-alpha.2`; `latest`
+and `latest` npm dist-tags currently both resolve to `0.1.0-alpha.3`; `latest`
 is a convenience alias pointing to the current alpha, not a stable API
 commitment. The one-time
 `0.1.0-alpha.0` bootstrap is complete, deprecated, and remains the only

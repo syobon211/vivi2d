@@ -21,16 +21,17 @@ publish path.
   `latest: 0.1.0-alpha.0`
 - Initial `latest` removal attempt: npm rejected deleting `latest` while this
   was the only package version.
-- Post-bootstrap status: `@vivi2d/web@0.1.0-alpha.2` has since been published
+- Post-bootstrap status: `@vivi2d/web@0.1.0-alpha.3` has since been published
   through GitHub Actions OIDC Trusted Publishing with npm provenance.
-  `alpha` and `latest` now both point to `0.1.0-alpha.2`. `latest` is a
+  `alpha` and `latest` now both point to `0.1.0-alpha.3`. `latest` is a
   convenience tag pointing to the current alpha for npm page usability only; it
   is not a stable-channel promise. This bootstrap version is deprecated with a
   message that points users to `npm install @vivi2d/web@alpha`. A
   post-`0.1.0-alpha.1`
   `npm dist-tag rm @vivi2d/web latest` attempt still returned a registry
   `400 Bad Request`; after `0.1.0-alpha.2`, the owner chose to retag `latest`
-  to the current alpha instead of leaving it on the deprecated bootstrap.
+  to the current alpha instead of leaving it on the deprecated bootstrap. After
+  `0.1.0-alpha.3`, `latest` remains on the current alpha.
 - Verified npm deprecation message:
   `Bootstrap alpha. Please install current alpha builds with: npm install @vivi2d/web@alpha`
 - Tarball filename: `vivi2d-web-0.1.0-alpha.0.tgz`

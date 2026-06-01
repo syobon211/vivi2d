@@ -41,7 +41,7 @@ Implemented and locally verified:
   channel is Windows x64 NSIS only, includes separate Editor and Vivi2D Viewer
   installers, is unsigned, draft/pre-release first, and is guarded by explicit
   release-note and website warnings.
-- `@vivi2d/web@0.1.0-alpha.2` is published on npm through GitHub Actions OIDC
+- `@vivi2d/web@0.1.0-alpha.3` is published on npm through GitHub Actions OIDC
   Trusted Publishing with npm provenance. The earlier `0.1.0-alpha.0`
   bootstrap package is deprecated, remains the only local-publish exception,
   and the bootstrap script is disabled for future use.
@@ -98,7 +98,7 @@ Governance decisions for the initial OSS release:
 | --- | --- | --- | --- |
 | Contribution terms | @syobon211 | DCO, no CLA for the initial public release | Add DCO automation before accepting outside PRs |
 | Trademark owner | @syobon211 | Vivi2D project owner controls the Vivi2D name and logo until a formal entity exists | Revisit before commercial trademark registration |
-| npm organization owner | @syobon211 | Keep root package private; publish only packages marked `experimental` or `public` in `docs/developer/quality/public-api-status.md` | `@vivi2d/web@0.1.0-alpha.2` published through npm Trusted Publishing; `0.1.0-alpha.0` remains the deprecated bootstrap exception |
+| npm organization owner | @syobon211 | Keep root package private; publish only packages marked `experimental` or `public` in `docs/developer/quality/public-api-status.md` | `@vivi2d/web@0.1.0-alpha.3` published through npm Trusted Publishing; `0.1.0-alpha.0` remains the deprecated bootstrap exception |
 | Code-signing and release-key owner | @syobon211 | No public native binary code-signing until native/WASM artifact policy is complete; current Windows installer alphas are intentionally unsigned | Finish R5 artifact signing/provenance policy |
 | Initial publication intent | @syobon211 | `@vivi2d/web` remains experimental; all other workspace packages remain internal or internal-app | Update `docs/developer/quality/public-api-status.md` before changing any package status |
 
@@ -239,7 +239,7 @@ lockfile, and the release-surface scanners.
 ## npm Alpha Gates
 
 This section is a status ledger for npm publication controls. Checked items
-record controls verified for the current `@vivi2d/web@0.1.0-alpha.2` alpha.
+record controls verified for the current `@vivi2d/web@0.1.0-alpha.3` alpha.
 Unchecked items are recurring or future-surface gates; they must be
 revalidated, completed, or explicitly excepted before the next npm publication,
 package-scope expansion, or paired GitHub release artifact set.
@@ -253,13 +253,13 @@ package-scope expansion, or paired GitHub release artifact set.
   disabled and direct `npm publish` remains blocked.
 - [ ] npm Trusted Publishing dry-run should be run against the protected
   `npm-alpha` environment before future non-bootstrap publish-path changes when
-  no real publish is intended. For `0.1.0-alpha.2`, the protected Trusted
+  no real publish is intended. For `0.1.0-alpha.3`, the protected Trusted
   Publishing path was validated by the real publish below.
 - [x] npm Trusted Publishing real publish completed against the protected
-  `npm-alpha` environment for `@vivi2d/web@0.1.0-alpha.2`.
+  `npm-alpha` environment for `@vivi2d/web@0.1.0-alpha.3`.
 - [x] Publish workflow actions are SHA-pinned, or an owner-approved exception is
   documented.
-- [x] CycloneDX SBOM was generated in the `0.1.0-alpha.2` publish workflow and
+- [x] CycloneDX SBOM was generated in the `0.1.0-alpha.3` publish workflow and
   recorded in package release evidence.
 - [ ] Attach the CycloneDX SBOM to the release artifact set when a future npm
   alpha is paired with a GitHub release artifact set. The generator and
@@ -268,8 +268,8 @@ package-scope expansion, or paired GitHub release artifact set.
 - [x] Package tarball digest is recorded in release notes or provenance
   artifacts.
 - [x] `npm pack --dry-run` contents are reviewed for the current
-  `0.1.0-alpha.2` package shape. Rerun for each final release tag.
-- [x] `npm run check:sdk-unlock:web` passed in the `0.1.0-alpha.2` publish
+  `0.1.0-alpha.3` package shape. Rerun for each final release tag.
+- [x] `npm run check:sdk-unlock:web` passed in the `0.1.0-alpha.3` publish
   workflow before the package was published.
 - [ ] `npm run check:sdk-unlock:web` passes before future changes to
   `@vivi2d/web` source, exports, package boundaries, implementation scope, or
