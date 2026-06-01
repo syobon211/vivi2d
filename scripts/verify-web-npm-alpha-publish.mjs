@@ -83,12 +83,18 @@ function validateAttestations(
 
   const payloads = attestations.flatMap(decodedAttestationPayloads);
   const combined = JSON.stringify({ attestations, payloads });
+  const workflowRef = parseGitHubWorkflowRef(releaseRecord.github?.workflowRef);
+  if (!workflowRef) {
+    failures.push("Release record GitHub workflowRef is invalid.");
+  }
   const requiredNeedles = [
     packageName,
     version,
     releaseRecord.sourceCommit,
     releaseRecord.github?.repository,
-    releaseRecord.github?.workflowRef,
+    workflowRef?.repository,
+    workflowRef?.path,
+    workflowRef?.ref,
     ".github/workflows/publish-web-alpha.yml",
     releaseRecord.releaseTag,
     `refs/tags/${releaseRecord.releaseTag}`,
@@ -113,6 +119,23 @@ function validateAttestations(
       "npm provenance attestation subject digest does not match the local tarball digest.",
     );
   }
+}
+
+function parseGitHubWorkflowRef(value) {
+  if (typeof value !== "string" || value.length === 0) return null;
+  const separatorIndex = value.lastIndexOf("@");
+  if (separatorIndex <= 0 || separatorIndex === value.length - 1) return null;
+  const ownerRepoAndPath = value.slice(0, separatorIndex);
+  const ref = value.slice(separatorIndex + 1);
+  const workflowPathMarker = "/.github/workflows/";
+  const workflowPathIndex = ownerRepoAndPath.indexOf(workflowPathMarker);
+  if (workflowPathIndex <= 0) return null;
+  const repository = ownerRepoAndPath.slice(0, workflowPathIndex);
+  const path = ownerRepoAndPath.slice(workflowPathIndex + 1);
+  if (!repository.includes("/") || !path.startsWith(".github/workflows/")) {
+    return null;
+  }
+  return { path, ref, repository };
 }
 
 function parseArgs(argv) {
