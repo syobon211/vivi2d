@@ -220,7 +220,7 @@ Developer-doc files have these initial responsibilities:
 `npm run check:sdk-unlock:web`. That command permits the current Phase 1
 programmatic SDK implementation work only; it does not approve stable
 compatibility promises or additional package promotion. The current
-`@vivi2d/web@0.1.0-alpha.1` npm package is an experimental alpha publication
+`@vivi2d/web@0.1.0-alpha.2` npm package is an experimental alpha publication
 covered by `docs/developer/quality/web-npm-alpha-release.md` and published
 through the GitHub Actions OIDC Trusted Publisher path. The older
 `0.1.0-alpha.0` bootstrap package is deprecated and covered by

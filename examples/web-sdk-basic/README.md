@@ -20,13 +20,19 @@ root workspace list and is not publishable.
 
 ## Copied-Out Usage
 
-Before npm publication, copied-out usage is available only if you install an
-explicit release tarball for `@vivi2d/web`. After npm publication, replace the
-local file dependency with:
+For copied-out usage, replace the local file dependency with the reviewed alpha
+dist-tag or an exact alpha pin:
 
 ```sh
-npm install @vivi2d/web
+npm install @vivi2d/web@alpha
 ```
+
+Pin `@vivi2d/web@0.1.0-alpha.2` instead if you need a reproducible sample
+snapshot.
+
+Do not use plain `npm install @vivi2d/web` during the alpha series. The npm
+`latest` tag can point at deprecated bootstrap metadata until a separate stable
+channel review promotes it.
 
 The pinned `typescript` and `vite` versions in this folder are the verified
 sample snapshot. They are not a broad compatibility promise.

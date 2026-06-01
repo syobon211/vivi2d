@@ -1,6 +1,6 @@
 {
   "name": "@vivi2d/web",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "type": "module",
   "description": "Independent Vivi2D Web Component for embedding 2D models in browsers",
   "repository": {

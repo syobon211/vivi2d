@@ -2,6 +2,19 @@
 
 ## 2026-06-01
 
+### Web SDK npm alpha.2
+
+- Published `@vivi2d/web@0.1.0-alpha.2` as a small Trusted Publishing
+  follow-up release focused on package metadata, public install guidance, and
+  copied-out sample instructions.
+- Published through GitHub Actions OIDC Trusted Publishing with npm provenance
+  attestation.
+- Kept `latest` out of the supported alpha channel. The package and examples
+  continue to direct users to `npm install @vivi2d/web@alpha` or exact version
+  pins rather than plain `npm install @vivi2d/web`.
+- Clarified that alpha.2 does not add new API surface, runtime artifacts,
+  native/WASM distribution, or third-party compatibility claims.
+
 ### Web SDK npm alpha Trusted Publishing
 
 - Published `@vivi2d/web@0.1.0-alpha.1` through GitHub Actions OIDC Trusted
