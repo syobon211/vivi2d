@@ -100,9 +100,10 @@ want to follow progress, watch GitHub Releases and the user documentation.
   public-profile model playback. Use `npm install @vivi2d/web@alpha` or pin
   `@vivi2d/web@0.1.0-alpha.2`; this is not a stable API commitment.
   `0.1.0-alpha.2` is published through GitHub Actions OIDC Trusted Publishing
-  with npm provenance. The older `0.1.0-alpha.0` bootstrap package is
-  deprecated, and `latest` currently resolves to that bootstrap version, so do
-  not use `latest` as a stable channel.
+  with npm provenance. The `latest` dist-tag currently mirrors this alpha so
+  the npm package page no longer defaults to the deprecated bootstrap, but it
+  still resolves to a pre-1.0 alpha, not a stable API commitment. The older
+  `0.1.0-alpha.0` bootstrap package is deprecated.
 - ComfyUI, ComfyUI-See-through, model weights, and custom-node bundles are not
   bundled with Vivi2D.
 - ComfyUI automation is supported through Vivi2D's compat plugin. The legacy

@@ -9,9 +9,11 @@
   copied-out sample instructions.
 - Published through GitHub Actions OIDC Trusted Publishing with npm provenance
   attestation.
-- Kept `latest` out of the supported alpha channel. The package and examples
-  continue to direct users to `npm install @vivi2d/web@alpha` or exact version
-  pins rather than plain `npm install @vivi2d/web`.
+- Retagged `latest` to `0.1.0-alpha.2` as an owner-reviewed convenience alias
+  pointing to the current alpha so the npm package page no longer defaults to
+  the deprecated bootstrap package. `latest` is not a stable API commitment,
+  and package/examples continue to keep
+  `npm install @vivi2d/web@alpha` or exact version pins prominent.
 - Clarified that alpha.2 does not add new API surface, runtime artifacts,
   native/WASM distribution, or third-party compatibility claims.
 
@@ -24,10 +26,10 @@
   `@vivi2d/web@0.1.0-alpha.1` pin.
 - Deprecated the bootstrap-only `@vivi2d/web@0.1.0-alpha.0` package with a
   message that points users to `npm install @vivi2d/web@alpha`.
-- Noted that npm still keeps `latest` on the deprecated `0.1.0-alpha.0`
-  bootstrap package because removing the only original `latest` tag was
-  rejected. A post-`0.1.0-alpha.1` `latest` removal attempt also returned a
-  registry `400 Bad Request`, so `latest` is not a stable Vivi2D channel.
+- Recorded the then-current registry state: npm still kept `latest` on the
+  deprecated `0.1.0-alpha.0` bootstrap package because removing the only
+  original `latest` tag was rejected. A post-`0.1.0-alpha.1` `latest` removal
+  attempt also returned a registry `400 Bad Request`.
 
 ### Web SDK npm alpha bootstrap
 

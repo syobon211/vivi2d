@@ -12,10 +12,11 @@ npm install @vivi2d/web@alpha
 
 The `alpha` dist-tag currently resolves to `0.1.0-alpha.2`, which is published
 through GitHub Actions OIDC Trusted Publishing with npm provenance. Pin
-`@vivi2d/web@0.1.0-alpha.2` in experiments if reproducibility matters. The
-older `0.1.0-alpha.0` bootstrap package is deprecated, and `latest` currently
-resolves to that bootstrap version, so do not use `latest` as a stable Vivi2D
-channel until release notes explicitly say so.
+`@vivi2d/web@0.1.0-alpha.2` in experiments if reproducibility matters.
+`latest` currently mirrors this alpha so the npm package page no longer
+defaults to the deprecated bootstrap, but it still resolves to a pre-1.0 alpha,
+not a stable API commitment. The older `0.1.0-alpha.0` bootstrap package is
+deprecated.
 
 ```ts
 import { createViviWebPlayer, loadViviWebModel } from "@vivi2d/web";

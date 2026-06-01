@@ -50,8 +50,10 @@ experiments.
 
 `0.1.0-alpha.0` was the documented one-time bootstrap package. It has no npm
 provenance attestation, is deprecated on npm, and is retained only as an audit
-record for the package-creation exception. `latest` currently resolves to that
-bootstrap package, so `latest` is not a stable install channel for Vivi2D.
+record for the package-creation exception. `latest` currently mirrors
+`0.1.0-alpha.2` so the npm package page no longer defaults to the deprecated
+bootstrap, but it still resolves to a pre-1.0 alpha and is not a stable Web SDK
+commitment.
 
 A valid npm alpha dry-run records:
 
