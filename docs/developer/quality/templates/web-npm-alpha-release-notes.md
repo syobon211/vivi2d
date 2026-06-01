@@ -30,8 +30,9 @@ npm install @vivi2d/web@alpha
 - Git commit: `<commit-sha>`
 - Git tag: `web-v<version>`
 - npm dist-tag: `alpha`
-- Stable channel: `latest` is not a Vivi2D alpha support channel unless release
-  notes explicitly say it was promoted after a separate stable-channel review.
+- `latest` status: `<latest-status>`. During alpha, `latest` may mirror this
+  version only as an explicit owner-reviewed convenience alias pointing to the
+  current alpha; it is not a stable API commitment.
 - Tarball SHA-256: `<sha256>`
 - npm integrity: `<integrity>`
 - SBOM: `<sbom-file>` (`<sbom-sha256>`)

@@ -757,9 +757,9 @@ function rootHtml() {
           <a href="${escapeHtml(npmWebUrl)}"><code>@vivi2d/web@${escapeHtml(npmWebVersion)}</code></a>
           is published for experimental browser playback of reviewed public-profile
           <code>.vivi</code> models. Use <code>${escapeHtml(npmWebInstall)}</code>
-          or pin an exact version. The older bootstrap package is deprecated,
-          and <code>latest</code> currently resolves to that bootstrap version;
-          it is not a stable-channel promise.
+          or pin an exact version. <code>latest</code> currently mirrors this
+          alpha so the npm package page no longer defaults to the deprecated
+          bootstrap, but it is not a stable-channel promise.
         </p>
       </article>
       <article class="info-card">

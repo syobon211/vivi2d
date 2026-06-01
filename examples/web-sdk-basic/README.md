@@ -30,9 +30,9 @@ npm install @vivi2d/web@alpha
 Pin `@vivi2d/web@0.1.0-alpha.2` instead if you need a reproducible sample
 snapshot.
 
-Do not use plain `npm install @vivi2d/web` during the alpha series. The npm
-`latest` tag can point at deprecated bootstrap metadata until a separate stable
-channel review promotes it.
+Plain `npm install @vivi2d/web` currently resolves to the same alpha version for
+npm page usability, but copied-out examples should prefer `@alpha` or an exact
+pin so the pre-1.0 status stays explicit.
 
 The pinned `typescript` and `vite` versions in this folder are the verified
 sample snapshot. They are not a broad compatibility promise.

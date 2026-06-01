@@ -2,11 +2,12 @@
 
 This document defines the release contract for the `@vivi2d/web` npm alpha
 channel. The one-time `0.1.0-alpha.0` bootstrap publication is complete and
-recorded below. The current `alpha` dist-tag points to `0.1.0-alpha.2`, which
-is published through GitHub Actions OIDC Trusted Publishing with npm
-provenance. Later package versions may be published only after every exit gate
-in this document and the public release checklist are green on the final
-release tree.
+recorded below. The current `alpha` and `latest` dist-tags both point to
+`0.1.0-alpha.2`, which is published through GitHub Actions OIDC Trusted
+Publishing with npm provenance. `latest` is a convenience alias pointing to the
+current alpha for npm page usability only; it is not a stable API commitment.
+Later package versions may be published only after every exit gate in this
+document and the public release checklist are green on the final release tree.
 
 ## Scope
 
@@ -186,11 +187,13 @@ Bootstrap completion record:
 - The registry initially attached both `alpha` and `latest` dist-tags to the
   initial package while it was the only published version. After
   `0.1.0-alpha.2` was published through Trusted Publishing, `alpha` points to
-  `0.1.0-alpha.2`. `0.1.0-alpha.0` is deprecated, but `latest` currently
-  points at that bootstrap package. npm rejected the initial `latest` deletion,
-  and a post-`0.1.0-alpha.1` removal attempt still returned a registry
-  `400 Bad Request`. Treat `alpha` and exact versions as the supported install
-  surface until a separate stable-channel review explicitly promotes `latest`.
+  `0.1.0-alpha.2`. `0.1.0-alpha.0` is deprecated. npm rejected the initial
+  `latest` deletion while the bootstrap was the only published version, and a
+  post-`0.1.0-alpha.1` removal attempt still returned a registry
+  `400 Bad Request`. After `0.1.0-alpha.2`, the owner chose to retag `latest`
+  to `0.1.0-alpha.2` so the npm package page no longer defaults to the
+  deprecated bootstrap. Treat `latest` as a convenience tag pointing to the
+  current alpha, not a stable channel.
 - `scripts/bootstrap-web-npm-alpha-publish.mjs` is intentionally disabled after
   the bootstrap; it is retained only as an audit trail for the first package
   creation path.
@@ -228,7 +231,8 @@ Workflow requirements:
   `scripts/publish-web-npm-alpha.mjs` wrapper, which runs the release-record
   verifier before invoking `npm publish`; do not use a third-party publish
   wrapper or hand-run `npm publish`
-- publish with the `alpha` dist-tag and never intentionally promote `latest`
+- publish with the `alpha` dist-tag; move `latest` only after an explicit
+  owner-reviewed registry-tag decision
 - verify the registry tarball digest after publication
 
 ## `0.1.0-alpha.2` Release Record
@@ -241,8 +245,8 @@ follow-up, not a feature-expansion release. It records:
 - the public install path on `npm install @vivi2d/web@alpha`
 - package metadata, package README, portal copy, and developer docs updated so
   the Web SDK alpha points at the current version
-- copied-out sample guidance that prevents external users from accidentally installing
-  the deprecated `latest` bootstrap package
+- copied-out sample guidance that keeps alpha installs explicit even though
+  `latest` currently mirrors `alpha`
 
 It does not add new runtime files, package entry points, public API methods,
 native/WASM standalone assets, Viewer API promises, provider promises, or
@@ -250,21 +254,26 @@ third-party compatibility claims. Future API or tarball-shape changes must be
 cut as separate alphas after review instead of being treated as part of this
 maintenance patch.
 
-The `latest` registry behavior is handled conservatively:
+The `latest` registry behavior is recorded as follows:
 
-- Do not intentionally add or move `latest` to `0.1.0-alpha.2`.
-- The post-publish registry check records `alpha: 0.1.0-alpha.2` as the
-  supported Web SDK alpha channel.
-- No `latest` promotion is part of this release. If a maintainer retests
-  `npm dist-tag rm @vivi2d/web latest` after `0.1.0-alpha.2`, the exact
-  command/output must be added to this record before public install guidance
-  changes.
-- Until such a retest is recorded, `latest` remains unsupported and public
-  guidance stays on `@alpha` or exact version pins.
+- The publish workflow published `0.1.0-alpha.2` with the `alpha` dist-tag.
+- After publication, the owner moved `latest` to `0.1.0-alpha.2` so the npm
+  package page no longer defaults to the deprecated bootstrap.
+- Current registry state:
+
+  ```text
+  alpha: 0.1.0-alpha.2
+  latest: 0.1.0-alpha.2
+  ```
+
+- `latest` is still a convenience alias pointing to the current alpha, not a
+  stable API commitment. Public examples and docs should keep `@alpha` or exact
+  pins prominent so the pre-1.0 status remains visible.
 
 The release notes for `0.1.0-alpha.2` describe this as a metadata/docs and
-sample-guidance alpha. They explicitly say that `latest` is not the supported
-Vivi2D alpha channel.
+sample-guidance alpha. The `CHANGELOG.md` entry notes that `latest` currently
+mirrors the alpha because the owner explicitly retagged it, and that `latest`
+is not a stable channel.
 
 The package `repository.url` must exactly match the GitHub repository used by
 the trusted publisher. If a fork or mirror is used, the package metadata and npm
@@ -445,11 +454,17 @@ The first publish should use an explicit alpha semver version, for example:
 
 Rules:
 
-- never intentionally publish or promote alpha builds under `latest`
-- use `--tag alpha`
+- publish with `--tag alpha`
+- do not promote `latest` as a stable channel during alpha
+- distinguish stable-channel promotion from owner-reviewed convenience retags:
+  during alpha, `latest` may mirror the current alpha only when docs and release
+  notes state that it is not a stable API commitment
 - if npm auto-attaches `latest` to the first or only version and refuses
   deletion, record the registry behavior and keep public install guidance on
   `@alpha` or exact versions until the next reviewed release can retag
+- if an owner-reviewed registry-tag decision moves `latest` to the current
+  alpha, document that `latest` is a convenience alias pointing to that alpha
+  rather than a stable API commitment
 - require a semver pre-release suffix such as `-alpha.0`; `0.1.0` is not a
   valid npm alpha publication version even if published under the `alpha` tag
 - do not reuse a version; npm package versions are immutable once published
@@ -462,9 +477,10 @@ Rules:
   `^\d+\.\d+\.\d+-alpha\.\d+$`, the requested dist-tag is exactly `alpha`,
   and the target version is not already present in the npm registry
 
-Promotion to `latest` or stable pre-1.0 install guidance requires a separate
-review. That promotion should happen only after real external feedback,
-installation docs, and support expectations are updated.
+Promotion of `latest` as a stable install channel requires a separate review.
+During alpha, `latest` may mirror the current alpha only as a convenience alias
+pointing to that alpha when the owner records the registry-tag decision and
+public docs keep the pre-1.0 support boundary visible.
 
 ## Tarball Contract
 
@@ -591,8 +607,9 @@ The only exception was the initial package bootstrap documented above. It used
 `@vivi2d/web@0.1.0-alpha.0`, and has been followed by npm Trusted Publisher
 configuration for later alpha releases. The first OIDC-published follow-up was
 `@vivi2d/web@0.1.0-alpha.1`; the current OIDC-published follow-up is
-`@vivi2d/web@0.1.0-alpha.2` on the `alpha` dist-tag. The script now exits
-before any npm publish path and is retained only for auditability.
+`@vivi2d/web@0.1.0-alpha.2`; `alpha` and `latest` currently both resolve to
+that version. The script now exits before any npm publish path and is retained
+only for auditability.
 
 The final publish workflow should run the non-dry-run publish only after the
 same final tree passes all release gates.
