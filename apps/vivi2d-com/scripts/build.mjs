@@ -15,6 +15,8 @@ const releaseTag = `v${releaseVersion}`;
 const releaseUrl = `${githubUrl}/releases/tag/${releaseTag}`;
 const releasesUrl = `${githubUrl}/releases`;
 const npmWebUrl = "https://www.npmjs.com/package/@vivi2d/web";
+const npmWebVersion = "0.1.0-alpha.1";
+const npmWebInstall = "npm install @vivi2d/web@alpha";
 const feedbackUrl = `${githubUrl}/issues/29`;
 const installerTrackUrl = `${githubUrl}/issues/30`;
 const portalDocsUrl = docsBaseUrl ? docsUrl("en", "") : `${docsHostUrl}/`;
@@ -685,7 +687,9 @@ function rootHtml() {
           Windows installer alphas for the Editor and Viewer alongside the
           source review, checksum, SBOM, and notice artifacts. The
           <code>@vivi2d/web</code> package is available as an experimental npm
-          alpha for public-profile playback.
+          alpha for public-profile playback, with the <code>@alpha</code>
+          dist-tag currently pointing to provenance-backed
+          <code>${escapeHtml(npmWebVersion)}</code>.
         </p>
         <div class="actions" aria-label="Primary actions">
           <a class="button button-primary" href="${escapeHtml(githubUrl)}">Open GitHub</a>
@@ -750,10 +754,12 @@ function rootHtml() {
       <article class="info-card">
         <h2>Web SDK Alpha</h2>
         <p>
-          <a href="${escapeHtml(npmWebUrl)}"><code>@vivi2d/web@0.1.0-alpha.0</code></a>
+          <a href="${escapeHtml(npmWebUrl)}"><code>@vivi2d/web@${escapeHtml(npmWebVersion)}</code></a>
           is published for experimental browser playback of reviewed public-profile
-          <code>.vivi</code> models. Use <code>@alpha</code> or pin an exact
-          version; <code>latest</code> is not a stable-channel promise.
+          <code>.vivi</code> models. Use <code>${escapeHtml(npmWebInstall)}</code>
+          or pin an exact version. The older bootstrap package is deprecated,
+          and <code>latest</code> currently resolves to that bootstrap version;
+          it is not a stable-channel promise.
         </p>
       </article>
       <article class="info-card">

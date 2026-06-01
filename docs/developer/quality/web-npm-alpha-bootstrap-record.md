@@ -22,6 +22,16 @@ publish path.
 - `latest` removal attempt: npm rejected deleting `latest` while this was the
   only package version. Do not treat `latest` as a stable Vivi2D channel until a
   separate stable-channel review explicitly promotes it.
+- Post-bootstrap status: `@vivi2d/web@0.1.0-alpha.1` has since been published
+  through GitHub Actions OIDC Trusted Publishing with npm provenance.
+  `alpha` points to `0.1.0-alpha.1`. This bootstrap version is deprecated with
+  a message that points users to `npm install @vivi2d/web@alpha`. `latest`
+  currently points at this bootstrap version, so it remains unsupported as a
+  stable channel. A post-`0.1.0-alpha.1` `npm dist-tag rm @vivi2d/web latest`
+  attempt still returned a registry `400 Bad Request`, so the supported install
+  guidance remains `@alpha` or an exact version.
+- Verified npm deprecation message:
+  `Bootstrap alpha. Please install current alpha builds with: npm install @vivi2d/web@alpha`
 - Tarball filename: `vivi2d-web-0.1.0-alpha.0.tgz`
 - Tarball SHA-256:
   `982dc5369f35cb0246c04bcdaf9dbfbad5f3a720dc0db86434f16e581babea09`

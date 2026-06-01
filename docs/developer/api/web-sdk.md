@@ -37,16 +37,21 @@ as npm dependencies.
 
 The current unlock state permits Phase 1 programmatic SDK implementation and
 the reviewed experimental npm alpha surface. It does not approve stable
-compatibility promises or additional package promotion. Later npm alpha
-publication requires the release contract in
+compatibility promises or additional package promotion. Later versions must use GitHub Actions OIDC Trusted Publishing and must follow the release contract in
 `docs/developer/quality/web-npm-alpha-release.md`, the protected npm publisher
 configuration, and a final release-tag dry-run/publish record.
 
 ## Alpha Release Shape
 
-The current alpha version is `0.1.0-alpha.0`. It was published through the
-documented one-time bootstrap path and has no npm provenance attestation. Later
-versions must use GitHub Actions OIDC Trusted Publishing.
+The current alpha version is `0.1.0-alpha.1`. It was published through GitHub
+Actions OIDC Trusted Publishing and has npm provenance attestation. Use
+`npm install @vivi2d/web@alpha` or pin `@vivi2d/web@0.1.0-alpha.1` for
+experiments.
+
+`0.1.0-alpha.0` was the documented one-time bootstrap package. It has no npm
+provenance attestation, is deprecated on npm, and is retained only as an audit
+record for the package-creation exception. `latest` currently resolves to that
+bootstrap package, so `latest` is not a stable install channel for Vivi2D.
 
 A valid npm alpha dry-run records:
 
@@ -59,8 +64,8 @@ A valid npm alpha dry-run records:
 
 Dry-run artifacts are local review evidence only. They should be regenerated
 from the final release tag immediately before publication so the source commit,
-tarball digest, provenance, SBOM, and release notes match. For
-`0.1.0-alpha.0`, the bootstrap audit record is tracked in
+tarball digest, provenance, SBOM, and release notes match. The bootstrap audit
+record for `0.1.0-alpha.0` is tracked in
 `docs/developer/quality/web-npm-alpha-bootstrap-record.md`.
 
 ## Examples

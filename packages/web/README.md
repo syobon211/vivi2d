@@ -10,10 +10,12 @@ The current Web SDK is published as an experimental alpha package:
 npm install @vivi2d/web@alpha
 ```
 
-Use the `alpha` dist-tag or pin an exact version in production experiments if
-reproducibility matters. The bootstrap package currently also has the `latest`
-dist-tag while it is the only npm version, but `latest` is not a stable-channel
-promise for Vivi2D until the release notes explicitly say so.
+The `alpha` dist-tag currently resolves to `0.1.0-alpha.1`, which was published
+through GitHub Actions OIDC Trusted Publishing with npm provenance. Pin
+`@vivi2d/web@0.1.0-alpha.1` in experiments if reproducibility matters. The
+older `0.1.0-alpha.0` bootstrap package is deprecated, and `latest` currently
+resolves to that bootstrap version, so do not use `latest` as a stable Vivi2D
+channel until release notes explicitly say so.
 
 ```ts
 import { createViviWebPlayer, loadViviWebModel } from "@vivi2d/web";

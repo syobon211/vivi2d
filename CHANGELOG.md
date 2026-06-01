@@ -2,6 +2,20 @@
 
 ## 2026-06-01
 
+### Web SDK npm alpha Trusted Publishing
+
+- Published `@vivi2d/web@0.1.0-alpha.1` through GitHub Actions OIDC Trusted
+  Publishing with npm provenance attestation.
+- Moved the npm `alpha` dist-tag to `0.1.0-alpha.1`; public install guidance is
+  `npm install @vivi2d/web@alpha` or an exact
+  `@vivi2d/web@0.1.0-alpha.1` pin.
+- Deprecated the bootstrap-only `@vivi2d/web@0.1.0-alpha.0` package with a
+  message that points users to `npm install @vivi2d/web@alpha`.
+- Noted that npm still keeps `latest` on the deprecated `0.1.0-alpha.0`
+  bootstrap package because removing the only original `latest` tag was
+  rejected. A post-`0.1.0-alpha.1` `latest` removal attempt also returned a
+  registry `400 Bad Request`, so `latest` is not a stable Vivi2D channel.
+
 ### Web SDK npm alpha bootstrap
 
 - Published `@vivi2d/web@0.1.0-alpha.0` through the one-time local bootstrap
@@ -18,9 +32,9 @@
   `publish-web-alpha.yml`, and environment `npm-alpha`.
 - Disabled the bootstrap publish script after the one-time package creation so
   future Web SDK publishes must use the Trusted Publishing workflow.
-- Noted npm registry behavior for the first package version: both `alpha` and
-  `latest` currently point at `0.1.0-alpha.0` because npm rejected removal of
-  `latest` while it is the only version. Public install guidance remains
+- Noted npm registry behavior for the first package version: npm initially
+  attached both `alpha` and `latest` to `0.1.0-alpha.0` and rejected removal of
+  `latest` while it was the only version. Public install guidance remains
   `@vivi2d/web@alpha` or an exact pinned version; `latest` is not a stable
   channel promise.
 

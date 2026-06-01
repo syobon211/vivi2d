@@ -2,8 +2,10 @@
 
 This document defines the release contract for the `@vivi2d/web` npm alpha
 channel. The one-time `0.1.0-alpha.0` bootstrap publication is complete and
-recorded below. Later package versions may be published only after every exit
-gate in this document and the public release checklist are green on the final
+recorded below. The current `alpha` dist-tag points to `0.1.0-alpha.1`, which
+was published through GitHub Actions OIDC Trusted Publishing with npm
+provenance. Later package versions may be published only after every exit gate
+in this document and the public release checklist are green on the final
 release tree.
 
 ## Scope
@@ -181,11 +183,14 @@ Bootstrap completion record:
   integrity is
   `sha512-/I/WiO+HB4c8RxTS71aUYO16NJAJ5BKs92sSWVKRT1KD+pBoYQM0CLm8tnRsK9q0akBwdvEJdgmNsFqAj90yzA==`,
   and npm shasum is `5a60a49f81c18fa8169569942a751d337e8ff977`.
-- The registry attached both `alpha` and `latest` dist-tags to the initial
-  package while it was the only published version. The owner attempted to
-  remove `latest`, but npm rejected the deletion. Treat `alpha` and exact
-  versions as the supported install surface until a separate stable-channel
-  review explicitly promotes `latest`.
+- The registry initially attached both `alpha` and `latest` dist-tags to the
+  initial package while it was the only published version. After
+  `0.1.0-alpha.1` was published through Trusted Publishing, `alpha` points to
+  `0.1.0-alpha.1`. `0.1.0-alpha.0` is deprecated, but `latest` currently
+  points at that bootstrap package. npm rejected the initial `latest` deletion,
+  and a post-`0.1.0-alpha.1` removal attempt still returned a registry
+  `400 Bad Request`. Treat `alpha` and exact versions as the supported install
+  surface until a separate stable-channel review explicitly promotes `latest`.
 - `scripts/bootstrap-web-npm-alpha-publish.mjs` is intentionally disabled after
   the bootstrap; it is retained only as an audit trail for the first package
   creation path.
@@ -245,7 +250,7 @@ on:
         description: "Expected @vivi2d/web version"
         required: true
       ref:
-        description: "Release tag to publish, for example web-v0.1.0-alpha.0"
+        description: "Release tag to publish, for example web-v0.1.0-alpha.2"
         required: true
       dryRun:
         description: "Run all gates and pack, but skip npm publish"
@@ -549,8 +554,9 @@ manual publication unless the wrapper sets
 The only exception was the initial package bootstrap documented above. It used
 `scripts/bootstrap-web-npm-alpha-publish.mjs`, was limited to
 `@vivi2d/web@0.1.0-alpha.0`, and has been followed by npm Trusted Publisher
-configuration for later alpha releases. The script now exits before any npm
-publish path and is retained only for auditability.
+configuration for later alpha releases. The first OIDC-published follow-up is
+`@vivi2d/web@0.1.0-alpha.1` on the `alpha` dist-tag. The script now exits
+before any npm publish path and is retained only for auditability.
 
 The final publish workflow should run the non-dry-run publish only after the
 same final tree passes all release gates.
