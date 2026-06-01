@@ -27,7 +27,7 @@ dist-tag or an exact alpha pin:
 npm install @vivi2d/web@alpha
 ```
 
-Pin `@vivi2d/web@0.1.0-alpha.2` instead if you need a reproducible sample
+Pin `@vivi2d/web@0.1.0-alpha.3` instead if you need a reproducible sample
 snapshot.
 
 Plain `npm install @vivi2d/web` currently resolves to the same alpha version for

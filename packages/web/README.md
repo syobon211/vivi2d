@@ -10,9 +10,9 @@ The current Web SDK is published as an experimental alpha package:
 npm install @vivi2d/web@alpha
 ```
 
-The `alpha` dist-tag currently resolves to `0.1.0-alpha.2`, which is published
+The `alpha` dist-tag currently resolves to `0.1.0-alpha.3`, which is published
 through GitHub Actions OIDC Trusted Publishing with npm provenance. Pin
-`@vivi2d/web@0.1.0-alpha.2` in experiments if reproducibility matters.
+`@vivi2d/web@0.1.0-alpha.3` in experiments if reproducibility matters.
 `latest` currently mirrors this alpha so the npm package page no longer
 defaults to the deprecated bootstrap, but it still resolves to a pre-1.0 alpha,
 not a stable API commitment. The older `0.1.0-alpha.0` bootstrap package is

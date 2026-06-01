@@ -96,10 +96,10 @@ want to follow progress, watch GitHub Releases and the user documentation.
   browser, `Unknown publisher`, or SmartScreen warnings.
 - No macOS, Linux, MSI, MSIX, Winget, or Microsoft Store installer is published
   yet.
-- `@vivi2d/web@0.1.0-alpha.2` is the current experimental npm alpha for
+- `@vivi2d/web@0.1.0-alpha.3` is the current experimental npm alpha for
   public-profile model playback. Use `npm install @vivi2d/web@alpha` or pin
-  `@vivi2d/web@0.1.0-alpha.2`; this is not a stable API commitment.
-  `0.1.0-alpha.2` is published through GitHub Actions OIDC Trusted Publishing
+  `@vivi2d/web@0.1.0-alpha.3`; this is not a stable API commitment.
+  `0.1.0-alpha.3` is published through GitHub Actions OIDC Trusted Publishing
   with npm provenance. The `latest` dist-tag currently mirrors this alpha so
   the npm package page no longer defaults to the deprecated bootstrap, but it
   still resolves to a pre-1.0 alpha, not a stable API commitment. The older

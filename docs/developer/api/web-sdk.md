@@ -43,15 +43,15 @@ configuration, and a final release-tag dry-run/publish record.
 
 ## Alpha Release Shape
 
-The current alpha version is `0.1.0-alpha.2`. It is published through GitHub
+The current alpha version is `0.1.0-alpha.3`. It is published through GitHub
 Actions OIDC Trusted Publishing and has npm provenance attestation. Use
-`npm install @vivi2d/web@alpha` or pin `@vivi2d/web@0.1.0-alpha.2` for
+`npm install @vivi2d/web@alpha` or pin `@vivi2d/web@0.1.0-alpha.3` for
 experiments.
 
 `0.1.0-alpha.0` was the documented one-time bootstrap package. It has no npm
 provenance attestation, is deprecated on npm, and is retained only as an audit
 record for the package-creation exception. `latest` currently mirrors
-`0.1.0-alpha.2` so the npm package page no longer defaults to the deprecated
+`0.1.0-alpha.3` so the npm package page no longer defaults to the deprecated
 bootstrap, but it still resolves to a pre-1.0 alpha and is not a stable Web SDK
 commitment.
 

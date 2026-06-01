@@ -2,6 +2,16 @@
 
 ## 2026-06-01
 
+### Web SDK npm alpha.3
+
+- Published `@vivi2d/web@0.1.0-alpha.3` as a README-only Trusted Publishing
+  follow-up so the npm package page no longer shows stale `latest` guidance
+  from the `0.1.0-alpha.2` tarball.
+- Kept the package runtime, exports, bundled files, and compatibility claims
+  unchanged from `0.1.0-alpha.2`.
+- Kept `latest` as an owner-reviewed convenience alias pointing to the current
+  alpha, not a stable API commitment.
+
 ### Web SDK npm alpha.2
 
 - Published `@vivi2d/web@0.1.0-alpha.2` as a small Trusted Publishing
