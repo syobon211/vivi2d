@@ -73,8 +73,8 @@ You are ready to continue when:
 - If the app opens on the wrong monitor or scale, check your OS display scaling and [Display And GPU](../troubleshooting/display-and-gpu.md).
 - If a dialog is too small, try a larger window before reporting layout clipping.
 - If the installed app prompts for sign-in, telemetry, updates, or unexpected
-  network access, report it in the alpha feedback issue:
-  https://github.com/syobon211/vivi2d/issues/29.
+  network access, open a new GitHub issue with the relevant template:
+  https://github.com/syobon211/vivi2d/issues/new/choose.
 
 ## Next
 

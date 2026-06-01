@@ -124,7 +124,7 @@ export const panel = {
   "prop.referenceOverlay.opacityLabel": "참조 불투명도",
   "prop.referenceOverlay.opacityAria": "참조 오버레이 불투명도",
   "prop.referenceOverlay.help":
-    "원본 모드는 변형되지 않은 원본 텍스처 사각형을 표시합니다. 현재 경계 모드는 현재 메시 정점 경계를 표시합니다. 가져온 경계 모드는 사용 가능한 경우 See-through 가져오기 경계를 표시합니다. 경계 비교는 두 참조 모드를 함께 겹쳐 보여줍니다.",
+    "원본 모드는 원본 소스 텍스처 사각형을 표시합니다. 현재 경계 모드는 현재 모델 경계를 표시합니다. 가져온 경계 모드는 사용 가능한 경우 See-through 가져오기 경계를 표시합니다. 경계 비교는 두 참조 모드를 함께 겹쳐 보여줍니다.",
   "prop.referenceOverlay.mode.source": "원본",
   "prop.referenceOverlay.mode.currentBounds": "현재 경계",
   "prop.referenceOverlay.mode.importedBounds": "가져온 경계",

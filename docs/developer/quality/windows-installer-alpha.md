@@ -175,29 +175,29 @@ verified values. Unsigned builds must keep them `null`.
 
 ## Alpha.3 Installer Improvement Track
 
-The `v0.1.0-alpha.3` installer track should improve the user-facing installer
-experience without weakening the release boundary established by `alpha.2`.
-Tracked work lives in
-[`#30`](https://github.com/syobon211/vivi2d/issues/30).
+The `v0.1.0-alpha.3` installer track completed the user-facing installer
+improvements without weakening the release boundary established by `alpha.2`.
+Future installer work should use fresh GitHub issues or a new release-specific
+tracking issue instead of reopening the closed alpha.3 planning thread.
 
-Required decisions before an `alpha.3` installer is tagged:
+Alpha.3 release decisions recorded for audit:
 
-- Include both desktop apps only after the workflow can build, scan, verify, and
-  attach separate Windows x64 NSIS installers for the Editor and Vivi2D Viewer.
-  The Viewer installer must have its own app id, product name, output
+- Both desktop apps are included only because the workflow can build, scan,
+  verify, and attach separate Windows x64 NSIS installers for the Editor and
+  Vivi2D Viewer. The Viewer installer has its own app id, product name, output
   directory, file name, packaged-app scan, release-record entry, and checksum
   entries.
-- Keep `alpha.3` unsigned under ADR 0007. The release notes, website, and
-  install docs must say so above the fold.
-- Keep Microsoft Defender SmartScreen guidance checksum-first. Docs must not ask
-  users to disable SmartScreen globally, and the release must not claim improved
-  reputation until a signed installer has real distribution evidence.
-- Confirm first launch from an installed build still opens the empty editor
+- `alpha.3` remains unsigned under ADR 0007. The release notes, website, and
+  install docs say so above the fold.
+- Microsoft Defender SmartScreen guidance remains checksum-first. Docs do not
+  ask users to disable SmartScreen globally, and the release does not claim
+  improved reputation without signed-installer distribution evidence.
+- First launch from an installed build is reviewed to open the empty editor
   without account sign-in, telemetry prompt, updater prompt, or outbound network
   activity attributed to the app process.
-- Keep uninstall behavior explicit. The default alpha behavior may preserve
-  `%APPDATA%/Vivi2D` user data and Chromium cache; any future "remove user
-  data" option must be explicit and opt-in.
+- Uninstall behavior is explicit. The default alpha behavior may preserve
+  `%APPDATA%/Vivi2D` user data and Chromium cache; any future "remove user data"
+  option must be explicit and opt-in.
 
 `alpha.3` may update copy, review evidence, and installer guidance without
 shipping a signed build. The alpha.3 workflow includes the separate Vivi2D

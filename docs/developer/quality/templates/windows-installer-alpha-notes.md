@@ -29,9 +29,8 @@ Before running the installer, confirm that it came from this GitHub Release and
 verify the SHA-256 entry in `checksums.txt`. Do not disable SmartScreen globally
 to install Vivi2D.
 
-Installer feedback is tracked in
-https://github.com/syobon211/vivi2d/issues/29. Follow-up work for the next
-installer alpha is tracked in https://github.com/syobon211/vivi2d/issues/30.
+For current alpha feedback, open a new GitHub issue with the relevant template:
+https://github.com/syobon211/vivi2d/issues/new/choose.
 
 ## Manual Windows Review
 
@@ -66,7 +65,8 @@ rapid back-to-back silent install testing.
 After installation, Vivi2D should open to the empty editor workspace without an
 account sign-in prompt, updater prompt, telemetry prompt, or outbound network
 activity attributed to the app process. If first launch behaves differently,
-please report it in the alpha feedback issue.
+please open a new GitHub issue with the relevant template:
+https://github.com/syobon211/vivi2d/issues/new/choose.
 
 ## Uninstall
 

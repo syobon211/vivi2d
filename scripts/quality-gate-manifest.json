@@ -29,10 +29,13 @@
       ".github/workflows/test-matrix.yml"
     ],
     "requiredScripts": [
+      "apps/vivi2d-com/scripts/build.mjs",
       "scripts/check-architecture-boundaries.mjs",
       "scripts/check-core-model-current-fixtures.mjs",
       "scripts/check-direct-model-mutations.mjs",
       "scripts/check-docs-public-surface.mjs",
+      "scripts/check-security-supported-versions.mjs",
+      "scripts/check-vivi2d-com-site.mjs",
       "scripts/check-task-guide-paths.mjs",
       "scripts/check-task-guide-gates.mjs",
       "scripts/check-pr-recipe-gates.mjs",
@@ -197,6 +200,24 @@
       "id": "docs-user-check-release",
       "npmScript": "docs:user:check:release",
       "command": "npm run docs:user:check:release",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "docs-site-check",
+      "npmScript": "docs:site:check",
+      "command": "npm run docs:site:check",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "id": "check-security-supported-versions",
+      "npmScript": "check:security-supported-versions",
+      "command": "npm run check:security-supported-versions",
       "requiredWorkflows": [
         ".github/workflows/quality-gates.yml"
       ],

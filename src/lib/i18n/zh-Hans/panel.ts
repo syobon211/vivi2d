@@ -124,7 +124,7 @@ export const panel = {
   "prop.referenceOverlay.opacityLabel": "参考不透明度",
   "prop.referenceOverlay.opacityAria": "参考叠加不透明度",
   "prop.referenceOverlay.help":
-    "源模式显示未变形的源纹理矩形。当前边界模式显示当前网格顶点边界。导入边界模式会在可用时显示 See-through 导入边界。边界比较会同时叠加两个参考模式。",
+    "源模式显示原始源纹理矩形。当前边界模式显示当前模型边界。导入边界模式会在可用时显示 See-through 导入边界。边界比较会同时叠加两个参考模式。",
   "prop.referenceOverlay.mode.source": "源图像",
   "prop.referenceOverlay.mode.currentBounds": "当前边界",
   "prop.referenceOverlay.mode.importedBounds": "导入边界",

@@ -1,7 +1,7 @@
-// All dialogs (Spine export / Media output / Validation / PSD reimport /
+// All dialogs (external JSON export / Media output / Validation / PSD reimport /
 // Integrations (OBS/VTS) / ComfyUI / Error boundary / Notification toast / Generic dialog)
 export const dialog = {
-  "export.spineTitle": "Spine JSON Export",
+  "export.spineTitle": "External JSON Export",
   "export.noViviMesh": "No ViviMeshes",
   "export.outputFiles": "Output Files",
   "export.bonesSkinAnims": "Bones, Skins, & Animations",
@@ -73,9 +73,9 @@ export const dialog = {
   "integration.obsPasswordPlaceholder": "Leave empty if not configured",
   "integration.obsNotice":
     "Enable the WebSocket server in OBS Studio (Tools → WebSocket Server Settings).",
-  "integration.vtsTitle": "VTube Studio API connection",
+  "integration.vtsTitle": "VTube Studio local API connection",
   "integration.vtsDialogTitle": "VTube Studio Connection Settings",
-  "integration.vtsUrl": "VTube Studio API URL",
+  "integration.vtsUrl": "VTube Studio local API URL",
   "integration.vtsNotice":
     "Make sure VTube Studio is running. Plugin authorization is required on first connection.",
 
@@ -244,7 +244,7 @@ export const dialog = {
     "{layerName} can usually stay on the lighter cleanup path.",
   "seethrough.depthRig.eyeRigReady": "Eye parts are ready for the eye rig helper.",
   "seethrough.depthRig.frontFineControl":
-    "{layerName} will likely benefit from finer deformation control.",
+    "{layerName} will likely benefit from more precise motion setup.",
   "seethrough.depthRig.incompleteEyebrowFamily":
     "Eyebrow layers are incomplete on one side. Symmetric face rigging may be unstable.",
   "seethrough.depthRig.incompleteEyeFamily":
@@ -366,7 +366,7 @@ export const dialog = {
     "Toggle the selected mesh reference comparison overlay.",
   "quickActions.action.referenceOverlaySource.title": "Reference Overlay: Source",
   "quickActions.action.referenceOverlaySource.description":
-    "Show the undeformed source texture rectangle.",
+    "Show the original source texture rectangle.",
   "quickActions.action.referenceOverlayCurrentBounds.title":
     "Reference Overlay: Current Bounds",
   "quickActions.action.referenceOverlayCurrentBounds.description":

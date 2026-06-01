@@ -17,8 +17,9 @@ const releasesUrl = `${githubUrl}/releases`;
 const npmWebUrl = "https://www.npmjs.com/package/@vivi2d/web";
 const npmWebVersion = "0.1.0-alpha.3";
 const npmWebInstall = "npm install @vivi2d/web@alpha";
-const feedbackUrl = `${githubUrl}/issues/29`;
-const installerTrackUrl = `${githubUrl}/issues/30`;
+const feedbackUrl = `${githubUrl}/issues/new/choose`;
+const securityPolicyUrl = `${githubUrl}/security/policy`;
+const vulnerabilityReportUrl = `${githubUrl}/security/advisories/new`;
 const portalDocsUrl = docsBaseUrl ? docsUrl("en", "") : `${docsHostUrl}/`;
 const localeLabels = {
   en: "English",
@@ -235,6 +236,15 @@ function securityHeaders() {
   X-Frame-Options: DENY
   Strict-Transport-Security: max-age=31536000
   Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'none'; connect-src 'none'; font-src 'self'; manifest-src 'self'; upgrade-insecure-requests
+`;
+}
+
+function securityTxt() {
+  return `Contact: ${vulnerabilityReportUrl}
+Policy: ${securityPolicyUrl}
+Preferred-Languages: en, ja
+Canonical: ${siteUrl}/.well-known/security.txt
+Expires: 2027-06-01T00:00:00Z
 `;
 }
 
@@ -739,7 +749,7 @@ function rootHtml() {
           <li>Read the release notes before installing.</li>
           <li>Verify the installer SHA-256 with <code>checksums.txt</code>.</li>
           <li>If installing both apps, wait a few seconds after one installer finishes before starting the other.</li>
-          <li>Report install, first-launch, or uninstall issues in the <a href="${escapeHtml(feedbackUrl)}">alpha feedback thread</a>.</li>
+          <li>Report install, first-launch, or uninstall issues with the <a href="${escapeHtml(feedbackUrl)}">GitHub issue templates</a>.</li>
           <li>Use test artwork first; this is still pre-1.0 alpha software.</li>
         </ul>
       </article>
@@ -765,9 +775,11 @@ function rootHtml() {
       <article class="info-card">
         <h2>Next Installer Work</h2>
         <p>
-          The <a href="${escapeHtml(installerTrackUrl)}">installer follow-up track</a>
-          focuses on repeatable smoke automation, checksum-first download
-          guidance, and clearer uninstall notes for unsigned alpha installers.
+          Current installer follow-up work should use
+          <a href="${escapeHtml(feedbackUrl)}">fresh GitHub issues</a>
+          so reports can be triaged against the active release. Repeatable smoke
+          automation, checksum-first download guidance, and uninstall notes are
+          already in the alpha docs.
         </p>
       </article>
     </section>
@@ -816,6 +828,7 @@ function main() {
   writeOutput("robots.txt", robotsTxt());
   writeOutput("sitemap.xml", sitemapXml(metadata));
   writeOutput("_headers", securityHeaders());
+  writeOutput(".well-known/security.txt", securityTxt());
 
   for (const route of manifest.routes.filter((route) => route.published)) {
     for (const locale of locales) {

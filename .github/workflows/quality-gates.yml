@@ -3,6 +3,7 @@ name: Quality Gates
 on:
   pull_request:
     paths:
+      - "apps/**"
       - ".github/**"
       - "CODE_OF_CONDUCT.md"
       - "CONTRIBUTING.md"
@@ -21,6 +22,7 @@ on:
       - "vite.aliases.ts"
       - "vite.config.ts"
       - "vitest.config.ts"
+      - "wrangler.jsonc"
   workflow_dispatch:
 
 permissions:
@@ -44,6 +46,7 @@ jobs:
       - run: npm ci
       - run: >
           npx biome check
+          apps/vivi2d-com/scripts/build.mjs
           e2e/playwright.config.ts
           electron/ipc-contract.cjs
           electron/main.cjs
@@ -64,6 +67,8 @@ jobs:
           scripts/check-direct-model-mutations.mjs
           scripts/check-docs-architecture.mjs
           scripts/check-docs-public-surface.mjs
+          scripts/check-security-supported-versions.mjs
+          scripts/check-vivi2d-com-site.mjs
           scripts/check-task-guide-paths.mjs
           scripts/check-task-guide-gates.mjs
           scripts/check-pr-recipe-gates.mjs
@@ -147,6 +152,8 @@ jobs:
       - run: npm run check:escalation-template
       - run: npm run docs:user:check
       - run: npm run docs:user:check:release
+      - run: npm run docs:site:check
+      - run: npm run check:security-supported-versions
       - run: npm run check:docs-public-surface
       - run: npm run check:quality-gate-drift
       - run: npm run test

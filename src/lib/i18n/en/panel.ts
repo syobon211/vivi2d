@@ -152,7 +152,7 @@ export const panel = {
   "prop.referenceOverlay.opacityLabel": "Reference opacity",
   "prop.referenceOverlay.opacityAria": "Reference overlay opacity",
   "prop.referenceOverlay.help":
-    "Source mode shows the undeformed source texture rectangle. Current bounds mode shows the current mesh-vertex bounds. Imported bounds mode shows the import-time See-through bbox when available. Bounds compare overlays any two reference modes together.",
+    "Source mode shows the original source texture rectangle. Current bounds mode shows the current model bounds. Imported bounds mode shows the import-time See-through bbox when available. Bounds compare overlays any two reference modes together.",
   "prop.referenceOverlay.comparePresetLabel": "Compare preset",
   "prop.referenceOverlay.comparePrimaryLabel": "Compare A",
   "prop.referenceOverlay.comparePrimaryAria": "Reference compare primary mode",

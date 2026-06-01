@@ -10,7 +10,7 @@ async function openExportDialog(window: import("playwright").Page) {
   await clickFileMenuItem(window, "SDK Export");
   await expect(window.locator(".modal-overlay")).toBeVisible();
   await expect(window.locator(".modal-content")).toContainText(
-    /Spine JSON|SDK Export|エクスポート/i,
+    /External JSON|外部 JSON|SDK Export|エクスポート/i,
   );
 }
 
