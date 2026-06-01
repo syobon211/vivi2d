@@ -9,6 +9,14 @@ const packResultPath = args["pack-result"];
 const runId = args["run-id"];
 const failures = [];
 const releaseRecordPath = "web-npm-alpha-release-record.json";
+const attestationRetryAttempts = readPositiveIntegerEnv(
+  "VIVI2D_NPM_ATTESTATION_RETRY_ATTEMPTS",
+  6,
+);
+const attestationRetryDelayMs = readPositiveIntegerEnv(
+  "VIVI2D_NPM_ATTESTATION_RETRY_DELAY_MS",
+  10_000,
+);
 
 if (packageName !== "@vivi2d/web") failures.push("--package must be @vivi2d/web.");
 if (!version) failures.push("--version is required.");
@@ -48,7 +56,7 @@ if (failures.length === 0) {
     }
   }
   try {
-    const attestations = await readNpmAttestations(packageName, version);
+    const attestations = await readNpmAttestationsWithRetry(packageName, version);
     validateAttestations(attestations, {
       localSha256: localDigest,
       localSha512: integritySha512Hex(packEntry.integrity),
@@ -88,7 +96,6 @@ function validateAttestations(
     failures.push("Release record GitHub workflowRef is invalid.");
   }
   const requiredNeedles = [
-    packageName,
     version,
     releaseRecord.sourceCommit,
     releaseRecord.github?.repository,
@@ -106,6 +113,13 @@ function validateAttestations(
     if (!combined.includes(String(needle))) {
       failures.push(`npm provenance attestation is missing expected value: ${needle}`);
     }
+  }
+
+  const packageNeedles = packageIdentityNeedles(packageName, version);
+  if (!packageNeedles.some((needle) => combined.includes(needle))) {
+    failures.push(
+      `npm provenance attestation is missing expected package identity: ${packageName}`,
+    );
   }
 
   const digestNeedles = [
@@ -191,8 +205,36 @@ async function readNpmAttestations(name, version) {
   throw new Error(`Could not fetch npm attestations: ${errors.join("; ")}`);
 }
 
+async function readNpmAttestationsWithRetry(name, version) {
+  const errors = [];
+  for (let attempt = 1; attempt <= attestationRetryAttempts; attempt += 1) {
+    try {
+      const attestations = await readNpmAttestations(name, version);
+      if (attestations.length > 0) return attestations;
+      errors.push(`attempt ${attempt}: npm returned no attestations`);
+    } catch (error) {
+      errors.push(
+        `attempt ${attempt}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+
+    if (attempt < attestationRetryAttempts) {
+      await delay(attestationRetryDelayMs);
+    }
+  }
+
+  throw new Error(
+    `Could not fetch npm attestations after ${attestationRetryAttempts} attempts: ${errors.join("; ")}`,
+  );
+}
+
 function encodeNpmPackageName(name) {
   return name.split("/").map(encodeURIComponent).join("%2F");
+}
+
+function packageIdentityNeedles(name, version) {
+  const purlName = name.split("/").map(encodeURIComponent).join("/");
+  return [name, `pkg:npm/${purlName}@${version}`, `${purlName}@${version}`];
 }
 
 function normalizeAttestationResponse(value) {
@@ -230,4 +272,15 @@ function integritySha512Hex(integrity) {
   const match = /^sha512-([A-Za-z0-9+/=]+)$/.exec(integrity ?? "");
   if (!match) return null;
   return Buffer.from(match[1], "base64").toString("hex");
+}
+
+function readPositiveIntegerEnv(name, fallback) {
+  const value = process.env[name];
+  if (value === undefined || value === "") return fallback;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
