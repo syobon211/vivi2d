@@ -96,11 +96,13 @@ want to follow progress, watch GitHub Releases and the user documentation.
   browser, `Unknown publisher`, or SmartScreen warnings.
 - No macOS, Linux, MSI, MSIX, Winget, or Microsoft Store installer is published
   yet.
-- `@vivi2d/web@0.1.0-alpha.0` is published as an experimental npm alpha for
-  public-profile model playback. Use `npm install @vivi2d/web@alpha` or pin the
-  exact version; this is not a stable API commitment. npm currently points both
-  `alpha` and `latest` at `0.1.0-alpha.0` while it is the only package version,
-  but `latest` is not a stable-channel promise.
+- `@vivi2d/web@0.1.0-alpha.1` is the current experimental npm alpha for
+  public-profile model playback. Use `npm install @vivi2d/web@alpha` or pin
+  `@vivi2d/web@0.1.0-alpha.1`; this is not a stable API commitment.
+  `0.1.0-alpha.1` was published through GitHub Actions OIDC Trusted Publishing
+  with npm provenance. The older `0.1.0-alpha.0` bootstrap package is
+  deprecated, and `latest` currently resolves to that bootstrap version, so do
+  not use `latest` as a stable channel.
 - ComfyUI, ComfyUI-See-through, model weights, and custom-node bundles are not
   bundled with Vivi2D.
 - ComfyUI automation is supported through Vivi2D's compat plugin. The legacy

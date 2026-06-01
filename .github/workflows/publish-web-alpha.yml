@@ -7,7 +7,7 @@ on:
         description: "Expected @vivi2d/web version"
         required: true
       ref:
-        description: "Release tag to publish, for example web-v0.1.0-alpha.0"
+        description: "Release tag to publish, for example web-v0.1.0-alpha.2"
         required: true
       dryRun:
         description: "Run all gates and pack, but skip npm publish"
