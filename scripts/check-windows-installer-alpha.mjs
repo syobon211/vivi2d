@@ -84,8 +84,8 @@ function checkPackageScripts() {
   if (packageJson.devDependencies?.["electron-builder"] !== "^26.8.1") {
     failures.push("package.json must pin electron-builder to ^26.8.1 for alpha.");
   }
-  if (packageJson.devDependencies?.electron !== "41.7.0") {
-    failures.push("package.json must pin Electron to 41.7.0 for installer alpha.");
+  if (packageJson.devDependencies?.electron !== "42.3.0") {
+    failures.push("package.json must pin Electron to 42.3.0 for installer alpha.");
   }
 }
 
@@ -112,8 +112,8 @@ function checkRequiredFiles() {
 function checkToolVersions() {
   for (const [toolName, expected] of [
     ["electronBuilder", "26.8.1"],
-    ["electron", "41.7.0"],
-    ["electronGet", "2.0.3"],
+    ["electron", "42.3.0"],
+    ["electronGet", "5.0.0"],
   ]) {
     if (toolManifest.tools?.[toolName]?.version !== expected) {
       failures.push(
