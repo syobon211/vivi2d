@@ -34,9 +34,9 @@ export const dialog = {
   "integration.obsPasswordPlaceholder": "未设置时可留空",
   "integration.obsNotice":
     "请在 OBS Studio 中启用 WebSocket 服务器（工具 → WebSocket 服务器设置）。",
-  "integration.vtsTitle": "VTube Studio API 连接",
+  "integration.vtsTitle": "VTube Studio 本地 API 连接",
   "integration.vtsDialogTitle": "VTube Studio 连接设置",
-  "integration.vtsUrl": "VTube Studio API URL",
+  "integration.vtsUrl": "VTube Studio 本地 API URL",
   "integration.vtsNotice":
     "请确认 VTube Studio 正在运行。首次连接需要插件授权。",
   "ai.comfyuiSettings": "ComfyUI 设置...",
@@ -291,7 +291,7 @@ export const dialog = {
     "切换选中网格的参考比较叠加。",
   "quickActions.action.referenceOverlaySource.title": "参考叠加：源图像",
   "quickActions.action.referenceOverlaySource.description":
-    "显示未变形的源纹理矩形。",
+    "显示原始源纹理矩形。",
   "quickActions.action.referenceOverlayCurrentBounds.title": "参考叠加：当前边界",
   "quickActions.action.referenceOverlayCurrentBounds.description":
     "显示当前网格边界矩形。",
@@ -371,7 +371,7 @@ export const dialog = {
   "imageImportOptions.reimportSourceMissing": "找不到原始 PNG 来源。",
   "imageImportOptions.reimportMismatch": "PNG 来源与当前项目不匹配。",
   "imageImportOptions.reimportedPrefix": "已重新导入:",
-  "export.spineTitle": "Spine JSON 导出",
+  "export.spineTitle": "外部 JSON 导出",
   "export.noViviMesh": "没有 ViviMesh",
   "export.outputFiles": "输出文件",
   "export.bonesSkinAnims": "骨骼、蒙皮与动画",

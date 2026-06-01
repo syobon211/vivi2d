@@ -28,6 +28,8 @@ body:
         - check:escalation-template
         - docs:user:check
         - docs:user:check:release
+        - docs:site:check
+        - check:security-supported-versions
         - check:docs-public-surface
         - check:quality-gate-drift
         - test

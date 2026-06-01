@@ -74,11 +74,10 @@ notes.
 
 The Windows installer alpha is unsigned. It may show browser, `Unknown
 publisher`, or Microsoft Defender SmartScreen warnings. Download installers only
-from GitHub Releases and verify `checksums.txt` before running them. Please add
-installer feedback to
-[#29](https://github.com/syobon211/vivi2d/issues/29). Follow-up installer
-improvements for smoke automation, download guidance, and uninstall guidance are tracked in
-[#30](https://github.com/syobon211/vivi2d/issues/30).
+from GitHub Releases and verify `checksums.txt` before running them. For current
+alpha feedback, please open a new GitHub issue with the relevant template:
+https://github.com/syobon211/vivi2d/issues/new/choose. Earlier alpha tracking
+threads are closed, so new reports are easier to triage as fresh issues.
 
 ## Getting Started
 

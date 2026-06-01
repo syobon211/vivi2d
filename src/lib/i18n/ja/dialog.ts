@@ -1,5 +1,5 @@
 export const dialog = {
-  "export.spineTitle": "Spine JSON エクスポート",
+  "export.spineTitle": "外部 JSON エクスポート",
   "export.noViviMesh": "ViviMesh がありません",
   "export.outputFiles": "出力ファイル",
   "export.bonesSkinAnims": "ボーン・スキン・アニメーション",
@@ -71,9 +71,9 @@ export const dialog = {
   "integration.obsPasswordPlaceholder": "未設定なら空欄のままにします",
   "integration.obsNotice":
     "OBS Studio で WebSocket サーバーを有効にしてください（ツール > WebSocket Server Settings）。",
-  "integration.vtsTitle": "VTube Studio API 接続",
+  "integration.vtsTitle": "VTube Studio ローカル API 接続",
   "integration.vtsDialogTitle": "VTube Studio 接続設定",
-  "integration.vtsUrl": "VTube Studio API 接続先",
+  "integration.vtsUrl": "VTube Studio ローカル API 接続先",
   "integration.vtsNotice":
     "VTube Studio が起動していることを確認してください。初回接続時はプラグイン認可が必要です。",
 
@@ -566,7 +566,7 @@ export const dialog = {
     "{layerName} は軽めの cleanup 経路のままでも問題ない可能性があります。",
   "seethrough.depthRig.eyeRigReady": "目パーツは eye rig helper を適用できる状態です。",
   "seethrough.depthRig.frontFineControl":
-    "{layerName} はより細かい変形制御が必要になりやすいレイヤーです。",
+    "{layerName} はより精密なモーション設定が向いています。",
   "seethrough.depthRig.incompleteEyebrowFamily":
     "片側の眉レイヤーが不足しています。左右対称の顔 rig は不安定になる可能性があります。",
   "seethrough.depthRig.incompleteEyeFamily":
@@ -691,7 +691,7 @@ export const dialog = {
     "選択中のメッシュに対する参照比較オーバーレイを切り替えます。",
   "quickActions.action.referenceOverlaySource.title": "参照オーバーレイ: ソース",
   "quickActions.action.referenceOverlaySource.description":
-    "変形前のソーステクスチャ矩形を表示します。",
+    "元のソーステクスチャ矩形を表示します。",
   "quickActions.action.referenceOverlayCurrentBounds.title":
     "参照オーバーレイ: 現在の bounds",
   "quickActions.action.referenceOverlayCurrentBounds.description":

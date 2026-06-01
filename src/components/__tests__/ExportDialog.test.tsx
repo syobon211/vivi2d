@@ -45,7 +45,7 @@ beforeEach(() => {
 describe("ExportDialog", () => {
   it("ダイアログタイトルが表示される", () => {
     render(<ExportDialog onClose={vi.fn()} />);
-    expect(screen.getByText("Spine JSON エクスポート")).toBeInTheDocument();
+    expect(screen.getByText("外部 JSON エクスポート")).toBeInTheDocument();
   });
 
   it("「キャンセル」クリックで onClose が呼ばれる", () => {

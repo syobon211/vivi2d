@@ -51,6 +51,7 @@
     "docs:media:check": "node scripts/check-user-docs-media.mjs",
     "docs:site:build": "node apps/vivi2d-com/scripts/build.mjs",
     "docs:site:check": "node scripts/check-vivi2d-com-site.mjs",
+    "check:security-supported-versions": "node scripts/check-security-supported-versions.mjs",
     "check:docs-public-surface": "node scripts/check-docs-public-surface.mjs",
     "check:quality-gate-drift": "node scripts/check-quality-gate-drift.mjs",
     "check:e2e-project-coverage": "node scripts/check-e2e-project-coverage.mjs",

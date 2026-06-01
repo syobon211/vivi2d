@@ -5,6 +5,7 @@ import path from "node:path";
 const root = process.cwd();
 const outDir = path.join(root, "tmp", "vivi2d-com-check");
 const docsHostUrl = "https://docs.vivi2d.com/";
+const obsoleteIssueUrlBase = "https://github.com/syobon211/vivi2d/issues";
 const failures = [];
 
 function fail(message) {
@@ -26,6 +27,10 @@ function routeFile(locale, slug) {
 function htmlAttributeValue(html, pattern) {
   const match = pattern.exec(html);
   return match?.[1] ?? null;
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function compareStringSet(name, actual, expected) {
@@ -56,7 +61,9 @@ if (result.status !== 0) {
 
 const manifest = readJson("docs/user/publication-manifest.json");
 const wranglerConfig = readJson("wrangler.jsonc");
-const metadata = JSON.parse(fs.readFileSync(path.join(outDir, "route-metadata.json"), "utf8"));
+const metadata = JSON.parse(
+  fs.readFileSync(path.join(outDir, "route-metadata.json"), "utf8"),
+);
 const trackedMetadata = readJson("apps/vivi2d-com/route-metadata.json");
 
 if (wranglerConfig.name !== "vivi2d") {
@@ -66,13 +73,17 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(wranglerConfig.compatibility_date ?? "")) {
   fail("wrangler.jsonc must pin a compatibility_date.");
 }
 if (typeof wranglerConfig.main !== "undefined") {
-  fail("vivi2d.com should remain a static-assets-only Worker until a Worker script is reviewed.");
+  fail(
+    "vivi2d.com should remain a static-assets-only Worker until a Worker script is reviewed.",
+  );
 }
 if (wranglerConfig.assets?.directory !== "./apps/vivi2d-com/dist") {
   fail("wrangler.jsonc must deploy apps/vivi2d-com/dist as the static assets directory.");
 }
 if (typeof wranglerConfig.assets?.binding !== "undefined") {
-  fail("wrangler.jsonc should not expose an assets binding without a reviewed Worker script.");
+  fail(
+    "wrangler.jsonc should not expose an assets binding without a reviewed Worker script.",
+  );
 }
 
 if (!fs.existsSync(path.join(outDir, "index.html"))) {
@@ -103,7 +114,18 @@ if (!fs.existsSync(path.join(outDir, "index.html"))) {
     "/assets/readme/vivi2d-workflow-demo.webm",
   ]) {
     if (rootHtml.includes(removedDemoSnippet)) {
-      fail(`root portal should not include README workflow demo media: ${removedDemoSnippet}`);
+      fail(
+        `root portal should not include README workflow demo media: ${removedDemoSnippet}`,
+      );
+    }
+  }
+  const obsoleteIssuePatterns = [29, 30].map(
+    (issueNumber) =>
+      new RegExp(`${escapeRegExp(obsoleteIssueUrlBase)}/${issueNumber}(?!\\d)`),
+  );
+  for (const pattern of obsoleteIssuePatterns) {
+    if (pattern.test(rootHtml)) {
+      fail(`root portal should not include obsolete issue link matching ${pattern}.`);
     }
   }
 }
@@ -118,9 +140,14 @@ if (!fs.existsSync(docsRedirect)) {
     redirectHtml,
     /<link rel="canonical" href="([^"]+)">/,
   );
-  const bodyHref = htmlAttributeValue(redirectHtml, /<a href="([^"]+)">Vivi2D documentation<\/a>/);
+  const bodyHref = htmlAttributeValue(
+    redirectHtml,
+    /<a href="([^"]+)">Vivi2D documentation<\/a>/,
+  );
   if (canonicalHref !== expectedDocsUrl || bodyHref !== expectedDocsUrl) {
-    fail("vivi2d.com/docs compatibility redirect must target the public docs entry point.");
+    fail(
+      "vivi2d.com/docs compatibility redirect must target the public docs entry point.",
+    );
   }
 }
 
@@ -133,9 +160,45 @@ if (!fs.existsSync(robotsPath)) {
   fail("robots.txt was not generated.");
 } else {
   const robots = fs.readFileSync(robotsPath, "utf8");
-  const expectedRobots = "User-agent: *\nAllow: /\nSitemap: https://vivi2d.com/sitemap.xml\n";
+  const expectedRobots =
+    "User-agent: *\nAllow: /\nSitemap: https://vivi2d.com/sitemap.xml\n";
   if (robots !== expectedRobots) {
     fail("robots.txt must allow the portal and point at the canonical sitemap.");
+  }
+}
+
+const securityTxtPath = path.join(outDir, ".well-known", "security.txt");
+if (!fs.existsSync(securityTxtPath)) {
+  fail(".well-known/security.txt was not generated.");
+} else {
+  const securityTxt = fs.readFileSync(securityTxtPath, "utf8");
+  const expectedSecurityTxt = [
+    "Contact: https://github.com/syobon211/vivi2d/security/advisories/new",
+    "Policy: https://github.com/syobon211/vivi2d/security/policy",
+    "Preferred-Languages: en, ja",
+    "Canonical: https://vivi2d.com/.well-known/security.txt",
+    "Expires: 2027-06-01T00:00:00Z",
+    "",
+  ].join("\n");
+  if (securityTxt !== expectedSecurityTxt) {
+    fail(".well-known/security.txt must match the reviewed security contact policy.");
+  }
+  const expiresMatch = /^Expires: (.+)$/m.exec(securityTxt);
+  const expiresAt = expiresMatch ? Date.parse(expiresMatch[1]) : Number.NaN;
+  if (!Number.isFinite(expiresAt)) {
+    fail(".well-known/security.txt must include a parseable Expires timestamp.");
+  } else {
+    const daysUntilExpiry = (expiresAt - Date.now()) / (24 * 60 * 60 * 1000);
+    if (daysUntilExpiry <= 90) {
+      fail(
+        ".well-known/security.txt Expires timestamp must be refreshed before 90 days remain.",
+      );
+    }
+    if (daysUntilExpiry > 366) {
+      fail(
+        ".well-known/security.txt Expires timestamp must stay within the RFC 9116 one-year limit.",
+      );
+    }
   }
 }
 
@@ -168,15 +231,14 @@ if (!fs.existsSync(headersPath)) {
   fail("_headers was not generated.");
 } else {
   const headers = fs.readFileSync(headersPath, "utf8");
-  const expectedHeaders = [
-    "/*",
-    "  X-Content-Type-Options: nosniff",
-    "  Referrer-Policy: strict-origin-when-cross-origin",
-    "  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()",
-    "  X-Frame-Options: DENY",
-    "  Strict-Transport-Security: max-age=31536000",
-    "  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'none'; connect-src 'none'; font-src 'self'; manifest-src 'self'; upgrade-insecure-requests",
-  ].join("\n") + "\n";
+  const expectedHeaders = `/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), bluetooth=()
+  X-Frame-Options: DENY
+  Strict-Transport-Security: max-age=31536000
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'none'; connect-src 'none'; font-src 'self'; manifest-src 'self'; upgrade-insecure-requests
+`;
   if (headers !== expectedHeaders) {
     fail("_headers must pin the reviewed vivi2d.com security headers.");
   }

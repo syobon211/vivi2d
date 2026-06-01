@@ -34,9 +34,9 @@ export const dialog = {
   "integration.obsPasswordPlaceholder": "설정하지 않았다면 비워 두세요",
   "integration.obsNotice":
     "OBS Studio에서 WebSocket 서버를 활성화하세요 (도구 → WebSocket 서버 설정).",
-  "integration.vtsTitle": "VTube Studio API 연결",
+  "integration.vtsTitle": "VTube Studio 로컬 API 연결",
   "integration.vtsDialogTitle": "VTube Studio 연결 설정",
-  "integration.vtsUrl": "VTube Studio API URL",
+  "integration.vtsUrl": "VTube Studio 로컬 API URL",
   "integration.vtsNotice":
     "VTube Studio가 실행 중인지 확인하세요. 첫 연결 시 플러그인 승인이 필요합니다.",
   "ai.comfyuiSettings": "ComfyUI 설정...",
@@ -295,7 +295,7 @@ export const dialog = {
     "선택한 메시의 참조 비교 오버레이를 전환합니다.",
   "quickActions.action.referenceOverlaySource.title": "참조 오버레이: 원본",
   "quickActions.action.referenceOverlaySource.description":
-    "변형되지 않은 원본 텍스처 사각형을 표시합니다.",
+    "원본 소스 텍스처 사각형을 표시합니다.",
   "quickActions.action.referenceOverlayCurrentBounds.title": "참조 오버레이: 현재 경계",
   "quickActions.action.referenceOverlayCurrentBounds.description":
     "현재 메시 경계 사각형을 표시합니다.",
@@ -375,7 +375,7 @@ export const dialog = {
   "imageImportOptions.reimportSourceMissing": "원본 PNG 소스를 찾을 수 없습니다.",
   "imageImportOptions.reimportMismatch": "PNG 소스가 현재 프로젝트와 일치하지 않습니다.",
   "imageImportOptions.reimportedPrefix": "다시 가져옴:",
-  "export.spineTitle": "Spine JSON 내보내기",
+  "export.spineTitle": "외부 JSON 내보내기",
   "export.noViviMesh": "ViviMesh 없음",
   "export.outputFiles": "출력 파일",
   "export.bonesSkinAnims": "본, 스킨 및 애니메이션",

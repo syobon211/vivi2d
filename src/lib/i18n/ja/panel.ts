@@ -125,7 +125,7 @@ export const panel = {
   "prop.referenceOverlay.opacityLabel": "参照の不透明度",
   "prop.referenceOverlay.opacityAria": "参照オーバーレイの不透明度",
   "prop.referenceOverlay.help":
-    "ソースは未変形の元テクスチャ矩形を表示します。現在の境界は現在のメッシュ頂点境界を表示します。インポート時の境界は、利用可能な場合に See-through の import 時 bbox を表示します。境界比較では任意の 2 つの参照モードを重ねて表示します。",
+    "ソースは元のソーステクスチャ矩形を表示します。現在の境界は現在のモデル境界を表示します。インポート時の境界は、利用可能な場合に See-through の import 時 bbox を表示します。境界比較では任意の 2 つの参照モードを重ねて表示します。",
   "prop.referenceOverlay.comparePresetLabel": "比較プリセット",
   "prop.referenceOverlay.comparePrimaryLabel": "比較 A",
   "prop.referenceOverlay.comparePrimaryAria": "比較 A の参照モード",

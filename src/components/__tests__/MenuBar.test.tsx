@@ -293,7 +293,7 @@ describe("MenuBar", () => {
     render(<MenuBar />);
     await openFileMenu(user);
     await user.click(screen.getByText("SDKエクスポート"));
-    expect(await screen.findByText("Spine JSON エクスポート")).toBeInTheDocument();
+    expect(await screen.findByText("外部 JSON エクスポート")).toBeInTheDocument();
   });
 
   it("プロジェクト読み込み後にメディア出力メニューが表示される", async () => {

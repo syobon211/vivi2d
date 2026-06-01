@@ -121,8 +121,8 @@ You are ready for the next page when:
 - If security software blocks launch, verify the build source before adding an exception.
 - If the UI opens but text is clipped or mixed-language, continue to [Language And Text Display](../troubleshooting/localization.md).
 - If first launch asks for sign-in, telemetry, updates, or unexpected network
-  access, report it in the alpha feedback issue:
-  https://github.com/syobon211/vivi2d/issues/29.
+  access, open a new GitHub issue with the relevant template:
+  https://github.com/syobon211/vivi2d/issues/new/choose.
 - If you report a launch issue publicly, do not include full local paths, private artwork, access tokens, or client names.
 
 ## Next

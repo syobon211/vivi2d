@@ -31,7 +31,7 @@ async function mockExportDir(app: import("playwright").ElectronApplication, dir:
 async function openSdkExport(window: import("playwright").Page) {
   await clickFileMenuItem(window, "SDK Export");
   await expect(window.locator(".modal-overlay")).toBeVisible();
-  await expect(window.locator(".modal-content")).toContainText(/Spine JSON|SDK Export/i);
+  await expect(window.locator(".modal-content")).toContainText(/External JSON|SDK Export/i);
 }
 
 test("shows the SDK export menu item when a project is loaded", async ({
@@ -41,7 +41,7 @@ test("shows the SDK export menu item when a project is loaded", async ({
   await loadTestPsd();
   await clickFileMenuItem(window, "SDK Export");
   await expect(window.locator(".modal-overlay")).toBeVisible();
-  await expect(window.locator(".modal-content")).toContainText(/Spine JSON|SDK Export/i);
+  await expect(window.locator(".modal-content")).toContainText(/External JSON|SDK Export/i);
 });
 
 test("opens the SDK export dialog", async ({ window, loadTestPsd }) => {

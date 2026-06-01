@@ -25,6 +25,8 @@ const commands = [
   ["npm", ["run", "docs:user:check"]],
   ["npm", ["run", "docs:user:check:release"]],
   ["npm", ["run", "docs:media:check"]],
+  ["npm", ["run", "docs:site:check"]],
+  ["npm", ["run", "check:security-supported-versions"]],
   ["npm", ["run", "check:docs-public-surface"]],
   ["npm", ["run", "check:quality-gate-drift"]],
   ["npm", ["run", "check:e2e-project-coverage"]],

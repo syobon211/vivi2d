@@ -77,7 +77,7 @@ describe("AutoSetupDialog depth-to-rig hints", () => {
       screen.getByText("1 import quality error(s) should be fixed before rigging."),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Hair Front will likely benefit from finer deformation control."),
+      screen.getByText("Hair Front will likely benefit from more precise motion setup."),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
