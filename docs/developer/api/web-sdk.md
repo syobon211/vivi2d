@@ -37,8 +37,7 @@ as npm dependencies.
 
 The current unlock state permits Phase 1 programmatic SDK implementation and
 the reviewed experimental npm alpha surface. It does not approve stable
-compatibility promises or additional package promotion. Later npm alpha
-publication requires the release contract in
+compatibility promises or additional package promotion. Later versions must use GitHub Actions OIDC Trusted Publishing and must follow the release contract in
 `docs/developer/quality/web-npm-alpha-release.md`, the protected npm publisher
 configuration, and a final release-tag dry-run/publish record.
 
