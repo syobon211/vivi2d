@@ -1,7 +1,6 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@vivi2d/web": ["../../packages/web/dist/index.d.ts"]
     }

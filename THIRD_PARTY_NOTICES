@@ -40,7 +40,7 @@ generation, or provenance review before public distribution.
 | react-dom | 19.2.6 | MIT | https://github.com/facebook/react.git | LICENSE |
 | robust-predicates | 3.0.3 | Unlicense | https://github.com/mourner/robust-predicates.git | LICENSE |
 | scheduler | 0.27.0 | MIT | https://github.com/facebook/react.git | LICENSE |
-| three | 0.183.2 | MIT | https://github.com/mrdoob/three.js | LICENSE |
+| three | 0.184.0 | MIT | https://github.com/mrdoob/three.js | LICENSE |
 | tiny-lru | 11.4.7 | BSD-3-Clause | git://github.com/avoidwork/tiny-lru.git | LICENSE |
 | ws | 8.21.0 | MIT | git+https://github.com/websockets/ws.git | LICENSE |
 | zod | 4.4.3 | MIT | git+https://github.com/colinhacks/zod.git | LICENSE |
@@ -860,7 +860,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-### three@0.183.2 - LICENSE
+### three@0.184.0 - LICENSE
 
 Source path: `node_modules/three/LICENSE`
 

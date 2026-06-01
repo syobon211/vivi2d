@@ -9,7 +9,7 @@ import {
 function mask(
   width: number,
   height: number,
-  points: readonly Array<readonly [number, number]>,
+  points: ReadonlyArray<readonly [number, number]>,
   alpha = 255,
 ): ManualSplitAlphaMaskView {
   const data = new Uint8ClampedArray(width * height);

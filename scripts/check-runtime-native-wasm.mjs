@@ -129,7 +129,7 @@ async function validateNativeWasmArtifact(bytes, label) {
 function readEmbeddedNativeWasmBytes() {
   const source = readFileSync(generatedBytesPath, "utf8");
   const exportMatch = source.match(
-    /export const VIVI_RUNTIME_NATIVE_WASM_BASE64 =\n([\s\S]*?);\n?$/,
+    /export const VIVI_RUNTIME_NATIVE_WASM_BASE64 =\s*([\s\S]*?);\n?$/,
   );
   if (!exportMatch) {
     throw new Error(

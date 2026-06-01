@@ -30,6 +30,6 @@ export default defineConfig({
               entryName === "index" ? "vivi2d.es.js" : `${entryName}.js`,
           },
     sourcemap: true,
-    minify: "esbuild",
+    minify: "oxc",
   },
 });
