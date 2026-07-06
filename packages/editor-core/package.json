@@ -62,6 +62,6 @@
   },
   "dependencies": {
     "@vivi2d/core": "^0.1.0",
-    "immer": "^11.1.4"
+    "immer": "^11.1.11"
   }
 }
