@@ -85,6 +85,13 @@ function clone<T>(value: T): T {
   return structuredClone(value);
 }
 
+function rawBase64ForDecodedByteLength(byteLength: number): string {
+  const encodedLength = Math.ceil(byteLength / 3) * 4;
+  const remainder = byteLength % 3;
+  const padding = remainder === 1 ? "==" : remainder === 2 ? "=" : "";
+  return `${"A".repeat(encodedLength - padding.length)}${padding}`;
+}
+
 function makeV11Embedded(): Record<string, unknown> {
   const wire = clone(fixture.v10RoundTrip.input);
   wire.version = 11;
@@ -427,6 +434,30 @@ describe("Project Format v11 production codec", () => {
     expect(loaded.compatibility).toBe("readOnly");
     expect(digest).toHaveBeenCalledTimes(2);
   });
+
+  it("accepts 4 MiB atlas base64 through the production codec for v1, v10, and v11", async () => {
+    const image = rawBase64ForDecodedByteLength(4 * 1024 * 1024);
+    for (const version of [1, 10, 11] as const) {
+      const wire = clone(fixture.v10RoundTrip.input);
+      wire.version = version;
+      const atlas = (wire.atlases as Array<Record<string, unknown>>)[0]!;
+      atlas.image = image;
+      atlas.entries = [];
+      if (version === 11) {
+        delete wire.profile;
+        wire.assetMode = "embedded";
+        wire.atlases = (wire.atlases as Array<Record<string, unknown>>).map(
+          (atlas, index) => ({ id: `atlas-${index}`, ...atlas }),
+        );
+      }
+      const source = JSON.stringify(wire);
+
+      const loaded = await parseProjectFormatV11Json(source, codecOptions());
+
+      expect(loaded.wire.version).toBe(version);
+      expect(JSON.parse(serializeProjectFormatV11LocalDuplicate(loaded))).toEqual(wire);
+    }
+  }, 30_000);
 
   it("maps nested additional properties to unknownPublicField with an exact pointer", async () => {
     const wire = makeV11Embedded();

@@ -132,6 +132,13 @@ function createEvaluationTexturePlan(): JsonObject {
   };
 }
 
+function rawBase64ForDecodedByteLength(byteLength: number): string {
+  const encodedLength = Math.ceil(byteLength / 3) * 4;
+  const remainder = byteLength % 3;
+  const padding = remainder === 1 ? "==" : remainder === 2 ? "=" : "";
+  return `${"A".repeat(encodedLength - padding.length)}${padding}`;
+}
+
 function projectCorpus(): unknown[] {
   const embedded = createEmbeddedProjectV11();
   const referenced = createReferencedProjectV11();
@@ -310,6 +317,47 @@ describe("precompiled approved schema validators", () => {
       evaluationTexturePlanCorpus(),
     );
   });
+
+  it("preserves the RawBase64 language at representative padding boundaries", () => {
+    const reference = compileReference(projectFormatV11Schema);
+    for (const image of [
+      "AAAA",
+      "AA==",
+      "AAA=",
+      "A===",
+      "AA=A",
+      "AAAA=",
+      "AAAA!AAA",
+      "data:image/png;base64,AA==",
+    ]) {
+      const value = createEmbeddedProjectV11();
+      (value.atlases as JsonObject[])[0]!.image = image;
+      expect(snapshotValidation(validateProjectFormatV11, value)).toEqual(
+        snapshotValidation(reference, clone(value)),
+      );
+    }
+  });
+
+  it.each([
+    4 * 1024 * 1024,
+    16 * 1024 * 1024,
+  ])("validates a %i-byte RawBase64 value linearly for v1, v10, and v11 atlases", (decodedByteLength) => {
+    const image = rawBase64ForDecodedByteLength(decodedByteLength);
+    const legacyV1 = clone(golden.v10RoundTrip.input) as JsonObject;
+    legacyV1.version = 1;
+    (legacyV1.atlases as JsonObject[])[0]!.image = image;
+    const legacyV10 = clone(golden.v10RoundTrip.input) as JsonObject;
+    (legacyV10.atlases as JsonObject[])[0]!.image = image;
+    const v11 = createEmbeddedProjectV11();
+    (v11.atlases as JsonObject[])[0]!.image = image;
+
+    expect(validateProjectFormatV11(legacyV1)).toBe(true);
+    expect(validateProjectFormatV11.errors).toBeNull();
+    expect(validateProjectFormatV11(legacyV10)).toBe(true);
+    expect(validateProjectFormatV11.errors).toBeNull();
+    expect(validateProjectFormatV11(v11)).toBe(true);
+    expect(validateProjectFormatV11.errors).toBeNull();
+  }, 30_000);
 
   it("executes source modules and ESM bundles with string code generation disabled", async () => {
     const cases = [

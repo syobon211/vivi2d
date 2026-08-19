@@ -10,6 +10,7 @@ that should own the change.
 | React editor UI | `src/` | UI should orchestrate domain commands instead of mutating nested project state directly. |
 | Electron IPC, files, URLs | `electron/` and `electron/ipc-contract.cjs` | Update contract tests and security checks with every payload or permission change. |
 | Project schema or migration | `packages/model/` | Keep public/private profile markers explicit and update hostile fixture coverage. |
+| Read-only authoring parse, atlas readiness, or evaluation projection | `packages/editor-host/` | Consume only `@vivi2d/model/internal/project-format-v11` and `@vivi2d/model/internal/evaluation-payload-v1`; inject atlas resolver/materializer ports. `buildRuntimePayload` projects data only; keep mutation, ordinary/public save, UI, desktop, provider, and runtime engine/renderer dependencies or execution outside this package. |
 | Runtime evaluation | `packages/core/src/runtime.ts`, `packages/runtime/`, `packages/runtime-wasm/`, `packages/runtime-native/` | Runtime packages must consume public-profile data and stay independent from editor stores. |
 | Renderer adapter | `packages/renderer-pixi/`, `packages/renderer-three/`, or `packages/renderer-phaser/` | Prefer `RuntimeMeshSnapshot` and `getRenderList()` over editor-project structural access. |
 | Provider integration | `packages/provider-sdk/` or a separate provider repository | Treat providers as untrusted; validate paths, outputs, cancellation, and payload size. |
@@ -40,6 +41,20 @@ import { RuntimeModel } from "@vivi2d/core/src/runtime";
 
 The architecture and package-boundary checks intentionally reject public or
 experimental packages that expose `src/*` or import editor/provider internals.
+`@vivi2d/editor-host` is a narrower private friend boundary: its production
+sources may import the two reviewed internal model friends only, and its root
+entry point must remain read-only. Ordinary/public save and mutable editor
+commands belong to later host or application slices.
+
+An editor-host instance is scoped to one trust principal: its opaque session ID
+is not an authorization token, must not be exposed directly through shared IPC
+or a multi-tenant service, and any future bridge must bind calls to that
+principal.
+
+Asset readiness is an initialization-time runtime-atlas validation snapshot,
+not a storage lease or pin: resolve missing assets and re-initialize the
+session, while extension `blobRefs` remain edit-only and outside W7a Evaluation
+readiness.
 
 ## Adding A Domain Command
 

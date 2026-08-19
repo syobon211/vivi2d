@@ -10374,7 +10374,37 @@ validate21.evaluated = {"props":true,"dynamicProps":false,"dynamicItems":false};
 const schema91 = {"type":"object","additionalProperties":false,"required":["image","width","height","entries"],"properties":{"image":{"allOf":[{"$ref":"#/$defs/RawBase64V11"},{"minLength":4}]},"width":{"type":"number"},"height":{"type":"number"},"entries":{"type":"array","items":{"$ref":"#/$defs/AtlasEntryV11"}}}};
 const schema92 = {"type":"string","pattern":"^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$","contentEncoding":"base64","$comment":"Raw base64 only; data URLs are rejected by the pattern. Decoded byte/hash checks are semantic."};
 const schema93 = {"type":"object","additionalProperties":false,"required":["layerId","x","y","width","height"],"properties":{"layerId":{"type":"string"},"x":{"type":"number"},"y":{"type":"number"},"width":{"type":"number"},"height":{"type":"number"}}};
-const pattern11 = new RegExp("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$", "u");
+const pattern11 = Object.freeze({
+  test(value) {
+    const length = value.length;
+    if (length % 4 !== 0) return false;
+
+    let contentLength = length;
+    while (contentLength > 0 && value.charCodeAt(contentLength - 1) === 0x3d) {
+      contentLength -= 1;
+    }
+    const paddingLength = length - contentLength;
+    if (paddingLength > 2) return false;
+    if (paddingLength === 1 && contentLength % 4 !== 3) return false;
+    if (paddingLength === 2 && contentLength % 4 !== 2) return false;
+
+    for (let index = 0; index < contentLength; index += 1) {
+      const code = value.charCodeAt(index);
+      if (
+        !(
+          (code >= 0x41 && code <= 0x5a) ||
+          (code >= 0x61 && code <= 0x7a) ||
+          (code >= 0x30 && code <= 0x39) ||
+          code === 0x2b ||
+          code === 0x2f
+        )
+      ) {
+        return false;
+      }
+    }
+    return true;
+  },
+});
 const func15 = function ucs2length(value) {
   const length = value.length;
   let codePointLength = 0;

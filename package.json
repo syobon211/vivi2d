@@ -59,7 +59,7 @@
     "check:ipc-contract-sync": "node scripts/check-ipc-contract-sync.mjs",
     "check:ip-markers": "node scripts/check-ip-markers.mjs",
     "check:ip-product-profile": "node scripts/check-ip-product-profile.mjs",
-    "check:packages-types": "tsc --noEmit -p tsconfig.packages.json",
+    "check:packages-types": "tsc --noEmit -p tsconfig.packages.json && tsc --noEmit -p packages/editor-host/tsconfig.portability.json",
     "generate:model-schema-validators": "node scripts/generate-schema-validators.mjs",
     "check:model-schema-validators": "node scripts/generate-schema-validators.mjs --check",
     "check:model-jsc-portability": "node scripts/check-model-jsc-portability.mjs",

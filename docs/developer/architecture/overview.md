@@ -21,6 +21,7 @@ packages/
   core/                    Runtime-neutral evaluation, validation, math, and compatibility shims
   model/                   File/profile types, schemas, migrations, serialization, and runtime spec constants
   editor-core/             UI-free editor command and safe plan contracts
+  editor-host/             Read-only v11 parse, host-injected atlas readiness, and evaluation projection
   loader/                  Browser texture extraction helpers over the model contract
   runtime/                 Narrow Runtime Spec facade and conformance entry point
   runtime-wasm/            Private WASM evaluator wrapper and browser smoke target
@@ -60,6 +61,13 @@ locale, media, frontmatter, and future website route contract is tracked in
   extraction targets. It may depend on `packages/core` and `packages/model`,
   but must not depend on React, Electron, renderer adapters, providers, or
   Zustand stores.
+- `packages/editor-host` is the private read-only authoring host. Its production
+  sources may consume only the reviewed
+  `@vivi2d/model/internal/project-format-v11` and
+  `@vivi2d/model/internal/evaluation-payload-v1` friend entry points. Mutation,
+  ordinary/public save, UI, desktop, provider, and runtime engine/renderer
+  dependencies or execution stay outside this package; `buildRuntimePayload`
+  is an Evaluation Payload data projection only.
 - `packages/core` is intentionally kept as a private runtime/math
   compatibility package during the alpha refactor. Schema, parser,
   public-profile, load-limit, Runtime Spec, and model-owned parameter sanitizer

@@ -8,6 +8,7 @@ workspaces. The enforceable contributor rules live in
 
 ```text
 model
+  -> editor-host
   -> loader
   -> runtime / runtime-wasm / runtime-native
   -> renderer-* / web / viewer
@@ -28,6 +29,7 @@ src/ and electron/
 | --- | --- |
 | `packages/model` | File/profile schemas, migrations, public-profile validation, runtime spec constants. |
 | `packages/editor-core` | UI-free editor domain commands, safe Auto Setup plans, and authoring safety helpers. |
+| `packages/editor-host` | Read-only, host-neutral Project Format v11 parsing, host-injected atlas resolution/materialization attestations, and Evaluation Payload v1 projection over the two reviewed model friend entry points. |
 | `packages/core` | Runtime-neutral math/evaluation compatibility while alpha refactors continue. |
 | `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, and conformance surfaces. |
 | `packages/renderer-*` | Renderer adapters that consume runtime snapshots instead of editor project internals. |
@@ -40,6 +42,7 @@ src/ and electron/
 
 - Public or experimental packages must not import root editor app internals.
 - Runtime packages consume public-profile data, not private authoring drafts.
+- `editor-host` consumes only the reviewed internal Project Format v11 and Evaluation Payload v1 model friends. `buildRuntimePayload` is a data projection; UI, desktop, provider, runtime engine/renderer dependencies or execution, mutation, and ordinary/public save surfaces stay outside it.
 - Providers are untrusted boundaries and must not mutate projects directly.
 - Electron privileged APIs stay behind main/preload IPC contracts.
 - Package publication status is tracked in

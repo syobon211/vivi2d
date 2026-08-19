@@ -106,6 +106,7 @@ for (const relativePath of [
   "packages/provider-comfyui/package.json",
   "packages/core/package.json",
   "packages/editor-core/package.json",
+  "packages/editor-host/package.json",
   "packages/loader/package.json",
   "packages/provider-sdk/package.json",
   "packages/renderer-phaser/package.json",

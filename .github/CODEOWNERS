@@ -39,6 +39,9 @@
 /docs/developer/contributing/package-boundaries.md @syobon211
 /docs/developer/quality/release-policy.md @syobon211
 
+# Portable authoring-host boundary.
+/packages/editor-host/ @syobon211
+
 # Public, experimental, and renderer package surfaces.
 /packages/web/ @syobon211
 # Keep runtime*/ as a glob so new runtime-family packages remain owner-reviewed.
