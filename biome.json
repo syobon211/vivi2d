@@ -60,6 +60,15 @@
   "overrides": [
     {
       "includes": [
+        "packages/model/src/project-format-v11/project-format-v11.schema.json",
+        "packages/model/src/__tests__/fixtures/project-format-v11-golden.json"
+      ],
+      "formatter": {
+        "enabled": false
+      }
+    },
+    {
+      "includes": [
         "**/__tests__/**",
         "**/*.test.ts",
         "**/*.test.tsx",

@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import ts from "typescript";
 
 const root = process.cwd();
 const failures = [];
@@ -226,11 +227,111 @@ function checkPublicPackage(workspace, packInfo) {
   }
 }
 
+function assertProjectFormatV11CodecIsInternal() {
+  const model = workspacesByName.get("@vivi2d/model");
+  if (!model) {
+    failures.push("@vivi2d/model workspace is missing.");
+    return;
+  }
+
+  const exports = model.pkg.exports ?? {};
+  const packageRoot = path.resolve(root, model.dir);
+  const internalCodecRoot = path.join(packageRoot, "src", "project-format-v11");
+  const transitiveSmokeEntrypoint = path.join(
+    packageRoot,
+    "src",
+    "__tests__",
+    "project-format-v11-codec.test.ts",
+  );
+  if (
+    !fs.existsSync(transitiveSmokeEntrypoint) ||
+    !moduleGraphReachesDirectory(
+      transitiveSmokeEntrypoint,
+      packageRoot,
+      internalCodecRoot,
+    )
+  ) {
+    failures.push(
+      "Project Format v11 public-entry graph check did not detect its transitive smoke import.",
+    );
+  }
+  for (const [exportName, exportTarget] of Object.entries(exports)) {
+    const targets = flattenExportTargets(exportTarget);
+    if (
+      exportName.includes("project-format-v11") ||
+      targets.some((target) => target.includes("project-format-v11"))
+    ) {
+      failures.push(
+        `@vivi2d/model exposes the internal Project Format v11 codec at ${exportName}.`,
+      );
+    }
+
+    for (const target of targets) {
+      const absoluteTarget = path.resolve(packageRoot, target);
+      if (!fs.existsSync(absoluteTarget) || !fs.statSync(absoluteTarget).isFile()) {
+        continue;
+      }
+      if (moduleGraphReachesDirectory(absoluteTarget, packageRoot, internalCodecRoot)) {
+        failures.push(
+          `@vivi2d/model public entry ${exportName} reaches the internal Project Format v11 codec.`,
+        );
+      }
+    }
+  }
+}
+
+function moduleGraphReachesDirectory(entrypoint, packageRoot, targetDirectory) {
+  const pending = [entrypoint];
+  const visited = new Set();
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (!current || visited.has(current)) continue;
+    visited.add(current);
+    if (isPathInside(current, targetDirectory)) return true;
+
+    const source = fs.readFileSync(current, "utf8");
+    const imports = ts.preProcessFile(source, true, true).importedFiles;
+    for (const imported of imports) {
+      if (!imported.fileName.startsWith(".")) continue;
+      const resolved = resolveLocalSourceModule(current, imported.fileName);
+      if (resolved && isPathInside(resolved, packageRoot)) pending.push(resolved);
+    }
+  }
+  return false;
+}
+
+function resolveLocalSourceModule(importer, specifier) {
+  const base = path.resolve(path.dirname(importer), specifier);
+  const candidates = [
+    base,
+    ...[".ts", ".tsx", ".mts", ".cts", ".js", ".mjs", ".cjs", ".json"].map(
+      (extension) => `${base}${extension}`,
+    ),
+    ...["index.ts", "index.tsx", "index.mts", "index.js", "index.mjs"].map((filename) =>
+      path.join(base, filename),
+    ),
+  ];
+  return candidates.find(
+    (candidate) => fs.existsSync(candidate) && fs.statSync(candidate).isFile(),
+  );
+}
+
+function isPathInside(candidate, directory) {
+  const relative = path.relative(directory, candidate);
+  return (
+    relative === "" ||
+    (relative !== ".." &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative))
+  );
+}
+
 const workspaces = collectWorkspacePackages();
 const workspacesByName = new Map(
   workspaces.map((workspace) => [workspace.pkg.name, workspace]),
 );
 assertPackContentRuleSmoke();
+assertProjectFormatV11CodecIsInternal();
 const packByName = new Map(runNpmPack().map((entry) => [entry.name, entry]));
 
 for (const workspace of workspaces) {
