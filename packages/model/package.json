@@ -8,6 +8,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./internal/evaluation-payload-v1": "./src/internal/evaluation-payload-v1.ts",
     "./load-limits": "./src/load-limits.ts",
     "./parameter-utils": "./src/parameter-utils.ts",
     "./private-profile-guards": "./src/private-profile-guards.ts",

@@ -1,0 +1,1086 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vivi2d.com/spec/evaluation-payload-v1.schema.json",
+  "title": "Vivi2D Evaluation Payload v1",
+  "$comment": "Self-contained schema approved by Spec Freeze Amendment 1 for the frozen Evaluation Payload v1 boundary. Project-only fields excluded by section 2 are absent from the closed object definitions. The serialized payload must not exceed maxPayloadBytes=67108864. Projected uniqueness, recursive aggregate limits, referential integrity, mask depth, mesh parity, byte size, and cross-field numeric invariants require semantic validation.",
+  "x-vivi-status": "approved-amendment-1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "canvas",
+    "layers",
+    "parameters",
+    "parameterBindings",
+    "skins",
+    "ikControllers",
+    "physicsGroups",
+    "colliders",
+    "expressionPresets",
+    "clips",
+    "stateMachines",
+    "atlases"
+  ],
+  "properties": {
+    "schema": { "const": "vivi2d.evaluationPayload.v1" },
+    "canvas": { "$ref": "#/$defs/EvaluationCanvasV1" },
+    "layers": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": { "$ref": "#/$defs/EvaluationLayerNodeV1" },
+      "x-vivi-uniqueBy": "id",
+      "$comment": "maxLayers=4096 applies recursively across the whole layer tree, not independently at each array. maxMeshes=1024, maxBones=1024, mask depth=8, global layer-ID uniqueness, and clip-mask acyclicity/references are semantic checks."
+    },
+    "parameters": {
+      "type": "array",
+      "maxItems": 2048,
+      "items": { "$ref": "#/$defs/EvaluationParameterDefinitionV1" },
+      "x-vivi-uniqueBy": "id"
+    },
+    "parameterBindings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/EvaluationParameterBindingV1" },
+      "x-vivi-uniqueBy": "id",
+      "$comment": "The total number of bindingPoints across all bindings must not exceed 8192."
+    },
+    "skins": { "$ref": "#/$defs/EvaluationSkinMapV1" },
+    "ikControllers": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/EvaluationIKControllerV1" },
+      "x-vivi-uniqueBy": "id"
+    },
+    "physicsGroups": {
+      "type": "array",
+      "maxItems": 256,
+      "items": { "$ref": "#/$defs/EvaluationPhysicsGroupV1" },
+      "x-vivi-uniqueBy": "id"
+    },
+    "colliders": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": { "$ref": "#/$defs/EvaluationColliderDataV1" },
+      "x-vivi-uniqueBy": "id"
+    },
+    "expressionPresets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/EvaluationExpressionPresetV1" },
+      "x-vivi-uniqueBy": "id"
+    },
+    "clips": {
+      "type": "array",
+      "maxItems": 512,
+      "items": { "$ref": "#/$defs/EvaluationAnimationClipV1" },
+      "x-vivi-uniqueBy": "id"
+    },
+    "stateMachines": {
+      "type": "array",
+      "maxItems": 128,
+      "items": { "$ref": "#/$defs/EvaluationAnimationStateMachineV1" },
+      "x-vivi-uniqueBy": "id"
+    },
+    "atlases": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/EvaluationAtlasRefV1" },
+      "x-vivi-uniqueBy": "id",
+      "$comment": "Atlas IDs and atlas entry layerIds must be unique. Every mesh must have exactly one atlas entry and every entry must reference a mesh. Texture-plan membership is a semantic 1:1 check."
+    }
+  },
+  "$defs": {
+    "SimpleIdV1": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "SourceAtlasIdV1": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,120}$"
+    },
+    "ParameterIdV1": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+      "$comment": "Amendment 1 permits opaque dotted parameter IDs while retaining case-sensitive identity and no normalization."
+    },
+    "NonNegativeSafeIntegerV1": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "SignedInt32V1": {
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "TextureDimensionV1": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8192,
+      "$comment": "Per-axis value for VIVI_PNG_RGBA8_V1_LIMITS. Each atlas must also satisfy width * height <= 67108864; across all atlases, sum(width * height) must be <= 67108864 and sum(width * height * 4) must be <= 268435456 bytes. Aggregate checks are semantic."
+    },
+    "BlendModeV1": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "add",
+        "multiply",
+        "screen",
+        "overlay",
+        "darken",
+        "lighten",
+        "color-dodge",
+        "color-burn",
+        "hard-light",
+        "soft-light",
+        "difference",
+        "exclusion"
+      ]
+    },
+    "InterpolationTypeV1": {
+      "type": "string",
+      "enum": ["linear", "step", "bezier", "ellipse", "sns"]
+    },
+    "RGBColorV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["r", "g", "b"],
+      "properties": {
+        "r": { "type": "number" },
+        "g": { "type": "number" },
+        "b": { "type": "number" }
+      }
+    },
+    "EvaluationCanvasV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "EvaluationMeshDataV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vertices", "uvs", "indices", "divisionsX", "divisionsY"],
+      "properties": {
+        "vertices": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 131072,
+          "items": { "type": "number" },
+          "$comment": "Length must be even; the semantic vertex count is length / 2 and is limited to 65536."
+        },
+        "uvs": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 131072,
+          "items": { "type": "number" },
+          "$comment": "Length must exactly equal vertices.length."
+        },
+        "indices": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 196608,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "$comment": "Length must be divisible by 3 and every value must be less than the vertex count."
+        },
+        "divisionsX": { "$ref": "#/$defs/NonNegativeSafeIntegerV1" },
+        "divisionsY": { "$ref": "#/$defs/NonNegativeSafeIntegerV1" }
+      }
+    },
+    "ViviClipMaskEdgeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layerId", "invert"],
+      "properties": {
+        "layerId": { "$ref": "#/$defs/SimpleIdV1" },
+        "invert": { "type": "boolean" }
+      }
+    },
+    "EvaluationBoneDataV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["angle", "length", "scaleX", "scaleY"],
+      "properties": {
+        "angle": { "type": "number" },
+        "length": { "type": "number" },
+        "scaleX": { "type": "number" },
+        "scaleY": { "type": "number" }
+      }
+    },
+    "EvaluationArtPathControlPointV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "handleInX",
+        "handleInY",
+        "handleOutX",
+        "handleOutY",
+        "width",
+        "opacity"
+      ],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "handleInX": { "type": "number" },
+        "handleInY": { "type": "number" },
+        "handleOutX": { "type": "number" },
+        "handleOutY": { "type": "number" },
+        "width": { "type": "number" },
+        "opacity": { "type": "number" }
+      }
+    },
+    "EvaluationArtPathStyleV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["color", "baseWidth", "lineCap", "lineJoin"],
+      "properties": {
+        "color": { "type": "number" },
+        "baseWidth": { "type": "number" },
+        "lineCap": {
+          "type": "string",
+          "enum": ["butt", "round", "square"]
+        },
+        "lineJoin": {
+          "type": "string",
+          "enum": ["miter", "round", "bevel"]
+        }
+      }
+    },
+    "EvaluationLayerNodeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "visible",
+        "opacity",
+        "x",
+        "y",
+        "width",
+        "height",
+        "blendMode",
+        "expanded",
+        "children",
+        "kind"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "visible": { "type": "boolean" },
+        "opacity": { "type": "number" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "blendMode": { "$ref": "#/$defs/BlendModeV1" },
+        "expanded": { "type": "boolean" },
+        "children": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": { "$ref": "#/$defs/EvaluationLayerNodeV1" }
+        },
+        "clipMaskIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/SimpleIdV1" }
+        },
+        "clipMasks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ViviClipMaskEdgeV1" },
+          "contains": {
+            "properties": { "invert": { "const": true } },
+            "required": ["invert"]
+          },
+          "minContains": 1,
+          "x-vivi-uniqueBy": "layerId",
+          "$comment": "Stage 2 preserves edge order and requires unique layerId values; this form contains at least one invert=true edge after canonical serialization."
+        },
+        "drawOrder": { "$ref": "#/$defs/SignedInt32V1" },
+        "multiplyColor": { "$ref": "#/$defs/RGBColorV1" },
+        "screenColor": { "$ref": "#/$defs/RGBColorV1" },
+        "kind": {
+          "type": "string",
+          "enum": ["viviMesh", "group", "bone", "artPath"]
+        },
+        "mesh": { "$ref": "#/$defs/EvaluationMeshDataV1" },
+        "culling": { "type": "boolean" },
+        "bone": { "$ref": "#/$defs/EvaluationBoneDataV1" },
+        "parentBoneId": { "$ref": "#/$defs/SimpleIdV1" },
+        "controlPoints": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationArtPathControlPointV1" }
+        },
+        "closed": { "type": "boolean" },
+        "style": { "$ref": "#/$defs/EvaluationArtPathStyleV1" }
+      },
+      "not": { "required": ["clipMaskIds", "clipMasks"] },
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "viviMesh" } },
+          "required": ["kind", "mesh"],
+          "not": {
+            "anyOf": [
+              { "required": ["bone"] },
+              { "required": ["parentBoneId"] },
+              { "required": ["controlPoints"] },
+              { "required": ["closed"] },
+              { "required": ["style"] }
+            ]
+          }
+        },
+        {
+          "properties": { "kind": { "const": "group" } },
+          "required": ["kind"],
+          "not": {
+            "anyOf": [
+              { "required": ["mesh"] },
+              { "required": ["culling"] },
+              { "required": ["bone"] },
+              { "required": ["parentBoneId"] },
+              { "required": ["controlPoints"] },
+              { "required": ["closed"] },
+              { "required": ["style"] }
+            ]
+          }
+        },
+        {
+          "properties": { "kind": { "const": "bone" } },
+          "required": ["kind", "bone"],
+          "not": {
+            "anyOf": [
+              { "required": ["mesh"] },
+              { "required": ["culling"] },
+              { "required": ["controlPoints"] },
+              { "required": ["closed"] },
+              { "required": ["style"] }
+            ]
+          }
+        },
+        {
+          "properties": { "kind": { "const": "artPath" } },
+          "required": ["kind", "controlPoints", "closed", "style"],
+          "not": {
+            "anyOf": [
+              { "required": ["mesh"] },
+              { "required": ["culling"] },
+              { "required": ["bone"] },
+              { "required": ["parentBoneId"] }
+            ]
+          }
+        }
+      ],
+      "$comment": "semanticRole*, riggingHint, manualSplit*, importMetadata, and managed* fields are deliberately absent from this closed evaluation object."
+    },
+    "EvaluationParameterDefinitionV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "minValue", "maxValue", "defaultValue"],
+      "properties": {
+        "id": { "$ref": "#/$defs/ParameterIdV1" },
+        "name": { "type": "string" },
+        "minValue": { "type": "number" },
+        "maxValue": { "type": "number" },
+        "defaultValue": { "type": "number" },
+        "pairedParameterId": { "$ref": "#/$defs/ParameterIdV1" },
+        "group": { "type": "string" }
+      },
+      "$comment": "minValue <= defaultValue <= maxValue is a semantic invariant."
+    },
+    "EvaluationBindingPointV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paramValue", "targetValue"],
+      "properties": {
+        "paramValue": { "type": "number" },
+        "targetValue": { "type": "number" }
+      }
+    },
+    "EvaluationBindingTargetV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "property"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["bone", "ikController"]
+        },
+        "boneId": { "$ref": "#/$defs/SimpleIdV1" },
+        "controllerId": { "$ref": "#/$defs/SimpleIdV1" },
+        "property": {
+          "type": "string",
+          "enum": [
+            "x",
+            "y",
+            "angle",
+            "scaleX",
+            "scaleY",
+            "targetX",
+            "targetY",
+            "poleTargetX",
+            "poleTargetY",
+            "influence"
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "type": { "const": "bone" },
+            "property": {
+              "enum": ["x", "y", "angle", "scaleX", "scaleY"]
+            }
+          },
+          "required": ["type", "boneId", "property"],
+          "not": { "required": ["controllerId"] }
+        },
+        {
+          "properties": {
+            "type": { "const": "ikController" },
+            "property": {
+              "enum": [
+                "targetX",
+                "targetY",
+                "poleTargetX",
+                "poleTargetY",
+                "influence"
+              ]
+            }
+          },
+          "required": ["type", "controllerId", "property"],
+          "not": { "required": ["boneId"] }
+        }
+      ]
+    },
+    "EvaluationParameterBindingV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "parameterId", "target", "bindingPoints"],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "parameterId": { "$ref": "#/$defs/ParameterIdV1" },
+        "target": { "$ref": "#/$defs/EvaluationBindingTargetV1" },
+        "bindingPoints": {
+          "type": "array",
+          "maxItems": 8192,
+          "items": { "$ref": "#/$defs/EvaluationBindingPointV1" }
+        }
+      }
+    },
+    "EvaluationSkinWeightV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boneId", "weight"],
+      "properties": {
+        "boneId": { "$ref": "#/$defs/SimpleIdV1" },
+        "weight": { "type": "number" }
+      }
+    },
+    "AffineMatrixV1": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "EvaluationSkinDataV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["weights", "bindPoseInverse"],
+      "properties": {
+        "weights": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/EvaluationSkinWeightV1" }
+          }
+        },
+        "bindPoseInverse": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Za-z0-9_-]{1,128}$": { "$ref": "#/$defs/AffineMatrixV1" }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "EvaluationSkinMapV1": {
+      "type": "object",
+      "patternProperties": {
+        "^[A-Za-z0-9_-]{1,128}$": { "$ref": "#/$defs/EvaluationSkinDataV1" }
+      },
+      "additionalProperties": false,
+      "$comment": "Each map key must name a mesh; bone references, vertex-weight row count, and weight normalization are semantic checks."
+    },
+    "EvaluationIKBoneConstraintV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boneId", "minAngle", "maxAngle"],
+      "properties": {
+        "boneId": { "$ref": "#/$defs/SimpleIdV1" },
+        "minAngle": { "type": "number" },
+        "maxAngle": { "type": "number" }
+      }
+    },
+    "EvaluationIKParameterMappingV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "boneId",
+        "parameterId",
+        "angleMin",
+        "angleMax",
+        "paramMin",
+        "paramMax"
+      ],
+      "properties": {
+        "boneId": { "$ref": "#/$defs/SimpleIdV1" },
+        "parameterId": { "$ref": "#/$defs/ParameterIdV1" },
+        "angleMin": { "type": "number" },
+        "angleMax": { "type": "number" },
+        "paramMin": { "type": "number" },
+        "paramMax": { "type": "number" }
+      }
+    },
+    "EvaluationIKControllerV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "solverType",
+        "boneChain",
+        "targetX",
+        "targetY",
+        "influence",
+        "parameterMappings"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "solverType": {
+          "type": "string",
+          "enum": ["twoBone", "ccd"]
+        },
+        "boneChain": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationIKBoneConstraintV1" }
+        },
+        "targetX": { "type": "number" },
+        "targetY": { "type": "number" },
+        "influence": { "type": "number" },
+        "poleTargetX": { "type": "number" },
+        "poleTargetY": { "type": "number" },
+        "maxIterations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "parameterMappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationIKParameterMappingV1" }
+        }
+      }
+    },
+    "EvaluationPendulumConfigV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["length", "mass", "damping"],
+      "properties": {
+        "length": { "type": "number" },
+        "mass": { "type": "number" },
+        "damping": { "type": "number" }
+      }
+    },
+    "EvaluationPhysicsInputV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameterId", "weight", "type"],
+      "properties": {
+        "parameterId": { "$ref": "#/$defs/ParameterIdV1" },
+        "weight": { "type": "number" },
+        "type": {
+          "type": "string",
+          "enum": ["x", "y", "angle"]
+        }
+      }
+    },
+    "EvaluationPhysicsOutputV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pendulumIndex", "weight", "type"],
+      "properties": {
+        "parameterId": { "$ref": "#/$defs/ParameterIdV1" },
+        "boneId": { "$ref": "#/$defs/SimpleIdV1" },
+        "pendulumIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 63,
+          "$comment": "Stage 2 additionally requires pendulumIndex < the containing group's pendulums.length."
+        },
+        "weight": { "type": "number" },
+        "type": {
+          "type": "string",
+          "enum": ["angle", "boneAngle"]
+        }
+      }
+    },
+    "EvaluationPhysicsGroupV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "enabled",
+        "pendulums",
+        "inputs",
+        "outputs",
+        "gravityDirection",
+        "gravityStrength",
+        "wind"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "pendulums": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/EvaluationPendulumConfigV1" }
+        },
+        "inputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationPhysicsInputV1" }
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationPhysicsOutputV1" }
+        },
+        "gravityDirection": { "type": "number" },
+        "gravityStrength": { "type": "number" },
+        "wind": { "type": "number" }
+      }
+    },
+    "EvaluationColliderShapeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["rectangle", "circle", "mesh"]
+        },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "radius": { "type": "number" },
+        "meshId": { "$ref": "#/$defs/SimpleIdV1" }
+      },
+      "oneOf": [
+        {
+          "properties": { "type": { "const": "rectangle" } },
+          "required": ["type", "x", "y", "width", "height"],
+          "not": {
+            "anyOf": [
+              { "required": ["radius"] },
+              { "required": ["meshId"] }
+            ]
+          }
+        },
+        {
+          "properties": { "type": { "const": "circle" } },
+          "required": ["type", "x", "y", "radius"],
+          "not": {
+            "anyOf": [
+              { "required": ["width"] },
+              { "required": ["height"] },
+              { "required": ["meshId"] }
+            ]
+          }
+        },
+        {
+          "properties": { "type": { "const": "mesh" } },
+          "required": ["type", "meshId"],
+          "not": {
+            "anyOf": [
+              { "required": ["x"] },
+              { "required": ["y"] },
+              { "required": ["width"] },
+              { "required": ["height"] },
+              { "required": ["radius"] }
+            ]
+          }
+        }
+      ]
+    },
+    "EvaluationColliderDataV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "shape", "enabled"],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "shape": { "$ref": "#/$defs/EvaluationColliderShapeV1" },
+        "tag": { "type": "string" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "EvaluationExpressionPresetV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "values"],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "values": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Za-z0-9_.-]{1,128}$": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "color": { "type": "string" },
+        "hotkey": { "$ref": "#/$defs/NonNegativeSafeIntegerV1" }
+      }
+    },
+    "EvaluationTimelineKeyframeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frame", "value", "interpolation"],
+      "properties": {
+        "frame": { "type": "number", "minimum": 0 },
+        "value": { "type": "number" },
+        "interpolation": { "$ref": "#/$defs/InterpolationTypeV1" },
+        "cp1x": { "type": "number" },
+        "cp1y": { "type": "number" },
+        "cp2x": { "type": "number" },
+        "cp2y": { "type": "number" },
+        "ellipseRatio": { "type": "number" },
+        "ellipseDirection": {
+          "type": "string",
+          "enum": ["cw", "ccw"]
+        },
+        "snsOscillations": { "type": "number" },
+        "snsDamping": { "type": "number" }
+      }
+    },
+    "EvaluationAnimationTrackV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameterId", "keyframes"],
+      "properties": {
+        "parameterId": { "$ref": "#/$defs/ParameterIdV1" },
+        "keyframes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationTimelineKeyframeV1" }
+        }
+      }
+    },
+    "EvaluationBoneTrackV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boneId", "property", "keyframes"],
+      "properties": {
+        "boneId": { "$ref": "#/$defs/SimpleIdV1" },
+        "property": {
+          "type": "string",
+          "enum": ["angle", "scaleX", "scaleY"]
+        },
+        "keyframes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationTimelineKeyframeV1" }
+        }
+      }
+    },
+    "EvaluationImageSequenceEntryV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startFrame", "imageId"],
+      "properties": {
+        "startFrame": { "type": "number", "minimum": 0 },
+        "imageId": { "$ref": "#/$defs/SimpleIdV1" }
+      }
+    },
+    "EvaluationImageSequenceTrackV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetMeshId", "entries"],
+      "properties": {
+        "targetMeshId": { "$ref": "#/$defs/SimpleIdV1" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationImageSequenceEntryV1" }
+        }
+      }
+    },
+    "EvaluationAudioTrackV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "sourcePath",
+        "startFrame",
+        "sourceDurationSeconds",
+        "gain",
+        "muted"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "sourcePath": { "type": "string" },
+        "startFrame": { "type": "number", "minimum": 0 },
+        "sourceDurationSeconds": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "gain": { "type": "number" },
+        "muted": { "type": "boolean" }
+      }
+    },
+    "EvaluationLipSyncTrackV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "sourceAudioTrackId",
+        "analysisType",
+        "analysisFps",
+        "samples",
+        "targetParameterId",
+        "sourcePathAtBake",
+        "sourceDurationSecondsAtBake",
+        "gain",
+        "muted"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "sourceAudioTrackId": { "$ref": "#/$defs/SimpleIdV1" },
+        "analysisType": { "const": "rms" },
+        "analysisFps": { "type": "number", "exclusiveMinimum": 0 },
+        "samples": {
+          "type": "array",
+          "items": { "type": "number" }
+        },
+        "targetParameterId": {
+          "anyOf": [
+            { "$ref": "#/$defs/ParameterIdV1" },
+            { "type": "null" }
+          ]
+        },
+        "sourcePathAtBake": { "type": "string" },
+        "sourceDurationSecondsAtBake": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "gain": { "type": "number" },
+        "muted": { "type": "boolean" }
+      }
+    },
+    "EvaluationIKControllerTrackV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["controllerId", "targetXKeyframes", "targetYKeyframes"],
+      "properties": {
+        "controllerId": { "$ref": "#/$defs/SimpleIdV1" },
+        "targetXKeyframes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationTimelineKeyframeV1" }
+        },
+        "targetYKeyframes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationTimelineKeyframeV1" }
+        }
+      }
+    },
+    "EvaluationAnimationClipV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "duration", "fps", "tracks"],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "duration": { "type": "number", "minimum": 0 },
+        "fps": { "type": "number", "exclusiveMinimum": 0 },
+        "tracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationAnimationTrackV1" }
+        },
+        "boneTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationBoneTrackV1" }
+        },
+        "imageSequenceTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationImageSequenceTrackV1" }
+        },
+        "audioTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationAudioTrackV1" }
+        },
+        "lipSyncTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationLipSyncTrackV1" }
+        },
+        "ikControllerTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationIKControllerTrackV1" }
+        }
+      }
+    },
+    "EvaluationTransitionConditionV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameterId", "operator", "threshold"],
+      "properties": {
+        "parameterId": { "$ref": "#/$defs/ParameterIdV1" },
+        "operator": {
+          "type": "string",
+          "enum": [">", "<", ">=", "<=", "==", "!="]
+        },
+        "threshold": { "type": "number" }
+      }
+    },
+    "EvaluationBlendTreeEntryV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["threshold", "clipId"],
+      "properties": {
+        "threshold": { "type": "number" },
+        "clipId": { "$ref": "#/$defs/SimpleIdV1" }
+      }
+    },
+    "EvaluationBlendTree1DV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameterId", "entries"],
+      "properties": {
+        "parameterId": { "$ref": "#/$defs/ParameterIdV1" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationBlendTreeEntryV1" }
+        }
+      }
+    },
+    "EvaluationAnimationStateV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "loop"],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "clipId": { "$ref": "#/$defs/SimpleIdV1" },
+        "blendTree": { "$ref": "#/$defs/EvaluationBlendTree1DV1" },
+        "loop": { "type": "boolean" }
+      }
+    },
+    "EvaluationStateTransitionV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "fromStateId",
+        "toStateId",
+        "conditions",
+        "transitionDuration",
+        "priority"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "fromStateId": { "$ref": "#/$defs/SimpleIdV1" },
+        "toStateId": { "$ref": "#/$defs/SimpleIdV1" },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationTransitionConditionV1" }
+        },
+        "transitionDuration": { "type": "number", "minimum": 0 },
+        "priority": { "$ref": "#/$defs/SignedInt32V1" }
+      }
+    },
+    "EvaluationAnimationStateMachineV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "states",
+        "transitions",
+        "initialStateId",
+        "enabled"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/SimpleIdV1" },
+        "name": { "type": "string" },
+        "states": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "$ref": "#/$defs/EvaluationAnimationStateV1" },
+          "x-vivi-uniqueBy": "id"
+        },
+        "transitions": {
+          "type": "array",
+          "maxItems": 512,
+          "items": { "$ref": "#/$defs/EvaluationStateTransitionV1" },
+          "x-vivi-uniqueBy": "id"
+        },
+        "initialStateId": { "$ref": "#/$defs/SimpleIdV1" },
+        "enabled": { "type": "boolean" },
+        "blendMode": {
+          "type": "string",
+          "enum": ["override", "additive"]
+        },
+        "weight": { "type": "number" }
+      }
+    },
+    "EvaluationAtlasEntryV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layerId", "x", "y", "width", "height"],
+      "properties": {
+        "layerId": { "$ref": "#/$defs/SimpleIdV1" },
+        "x": { "$ref": "#/$defs/NonNegativeSafeIntegerV1" },
+        "y": { "$ref": "#/$defs/NonNegativeSafeIntegerV1" },
+        "width": { "$ref": "#/$defs/NonNegativeSafeIntegerV1" },
+        "height": { "$ref": "#/$defs/NonNegativeSafeIntegerV1" }
+      }
+    },
+    "EvaluationAtlasRefV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "width", "height", "entries"],
+      "properties": {
+        "id": { "$ref": "#/$defs/SourceAtlasIdV1" },
+        "width": { "$ref": "#/$defs/TextureDimensionV1" },
+        "height": { "$ref": "#/$defs/TextureDimensionV1" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EvaluationAtlasEntryV1" },
+          "x-vivi-uniqueBy": "layerId"
+        }
+      }
+    }
+  }
+}

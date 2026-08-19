@@ -1,0 +1,6 @@
+# The Evaluation Payload builder is an internal package entry; its tests stay out of packs.
+src/__tests__/evaluation-payload-v1.test.ts
+
+# Reviewed Amendment 1 artifacts remain local-only until an explicit production decision.
+src/__tests__/evaluation-vertical-spike.test.ts
+src/__tests__/project-format-v10-freeze.test.ts

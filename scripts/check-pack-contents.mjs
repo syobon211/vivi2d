@@ -280,6 +280,101 @@ function assertProjectFormatV11CodecIsInternal() {
   }
 }
 
+function assertEvaluationPayloadV1InternalBoundary(packByName) {
+  const model = workspacesByName.get("@vivi2d/model");
+  if (!model) {
+    failures.push("@vivi2d/model workspace is missing.");
+    return;
+  }
+
+  const internalExportName = "./internal/evaluation-payload-v1";
+  const internalExportTarget = "./src/internal/evaluation-payload-v1.ts";
+  const requiredPackFiles = [
+    "src/internal/evaluation-payload-v1.ts",
+    "src/evaluation-payload-v1.ts",
+    "src/evaluation-payload-v1/schema.ts",
+    "src/evaluation-payload-v1/evaluation-payload-v1.schema.json",
+    "src/evaluation-payload-v1/evaluation-texture-plan-v1.schema.json",
+  ];
+  const forbiddenPackFiles = [
+    "src/__tests__/evaluation-payload-v1.test.ts",
+    "src/__tests__/evaluation-vertical-spike.test.ts",
+  ];
+  const exports = model.pkg.exports ?? {};
+  const packageRoot = path.resolve(root, model.dir);
+  const friendEntrypoint = path.join(
+    packageRoot,
+    "src",
+    "internal",
+    "evaluation-payload-v1.ts",
+  );
+  const builderEntrypoint = path.join(packageRoot, "src", "evaluation-payload-v1.ts");
+  const schemaValidator = path.join(
+    packageRoot,
+    "src",
+    "evaluation-payload-v1",
+    "schema.ts",
+  );
+
+  if (exports[internalExportName] !== internalExportTarget) {
+    failures.push(
+      `@vivi2d/model must expose the Evaluation Payload v1 builder only at ${internalExportName} -> ${internalExportTarget}.`,
+    );
+  }
+
+  if (!fs.existsSync(friendEntrypoint) || !fs.statSync(friendEntrypoint).isFile()) {
+    failures.push("The Evaluation Payload v1 friend entrypoint is missing.");
+  } else if (
+    !fs.existsSync(builderEntrypoint) ||
+    !fs.statSync(builderEntrypoint).isFile() ||
+    !fs.existsSync(schemaValidator) ||
+    !fs.statSync(schemaValidator).isFile() ||
+    !moduleGraphReachesDirectory(friendEntrypoint, packageRoot, builderEntrypoint) ||
+    !moduleGraphReachesDirectory(friendEntrypoint, packageRoot, schemaValidator)
+  ) {
+    failures.push(
+      "The Evaluation Payload v1 friend entrypoint does not transitively reach its builder and schema validator.",
+    );
+  } else {
+    for (const [exportName, exportTarget] of Object.entries(exports)) {
+      if (exportName === internalExportName) continue;
+      for (const target of flattenExportTargets(exportTarget)) {
+        const absoluteTarget = path.resolve(packageRoot, target);
+        if (!fs.existsSync(absoluteTarget) || !fs.statSync(absoluteTarget).isFile()) {
+          continue;
+        }
+        if (
+          moduleGraphReachesDirectory(absoluteTarget, packageRoot, friendEntrypoint) ||
+          moduleGraphReachesDirectory(absoluteTarget, packageRoot, builderEntrypoint) ||
+          moduleGraphReachesDirectory(absoluteTarget, packageRoot, schemaValidator)
+        ) {
+          failures.push(
+            `@vivi2d/model entry ${exportName} reaches the internal Evaluation Payload v1 builder; only ${internalExportName} may reach it.`,
+          );
+        }
+      }
+    }
+  }
+
+  const packInfo = packByName.get(model.pkg.name);
+  if (!packInfo) return;
+  const files = new Set(packInfo.files.map((file) => file.path));
+  for (const requiredFile of requiredPackFiles) {
+    if (!files.has(requiredFile)) {
+      failures.push(
+        `@vivi2d/model npm pack is missing internal Evaluation Payload v1 file ${requiredFile}.`,
+      );
+    }
+  }
+  for (const forbiddenFile of forbiddenPackFiles) {
+    if (files.has(forbiddenFile)) {
+      failures.push(
+        `@vivi2d/model npm pack includes excluded Evaluation Payload v1 test artifact ${forbiddenFile}.`,
+      );
+    }
+  }
+}
+
 function moduleGraphReachesDirectory(entrypoint, packageRoot, targetDirectory) {
   const pending = [entrypoint];
   const visited = new Set();
@@ -333,6 +428,7 @@ const workspacesByName = new Map(
 assertPackContentRuleSmoke();
 assertProjectFormatV11CodecIsInternal();
 const packByName = new Map(runNpmPack().map((entry) => [entry.name, entry]));
+assertEvaluationPayloadV1InternalBoundary(packByName);
 
 for (const workspace of workspaces) {
   const publication = workspace.pkg.vivi2d?.publication;
