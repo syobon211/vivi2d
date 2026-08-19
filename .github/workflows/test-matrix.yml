@@ -106,6 +106,8 @@ jobs:
           scripts/prepare-windows-installer-assets.mjs
           scripts/verify-windows-installer-assets.mjs
           scripts/lib/windows-installer-alpha.mjs
+          scripts/generate-schema-validators.mjs
+          scripts/check-model-jsc-portability.mjs
           scripts/check-pack-contents.mjs
           scripts/check-package-boundaries.mjs
           scripts/check-web-sdk-unlock.mjs

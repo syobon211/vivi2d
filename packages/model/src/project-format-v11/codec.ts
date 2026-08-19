@@ -10,6 +10,7 @@ import {
   parseJsonV11,
   type ViviJsonValueV11,
 } from "./json-contract";
+import { decodeUtf8Fatal, encodeUtf8, utf8ByteLength } from "./portable-primitives";
 import {
   type ProjectFormatV11SchemaIssue,
   validateProjectFormatV11Schema,
@@ -162,7 +163,7 @@ export async function parseProjectFormatV11Utf8(
 
   let source: string;
   try {
-    source = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    source = decodeUtf8Fatal(bytes);
   } catch {
     throw new ProjectFormatV11JsonError(
       "VIVI_FMT_UNICODE_SCALAR_INVALID",
@@ -269,6 +270,9 @@ async function validateDecodedProjectFormat(
 }
 
 function snapshotOptions(options: ProjectFormatV11CodecOptions): StoredCodecOptions {
+  if (typeof options.sha256 !== "function") {
+    throw new TypeError("Project Format v11 codec requires a SHA-256 provider");
+  }
   const registry = new Map<string, ExtensionRegistryEntryV11>();
   for (const [extensionId, entry] of options.registry) {
     registry.set(extensionId, {
@@ -285,8 +289,8 @@ function snapshotOptions(options: ProjectFormatV11CodecOptions): StoredCodecOpti
   const stored: StoredCodecOptions = {
     registry,
     supportedCapabilities: new Map(options.supportedCapabilities),
+    sha256: options.sha256,
   };
-  if (options.sha256 !== undefined) stored.sha256 = options.sha256;
   if (options.testLimits !== undefined) stored.testLimits = { ...options.testLimits };
   return stored;
 }
@@ -294,7 +298,7 @@ function snapshotOptions(options: ProjectFormatV11CodecOptions): StoredCodecOpti
 async function snapshotOpaqueRecord(
   record: OpaqueExtensionRecordV11,
   normalized: NormalizedViviFileDataV11,
-  sha256: Sha256V11 | undefined,
+  sha256: Sha256V11,
 ): Promise<StoredOpaqueRecord> {
   const normalizedEnvelope = normalized.extensions?.[record.extensionId];
   const normalizedRequirement = (normalized.requires ?? []).find(
@@ -700,7 +704,7 @@ function classifyMalformedExtensionAssetRef(
 
 function invalidAssetMediaType(value: unknown): boolean {
   if (typeof value !== "string") return true;
-  const byteLength = new TextEncoder().encode(value).byteLength;
+  const byteLength = utf8ByteLength(value);
   return (
     byteLength < 1 ||
     byteLength > 255 ||
@@ -1199,9 +1203,9 @@ function cloneJsonValue<T>(value: T): T {
   return parseJsonV11(canonicalizeJsonV11(value)) as T;
 }
 
-async function hashCanonicalValue(value: unknown, sha256?: Sha256V11): Promise<string> {
-  const bytes = new TextEncoder().encode(canonicalizeJsonV11(value));
-  const digest = sha256 ? await sha256(bytes) : await defaultSha256(bytes);
+async function hashCanonicalValue(value: unknown, sha256: Sha256V11): Promise<string> {
+  const bytes = encodeUtf8(canonicalizeJsonV11(value));
+  const digest = await sha256(bytes);
   if (!SHA256_PATTERN.test(digest)) {
     throw new ProjectFormatV11SemanticError(
       "VIVI_FMT_ASSET_HASH_MISMATCH",
@@ -1210,17 +1214,6 @@ async function hashCanonicalValue(value: unknown, sha256?: Sha256V11): Promise<s
     );
   }
   return digest.toLowerCase();
-}
-
-async function defaultSha256(bytes: Uint8Array): Promise<string> {
-  const subtle = globalThis.crypto?.subtle;
-  if (!subtle) throw new Error("WebCrypto SHA-256 is unavailable");
-  const ownedBytes = new Uint8Array(bytes.byteLength);
-  ownedBytes.set(bytes);
-  const digest = await subtle.digest("SHA-256", ownedBytes);
-  return [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
 }
 
 function escapePointer(value: string): string {

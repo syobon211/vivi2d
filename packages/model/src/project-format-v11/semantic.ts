@@ -5,6 +5,13 @@ import {
 } from "../runtime-spec";
 import { semanticError } from "./errors";
 import { canonicalizeJsonV11 } from "./json-contract";
+import {
+  cloneJsonDetached,
+  compareUtf8Bytes,
+  decodeRawBase64,
+  encodeUtf8,
+  utf8ByteLength,
+} from "./portable-primitives";
 import type {
   CapabilityPurposeV11,
   ClassifiedExtensionRecordV11,
@@ -78,12 +85,16 @@ export async function validateProjectFormatV11Semantics(
     };
   }
 
+  if (typeof options.sha256 !== "function") {
+    throw new TypeError("Project Format v11 semantics require a SHA-256 provider");
+  }
+
   const project = wire.project;
   const layerState = validateProjectGraph(project);
   validateProjectReferences(project, layerState);
   validateAtlasCoverage(wire, layerState);
 
-  const sha256 = options.sha256 ?? defaultSha256;
+  const sha256 = options.sha256;
   await validateV11Assets(wire, sha256);
   validateExtensionCanonicalSize(wire.extensions);
 
@@ -592,7 +603,7 @@ function validateMediaType(mediaType: string, path: string): void {
       "mediaType is not a well-formed Unicode scalar string",
     );
   }
-  const byteLength = new TextEncoder().encode(mediaType).byteLength;
+  const byteLength = utf8ByteLength(mediaType);
   if (byteLength < 1 || byteLength > 255 || hasAsciiControl(mediaType)) {
     semanticError(
       "VIVI_FMT_ASSET_REF_INVALID",
@@ -606,7 +617,7 @@ function validateExtensionCanonicalSize(
   extensions: Record<string, ViviExtensionEnvelopeV11> | undefined,
 ): void {
   const canonical = canonicalizeJsonV11(extensions ?? {});
-  if (new TextEncoder().encode(canonical).byteLength > MAX_EXTENSION_CANONICAL_BYTES) {
+  if (utf8ByteLength(canonical) > MAX_EXTENSION_CANONICAL_BYTES) {
     semanticError(
       "VIVI_FMT_EXTENSION_CANONICAL_SIZE_EXCEEDED",
       "/extensions",
@@ -1538,12 +1549,7 @@ function normalizeSha256(value: string, path: string): string {
 
 function decodeBase64(value: string, path: string): Uint8Array {
   try {
-    const binary = globalThis.atob(value);
-    const result = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index += 1) {
-      result[index] = binary.charCodeAt(index);
-    }
-    return result;
+    return decodeRawBase64(value);
   } catch {
     semanticError("VIVI_FMT_ASSET_HASH_MISMATCH", path, "invalid base64 data");
   }
@@ -1551,7 +1557,7 @@ function decodeBase64(value: string, path: string): Uint8Array {
 
 async function hashCanonicalValue(value: unknown, sha256: Sha256V11): Promise<string> {
   const canonical = canonicalizeJsonV11(value);
-  return checkedSha256(new TextEncoder().encode(canonical), sha256, "/extensions");
+  return checkedSha256(encodeUtf8(canonical), sha256, "/extensions");
 }
 
 async function checkedSha256(
@@ -1570,29 +1576,8 @@ async function checkedSha256(
   return digest.toLowerCase();
 }
 
-async function defaultSha256(bytes: Uint8Array): Promise<string> {
-  const subtle = globalThis.crypto?.subtle;
-  if (!subtle) {
-    throw new Error("WebCrypto SHA-256 is unavailable");
-  }
-  const input = new Uint8Array(bytes.byteLength);
-  input.set(bytes);
-  const digest = await subtle.digest("SHA-256", input.buffer);
-  return [...new Uint8Array(digest)]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 function utf8Compare(left: string, right: string): number {
-  const encoder = new TextEncoder();
-  const leftBytes = encoder.encode(left);
-  const rightBytes = encoder.encode(right);
-  const length = Math.min(leftBytes.length, rightBytes.length);
-  for (let index = 0; index < length; index += 1) {
-    const difference = (leftBytes[index] ?? 0) - (rightBytes[index] ?? 0);
-    if (difference !== 0) return difference;
-  }
-  return leftBytes.length - rightBytes.length;
+  return compareUtf8Bytes(left, right);
 }
 
 function isWellFormedUnicode(value: string): boolean {
@@ -1622,7 +1607,7 @@ function escapePointer(value: string): string {
 }
 
 function cloneJsonSafe<T>(value: T): T {
-  return structuredClone(value);
+  return cloneJsonDetached(value);
 }
 
 function normalizeNegativeZero(value: unknown, seen = new WeakSet<object>()): void {

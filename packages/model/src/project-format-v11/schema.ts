@@ -1,5 +1,8 @@
-import Ajv2020, { type ErrorObject, type ValidateFunction } from "ajv/dist/2020.js";
-import projectFormatV11Schema from "./project-format-v11.schema.json";
+import {
+  projectFormatV11SchemaIdentity,
+  type StandaloneSchemaError,
+  validateProjectFormatV11 as validator,
+} from "../internal/generated/project-format-v11-validator.mjs";
 
 export const PROJECT_FORMAT_V11_SCHEMA_ID =
   "https://vivi2d.com/spec/project-format-v11.schema.json" as const;
@@ -14,7 +17,7 @@ export interface ProjectFormatV11SchemaIssue {
   params: Readonly<Record<string, unknown>>;
 }
 
-const validator = compileProjectFormatV11Schema();
+assertProjectFormatV11SchemaIdentity();
 
 export function validateProjectFormatV11Schema(
   value: unknown,
@@ -24,41 +27,26 @@ export function validateProjectFormatV11Schema(
 }
 
 export function assertProjectFormatV11SchemaIdentity(): void {
-  if (projectFormatV11Schema.$id !== PROJECT_FORMAT_V11_SCHEMA_ID) {
+  if (projectFormatV11SchemaIdentity.id !== PROJECT_FORMAT_V11_SCHEMA_ID) {
     throw new Error(
-      `Project Format v11 schema ID mismatch: ${String(projectFormatV11Schema.$id)}`,
+      `Project Format v11 schema ID mismatch: ${projectFormatV11SchemaIdentity.id}`,
     );
   }
-  if (projectFormatV11Schema["x-vivi-status"] !== "approved-amendment-1") {
+  if (projectFormatV11SchemaIdentity.status !== "approved-amendment-1") {
     throw new Error(
-      `Project Format v11 schema status mismatch: ${String(
-        projectFormatV11Schema["x-vivi-status"],
-      )}`,
+      `Project Format v11 schema status mismatch: ${projectFormatV11SchemaIdentity.status}`,
+    );
+  }
+  if (
+    projectFormatV11SchemaIdentity.sha256 !== PROJECT_FORMAT_V11_APPROVED_SCHEMA_SHA256
+  ) {
+    throw new Error(
+      `Project Format v11 schema SHA-256 mismatch: ${projectFormatV11SchemaIdentity.sha256}`,
     );
   }
 }
 
-function compileProjectFormatV11Schema(): ValidateFunction<unknown> {
-  assertProjectFormatV11SchemaIdentity();
-  const ajv = new Ajv2020({
-    allErrors: false,
-    allowUnionTypes: true,
-    strict: false,
-    validateFormats: false,
-  });
-
-  // Amendment A-08 assigns this annotation to Stage 2. Generic JSON Schema
-  // evaluation must not silently turn it into a different structural rule.
-  ajv.addKeyword({
-    keyword: "x-vivi-uniqueBy",
-    schemaType: "string",
-    valid: true,
-  });
-
-  return ajv.compile(projectFormatV11Schema);
-}
-
-function copyIssue(issue: ErrorObject): ProjectFormatV11SchemaIssue {
+function copyIssue(issue: StandaloneSchemaError): ProjectFormatV11SchemaIssue {
   return {
     instancePath: issue.instancePath,
     schemaPath: issue.schemaPath,

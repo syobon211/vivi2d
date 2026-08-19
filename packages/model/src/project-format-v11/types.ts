@@ -181,7 +181,8 @@ export type Sha256V11 = (bytes: Uint8Array) => Promise<string> | string;
 export interface ProjectFormatV11SemanticOptions {
   registry: ExtensionRegistryV11;
   supportedCapabilities: ReadonlyMap<string, number>;
-  sha256?: Sha256V11;
+  /** Host-supplied SHA-256 keeps the codec independent of ambient WebCrypto. */
+  sha256: Sha256V11;
 }
 
 export interface SemanticValidationResult {

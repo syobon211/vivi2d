@@ -227,55 +227,110 @@ function checkPublicPackage(workspace, packInfo) {
   }
 }
 
-function assertProjectFormatV11CodecIsInternal() {
+function assertProjectFormatV11InternalBoundary(packByName) {
   const model = workspacesByName.get("@vivi2d/model");
   if (!model) {
     failures.push("@vivi2d/model workspace is missing.");
     return;
   }
 
+  const internalExportName = "./internal/project-format-v11";
+  const internalExportTarget = "./src/internal/project-format-v11.ts";
+  const requiredPackFiles = [
+    "src/internal/project-format-v11.ts",
+    "src/internal/generated/project-format-v11-validator.mjs",
+    "src/internal/generated/project-format-v11-validator.d.mts",
+    "src/project-format-v11/codec.ts",
+    "src/project-format-v11/errors.ts",
+    "src/project-format-v11/json-contract.ts",
+    "src/project-format-v11/portable-primitives.ts",
+    "src/project-format-v11/project-format-v11.schema.json",
+    "src/project-format-v11/schema.ts",
+    "src/project-format-v11/semantic.ts",
+    "src/project-format-v11/types.ts",
+  ];
   const exports = model.pkg.exports ?? {};
-  const packageRoot = path.resolve(root, model.dir);
-  const internalCodecRoot = path.join(packageRoot, "src", "project-format-v11");
-  const transitiveSmokeEntrypoint = path.join(
-    packageRoot,
-    "src",
-    "__tests__",
-    "project-format-v11-codec.test.ts",
-  );
-  if (
-    !fs.existsSync(transitiveSmokeEntrypoint) ||
-    !moduleGraphReachesDirectory(
-      transitiveSmokeEntrypoint,
-      packageRoot,
-      internalCodecRoot,
-    )
-  ) {
+  if (Object.hasOwn(model.pkg.dependencies ?? {}, "ajv")) {
     failures.push(
-      "Project Format v11 public-entry graph check did not detect its transitive smoke import.",
+      "@vivi2d/model must not declare Ajv as a runtime dependency after validator precompilation.",
     );
   }
-  for (const [exportName, exportTarget] of Object.entries(exports)) {
-    const targets = flattenExportTargets(exportTarget);
-    if (
-      exportName.includes("project-format-v11") ||
-      targets.some((target) => target.includes("project-format-v11"))
-    ) {
+  const packageRoot = path.resolve(root, model.dir);
+  const internalCodecRoot = path.join(packageRoot, "src", "project-format-v11");
+  const generatedValidator = path.join(
+    packageRoot,
+    "src",
+    "internal",
+    "generated",
+    "project-format-v11-validator.mjs",
+  );
+  const friendEntrypoint = path.join(
+    packageRoot,
+    "src",
+    "internal",
+    "project-format-v11.ts",
+  );
+
+  if (exports[internalExportName] !== internalExportTarget) {
+    failures.push(
+      `@vivi2d/model must expose the Project Format v11 codec only at ${internalExportName} -> ${internalExportTarget}.`,
+    );
+  }
+
+  if (!fs.existsSync(friendEntrypoint) || !fs.statSync(friendEntrypoint).isFile()) {
+    failures.push("The Project Format v11 friend entrypoint is missing.");
+  } else if (
+    !fs.existsSync(generatedValidator) ||
+    !fs.statSync(generatedValidator).isFile() ||
+    !moduleGraphReachesDirectory(friendEntrypoint, packageRoot, internalCodecRoot) ||
+    !moduleGraphReachesDirectory(friendEntrypoint, packageRoot, generatedValidator)
+  ) {
+    failures.push(
+      "The Project Format v11 friend entrypoint does not transitively reach its codec and generated validator.",
+    );
+  } else {
+    for (const [exportName, exportTarget] of Object.entries(exports)) {
+      if (exportName === internalExportName) continue;
+      for (const target of flattenExportTargets(exportTarget)) {
+        const absoluteTarget = path.resolve(packageRoot, target);
+        if (!fs.existsSync(absoluteTarget) || !fs.statSync(absoluteTarget).isFile()) {
+          continue;
+        }
+        if (
+          moduleGraphReachesDirectory(absoluteTarget, packageRoot, friendEntrypoint) ||
+          moduleGraphReachesDirectory(absoluteTarget, packageRoot, internalCodecRoot) ||
+          moduleGraphReachesDirectory(absoluteTarget, packageRoot, generatedValidator)
+        ) {
+          failures.push(
+            `@vivi2d/model entry ${exportName} reaches the internal Project Format v11 codec; only ${internalExportName} may reach it.`,
+          );
+        }
+      }
+    }
+  }
+
+  const packInfo = packByName.get(model.pkg.name);
+  if (!packInfo) return;
+  const files = new Set(packInfo.files.map((file) => file.path));
+  for (const requiredFile of requiredPackFiles) {
+    if (!files.has(requiredFile)) {
       failures.push(
-        `@vivi2d/model exposes the internal Project Format v11 codec at ${exportName}.`,
+        `@vivi2d/model npm pack is missing internal Project Format v11 file ${requiredFile}.`,
       );
     }
+  }
+}
 
-    for (const target of targets) {
-      const absoluteTarget = path.resolve(packageRoot, target);
-      if (!fs.existsSync(absoluteTarget) || !fs.statSync(absoluteTarget).isFile()) {
-        continue;
-      }
-      if (moduleGraphReachesDirectory(absoluteTarget, packageRoot, internalCodecRoot)) {
-        failures.push(
-          `@vivi2d/model public entry ${exportName} reaches the internal Project Format v11 codec.`,
-        );
-      }
+function assertModelTestsAreExcludedFromPack(packByName) {
+  const model = workspacesByName.get("@vivi2d/model");
+  if (!model) return;
+  const packInfo = packByName.get(model.pkg.name);
+  if (!packInfo) return;
+  for (const file of packInfo.files) {
+    if (file.path.startsWith("src/__tests__/")) {
+      failures.push(
+        `@vivi2d/model npm pack includes internal test artifact ${file.path}.`,
+      );
     }
   }
 }
@@ -291,6 +346,8 @@ function assertEvaluationPayloadV1InternalBoundary(packByName) {
   const internalExportTarget = "./src/internal/evaluation-payload-v1.ts";
   const requiredPackFiles = [
     "src/internal/evaluation-payload-v1.ts",
+    "src/internal/generated/evaluation-v1-validators.mjs",
+    "src/internal/generated/evaluation-v1-validators.d.mts",
     "src/evaluation-payload-v1.ts",
     "src/evaluation-payload-v1/schema.ts",
     "src/evaluation-payload-v1/evaluation-payload-v1.schema.json",
@@ -315,6 +372,13 @@ function assertEvaluationPayloadV1InternalBoundary(packByName) {
     "evaluation-payload-v1",
     "schema.ts",
   );
+  const generatedValidator = path.join(
+    packageRoot,
+    "src",
+    "internal",
+    "generated",
+    "evaluation-v1-validators.mjs",
+  );
 
   if (exports[internalExportName] !== internalExportTarget) {
     failures.push(
@@ -329,11 +393,14 @@ function assertEvaluationPayloadV1InternalBoundary(packByName) {
     !fs.statSync(builderEntrypoint).isFile() ||
     !fs.existsSync(schemaValidator) ||
     !fs.statSync(schemaValidator).isFile() ||
+    !fs.existsSync(generatedValidator) ||
+    !fs.statSync(generatedValidator).isFile() ||
     !moduleGraphReachesDirectory(friendEntrypoint, packageRoot, builderEntrypoint) ||
-    !moduleGraphReachesDirectory(friendEntrypoint, packageRoot, schemaValidator)
+    !moduleGraphReachesDirectory(friendEntrypoint, packageRoot, schemaValidator) ||
+    !moduleGraphReachesDirectory(friendEntrypoint, packageRoot, generatedValidator)
   ) {
     failures.push(
-      "The Evaluation Payload v1 friend entrypoint does not transitively reach its builder and schema validator.",
+      "The Evaluation Payload v1 friend entrypoint does not transitively reach its builder, schema validator, and generated validator.",
     );
   } else {
     for (const [exportName, exportTarget] of Object.entries(exports)) {
@@ -346,7 +413,8 @@ function assertEvaluationPayloadV1InternalBoundary(packByName) {
         if (
           moduleGraphReachesDirectory(absoluteTarget, packageRoot, friendEntrypoint) ||
           moduleGraphReachesDirectory(absoluteTarget, packageRoot, builderEntrypoint) ||
-          moduleGraphReachesDirectory(absoluteTarget, packageRoot, schemaValidator)
+          moduleGraphReachesDirectory(absoluteTarget, packageRoot, schemaValidator) ||
+          moduleGraphReachesDirectory(absoluteTarget, packageRoot, generatedValidator)
         ) {
           failures.push(
             `@vivi2d/model entry ${exportName} reaches the internal Evaluation Payload v1 builder; only ${internalExportName} may reach it.`,
@@ -426,9 +494,10 @@ const workspacesByName = new Map(
   workspaces.map((workspace) => [workspace.pkg.name, workspace]),
 );
 assertPackContentRuleSmoke();
-assertProjectFormatV11CodecIsInternal();
 const packByName = new Map(runNpmPack().map((entry) => [entry.name, entry]));
+assertProjectFormatV11InternalBoundary(packByName);
 assertEvaluationPayloadV1InternalBoundary(packByName);
+assertModelTestsAreExcludedFromPack(packByName);
 
 for (const workspace of workspaces) {
   const publication = workspace.pkg.vivi2d?.publication;

@@ -23,6 +23,7 @@ import type {
 const EMPTY_OPTIONS: ProjectFormatV11SemanticOptions = {
   registry: new Map(),
   supportedCapabilities: new Map(),
+  sha256: () => "ab".repeat(32),
 };
 
 const CAP_CLIP = "vivi.cap.clipPlayback";
@@ -511,6 +512,7 @@ describe("Project Format v11 requirements and extension classification", () => {
         [CAP_CLIP, 3],
         [CAP_REFERENCED, 1],
       ]),
+      sha256: () => DIGEST_A,
     };
     assertSchemaPass(wire);
 
@@ -586,6 +588,7 @@ describe("Project Format v11 requirements and extension classification", () => {
     const editOptions: ProjectFormatV11SemanticOptions = {
       registry: registryFor("edit", CAP_ASSET),
       supportedCapabilities: new Map(),
+      sha256: () => DIGEST_A,
     };
 
     const render = embeddedV11();
@@ -615,6 +618,7 @@ describe("Project Format v11 requirements and extension classification", () => {
     const invalidOptions: ProjectFormatV11SemanticOptions = {
       registry: registryFor("known", "vivi.cap.other"),
       supportedCapabilities: new Map(),
+      sha256: () => DIGEST_A,
     };
     await expectSemanticFailure(
       invalidRegistry,
@@ -671,6 +675,7 @@ describe("Project Format v11 requirements and extension classification", () => {
     await expectSemanticFailure(wire, "invalidSemanticValue", "/extensions/known", {
       registry,
       supportedCapabilities: new Map(),
+      sha256: () => DIGEST_A,
     });
   });
 
@@ -704,6 +709,7 @@ describe("Project Format v11 requirements and extension classification", () => {
         ],
       ]),
       supportedCapabilities: new Map([[CAP_ASSET, 1]]),
+      sha256: () => DIGEST_A,
     };
     assertSchemaPass(wire);
 
@@ -743,6 +749,7 @@ describe("Project Format v11 requirements and extension classification", () => {
         ],
       ]),
       supportedCapabilities: new Map(),
+      sha256: () => DIGEST_A,
     };
     assertSchemaPass(wire);
 
@@ -1129,6 +1136,7 @@ describe("Project Format v11 project graph and references", () => {
           [CAP_CLIP, 1],
           [CAP_STATE, 1],
         ]),
+        sha256: () => DIGEST_A,
       }),
     ).resolves.toMatchObject({ compatibility: "full" });
   });

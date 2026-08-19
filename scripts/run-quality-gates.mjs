@@ -12,8 +12,10 @@ if (isCi && !includeCoverage) {
 }
 
 const commands = [
+  ["npm", ["run", "check:model-schema-validators"]],
   ["npx", ["tsc", "--noEmit"]],
   ["npm", ["run", "check:packages-types"]],
+  ["npm", ["run", "check:model-jsc-portability"]],
   ["npm", ["run", "check:workspace-layout"]],
   ["npm", ["run", "check:docs-architecture"]],
   ["npm", ["run", "check:task-guide-paths"]],
