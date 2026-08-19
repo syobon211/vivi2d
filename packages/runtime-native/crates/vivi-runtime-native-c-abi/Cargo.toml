@@ -9,8 +9,12 @@ publish = false
 
 [lib]
 name = "vivi_runtime_native_c_abi"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "staticlib", "rlib"]
 path = "src/lib.rs"
+
+[features]
+default = []
+abi-v02 = ["vivi-runtime-native-core/render-v02"]
 
 [dependencies]
 vivi-runtime-native-core = { path = "../vivi-runtime-native-core" }

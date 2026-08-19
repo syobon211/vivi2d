@@ -5,6 +5,8 @@
 //! Phase N2 adds runtime creation and parser-backed model loading. Evaluator,
 //! snapshot, and ownership-heavy APIs are intentionally left for later phases.
 
+#[cfg(feature = "abi-v02")]
+use std::cell::Cell;
 use std::cell::RefCell;
 use std::ffi::{CStr, CString, c_char};
 use std::mem::{offset_of, size_of};
@@ -12,12 +14,23 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::ptr;
 use std::slice;
 
+#[cfg(not(feature = "abi-v02"))]
+use vivi_runtime_native_core::ABI_VERSION;
+#[cfg(all(feature = "abi-v02", test))]
+use vivi_runtime_native_core::DrawCommandType as CoreDrawCommandType;
 use vivi_runtime_native_core::{
-    ABI_VERSION, BlendMode as CoreBlendMode, RUNTIME_VERSION, RuntimeError,
+    BlendMode as CoreBlendMode, MeshSnapshot as CoreMeshSnapshot, RUNTIME_VERSION, RuntimeError,
     RuntimeLimits as CoreRuntimeLimits, RuntimeModel as CoreRuntimeModel,
     SUPPORTED_SPEC_MAX_VERSION, SUPPORTED_SPEC_MIN_VERSION,
     SUPPORTED_SPEC_MIN_VERSION as RUNTIME_SPEC_VERSION, Version, parse_runtime_payload, status,
 };
+#[cfg(feature = "abi-v02")]
+use vivi_runtime_native_core::{RENDER_FEATURE_DRAW_COMMANDS, render::validate_draw_commands};
+
+#[cfg(feature = "abi-v02")]
+const C_ABI_VERSION: u32 = 2;
+#[cfg(not(feature = "abi-v02"))]
+const C_ABI_VERSION: u32 = ABI_VERSION;
 
 /// C ABI status code.
 pub type ViviStatus = i32;
@@ -257,10 +270,44 @@ pub struct ViviMeshSnapshot {
     pub screen_color: [f32; 4],
 }
 
+/// One ABI 0.2 render command.
+#[cfg(feature = "abi-v02")]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ViviDrawCommandV2 {
+    /// Fixed command size. This is always 24 bytes.
+    pub struct_size: u32,
+    /// Numeric draw-command type.
+    pub command_type: u32,
+    /// Slot in the ABI 0.2 stable render-mesh table.
+    pub mesh_index: u32,
+    /// Mask nesting depth after this command executes.
+    pub mask_depth: u32,
+    /// Command flags. Only mask-invert bit 0 on `BEGIN_MASK` is defined.
+    pub flags: u32,
+    /// Reserved for future use and always zero.
+    pub _reserved: u32,
+}
+
+/// ABI 0.2 model cache generations.
+#[cfg(feature = "abi-v02")]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ViviGenerations {
+    /// Runtime-local monotonically increasing public model instance number.
+    pub model_generation: u64,
+    /// Stable-table and draw-command topology generation.
+    pub topology_generation: u64,
+    /// Dynamic snapshot generation, incremented by each successful update.
+    pub dynamic_generation: u64,
+}
+
 /// Opaque runtime factory handle.
 pub struct ViviRuntime {
     limits: CoreRuntimeLimits,
     last_error: CString,
+    #[cfg(feature = "abi-v02")]
+    public_model_generation: u64,
 }
 
 /// Opaque loaded model handle.
@@ -273,6 +320,14 @@ pub struct ViviModel {
     hit_string_pool: RefCell<Vec<Box<CStr>>>,
     spec_version: Version,
     last_error: RefCell<CString>,
+    #[cfg(feature = "abi-v02")]
+    draw_commands: Vec<ViviDrawCommandV2>,
+    #[cfg(feature = "abi-v02")]
+    render_mesh_strings_v2: Vec<MeshStrings>,
+    #[cfg(feature = "abi-v02")]
+    model_generation: u64,
+    #[cfg(feature = "abi-v02")]
+    dynamic_generation: Cell<u64>,
 }
 
 struct TextureStrings {
@@ -296,7 +351,7 @@ struct ExpressionPresetStrings {
 /// Return the packed Vivi2D runtime ABI version.
 #[unsafe(no_mangle)]
 pub extern "C" fn vivi_get_abi_version() -> u32 {
-    ABI_VERSION
+    C_ABI_VERSION
 }
 
 /// Return the native runtime build/package version.
@@ -592,6 +647,67 @@ pub extern "C" fn vivi_model_apply_expression_preset(
     ffi_boundary(|| model_apply_expression_preset_impl(model, preset_id))
 }
 
+/// Return the number of ABI 0.2 draw commands.
+#[cfg(feature = "abi-v02")]
+#[unsafe(no_mangle)]
+pub extern "C" fn vivi_model_draw_command_count(
+    model: *const ViviModel,
+    out_count: *mut u64,
+) -> ViviStatus {
+    ffi_boundary(|| model_draw_command_count_impl(model, out_count))
+}
+
+/// Return a borrowed model-owned ABI 0.2 draw-command array.
+#[cfg(feature = "abi-v02")]
+#[unsafe(no_mangle)]
+pub extern "C" fn vivi_model_draw_commands(
+    model: *const ViviModel,
+    out_ptr: *mut *const ViviDrawCommandV2,
+) -> ViviStatus {
+    ffi_boundary(|| model_draw_commands_impl(model, out_ptr))
+}
+
+/// Return the ABI 0.2 cache generations for a model.
+#[cfg(feature = "abi-v02")]
+#[unsafe(no_mangle)]
+pub extern "C" fn vivi_model_generations(
+    model: *const ViviModel,
+    out_generations: *mut ViviGenerations,
+) -> ViviStatus {
+    ffi_boundary(|| model_generations_impl(model, out_generations))
+}
+
+/// Return the number of slots in the ABI 0.2 stable render-mesh table.
+#[cfg(feature = "abi-v02")]
+#[unsafe(no_mangle)]
+pub extern "C" fn vivi_model_render_mesh_count_v2(
+    model: *const ViviModel,
+    out_count: *mut u64,
+) -> ViviStatus {
+    ffi_boundary(|| model_render_mesh_count_v2_impl(model, out_count))
+}
+
+/// Return a mesh snapshot from an ABI 0.2 stable render-mesh slot.
+#[cfg(feature = "abi-v02")]
+#[unsafe(no_mangle)]
+pub extern "C" fn vivi_model_render_mesh_snapshot_v2(
+    model: *const ViviModel,
+    mesh_slot: u32,
+    out_snapshot: *mut ViviMeshSnapshot,
+) -> ViviStatus {
+    ffi_boundary(|| model_render_mesh_snapshot_v2_impl(model, mesh_slot, out_snapshot))
+}
+
+/// Return the render features required to display a model correctly.
+#[cfg(feature = "abi-v02")]
+#[unsafe(no_mangle)]
+pub extern "C" fn vivi_model_required_render_features(
+    model: *const ViviModel,
+    out_flags: *mut u64,
+) -> ViviStatus {
+    ffi_boundary(|| model_required_render_features_impl(model, out_flags))
+}
+
 /// Return the number of renderable meshes.
 #[unsafe(no_mangle)]
 pub extern "C" fn vivi_model_mesh_count(
@@ -678,6 +794,8 @@ fn runtime_create_impl(
     let runtime = Box::new(ViviRuntime {
         limits,
         last_error: empty_cstring(),
+        #[cfg(feature = "abi-v02")]
+        public_model_generation: 0,
     });
     unsafe {
         *out_runtime = Box::into_raw(runtime);
@@ -738,7 +856,11 @@ fn model_load_impl(
         }
     };
     let runtime_limits = unsafe { (*runtime).limits };
-    let runtime_model = match CoreRuntimeModel::from_payload_with_limits(&payload, runtime_limits) {
+    #[cfg(feature = "abi-v02")]
+    let runtime_model = CoreRuntimeModel::from_payload_with_limits_v02(&payload, runtime_limits);
+    #[cfg(not(feature = "abi-v02"))]
+    let runtime_model = CoreRuntimeModel::from_payload_with_limits(&payload, runtime_limits);
+    let runtime_model = match runtime_model {
         Ok(runtime_model) => runtime_model,
         Err(error) => {
             set_runtime_error(runtime, error.status(), error.message());
@@ -781,6 +903,58 @@ fn model_load_impl(
                 .collect(),
         })
         .collect();
+    #[cfg(feature = "abi-v02")]
+    let render_mesh_strings_v2 = runtime_model
+        .render_meshes()
+        .iter()
+        .map(|mesh| MeshStrings {
+            id: cstring_lossy(&mesh.id),
+            texture_id: cstring_lossy(&mesh.texture_id),
+        })
+        .collect::<Vec<_>>();
+    #[cfg(feature = "abi-v02")]
+    {
+        if runtime_model.required_render_features() & !RENDER_FEATURE_DRAW_COMMANDS != 0 {
+            set_runtime_error(
+                runtime,
+                status::DRAW_COMMANDS_INVALID,
+                "runtime model requires an unknown ABI 0.2 render feature",
+            );
+            return status::DRAW_COMMANDS_INVALID;
+        }
+        if let Err(error) = validate_draw_commands(
+            runtime_model.draw_commands(),
+            runtime_model.render_mesh_count(),
+        ) {
+            set_runtime_error(runtime, status::DRAW_COMMANDS_INVALID, error.message());
+            return status::DRAW_COMMANDS_INVALID;
+        }
+    }
+    #[cfg(feature = "abi-v02")]
+    let draw_commands = runtime_model
+        .draw_commands()
+        .iter()
+        .map(|command| ViviDrawCommandV2 {
+            struct_size: command.struct_size,
+            command_type: command.command_type,
+            mesh_index: command.mesh_index,
+            mask_depth: command.mask_depth,
+            flags: command.flags,
+            _reserved: command.reserved,
+        })
+        .collect::<Vec<_>>();
+    #[cfg(feature = "abi-v02")]
+    let model_generation = match unsafe { (*runtime).public_model_generation.checked_add(1) } {
+        Some(generation) => generation,
+        None => {
+            set_runtime_error(
+                runtime,
+                status::INTERNAL,
+                "public model generation overflow",
+            );
+            return status::INTERNAL;
+        }
+    };
     let model = Box::new(ViviModel {
         runtime_model: RefCell::new(runtime_model),
         texture_strings,
@@ -790,8 +964,20 @@ fn model_load_impl(
         hit_string_pool: RefCell::new(Vec::new()),
         spec_version: RUNTIME_SPEC_VERSION,
         last_error: RefCell::new(empty_cstring()),
+        #[cfg(feature = "abi-v02")]
+        draw_commands,
+        #[cfg(feature = "abi-v02")]
+        render_mesh_strings_v2,
+        #[cfg(feature = "abi-v02")]
+        model_generation,
+        #[cfg(feature = "abi-v02")]
+        dynamic_generation: Cell::new(0),
     });
     unsafe {
+        #[cfg(feature = "abi-v02")]
+        {
+            (*runtime).public_model_generation = model_generation;
+        }
         *out_model = Box::into_raw(model);
     }
     status::OK
@@ -883,8 +1069,20 @@ fn model_update_impl(model: *mut ViviModel, delta_seconds: f64) -> ViviStatus {
         return status::INVALID_ARGUMENT;
     }
     let model_ref = unsafe { &*model };
+    #[cfg(feature = "abi-v02")]
+    let next_dynamic_generation = match model_ref.dynamic_generation.get().checked_add(1) {
+        Some(generation) => generation,
+        None => {
+            set_model_error(model, status::INTERNAL, "dynamic generation overflow");
+            return status::INTERNAL;
+        }
+    };
     match model_ref.runtime_model.borrow_mut().update(delta_seconds) {
-        Ok(()) => status::OK,
+        Ok(()) => {
+            #[cfg(feature = "abi-v02")]
+            model_ref.dynamic_generation.set(next_dynamic_generation);
+            status::OK
+        }
         Err(error) => {
             set_model_error(model, error.status(), error.message());
             error.status()
@@ -1218,6 +1416,179 @@ fn model_apply_expression_preset_impl(
     }
 }
 
+#[cfg(feature = "abi-v02")]
+fn model_draw_command_count_impl(model: *const ViviModel, out_count: *mut u64) -> ViviStatus {
+    if model.is_null() {
+        return status::INVALID_ARGUMENT;
+    }
+    if out_count.is_null() {
+        set_model_error(
+            model,
+            status::INVALID_ARGUMENT,
+            "draw-command out_count must not be null",
+        );
+        return status::INVALID_ARGUMENT;
+    }
+    unsafe {
+        *out_count = (*model).draw_commands.len() as u64;
+    }
+    status::OK
+}
+
+#[cfg(feature = "abi-v02")]
+fn model_draw_commands_impl(
+    model: *const ViviModel,
+    out_ptr: *mut *const ViviDrawCommandV2,
+) -> ViviStatus {
+    if model.is_null() {
+        return status::INVALID_ARGUMENT;
+    }
+    if out_ptr.is_null() {
+        set_model_error(
+            model,
+            status::INVALID_ARGUMENT,
+            "draw-command out_ptr must not be null",
+        );
+        return status::INVALID_ARGUMENT;
+    }
+    let commands = unsafe { &(*model).draw_commands };
+    unsafe {
+        *out_ptr = if commands.is_empty() {
+            ptr::null()
+        } else {
+            commands.as_ptr()
+        };
+    }
+    status::OK
+}
+
+#[cfg(feature = "abi-v02")]
+fn model_generations_impl(
+    model: *const ViviModel,
+    out_generations: *mut ViviGenerations,
+) -> ViviStatus {
+    if model.is_null() {
+        return status::INVALID_ARGUMENT;
+    }
+    if out_generations.is_null() {
+        set_model_error(
+            model,
+            status::INVALID_ARGUMENT,
+            "out_generations must not be null",
+        );
+        return status::INVALID_ARGUMENT;
+    }
+    let model_ref = unsafe { &*model };
+    unsafe {
+        *out_generations = ViviGenerations {
+            model_generation: model_ref.model_generation,
+            topology_generation: 1,
+            dynamic_generation: model_ref.dynamic_generation.get(),
+        };
+    }
+    status::OK
+}
+
+#[cfg(feature = "abi-v02")]
+fn model_render_mesh_count_v2_impl(model: *const ViviModel, out_count: *mut u64) -> ViviStatus {
+    if model.is_null() {
+        return status::INVALID_ARGUMENT;
+    }
+    if out_count.is_null() {
+        set_model_error(
+            model,
+            status::INVALID_ARGUMENT,
+            "V2 render-mesh out_count must not be null",
+        );
+        return status::INVALID_ARGUMENT;
+    }
+    unsafe {
+        *out_count = (*model).runtime_model.borrow().render_mesh_count() as u64;
+    }
+    status::OK
+}
+
+#[cfg(feature = "abi-v02")]
+fn model_render_mesh_snapshot_v2_impl(
+    model: *const ViviModel,
+    mesh_slot: u32,
+    out_snapshot: *mut ViviMeshSnapshot,
+) -> ViviStatus {
+    if model.is_null() {
+        return status::INVALID_ARGUMENT;
+    }
+    if !is_valid_output_struct::<ViviMeshSnapshot>(out_snapshot) {
+        set_model_error(
+            model,
+            status::INVALID_ARGUMENT,
+            "invalid ABI 0.2 ViviMeshSnapshot output",
+        );
+        return status::INVALID_ARGUMENT;
+    }
+    let model_ref = unsafe { &*model };
+    let runtime_model = model_ref.runtime_model.borrow();
+    let index = mesh_slot as usize;
+    let Some(mesh) = runtime_model.render_mesh(index) else {
+        set_model_error(
+            model,
+            status::INVALID_ARGUMENT,
+            "V2 render mesh slot is out of range",
+        );
+        return status::INVALID_ARGUMENT;
+    };
+    let Some(strings) = model_ref.render_mesh_strings_v2.get(index) else {
+        set_model_error(
+            model,
+            status::INTERNAL,
+            "V2 render-mesh string cache is inconsistent",
+        );
+        return status::INTERNAL;
+    };
+    write_mesh_snapshot(model, mesh, strings, out_snapshot)
+}
+
+#[cfg(feature = "abi-v02")]
+fn model_required_render_features_impl(model: *const ViviModel, out_flags: *mut u64) -> ViviStatus {
+    if model.is_null() {
+        return status::INVALID_ARGUMENT;
+    }
+    if out_flags.is_null() {
+        set_model_error(
+            model,
+            status::INVALID_ARGUMENT,
+            "out_flags must not be null",
+        );
+        return status::INVALID_ARGUMENT;
+    }
+    let required = unsafe { (*model).runtime_model.borrow().required_render_features() };
+    if required & !RENDER_FEATURE_DRAW_COMMANDS != 0 {
+        set_model_error(
+            model,
+            status::DRAW_COMMANDS_INVALID,
+            "runtime model requires an unknown ABI 0.2 render feature",
+        );
+        return status::DRAW_COMMANDS_INVALID;
+    }
+    unsafe {
+        *out_flags = required;
+    }
+    status::OK
+}
+
+#[cfg(feature = "abi-v02")]
+fn reject_legacy_render_api_for_required_features(model: *const ViviModel) -> Option<ViviStatus> {
+    let required = unsafe { (*model).runtime_model.borrow().required_render_features() };
+    if required == 0 {
+        return None;
+    }
+    set_model_error(
+        model,
+        status::RENDER_FEATURE_REQUIRED,
+        "model requires ABI 0.2 draw commands; legacy render API is unavailable",
+    );
+    Some(status::RENDER_FEATURE_REQUIRED)
+}
+
 fn model_mesh_count_impl(model: *const ViviModel, out_count: *mut u64) -> ViviStatus {
     if model.is_null() {
         return status::INVALID_ARGUMENT;
@@ -1229,6 +1600,10 @@ fn model_mesh_count_impl(model: *const ViviModel, out_count: *mut u64) -> ViviSt
             "out_count must not be null",
         );
         return status::INVALID_ARGUMENT;
+    }
+    #[cfg(feature = "abi-v02")]
+    if let Some(error_status) = reject_legacy_render_api_for_required_features(model) {
+        return error_status;
     }
     unsafe {
         *out_count = (*model).runtime_model.borrow().meshes().len() as u64;
@@ -1252,6 +1627,19 @@ fn model_mesh_snapshot_impl(
         );
         return status::INVALID_ARGUMENT;
     };
+    #[cfg(feature = "abi-v02")]
+    if !is_valid_output_struct::<ViviMeshSnapshot>(out_snapshot) {
+        set_model_error(
+            model,
+            status::INVALID_ARGUMENT,
+            "invalid ViviMeshSnapshot output",
+        );
+        return status::INVALID_ARGUMENT;
+    }
+    #[cfg(feature = "abi-v02")]
+    if let Some(error_status) = reject_legacy_render_api_for_required_features(model) {
+        return error_status;
+    }
     write_mesh_snapshot_by_index(model, index, out_snapshot)
 }
 
@@ -1266,6 +1654,19 @@ fn model_mesh_snapshot_by_id_impl(
     if mesh_id.is_null() {
         set_model_error(model, status::INVALID_ARGUMENT, "mesh_id must not be null");
         return status::INVALID_ARGUMENT;
+    }
+    #[cfg(feature = "abi-v02")]
+    if !is_valid_output_struct::<ViviMeshSnapshot>(out_snapshot) {
+        set_model_error(
+            model,
+            status::INVALID_ARGUMENT,
+            "invalid ViviMeshSnapshot output",
+        );
+        return status::INVALID_ARGUMENT;
+    }
+    #[cfg(feature = "abi-v02")]
+    if let Some(error_status) = reject_legacy_render_api_for_required_features(model) {
+        return error_status;
     }
     let mesh_id = unsafe { CStr::from_ptr(mesh_id) }.to_string_lossy();
     let model_ref = unsafe { &*model };
@@ -1385,6 +1786,15 @@ fn write_mesh_snapshot_by_index(
         set_model_error(model, status::INTERNAL, "mesh string cache is inconsistent");
         return status::INTERNAL;
     };
+    write_mesh_snapshot(model, mesh, strings, out_snapshot)
+}
+
+fn write_mesh_snapshot(
+    model: *const ViviModel,
+    mesh: &CoreMeshSnapshot,
+    strings: &MeshStrings,
+    out_snapshot: *mut ViviMeshSnapshot,
+) -> ViviStatus {
     let Some(out) = validate_output_struct::<ViviMeshSnapshot>(out_snapshot) else {
         set_model_error(
             model,
@@ -1711,7 +2121,7 @@ mod tests {
 
     #[test]
     fn exports_version_functions() {
-        assert_eq!(vivi_get_abi_version(), ABI_VERSION);
+        assert_eq!(vivi_get_abi_version(), C_ABI_VERSION);
 
         let mut runtime_version = ViviVersion {
             struct_size: size_of::<ViviVersion>() as u32,
@@ -1941,6 +2351,389 @@ mod tests {
         );
         assert_eq!(mesh.x, 3.0);
         assert_eq!(mesh.y, 4.0);
+
+        vivi_model_destroy(model);
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[cfg(not(feature = "abi-v02"))]
+    #[test]
+    fn abi_v01_ignores_mask_metadata_and_keeps_legacy_mesh_api_available() {
+        assert_eq!(vivi_get_abi_version(), 1);
+        let (runtime, model) = load_test_model(masked_mesh_payload());
+
+        let mut mesh_count = 0_u64;
+        assert_eq!(vivi_model_mesh_count(model, &mut mesh_count), status::OK);
+        assert_eq!(mesh_count, 2);
+        let mut snapshot = mesh_snapshot_output();
+        assert_eq!(
+            vivi_model_mesh_snapshot(model, 0, &mut snapshot),
+            status::OK
+        );
+        assert_eq!(
+            unsafe { CStr::from_ptr(snapshot.id) }.to_str().unwrap(),
+            "target"
+        );
+
+        vivi_model_destroy(model);
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[cfg(feature = "abi-v02")]
+    #[test]
+    fn abi_v02_version_and_layout_are_frozen() {
+        assert_eq!(vivi_get_abi_version(), 2);
+        assert_eq!(status::ABI_VERSION, 11);
+        assert_eq!(status::DRAW_COMMANDS_INVALID, 12);
+        assert_eq!(status::RENDER_FEATURE_REQUIRED, 13);
+
+        assert_layout!(ViviDrawCommandV2, 24, 4);
+        assert_offset!(ViviDrawCommandV2, struct_size, 0);
+        assert_offset!(ViviDrawCommandV2, command_type, 4);
+        assert_offset!(ViviDrawCommandV2, mesh_index, 8);
+        assert_offset!(ViviDrawCommandV2, mask_depth, 12);
+        assert_offset!(ViviDrawCommandV2, flags, 16);
+        assert_offset!(ViviDrawCommandV2, _reserved, 20);
+
+        assert_layout!(ViviGenerations, 24, 8);
+        assert_offset!(ViviGenerations, model_generation, 0);
+        assert_offset!(ViviGenerations, topology_generation, 8);
+        assert_offset!(ViviGenerations, dynamic_generation, 16);
+    }
+
+    #[cfg(feature = "abi-v02")]
+    #[test]
+    fn abi_v02_masked_model_exposes_commands_table_and_fail_closed_legacy_apis() {
+        let (runtime, model) = load_test_model(masked_mesh_payload());
+
+        let mut required = u64::MAX;
+        assert_eq!(
+            vivi_model_required_render_features(model, &mut required),
+            status::OK
+        );
+        assert_eq!(required, RENDER_FEATURE_DRAW_COMMANDS);
+
+        let mut command_count = 0_u64;
+        assert_eq!(
+            vivi_model_draw_command_count(model, &mut command_count),
+            status::OK
+        );
+        assert_eq!(command_count, 3);
+        let mut command_ptr = ptr::null();
+        assert_eq!(
+            vivi_model_draw_commands(model, &mut command_ptr),
+            status::OK
+        );
+        assert!(!command_ptr.is_null());
+        let commands = unsafe { slice::from_raw_parts(command_ptr, command_count as usize) };
+        assert_eq!(
+            commands,
+            &[
+                ViviDrawCommandV2 {
+                    struct_size: 24,
+                    command_type: CoreDrawCommandType::BeginMask as u32,
+                    mesh_index: 0,
+                    mask_depth: 1,
+                    flags: 0,
+                    _reserved: 0,
+                },
+                ViviDrawCommandV2 {
+                    struct_size: 24,
+                    command_type: CoreDrawCommandType::DrawMesh as u32,
+                    mesh_index: 1,
+                    mask_depth: 1,
+                    flags: 0,
+                    _reserved: 0,
+                },
+                ViviDrawCommandV2 {
+                    struct_size: 24,
+                    command_type: CoreDrawCommandType::EndMask as u32,
+                    mesh_index: 0,
+                    mask_depth: 0,
+                    flags: 0,
+                    _reserved: 0,
+                },
+            ]
+        );
+
+        let mut render_mesh_count = 0_u64;
+        assert_eq!(
+            vivi_model_render_mesh_count_v2(model, &mut render_mesh_count),
+            status::OK
+        );
+        assert_eq!(render_mesh_count, 2);
+        let mut mask_snapshot = mesh_snapshot_output();
+        assert_eq!(
+            vivi_model_render_mesh_snapshot_v2(model, 0, &mut mask_snapshot),
+            status::OK
+        );
+        assert_eq!(
+            unsafe { CStr::from_ptr(mask_snapshot.id) }
+                .to_str()
+                .unwrap(),
+            "mask"
+        );
+        assert_eq!(mask_snapshot.visible, 0);
+        let mut target_snapshot = mesh_snapshot_output();
+        assert_eq!(
+            vivi_model_render_mesh_snapshot_v2(model, 1, &mut target_snapshot),
+            status::OK
+        );
+        assert_eq!(
+            unsafe { CStr::from_ptr(target_snapshot.id) }
+                .to_str()
+                .unwrap(),
+            "target"
+        );
+
+        let mut generations = ViviGenerations {
+            model_generation: 0,
+            topology_generation: 0,
+            dynamic_generation: u64::MAX,
+        };
+        assert_eq!(vivi_model_generations(model, &mut generations), status::OK);
+        assert_eq!(
+            generations,
+            ViviGenerations {
+                model_generation: 1,
+                topology_generation: 1,
+                dynamic_generation: 0,
+            }
+        );
+
+        let mut legacy_count = 99_u64;
+        assert_eq!(
+            vivi_model_mesh_count(model, &mut legacy_count),
+            status::RENDER_FEATURE_REQUIRED
+        );
+        assert_eq!(legacy_count, 99);
+        let mut legacy_snapshot = mesh_snapshot_output();
+        assert_eq!(
+            vivi_model_mesh_snapshot(model, 0, &mut legacy_snapshot),
+            status::RENDER_FEATURE_REQUIRED
+        );
+        let target_id = CString::new("target").unwrap();
+        assert_eq!(
+            vivi_model_mesh_snapshot_by_id(model, target_id.as_ptr(), &mut legacy_snapshot),
+            status::RENDER_FEATURE_REQUIRED
+        );
+        let message =
+            unsafe { CStr::from_ptr(vivi_model_last_error_message(model)) }.to_string_lossy();
+        assert!(message.contains("draw commands"));
+
+        vivi_model_destroy(model);
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[cfg(feature = "abi-v02")]
+    #[test]
+    fn abi_v02_public_loader_rejects_editor_only_clip_masks_wire_shape() {
+        let mut runtime: *mut ViviRuntime = ptr::null_mut();
+        assert_eq!(
+            vivi_runtime_create(ptr::null(), ptr::null_mut(), &mut runtime),
+            status::OK
+        );
+        let payload = editor_clip_masks_payload();
+        let mut model: *mut ViviModel = ptr::null_mut();
+        assert_eq!(
+            vivi_model_load(runtime, payload.as_ptr(), payload.len() as u64, &mut model),
+            status::DRAW_COMMANDS_INVALID
+        );
+        assert!(model.is_null());
+        let message =
+            unsafe { CStr::from_ptr(vivi_runtime_last_error_message(runtime)) }.to_string_lossy();
+        assert!(message.contains("clipMasks"));
+
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[cfg(feature = "abi-v02")]
+    #[test]
+    fn abi_v02_generations_change_only_after_successful_operations() {
+        let (runtime, model) = load_test_model(basic_mesh_payload());
+        let mut generations = ViviGenerations {
+            model_generation: 0,
+            topology_generation: 0,
+            dynamic_generation: 0,
+        };
+        assert_eq!(vivi_model_generations(model, &mut generations), status::OK);
+        assert_eq!(generations.dynamic_generation, 0);
+
+        assert_eq!(vivi_model_update(model, f64::NAN), status::INVALID_ARGUMENT);
+        assert_eq!(vivi_model_generations(model, &mut generations), status::OK);
+        assert_eq!(generations.dynamic_generation, 0);
+
+        assert_eq!(vivi_model_update(model, 1.0 / 60.0), status::OK);
+        assert_eq!(vivi_model_generations(model, &mut generations), status::OK);
+        assert_eq!(generations.dynamic_generation, 1);
+        assert_eq!(generations.topology_generation, 1);
+
+        vivi_model_destroy(model);
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[cfg(feature = "abi-v02")]
+    #[test]
+    fn abi_v02_public_model_generation_is_runtime_local_and_success_only() {
+        let mut runtime: *mut ViviRuntime = ptr::null_mut();
+        assert_eq!(
+            vivi_runtime_create(ptr::null(), ptr::null_mut(), &mut runtime),
+            status::OK
+        );
+        let invalid_payload = b"{";
+        let mut failed_model: *mut ViviModel = ptr::null_mut();
+        assert_ne!(
+            vivi_model_load(
+                runtime,
+                invalid_payload.as_ptr(),
+                invalid_payload.len() as u64,
+                &mut failed_model,
+            ),
+            status::OK
+        );
+        assert!(failed_model.is_null());
+
+        let payload = minimal_static_payload();
+        let mut first_model: *mut ViviModel = ptr::null_mut();
+        let mut second_model: *mut ViviModel = ptr::null_mut();
+        assert_eq!(
+            vivi_model_load(
+                runtime,
+                payload.as_ptr(),
+                payload.len() as u64,
+                &mut first_model
+            ),
+            status::OK
+        );
+        assert_eq!(
+            vivi_model_load(
+                runtime,
+                payload.as_ptr(),
+                payload.len() as u64,
+                &mut second_model,
+            ),
+            status::OK
+        );
+        let mut first = ViviGenerations {
+            model_generation: 0,
+            topology_generation: 0,
+            dynamic_generation: 0,
+        };
+        let mut second = first;
+        assert_eq!(vivi_model_generations(first_model, &mut first), status::OK);
+        assert_eq!(
+            vivi_model_generations(second_model, &mut second),
+            status::OK
+        );
+        assert_eq!(first.model_generation, 1);
+        assert_eq!(second.model_generation, 2);
+
+        let mut other_runtime: *mut ViviRuntime = ptr::null_mut();
+        assert_eq!(
+            vivi_runtime_create(ptr::null(), ptr::null_mut(), &mut other_runtime),
+            status::OK
+        );
+        let mut other_model: *mut ViviModel = ptr::null_mut();
+        assert_eq!(
+            vivi_model_load(
+                other_runtime,
+                payload.as_ptr(),
+                payload.len() as u64,
+                &mut other_model,
+            ),
+            status::OK
+        );
+        let mut other = first;
+        assert_eq!(vivi_model_generations(other_model, &mut other), status::OK);
+        assert_eq!(other.model_generation, 1);
+
+        vivi_model_destroy(first_model);
+        vivi_model_destroy(second_model);
+        vivi_model_destroy(other_model);
+        vivi_runtime_destroy(runtime);
+        vivi_runtime_destroy(other_runtime);
+    }
+
+    #[cfg(feature = "abi-v02")]
+    #[test]
+    fn abi_v02_model_generation_overflow_fails_without_publishing_a_model() {
+        let mut runtime: *mut ViviRuntime = ptr::null_mut();
+        assert_eq!(
+            vivi_runtime_create(ptr::null(), ptr::null_mut(), &mut runtime),
+            status::OK
+        );
+        unsafe {
+            (*runtime).public_model_generation = u64::MAX;
+        }
+        let payload = minimal_static_payload();
+        let mut model: *mut ViviModel = ptr::NonNull::dangling().as_ptr();
+        assert_eq!(
+            vivi_model_load(runtime, payload.as_ptr(), payload.len() as u64, &mut model),
+            status::INTERNAL
+        );
+        assert!(model.is_null());
+        assert_eq!(unsafe { (*runtime).public_model_generation }, u64::MAX);
+        let message =
+            unsafe { CStr::from_ptr(vivi_runtime_last_error_message(runtime)) }.to_string_lossy();
+        assert!(message.contains("generation overflow"));
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[cfg(feature = "abi-v02")]
+    #[test]
+    fn abi_v02_validates_new_api_outputs_and_keeps_unmasked_legacy_behavior() {
+        let (runtime, model) = load_test_model(basic_mesh_payload());
+
+        let mut required = u64::MAX;
+        assert_eq!(
+            vivi_model_required_render_features(model, &mut required),
+            status::OK
+        );
+        assert_eq!(required, 0);
+        let mut legacy_count = 0_u64;
+        assert_eq!(vivi_model_mesh_count(model, &mut legacy_count), status::OK);
+        assert_eq!(legacy_count, 1);
+        let mut legacy_snapshot = mesh_snapshot_output();
+        assert_eq!(
+            vivi_model_mesh_snapshot(model, 0, &mut legacy_snapshot),
+            status::OK
+        );
+
+        assert_eq!(
+            vivi_model_draw_command_count(ptr::null(), &mut legacy_count),
+            status::INVALID_ARGUMENT
+        );
+        assert_eq!(
+            vivi_model_draw_command_count(model, ptr::null_mut()),
+            status::INVALID_ARGUMENT
+        );
+        assert_eq!(
+            vivi_model_draw_commands(model, ptr::null_mut()),
+            status::INVALID_ARGUMENT
+        );
+        assert_eq!(
+            vivi_model_generations(model, ptr::null_mut()),
+            status::INVALID_ARGUMENT
+        );
+        assert_eq!(
+            vivi_model_render_mesh_count_v2(model, ptr::null_mut()),
+            status::INVALID_ARGUMENT
+        );
+        assert_eq!(
+            vivi_model_required_render_features(model, ptr::null_mut()),
+            status::INVALID_ARGUMENT
+        );
+        let mut undersized_snapshot = mesh_snapshot_output();
+        undersized_snapshot.struct_size -= 1;
+        assert_eq!(
+            vivi_model_render_mesh_snapshot_v2(model, 0, &mut undersized_snapshot),
+            status::INVALID_ARGUMENT
+        );
+        let mut valid_snapshot = mesh_snapshot_output();
+        assert_eq!(
+            vivi_model_render_mesh_snapshot_v2(model, u32::MAX, &mut valid_snapshot),
+            status::INVALID_ARGUMENT
+        );
 
         vivi_model_destroy(model);
         vivi_runtime_destroy(runtime);
@@ -2469,8 +3262,99 @@ mod tests {
         }
     }
 
+    fn load_test_model(payload: &[u8]) -> (*mut ViviRuntime, *mut ViviModel) {
+        let mut runtime: *mut ViviRuntime = ptr::null_mut();
+        assert_eq!(
+            vivi_runtime_create(ptr::null(), ptr::null_mut(), &mut runtime),
+            status::OK
+        );
+        let mut model: *mut ViviModel = ptr::null_mut();
+        assert_eq!(
+            vivi_model_load(runtime, payload.as_ptr(), payload.len() as u64, &mut model),
+            status::OK
+        );
+        assert!(!model.is_null());
+        (runtime, model)
+    }
+
     fn minimal_static_payload() -> &'static [u8] {
         br#"{"profile":"publicProfileV1","version":10,"project":{"layers":[]},"atlases":[]}"#
+    }
+
+    fn masked_mesh_payload() -> &'static [u8] {
+        br##"{
+          "version":10,
+          "profile":"publicProfileV1",
+          "atlases":[{
+            "image":"host-atlas-0",
+            "width":16,
+            "height":16,
+            "entries":[
+              {"layerId":"mask","x":0,"y":0,"width":10,"height":10},
+              {"layerId":"target","x":0,"y":0,"width":10,"height":10}
+            ]
+          }],
+          "project":{
+            "name":"runtime-mask-fixture",
+            "width":64,
+            "height":64,
+            "layers":[
+              {
+                "id":"mask",
+                "name":"Mask",
+                "visible":false,
+                "opacity":0.25,
+                "x":0,
+                "y":0,
+                "width":10,
+                "height":10,
+                "blendMode":"normal",
+                "expanded":true,
+                "kind":"viviMesh",
+                "children":[],
+                "drawOrder":20,
+                "mesh":{"vertices":[0,0,10,0,0,10],"uvs":[0,0,1,0,0,1],"indices":[0,1,2],"divisionsX":1,"divisionsY":1}
+              },
+              {
+                "id":"target",
+                "name":"Target",
+                "visible":true,
+                "opacity":1,
+                "x":0,
+                "y":0,
+                "width":10,
+                "height":10,
+                "blendMode":"normal",
+                "expanded":true,
+                "kind":"viviMesh",
+                "children":[],
+                "drawOrder":10,
+                "clipMaskIds":["mask"],
+                "mesh":{"vertices":[0,0,10,0,0,10],"uvs":[0,0,1,0,0,1],"indices":[0,1,2],"divisionsX":1,"divisionsY":1}
+              }
+            ],
+            "parameters":[],
+            "clips":[],
+            "scenes":[],
+            "physicsGroups":[],
+            "lipsyncConfig":{"enabled":false,"targetParameterId":null,"source":"microphone","threshold":0.02,"smoothing":0.7,"gain":2},
+            "skins":{},
+            "colliders":[],
+            "stateMachines":[],
+            "expressionPresets":[]
+          }
+        }"##
+    }
+
+    #[cfg(feature = "abi-v02")]
+    fn editor_clip_masks_payload() -> Vec<u8> {
+        std::str::from_utf8(masked_mesh_payload())
+            .unwrap()
+            .replace(
+                "\"clipMaskIds\":[\"mask\"]",
+                "\"clipMasks\":[{\"layerId\":\"mask\",\"invert\":true}]",
+            )
+            .into_bytes()
     }
 
     fn basic_mesh_payload() -> &'static [u8] {

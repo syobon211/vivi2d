@@ -6,6 +6,11 @@ use crate::errors::RuntimeError;
 use crate::limits::RuntimeLimits;
 use crate::parameters::{ParameterInfo, ParameterState};
 use crate::parser::RuntimePayload;
+#[cfg(feature = "render-v02")]
+use crate::render::{
+    ClipMaskEdge, DrawCommand, RENDER_FEATURE_DRAW_COMMANDS, RenderLayerTopology,
+    build_draw_commands,
+};
 use crate::static_model::{BlendMode, MeshSnapshot, StaticModel, TextureSnapshot};
 use crate::status;
 
@@ -72,9 +77,26 @@ impl RuntimeModel {
         payload: &RuntimePayload,
         limits: RuntimeLimits,
     ) -> Result<Self, RuntimeError> {
+        Self::from_payload_with_limits_policy(payload, limits, false)
+    }
+
+    /// Build an evaluator with Runtime ABI 0.2 render-topology validation enabled.
+    #[cfg(feature = "render-v02")]
+    pub fn from_payload_with_limits_v02(
+        payload: &RuntimePayload,
+        limits: RuntimeLimits,
+    ) -> Result<Self, RuntimeError> {
+        Self::from_payload_with_limits_policy(payload, limits, true)
+    }
+
+    fn from_payload_with_limits_policy(
+        payload: &RuntimePayload,
+        limits: RuntimeLimits,
+        render_v02: bool,
+    ) -> Result<Self, RuntimeError> {
         let static_model = StaticModel::from_payload_with_limits(payload, limits)?;
         let parameters = ParameterState::from_payload_with_limits(payload, limits)?;
-        let scene = RuntimeScene::from_payload(payload, limits)?;
+        let scene = RuntimeScene::from_payload(payload, limits, render_v02)?;
         let mut model = Self {
             textures: static_model.textures().to_vec(),
             parameters,
@@ -114,6 +136,36 @@ impl RuntimeModel {
     /// Return current mesh snapshots in render order.
     pub fn meshes(&self) -> &[MeshSnapshot] {
         &self.state.meshes
+    }
+
+    /// Return current V2 render-mesh snapshots in stable traversal-slot order.
+    #[cfg(feature = "render-v02")]
+    pub fn render_meshes(&self) -> &[MeshSnapshot] {
+        &self.state.render_meshes
+    }
+
+    /// Return the number of stable V2 render-mesh slots.
+    #[cfg(feature = "render-v02")]
+    pub fn render_mesh_count(&self) -> usize {
+        self.state.render_meshes.len()
+    }
+
+    /// Return the current snapshot at a stable V2 render-mesh slot.
+    #[cfg(feature = "render-v02")]
+    pub fn render_mesh(&self, slot: usize) -> Option<&MeshSnapshot> {
+        self.state.render_meshes.get(slot)
+    }
+
+    /// Return the model's validated Runtime ABI 0.2 draw-command sequence.
+    #[cfg(feature = "render-v02")]
+    pub fn draw_commands(&self) -> &[DrawCommand] {
+        &self.scene.draw_commands
+    }
+
+    /// Return the render features required to display this model correctly.
+    #[cfg(feature = "render-v02")]
+    pub fn required_render_features(&self) -> u64 {
+        self.scene.required_render_features
     }
 
     /// Return parameter metadata and current values.
@@ -468,8 +520,14 @@ impl RuntimeModel {
                 screen_color: layer.screen_color,
             });
         }
+        #[cfg(feature = "render-v02")]
+        let render_meshes = meshes.clone();
         meshes.sort_by_key(|mesh| mesh.draw_order);
         self.state.meshes = meshes;
+        #[cfg(feature = "render-v02")]
+        {
+            self.state.render_meshes = render_meshes;
+        }
     }
 
     fn compute_world_transforms(&self) -> HashMap<String, Affine2D> {
@@ -650,10 +708,18 @@ struct RuntimeScene {
     colliders: Vec<Collider>,
     physics_groups: Vec<PhysicsGroup>,
     expression_presets: Vec<ExpressionPreset>,
+    #[cfg(feature = "render-v02")]
+    draw_commands: Vec<DrawCommand>,
+    #[cfg(feature = "render-v02")]
+    required_render_features: u64,
 }
 
 impl RuntimeScene {
-    fn from_payload(payload: &RuntimePayload, limits: RuntimeLimits) -> Result<Self, RuntimeError> {
+    fn from_payload(
+        payload: &RuntimePayload,
+        limits: RuntimeLimits,
+        render_v02: bool,
+    ) -> Result<Self, RuntimeError> {
         let limits = limits.hardened();
         let root = object(&payload.value, "runtime payload")?;
         let project = object_field(root, "project", "project")?;
@@ -665,6 +731,7 @@ impl RuntimeScene {
             &mut layers,
             0,
             true,
+            render_v02,
         )?;
         assert_limit("layers", layers.len(), limits.max_layers)?;
         assert_limit(
@@ -688,6 +755,39 @@ impl RuntimeScene {
         let colliders = parse_colliders(project, limits)?;
         let physics_groups = parse_physics_groups(project, limits)?;
         let expression_presets = parse_expression_presets(project)?;
+        #[cfg(feature = "render-v02")]
+        let (draw_commands, required_render_features) = if render_v02 {
+            let render_layers = layers
+                .iter()
+                .filter(|layer| layer.mesh.is_some())
+                .enumerate()
+                .map(|(mesh_slot, layer)| {
+                    Ok(RenderLayerTopology {
+                        id: layer.id.clone(),
+                        clip_masks: layer.clip_masks.clone(),
+                        draw_order: layer.draw_order,
+                        visible: layer.effective_visible,
+                        mesh_slot: u32::try_from(mesh_slot).map_err(|_| {
+                            RuntimeError::new(status::LIMIT_EXCEEDED, "render mesh slot overflow")
+                        })?,
+                    })
+                })
+                .collect::<Result<Vec<_>, RuntimeError>>()?;
+            let required_render_features = if render_layers
+                .iter()
+                .any(|layer| !layer.clip_masks.is_empty())
+            {
+                RENDER_FEATURE_DRAW_COMMANDS
+            } else {
+                0
+            };
+            (
+                build_draw_commands(&render_layers)?,
+                required_render_features,
+            )
+        } else {
+            (Vec::new(), 0)
+        };
         Ok(Self {
             layers,
             bones,
@@ -697,6 +797,10 @@ impl RuntimeScene {
             colliders,
             physics_groups,
             expression_presets,
+            #[cfg(feature = "render-v02")]
+            draw_commands,
+            #[cfg(feature = "render-v02")]
+            required_render_features,
         })
     }
 
@@ -731,6 +835,8 @@ struct RuntimeState {
     physics_accumulators: HashMap<String, f64>,
     prev_parameters: HashMap<String, f64>,
     meshes: Vec<MeshSnapshot>,
+    #[cfg(feature = "render-v02")]
+    render_meshes: Vec<MeshSnapshot>,
 }
 
 impl RuntimeState {
@@ -750,6 +856,8 @@ impl RuntimeState {
             physics_accumulators: HashMap::new(),
             prev_parameters: HashMap::new(),
             meshes: Vec::new(),
+            #[cfg(feature = "render-v02")]
+            render_meshes: Vec::new(),
         }
     }
 }
@@ -766,6 +874,8 @@ struct LayerData {
     multiply_color: Option<[f32; 4]>,
     screen_color: Option<[f32; 4]>,
     culling: bool,
+    #[cfg(feature = "render-v02")]
+    clip_masks: Vec<ClipMaskEdge>,
     mesh: Option<MeshLayer>,
     bone: Option<BoneLayer>,
 }
@@ -980,7 +1090,10 @@ fn collect_layers(
     layers: &mut Vec<LayerData>,
     depth: usize,
     parent_visible: bool,
+    render_v02: bool,
 ) -> Result<(), RuntimeError> {
+    #[cfg(not(feature = "render-v02"))]
+    let _ = render_v02;
     if depth > 256 {
         return Err(validation_error("layer tree depth exceeds native limit"));
     }
@@ -998,6 +1111,19 @@ fn collect_layers(
         )?)?;
         let x = optional_f64_field(object, "x", &format!("{path}.x"))?.unwrap_or(0.0);
         let y = optional_f64_field(object, "y", &format!("{path}.y"))?.unwrap_or(0.0);
+        #[cfg(feature = "render-v02")]
+        let clip_masks = if render_v02 {
+            parse_clip_masks(object, &path)?
+        } else {
+            Vec::new()
+        };
+        #[cfg(feature = "render-v02")]
+        if kind != "viviMesh" && !clip_masks.is_empty() {
+            return Err(RuntimeError::new(
+                status::DRAW_COMMANDS_INVALID,
+                format!("{path} applies clip masks to a non-mesh layer"),
+            ));
+        }
         let layer = LayerData {
             x,
             y,
@@ -1009,6 +1135,8 @@ fn collect_layers(
                 .filter(|color| color[0] != 0.0 || color[1] != 0.0 || color[2] != 0.0),
             culling: optional_bool_field(object, "culling", &format!("{path}.culling"))?
                 .unwrap_or(false),
+            #[cfg(feature = "render-v02")]
+            clip_masks,
             mesh: if kind == "viviMesh" {
                 let mesh = object_field(object, "mesh", &format!("{path}.mesh"))?;
                 Some(MeshLayer {
@@ -1056,10 +1184,55 @@ fn collect_layers(
                 layers,
                 depth + 1,
                 effective_visible,
+                render_v02,
             )?;
         }
     }
     Ok(())
+}
+
+#[cfg(feature = "render-v02")]
+fn parse_clip_masks(
+    layer: &Map<String, Value>,
+    path: &str,
+) -> Result<Vec<ClipMaskEdge>, RuntimeError> {
+    if layer.contains_key("clipMasks") {
+        return Err(RuntimeError::new(
+            status::DRAW_COMMANDS_INVALID,
+            format!("{path}.clipMasks is not accepted by the public Runtime Spec v1 loader"),
+        ));
+    }
+
+    let mut seen = HashSet::new();
+    let mut edges = Vec::new();
+    if let Some(value) = layer.get("clipMaskIds") {
+        let ids = value.as_array().ok_or_else(|| {
+            RuntimeError::new(
+                status::DRAW_COMMANDS_INVALID,
+                format!("{path}.clipMaskIds must be an array"),
+            )
+        })?;
+        for (index, value) in ids.iter().enumerate() {
+            let id = value.as_str().filter(|id| !id.is_empty()).ok_or_else(|| {
+                RuntimeError::new(
+                    status::DRAW_COMMANDS_INVALID,
+                    format!("{path}.clipMaskIds[{index}] must be a non-empty string"),
+                )
+            })?;
+            if !seen.insert(id.to_owned()) {
+                return Err(RuntimeError::new(
+                    status::DRAW_COMMANDS_INVALID,
+                    format!("{path} contains duplicate clip-mask edge {id}"),
+                ));
+            }
+            edges.push(ClipMaskEdge {
+                layer_id: id.to_owned(),
+                invert: false,
+            });
+        }
+    }
+
+    Ok(edges)
 }
 
 fn atlas_layer_map(
@@ -2217,8 +2390,12 @@ fn assert_limit(label: &str, actual: usize, limit: usize) -> Result<(), RuntimeE
 #[cfg(test)]
 mod tests {
     use serde_json::Value;
+    #[cfg(feature = "render-v02")]
+    use serde_json::json;
 
     use super::*;
+    #[cfg(feature = "render-v02")]
+    use crate::DrawCommandType;
     use crate::{RuntimeLimits, parse_runtime_payload};
 
     fn fixture_file_data(name: &str) -> Value {
@@ -2248,6 +2425,14 @@ mod tests {
         RuntimeModel::from_payload_with_limits(&payload, RuntimeLimits::default())
     }
 
+    #[cfg(feature = "render-v02")]
+    fn model_from_file_data_v02(file_data: Value) -> Result<RuntimeModel, RuntimeError> {
+        let file_data = file_data.to_string();
+        let payload =
+            parse_runtime_payload(file_data.as_bytes(), RuntimeLimits::default()).unwrap();
+        RuntimeModel::from_payload_with_limits_v02(&payload, RuntimeLimits::default())
+    }
+
     fn model_from_fixture(name: &str) -> RuntimeModel {
         model_from_file_data(fixture_file_data(name)).unwrap()
     }
@@ -2257,6 +2442,335 @@ mod tests {
             Ok(_) => panic!("expected model validation error"),
             Err(error) => error,
         }
+    }
+
+    #[cfg(feature = "render-v02")]
+    fn topology_mesh(id: &str, draw_order: i32, visible: bool, extra: Value) -> Value {
+        let mut layer = json!({
+            "id": id,
+            "name": id,
+            "visible": visible,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "kind": "viviMesh",
+            "children": [],
+            "drawOrder": draw_order,
+            "mesh": {
+                "vertices": [0, 0, 1, 0, 0, 1],
+                "uvs": [0, 0, 1, 0, 0, 1],
+                "indices": [0, 1, 2],
+                "divisionsX": 1,
+                "divisionsY": 1
+            }
+        });
+        let Value::Object(extra) = extra else {
+            panic!("topology mesh extra fields must be an object");
+        };
+        layer.as_object_mut().unwrap().extend(extra);
+        layer
+    }
+
+    #[cfg(feature = "render-v02")]
+    fn topology_file_data(layers: Vec<Value>) -> Value {
+        let mut entry_ids = HashSet::new();
+        let entries = layers
+            .iter()
+            .filter_map(|layer| {
+                let id = layer["id"].as_str().unwrap();
+                entry_ids.insert(id.to_owned()).then(|| {
+                    json!({
+                        "layerId": id,
+                        "x": 0,
+                        "y": 0,
+                        "width": 1,
+                        "height": 1
+                    })
+                })
+            })
+            .collect::<Vec<_>>();
+        json!({
+            "profile": "publicProfileV1",
+            "version": 10,
+            "project": {"layers": layers},
+            "atlases": [{
+                "image": "host-atlas-0",
+                "width": 16,
+                "height": 16,
+                "entries": entries
+            }]
+        })
+    }
+
+    #[cfg(feature = "render-v02")]
+    fn topology_model(layers: Vec<Value>) -> Result<RuntimeModel, RuntimeError> {
+        model_from_file_data_v02(topology_file_data(layers))
+    }
+
+    #[cfg(feature = "render-v02")]
+    fn command_shape(model: &RuntimeModel) -> Vec<(u32, u32, u32, u32)> {
+        model
+            .draw_commands()
+            .iter()
+            .map(|command| {
+                (
+                    command.command_type,
+                    command.mesh_index,
+                    command.mask_depth,
+                    command.flags,
+                )
+            })
+            .collect()
+    }
+
+    #[cfg(feature = "render-v02")]
+    #[test]
+    fn keeps_v2_mesh_slots_in_traversal_order_and_draws_in_order() {
+        let mut model = topology_model(vec![
+            topology_mesh("late", 20, true, json!({})),
+            topology_mesh("early", 10, true, json!({})),
+        ])
+        .unwrap();
+
+        assert_eq!(model.required_render_features(), 0);
+        assert_eq!(model.render_mesh_count(), 2);
+        assert_eq!(model.render_meshes()[0].id, "late");
+        assert_eq!(model.render_mesh(1).unwrap().id, "early");
+        assert_eq!(model.meshes()[0].id, "early");
+        assert_eq!(model.meshes()[1].id, "late");
+        assert_eq!(
+            command_shape(&model),
+            vec![
+                (DrawCommandType::DrawMesh as u32, 1, 0, 0),
+                (DrawCommandType::DrawMesh as u32, 0, 0, 0),
+            ]
+        );
+
+        let slots_before_update = model
+            .render_meshes()
+            .iter()
+            .map(|mesh| mesh.id.clone())
+            .collect::<Vec<_>>();
+        let commands_before_update = model.draw_commands().to_vec();
+        model.update(0.0).unwrap();
+        assert_eq!(
+            model
+                .render_meshes()
+                .iter()
+                .map(|mesh| mesh.id.clone())
+                .collect::<Vec<_>>(),
+            slots_before_update
+        );
+        assert_eq!(model.draw_commands(), commands_before_update);
+    }
+
+    #[cfg(feature = "render-v02")]
+    #[test]
+    fn emits_single_mask_and_keeps_invisible_mask_only_mesh_addressable() {
+        let model = topology_model(vec![
+            topology_mesh("mask", 20, false, json!({})),
+            topology_mesh("target", 10, true, json!({"clipMaskIds": ["mask"]})),
+        ])
+        .unwrap();
+
+        assert_eq!(
+            model.required_render_features(),
+            RENDER_FEATURE_DRAW_COMMANDS
+        );
+        assert_eq!(model.render_mesh_count(), 2);
+        assert_eq!(model.render_mesh(0).unwrap().id, "mask");
+        assert!(!model.render_mesh(0).unwrap().visible);
+        assert_eq!(model.render_mesh(1).unwrap().id, "target");
+        assert_eq!(
+            command_shape(&model),
+            vec![
+                (DrawCommandType::BeginMask as u32, 0, 1, 0),
+                (DrawCommandType::DrawMesh as u32, 1, 1, 0),
+                (DrawCommandType::EndMask as u32, 0, 0, 0),
+            ]
+        );
+        // The pre-0.2 core view remains available and in legacy draw order.
+        assert_eq!(model.meshes().len(), 2);
+        assert_eq!(model.meshes()[0].id, "target");
+    }
+
+    #[cfg(feature = "render-v02")]
+    #[test]
+    fn expands_multiple_and_recursive_masks_as_nested_and() {
+        let model = topology_model(vec![
+            topology_mesh("root-mask", 50, false, json!({})),
+            topology_mesh(
+                "nested-mask",
+                40,
+                false,
+                json!({"clipMaskIds": ["root-mask"]}),
+            ),
+            topology_mesh("second-mask", 30, false, json!({})),
+            topology_mesh(
+                "target",
+                10,
+                true,
+                json!({"clipMaskIds": ["nested-mask", "second-mask"]}),
+            ),
+        ])
+        .unwrap();
+
+        assert_eq!(
+            command_shape(&model),
+            vec![
+                (DrawCommandType::BeginMask as u32, 0, 1, 0),
+                (DrawCommandType::BeginMask as u32, 1, 2, 0),
+                (DrawCommandType::BeginMask as u32, 2, 3, 0),
+                (DrawCommandType::DrawMesh as u32, 3, 3, 0),
+                (DrawCommandType::EndMask as u32, 0, 2, 0),
+                (DrawCommandType::EndMask as u32, 0, 1, 0),
+                (DrawCommandType::EndMask as u32, 0, 0, 0),
+            ]
+        );
+    }
+
+    #[cfg(feature = "render-v02")]
+    #[test]
+    fn public_v02_constructor_rejects_editor_only_clip_masks_wire_shape() {
+        let error = topology_model(vec![
+            topology_mesh("mask", 20, false, json!({})),
+            topology_mesh(
+                "target",
+                10,
+                true,
+                json!({"clipMasks": [{"layerId": "mask", "invert": true}]}),
+            ),
+        ])
+        .unwrap_err();
+
+        assert_eq!(error.status(), status::DRAW_COMMANDS_INVALID);
+    }
+
+    #[cfg(feature = "render-v02")]
+    #[test]
+    fn legacy_constructor_ignores_v02_fields_when_cargo_unifies_the_feature() {
+        let model = model_from_file_data(topology_file_data(vec![topology_mesh(
+            "target",
+            10,
+            true,
+            json!({
+                "clipMaskIds": "not-an-array",
+                "clipMasks": {"not": "an-array"}
+            }),
+        )]))
+        .unwrap();
+
+        assert_eq!(model.meshes().len(), 1);
+        assert!(model.draw_commands().is_empty());
+        assert_eq!(model.required_render_features(), 0);
+    }
+
+    #[cfg(feature = "render-v02")]
+    #[test]
+    fn rejects_ninth_mask_depth_with_limit_status() {
+        let mut layers = (0..9)
+            .map(|index| topology_mesh(&format!("mask-{index}"), 20, false, json!({})))
+            .collect::<Vec<_>>();
+        let mask_ids = (0..9)
+            .map(|index| Value::String(format!("mask-{index}")))
+            .collect::<Vec<_>>();
+        layers.push(topology_mesh(
+            "target",
+            10,
+            true,
+            json!({"clipMaskIds": mask_ids}),
+        ));
+
+        let error = topology_model(layers).unwrap_err();
+        assert_eq!(error.status(), status::LIMIT_EXCEEDED);
+    }
+
+    #[cfg(feature = "render-v02")]
+    #[test]
+    fn accepts_exactly_eight_active_masks() {
+        let mut layers = (0..8)
+            .map(|index| topology_mesh(&format!("mask-{index}"), 20, false, json!({})))
+            .collect::<Vec<_>>();
+        let mask_ids = (0..8)
+            .map(|index| Value::String(format!("mask-{index}")))
+            .collect::<Vec<_>>();
+        layers.push(topology_mesh(
+            "target",
+            10,
+            true,
+            json!({"clipMaskIds": mask_ids}),
+        ));
+
+        let model = topology_model(layers).unwrap();
+        assert_eq!(
+            model
+                .draw_commands()
+                .iter()
+                .filter(|command| command.command_type == DrawCommandType::BeginMask as u32)
+                .count(),
+            8
+        );
+        assert_eq!(
+            model
+                .draw_commands()
+                .iter()
+                .map(|command| command.mask_depth)
+                .max(),
+            Some(crate::MAX_MASK_DEPTH)
+        );
+    }
+
+    #[cfg(feature = "render-v02")]
+    #[test]
+    fn rejects_mask_cycles_and_invalid_edges_with_draw_command_status() {
+        let cycle = topology_model(vec![
+            topology_mesh("a", 10, false, json!({"clipMaskIds": ["b"]})),
+            topology_mesh("b", 20, false, json!({"clipMaskIds": ["a"]})),
+        ])
+        .unwrap_err();
+        assert_eq!(cycle.status(), status::DRAW_COMMANDS_INVALID);
+
+        let missing = topology_model(vec![topology_mesh(
+            "target",
+            10,
+            true,
+            json!({"clipMaskIds": ["missing"]}),
+        )])
+        .unwrap_err();
+        assert_eq!(missing.status(), status::DRAW_COMMANDS_INVALID);
+
+        let exclusive = topology_model(vec![
+            topology_mesh("mask", 20, false, json!({})),
+            topology_mesh(
+                "target",
+                10,
+                true,
+                json!({
+                    "clipMaskIds": ["mask"],
+                    "clipMasks": [{"layerId": "mask", "invert": true}]
+                }),
+            ),
+        ])
+        .unwrap_err();
+        assert_eq!(exclusive.status(), status::DRAW_COMMANDS_INVALID);
+
+        let duplicate_edge = topology_model(vec![
+            topology_mesh("mask", 20, false, json!({})),
+            topology_mesh("target", 10, true, json!({"clipMaskIds": ["mask", "mask"]})),
+        ])
+        .unwrap_err();
+        assert_eq!(duplicate_edge.status(), status::DRAW_COMMANDS_INVALID);
+
+        let duplicate_mesh_id = topology_model(vec![
+            topology_mesh("duplicate", 10, true, json!({})),
+            topology_mesh("duplicate", 20, true, json!({})),
+        ])
+        .unwrap_err();
+        assert_eq!(duplicate_mesh_id.status(), status::DRAW_COMMANDS_INVALID);
     }
 
     #[test]

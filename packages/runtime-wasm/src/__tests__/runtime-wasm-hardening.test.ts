@@ -175,6 +175,21 @@ describe("@vivi2d/runtime-wasm hardening", () => {
     );
   });
 
+  it("rejects attempts to override fixed mask depth in the portable evaluator", async () => {
+    const runtime = await createViviWasmRuntime({ backend: "portable" });
+
+    for (const maxMaskDepth of [4, undefined]) {
+      const escapedOptions = {
+        limits: { maxMaskDepth },
+      } as unknown as RuntimeOptions;
+
+      await expectRuntimeError(
+        () => runtime.load(cloneFixture(), escapedOptions),
+        VIVI_RUNTIME_ERROR_CODES.invalidArgument,
+      );
+    }
+  });
+
   it("validates and clamps portable evaluator initial parameters", async () => {
     const runtime = await createViviWasmRuntime({ backend: "portable" });
     const clamped = runtime.load(cloneFixture(), {

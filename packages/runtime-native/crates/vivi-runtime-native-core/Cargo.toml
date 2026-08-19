@@ -11,5 +11,9 @@ publish = false
 name = "vivi_runtime_native_core"
 path = "src/lib.rs"
 
+[features]
+default = []
+render-v02 = []
+
 [dependencies]
 serde_json = "1.0"

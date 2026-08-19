@@ -16,6 +16,9 @@ pub mod model;
 pub mod parameters;
 /// Strict Runtime Spec v1 JSON parser.
 pub mod parser;
+/// Runtime ABI 0.2 render topology and draw-command types.
+#[cfg(feature = "render-v02")]
+pub mod render;
 /// Static Runtime Spec v1 model snapshots.
 pub mod static_model;
 
@@ -25,6 +28,11 @@ pub use model::{HitResult, RuntimeModel};
 pub use parameters::{ParameterInfo, ParameterState};
 pub use parser::{
     PreflightSummary, RuntimePayload, parse_runtime_payload, preflight_runtime_payload,
+};
+#[cfg(feature = "render-v02")]
+pub use render::{
+    DRAW_COMMAND_FLAG_MASK_INVERT, DRAW_COMMAND_STRUCT_SIZE, DrawCommand, DrawCommandType,
+    MAX_MASK_DEPTH, RENDER_FEATURE_DRAW_COMMANDS,
 };
 pub use static_model::{BlendMode, MeshSnapshot, StaticModel, TextureSnapshot};
 
@@ -93,10 +101,26 @@ pub mod status {
     pub const EVALUATION: i32 = 9;
     /// Unexpected runtime failure.
     pub const INTERNAL: i32 = 10;
+    /// Host and runtime ABI versions are incompatible.
+    #[cfg(feature = "render-v02")]
+    pub const ABI_VERSION: i32 = 11;
+    /// Runtime draw-command topology is invalid.
+    #[cfg(feature = "render-v02")]
+    pub const DRAW_COMMANDS_INVALID: i32 = 12;
+    /// The model requires a render path unavailable through a legacy API.
+    #[cfg(feature = "render-v02")]
+    pub const RENDER_FEATURE_REQUIRED: i32 = 13;
 
     /// Return whether a raw status code belongs to the canonical C ABI catalog.
     pub const fn is_canonical(status: i32) -> bool {
-        status >= OK && status <= INTERNAL
+        #[cfg(feature = "render-v02")]
+        {
+            status >= OK && status <= RENDER_FEATURE_REQUIRED
+        }
+        #[cfg(not(feature = "render-v02"))]
+        {
+            status >= OK && status <= INTERNAL
+        }
     }
 }
 
@@ -140,7 +164,18 @@ mod tests {
         assert_eq!(status::EVALUATION, 9);
         assert_eq!(status::INTERNAL, 10);
         assert!(status::is_canonical(status::OK));
-        assert!(status::is_canonical(status::INTERNAL));
-        assert!(!status::is_canonical(status::INTERNAL + 1));
+        #[cfg(feature = "render-v02")]
+        {
+            assert_eq!(status::ABI_VERSION, 11);
+            assert_eq!(status::DRAW_COMMANDS_INVALID, 12);
+            assert_eq!(status::RENDER_FEATURE_REQUIRED, 13);
+            assert!(status::is_canonical(status::RENDER_FEATURE_REQUIRED));
+            assert!(!status::is_canonical(status::RENDER_FEATURE_REQUIRED + 1));
+        }
+        #[cfg(not(feature = "render-v02"))]
+        {
+            assert!(status::is_canonical(status::INTERNAL));
+            assert!(!status::is_canonical(status::INTERNAL + 1));
+        }
     }
 }

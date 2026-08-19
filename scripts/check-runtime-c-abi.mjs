@@ -6,17 +6,31 @@ const headerPath = "packages/runtime-c-abi/include/vivi_runtime.h";
 const samplePath = "packages/runtime-c-abi/samples/minimal-host.c";
 const layoutPath = "packages/runtime-c-abi/tests/header-layout.c";
 const runtimeSpecPath = "packages/model/src/runtime-spec.ts";
+const coreRuntimeSpecPath = "packages/core/src/runtime-spec.ts";
+const runtimeSpecDocumentPath = "docs/developer/api/spec/runtime-spec-v1.md";
 const nativeCorePath =
   "packages/runtime-native/crates/vivi-runtime-native-core/src/lib.rs";
+const nativeRenderPath =
+  "packages/runtime-native/crates/vivi-runtime-native-core/src/render.rs";
 const nativeCAbiPath =
   "packages/runtime-native/crates/vivi-runtime-native-c-abi/src/lib.rs";
+const v02HeaderPath = "packages/runtime-c-abi/include/vivi_runtime_v02.h";
 const header = fs.readFileSync(path.join(root, headerPath), "utf8");
 const sample = fs.readFileSync(path.join(root, samplePath), "utf8");
 const layout = fs.readFileSync(path.join(root, layoutPath), "utf8");
 const runtimeSpec = fs.readFileSync(path.join(root, runtimeSpecPath), "utf8");
+const coreRuntimeSpec = fs.readFileSync(path.join(root, coreRuntimeSpecPath), "utf8");
+const runtimeSpecDocument = fs.readFileSync(
+  path.join(root, runtimeSpecDocumentPath),
+  "utf8",
+);
 const nativeCore = fs.readFileSync(path.join(root, nativeCorePath), "utf8");
+const nativeRender = fs.readFileSync(path.join(root, nativeRenderPath), "utf8");
 const nativeCAbi = fs.existsSync(path.join(root, nativeCAbiPath))
   ? fs.readFileSync(path.join(root, nativeCAbiPath), "utf8")
+  : "";
+const v02Header = fs.existsSync(path.join(root, v02HeaderPath))
+  ? fs.readFileSync(path.join(root, v02HeaderPath), "utf8")
   : "";
 const headerWithoutComments = header.replace(/\/\*[\s\S]*?\*\//g, " ");
 const failures = [];
@@ -45,6 +59,8 @@ const expectedBlendModeEntries = [
 const expectedPixelFormatEntries = [["VIVI_PIXEL_FORMAT_RGBA8_STRAIGHT", 0]];
 
 const expectedColorSpaceEntries = [["VIVI_COLOR_SPACE_SRGB", 0]];
+
+const expectedMaxMaskDepth = 8;
 
 const expectedStructs = [
   "ViviVersion",
@@ -186,6 +202,15 @@ const expectedFunctions = [
   "vivi_model_mesh_snapshot_by_id",
   "vivi_model_hit_test",
   "vivi_model_get_playback_state",
+];
+
+const expectedV02Functions = [
+  "vivi_model_draw_command_count",
+  "vivi_model_draw_commands",
+  "vivi_model_generations",
+  "vivi_model_render_mesh_count_v2",
+  "vivi_model_render_mesh_snapshot_v2",
+  "vivi_model_required_render_features",
 ];
 
 const expectedSignatures = new Map([
@@ -399,11 +424,13 @@ for (const functionName of exportedFunctions) {
 }
 
 if (nativeCAbi) {
-  const nativeExports = [
+  const nativeExportMatches = [
     ...nativeCAbi.matchAll(/pub\s+extern\s+"C"\s+fn\s+(vivi_[A-Za-z0-9_]+)\s*\(/g),
-  ].map((match) => match[1]);
+  ];
+  const nativeExports = nativeExportMatches.map((match) => match[1]);
   const nativeExportSet = new Set(nativeExports);
-  for (const functionName of expectedFunctions) {
+  const expectedNativeFunctions = [...expectedFunctions, ...expectedV02Functions];
+  for (const functionName of expectedNativeFunctions) {
     if (!nativeExportSet.has(functionName)) {
       failures.push(
         `${nativeCAbiPath} is missing exported implementation/stub: ${functionName}`,
@@ -411,11 +438,31 @@ if (nativeCAbi) {
     }
   }
   for (const functionName of nativeExports) {
-    if (!expectedFunctions.includes(functionName)) {
+    if (!expectedNativeFunctions.includes(functionName)) {
       failures.push(
-        `${nativeCAbiPath} exports a function not declared by the public header: ${functionName}`,
+        `${nativeCAbiPath} exports a function outside the ABI 0.1 + feature-gated ABI 0.2 surface: ${functionName}`,
       );
     }
+  }
+  if (nativeExports.length !== nativeExportSet.size) {
+    failures.push(`${nativeCAbiPath} contains duplicate exported function definitions`);
+  }
+  for (const match of nativeExportMatches) {
+    const functionName = match[1];
+    const featureGated = hasAdjacentFeatureGate(nativeCAbi, match.index ?? 0, "abi-v02");
+    if (expectedV02Functions.includes(functionName) && !featureGated) {
+      failures.push(`${functionName} must be gated by the abi-v02 Cargo feature`);
+    }
+    if (expectedFunctions.includes(functionName) && featureGated) {
+      failures.push(
+        `${functionName} is inherited ABI 0.1 and must remain enabled by default`,
+      );
+    }
+  }
+  if (/\bvivi_model_load_evaluation\b/.test(nativeCAbi)) {
+    failures.push(
+      `${nativeCAbiPath} must not export or implement the editor-only vivi_model_load_evaluation symbol`,
+    );
   }
 }
 
@@ -451,6 +498,45 @@ if (
 ) {
   failures.push(
     `${runtimeSpecPath} must match the C ABI pre-release version ((0 << 16) | 1)`,
+  );
+}
+
+const runtimeSpecMaxMaskDepth = parseRuntimeSpecMaxMaskDepth(runtimeSpec);
+const nativeMaxMaskDepth = parseNativeMaxMaskDepth(nativeRender);
+if (runtimeSpecMaxMaskDepth !== expectedMaxMaskDepth) {
+  failures.push(
+    `${runtimeSpecPath} must define VIVI_RUNTIME_LIMITS.maxMaskDepth as ${expectedMaxMaskDepth}`,
+  );
+}
+if (
+  !/export\s+\*\s+from\s+["']@vivi2d\/model\/runtime-spec["']\s*;/.test(coreRuntimeSpec)
+) {
+  failures.push(
+    `${coreRuntimeSpecPath} must re-export the canonical VIVI_RUNTIME_LIMITS definition`,
+  );
+}
+if (nativeMaxMaskDepth !== runtimeSpecMaxMaskDepth) {
+  failures.push(
+    `${nativeRenderPath} MAX_MASK_DEPTH must match ${runtimeSpecPath}: ${runtimeSpecMaxMaskDepth}`,
+  );
+}
+if (
+  !new RegExp(
+    `VIVI_RUNTIME_LIMITS\\.maxMaskDepth[^\\n]*\\b${expectedMaxMaskDepth}\\b`,
+  ).test(runtimeSpecDocument)
+) {
+  failures.push(
+    `${runtimeSpecDocumentPath} must document VIVI_RUNTIME_LIMITS.maxMaskDepth as ${expectedMaxMaskDepth}`,
+  );
+}
+if (
+  v02Header &&
+  !new RegExp(
+    `#define\\s+VIVI_RUNTIME_LIMIT_MAX_MASK_DEPTH\\s+UINT32_C\\(${expectedMaxMaskDepth}\\)`,
+  ).test(v02Header)
+) {
+  failures.push(
+    `${v02HeaderPath} must match the canonical maxMaskDepth value ${expectedMaxMaskDepth}`,
   );
 }
 
@@ -575,6 +661,23 @@ function normalizeCDeclaration(value) {
     .trim();
 }
 
+function hasAdjacentFeatureGate(source, functionIndex, featureName) {
+  const lines = source.slice(0, functionIndex).split(/\r?\n/);
+  const metadata = [];
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const line = lines[index].trim();
+    if (line === "" || line.startsWith("///") || line.startsWith("#[")) {
+      metadata.push(line);
+      continue;
+    }
+    break;
+  }
+  const escapedFeature = escapeRegExp(featureName);
+  return new RegExp(`#\\[cfg\\(feature\\s*=\\s*["']${escapedFeature}["']\\)\\]`).test(
+    metadata.join("\n"),
+  );
+}
+
 function parseHeaderAbiVersion(value) {
   const match =
     /#define\s+VIVI_RUNTIME_ABI_VERSION\s+\(\(uint32_t\)\(\((\d+)u\s*<<\s*16\)\s*\|\s*(\d+)u\)\)/.exec(
@@ -607,4 +710,24 @@ function parseNativeCoreAbiVersion(value) {
     return Number.NaN;
   }
   return (Number(majorMatch[1]) << 16) | Number(minorMatch[1]);
+}
+
+function parseRuntimeSpecMaxMaskDepth(value) {
+  const match = /\bmaxMaskDepth\s*:\s*(\d+)\s*,/.exec(value);
+  if (!match) {
+    failures.push(
+      `${runtimeSpecPath} is missing a parseable VIVI_RUNTIME_LIMITS.maxMaskDepth`,
+    );
+    return Number.NaN;
+  }
+  return Number(match[1]);
+}
+
+function parseNativeMaxMaskDepth(value) {
+  const match = /pub\s+const\s+MAX_MASK_DEPTH:\s*u32\s*=\s*(\d+)\s*;/.exec(value);
+  if (!match) {
+    failures.push(`${nativeRenderPath} is missing a parseable MAX_MASK_DEPTH`);
+    return Number.NaN;
+  }
+  return Number(match[1]);
 }

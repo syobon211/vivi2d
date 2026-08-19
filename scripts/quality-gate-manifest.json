@@ -557,6 +557,16 @@
       "escalatable": true
     },
     {
+      "npmScript": "check:runtime-c-abi-v02-host-smoke",
+      "command": "npm run check:runtime-c-abi-v02-host-smoke",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Builds the default ABI 0.1 and feature-isolated ABI 0.2 dynamic libraries, verifies their exact 31/37-symbol public export sets (including ABI 0.2/editor absence from the default binary), and compares ABI 0.1 mesh/update observations for a valid unmasked tracked fixture before running the ABI 0.2 implementation smoke subset. This is not Frozen full conformance and does not publish the local 0.2 header.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
       "npmScript": "check:runtime-native",
       "command": "npm run check:runtime-native",
       "requiredWorkflows": [

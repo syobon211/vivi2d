@@ -115,6 +115,7 @@
     "check:auto-setup-ip-compliance": "node scripts/check-auto-setup-ip-compliance.mjs",
     "check:runtime-c-abi": "node scripts/check-runtime-c-abi.mjs",
     "check:runtime-c-abi-link": "node scripts/check-runtime-c-abi-link.mjs",
+    "check:runtime-c-abi-v02-host-smoke": "node scripts/check-runtime-c-abi-v02-host-smoke.mjs",
     "check:runtime-native": "npm run check --workspace @vivi2d/runtime-native",
     "check:security-patterns": "node scripts/check-security-patterns.mjs",
     "check:direct-model-mutations": "node scripts/check-direct-model-mutations.mjs",
