@@ -29,6 +29,59 @@ const FORBIDDEN_KIND_OR_TYPE: &[&str] = &[
     "meshLink",
 ];
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum PublicProfileScanPosition {
+    RuntimeRoot,
+    ProjectRoot,
+    Normal,
+    SkinsMap,
+    SkinData,
+    BindPoseInverseMap,
+    ExpressionPresets,
+    ExpressionPreset,
+    ExpressionValuesMap,
+}
+
+fn identifier_keys_are_opaque(position: PublicProfileScanPosition) -> bool {
+    matches!(
+        position,
+        PublicProfileScanPosition::SkinsMap
+            | PublicProfileScanPosition::BindPoseInverseMap
+            | PublicProfileScanPosition::ExpressionValuesMap
+    )
+}
+
+fn child_scan_position(
+    position: PublicProfileScanPosition,
+    key: &str,
+) -> PublicProfileScanPosition {
+    match (position, key) {
+        (PublicProfileScanPosition::RuntimeRoot, "project") => {
+            PublicProfileScanPosition::ProjectRoot
+        }
+        (PublicProfileScanPosition::ProjectRoot, "skins") => PublicProfileScanPosition::SkinsMap,
+        (PublicProfileScanPosition::SkinsMap, _) => PublicProfileScanPosition::SkinData,
+        (PublicProfileScanPosition::SkinData, "bindPoseInverse") => {
+            PublicProfileScanPosition::BindPoseInverseMap
+        }
+        (PublicProfileScanPosition::ProjectRoot, "expressionPresets") => {
+            PublicProfileScanPosition::ExpressionPresets
+        }
+        (PublicProfileScanPosition::ExpressionPreset, "values") => {
+            PublicProfileScanPosition::ExpressionValuesMap
+        }
+        _ => PublicProfileScanPosition::Normal,
+    }
+}
+
+fn array_item_scan_position(position: PublicProfileScanPosition) -> PublicProfileScanPosition {
+    if position == PublicProfileScanPosition::ExpressionPresets {
+        PublicProfileScanPosition::ExpressionPreset
+    } else {
+        PublicProfileScanPosition::Normal
+    }
+}
+
 /// Allocation-light preflight summary.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PreflightSummary {
@@ -90,7 +143,12 @@ fn validate_runtime_payload(value: &Value, limits: RuntimeLimits) -> Result<(), 
     // Defense-in-depth: the streaming scanner catches decoded forbidden markers
     // before hydration, and this pass proves the hydrated tree still matches
     // the same public-profile policy.
-    scan_decoded_public_profile(value, 0, limits.max_json_depth)?;
+    scan_decoded_public_profile(
+        value,
+        0,
+        limits.max_json_depth,
+        PublicProfileScanPosition::RuntimeRoot,
+    )?;
     let object = value.as_object().ok_or_else(|| {
         RuntimeError::new(status::VALIDATION, "runtime payload must be an object")
     })?;
@@ -146,6 +204,7 @@ fn scan_decoded_public_profile(
     value: &Value,
     depth: usize,
     max_depth: usize,
+    position: PublicProfileScanPosition,
 ) -> Result<(), RuntimeError> {
     if depth > max_depth {
         return Err(parse_error("runtime payload exceeds maximum JSON depth"));
@@ -153,20 +212,32 @@ fn scan_decoded_public_profile(
     match value {
         Value::Array(items) => {
             for item in items {
-                scan_decoded_public_profile(item, depth + 1, max_depth)?;
+                scan_decoded_public_profile(
+                    item,
+                    depth + 1,
+                    max_depth,
+                    array_item_scan_position(position),
+                )?;
             }
         }
         Value::Object(object) => {
+            let keys_are_opaque = identifier_keys_are_opaque(position);
             for (key, child) in object {
-                if is_forbidden_raw_key(key) {
+                if !keys_are_opaque && is_forbidden_raw_key(key) {
                     return Err(private_profile_error());
                 }
-                if (key == "kind" || key == "type")
+                if !keys_are_opaque
+                    && (key == "kind" || key == "type")
                     && child.as_str().is_some_and(is_forbidden_kind_or_type)
                 {
                     return Err(private_profile_error());
                 }
-                scan_decoded_public_profile(child, depth + 1, max_depth)?;
+                scan_decoded_public_profile(
+                    child,
+                    depth + 1,
+                    max_depth,
+                    child_scan_position(position, key),
+                )?;
             }
         }
         _ => {}
@@ -213,7 +284,7 @@ impl<'a> JsonScanner<'a> {
         if self.is_eof() {
             return Err(parse_error("runtime payload must not be empty"));
         }
-        self.parse_value(0, false)?;
+        self.parse_value(0, false, PublicProfileScanPosition::RuntimeRoot)?;
         self.skip_ws();
         if !self.is_eof() {
             return Err(parse_error("runtime payload has trailing JSON content"));
@@ -225,6 +296,7 @@ impl<'a> JsonScanner<'a> {
         &mut self,
         depth: usize,
         expects_kind_or_type: bool,
+        position: PublicProfileScanPosition,
     ) -> Result<Option<String>, RuntimeError> {
         self.max_depth = self.max_depth.max(depth);
         if depth > self.limits.max_json_depth {
@@ -233,11 +305,11 @@ impl<'a> JsonScanner<'a> {
         self.skip_ws();
         match self.peek() {
             Some(b'{') => {
-                self.parse_object(depth + 1)?;
+                self.parse_object(depth + 1, position)?;
                 Ok(None)
             }
             Some(b'[') => {
-                self.parse_array(depth + 1)?;
+                self.parse_array(depth + 1, position)?;
                 Ok(None)
             }
             Some(b'"') => {
@@ -267,7 +339,11 @@ impl<'a> JsonScanner<'a> {
         }
     }
 
-    fn parse_object(&mut self, depth: usize) -> Result<(), RuntimeError> {
+    fn parse_object(
+        &mut self,
+        depth: usize,
+        position: PublicProfileScanPosition,
+    ) -> Result<(), RuntimeError> {
         self.expect_byte(b'{')?;
         self.skip_ws();
         if self.consume_if(b'}') {
@@ -275,6 +351,7 @@ impl<'a> JsonScanner<'a> {
         }
 
         let mut keys = HashSet::new();
+        let keys_are_opaque = identifier_keys_are_opaque(position);
         loop {
             self.skip_ws();
             if self.peek() != Some(b'"') {
@@ -284,14 +361,15 @@ impl<'a> JsonScanner<'a> {
             if keys.contains(&key) {
                 return Err(parse_error("runtime object contains a duplicate key"));
             }
-            if is_forbidden_raw_key(&key) {
+            if !keys_are_opaque && is_forbidden_raw_key(&key) {
                 return Err(private_profile_error());
             }
-            let expects_kind_or_type = key == "kind" || key == "type";
+            let expects_kind_or_type = !keys_are_opaque && (key == "kind" || key == "type");
+            let child_position = child_scan_position(position, &key);
             keys.insert(key);
             self.skip_ws();
             self.expect_byte(b':')?;
-            self.parse_value(depth, expects_kind_or_type)?;
+            self.parse_value(depth, expects_kind_or_type, child_position)?;
             self.skip_ws();
             if self.consume_if(b'}') {
                 return Ok(());
@@ -300,14 +378,18 @@ impl<'a> JsonScanner<'a> {
         }
     }
 
-    fn parse_array(&mut self, depth: usize) -> Result<(), RuntimeError> {
+    fn parse_array(
+        &mut self,
+        depth: usize,
+        position: PublicProfileScanPosition,
+    ) -> Result<(), RuntimeError> {
         self.expect_byte(b'[')?;
         self.skip_ws();
         if self.consume_if(b']') {
             return Ok(());
         }
         loop {
-            self.parse_value(depth, false)?;
+            self.parse_value(depth, false, array_item_scan_position(position))?;
             self.skip_ws();
             if self.consume_if(b']') {
                 return Ok(());
@@ -524,6 +606,25 @@ mod tests {
     fn rejects_escaped_forbidden_raw_keys_before_hydration() {
         let error = parse_runtime_payload(
             br#"{"profile":"publicProfileV1","version":10,"project":{"blend\u0053hapes":[]},"atlases":[]}"#,
+            RuntimeLimits::default(),
+        )
+        .unwrap_err();
+        assert_eq!(error.status(), status::PRIVATE_PROFILE);
+    }
+
+    #[test]
+    fn allows_forbidden_spellings_as_opaque_identifier_map_keys() {
+        parse_runtime_payload(
+            br#"{"profile":"publicProfileV1","version":10,"project":{"skins":{"blend\u0053hapes":{"weights":[],"bindPoseInverse":{"meshLinks":[]}}},"expressionPresets":[{"values":{"correctiveDeformations":0}}]},"atlases":[]}"#,
+            RuntimeLimits::default(),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn still_scans_values_inside_opaque_identifier_maps() {
+        let error = parse_runtime_payload(
+            br#"{"profile":"publicProfileV1","version":10,"project":{"skins":{"mesh-a":{"weights":[],"bindPoseInverse":{},"blendShapes":[]}}},"atlases":[]}"#,
             RuntimeLimits::default(),
         )
         .unwrap_err();
