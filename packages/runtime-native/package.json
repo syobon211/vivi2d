@@ -7,6 +7,8 @@
     "publication": "internal"
   },
   "scripts": {
-    "check": "cargo fmt --manifest-path Cargo.toml --all -- --check && cargo clippy --manifest-path Cargo.toml --workspace --all-targets -- -D warnings && cargo test --manifest-path Cargo.toml --workspace --all-targets && node ../../scripts/check-runtime-native-wasm.mjs"
+    "check": "cargo fmt --manifest-path Cargo.toml --all -- --check && cargo clippy --manifest-path Cargo.toml --workspace --all-targets -- -D warnings && cargo test --manifest-path Cargo.toml --workspace --all-targets && node ../../scripts/check-runtime-native-wasm.mjs",
+    "check:asset-resolver": "cargo test --locked --manifest-path Cargo.toml -p vivi-asset-resolver --all-targets && cargo clippy --locked --manifest-path Cargo.toml -p vivi-asset-resolver --all-targets -- -D warnings",
+    "check:asset-resolver:wasm32": "cargo test --locked --manifest-path Cargo.toml -p vivi-asset-resolver --target wasm32-unknown-unknown --all-targets --no-run && cargo clippy --locked --manifest-path Cargo.toml -p vivi-asset-resolver --target wasm32-unknown-unknown --all-targets -- -D warnings"
   }
 }

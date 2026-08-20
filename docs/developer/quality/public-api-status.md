@@ -35,7 +35,7 @@ default.
 | `@vivi2d/runtime` | Internal | Narrow Runtime Spec v1 facade over the TypeScript reference runtime. It now builds a small `dist` facade for export-shape review while remaining private/internal until conformance, packaging, and API/legal review are complete. |
 | `@vivi2d/runtime-wasm` | Internal | Experimental WASM-wrapper boundary. It now embeds the private native Rust WASM evaluator behind explicit backend diagnostics while keeping portable and TypeScript reference paths for conformance. It remains private until memory-growth failure behavior, fuzz, benchmark, packaging, and export reviews are complete. |
 | `@vivi2d/runtime-c-abi` | Internal | Internal C header source paired with private native implementations in `@vivi2d/runtime-native`; ABI 0.2 and strict PNG entry points remain default-off feature builds, with no public support promise. |
-| `@vivi2d/runtime-native` | Internal | Private Rust workspace for the future native core, C ABI, and WASM bindings. It currently includes strict JSON preflight plus fixture-backed native evaluation for static meshes, parameters, expression presets, binding, skinning, IK, hit testing, and pendulum physics, but has no public support promise. |
+| `@vivi2d/runtime-native` | Internal | Private Rust workspace for the future native core, C ABI, WASM bindings, strict PNG decoder, and Asset Model v1 resolver foundation. The resolver validates its tracked approved schema before semantic checks and returns owned, principal-scoped asset snapshots; it is not an editor-host, desktop IPC, capability-advertisement, GPU-upload, or public C ABI surface. The workspace has no public support promise. |
 | `@vivi2d/renderer-pixi` | Internal | Renderer adapter candidate, but public surface is not frozen. |
 | `@vivi2d/renderer-three` | Internal | Renderer adapter candidate, but public surface is not frozen. |
 | `@vivi2d/renderer-phaser` | Internal | Renderer adapter candidate, but public surface is not frozen. |
@@ -173,6 +173,12 @@ requests.
   runtime/model-load/update/expression smoke, and native WASM release-artifact
   export/load/snapshot/hit-test validation, but it does not create a public ABI
   support policy or publication promise.
+- Its private `vivi-asset-resolver` crate is a foundation boundary only. `npm
+  run check:runtime-asset-resolver` pins the approved Asset Model schema and
+  static validator evidence, dependency license/checksum closure, Rust toolchain
+  metadata, and exact C ABI non-expansion. Passing that gate does not connect
+  W7a or Electron IPC, advertise referenced-asset capability, upload textures,
+  or authorize publication.
 
 `npm run check:package-boundaries` enforces the most important publication
 guard: a package cannot become public while still exporting `src/*`, and

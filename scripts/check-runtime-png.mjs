@@ -517,7 +517,7 @@ function assertRustFeatureGraph(metadata, pngPackage) {
     JSON.stringify(pngFeatureReferences) !==
     JSON.stringify([["png-v1", ["dep:vivi-png-ref"]]])
   ) {
-    throw new Error("vivi-png-ref must be reachable only through C ABI png-v1");
+    throw new Error("the C ABI must reference vivi-png-ref only through png-v1");
   }
 
   const optionalDependencies = cAbiPackage.dependencies.filter(
@@ -533,6 +533,35 @@ function assertRustFeatureGraph(metadata, pngPackage) {
     path.resolve(pngDependency.path) !== path.resolve(expectedPngPath)
   ) {
     throw new Error("C ABI vivi-png-ref optional path dependency edge drifted");
+  }
+
+  const resolverPackage = metadata.packages.find(
+    (pkg) => pkg.name === "vivi-asset-resolver",
+  );
+  const resolverPngDependency = resolverPackage?.dependencies.find(
+    (dependency) => dependency.name === "vivi-png-ref",
+  );
+  const pngConsumers = metadata.packages
+    .filter((pkg) =>
+      pkg.dependencies.some((dependency) => dependency.name === "vivi-png-ref"),
+    )
+    .map((pkg) => pkg.name)
+    .sort();
+  if (
+    !resolverPackage ||
+    JSON.stringify(resolverPackage.publish) !== "[]" ||
+    !resolverPngDependency ||
+    resolverPngDependency.kind !== null ||
+    resolverPngDependency.optional ||
+    resolverPngDependency.source !== null ||
+    path.resolve(resolverPngDependency.path) !==
+      path.resolve(root, "packages/runtime-native/crates/vivi-png-ref") ||
+    JSON.stringify(pngConsumers) !==
+      JSON.stringify(["vivi-asset-resolver", "vivi-runtime-native-c-abi"])
+  ) {
+    throw new Error(
+      "vivi-png-ref consumers must remain the private resolver direct path edge and C ABI optional png-v1 edge",
+    );
   }
 
   const expectedDirectDependencies = new Map([

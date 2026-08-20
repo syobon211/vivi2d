@@ -591,7 +591,17 @@
       "requiredWorkflows": [
         ".github/workflows/runtime-native.yml"
       ],
-      "notes": "Pins the private PNG header and Rust dependency closure, proves the runtime-c-abi package inventory, verifies exact default/ABI 0.2 export isolation, and runs C11/C++17 hosts against feature-isolated PNG dynamic and static libraries on all three native CI operating systems.",
+      "notes": "Pins the private PNG header, Rust dependency closure, and exact two-consumer graph (the resolver direct path edge plus the C ABI optional png-v1 edge), proves the runtime-c-abi package inventory, verifies exact default/ABI 0.2 export isolation, and runs C11/C++17 hosts against feature-isolated PNG dynamic and static libraries on all three native CI operating systems.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-asset-resolver",
+      "command": "npm run check:runtime-asset-resolver",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private Asset Model v1 resolver foundation, approved schema and live AJV 2020-12 parity with its static Rust equivalent, dependency license/checksum closure, Rust 1.89 metadata, exact C ABI non-expansion, and default native tests/Clippy. The sibling workflow also compiles tests and runs Clippy for wasm32-unknown-unknown from an isolated clean target.",
       "intentionallySplit": true,
       "escalatable": true
     },
