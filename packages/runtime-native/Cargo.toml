@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "crates/vivi-png-ref",
   "crates/vivi-runtime-native-core",
   "crates/vivi-runtime-native-c-abi",
   "crates/vivi-runtime-native-wasm",

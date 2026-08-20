@@ -77,6 +77,7 @@ const commands = [
   ["npm", ["run", "check:runtime-c-abi"]],
   ["npm", ["run", "check:runtime-c-abi-link"]],
   ["npm", ["run", "check:runtime-c-abi-v02-host-smoke"]],
+  ["npm", ["run", "check:runtime-png"]],
   ["npm", ["run", "check:runtime-native"]],
   ["npm", ["run", "check:native-artifact-policy"]],
   ["npm", ["run", "test:runtime-wasm:browser"]],

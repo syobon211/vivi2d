@@ -213,6 +213,8 @@ const expectedV02Functions = [
   "vivi_model_required_render_features",
 ];
 
+const expectedPngFunctions = ["vivi_png_inspect", "vivi_png_decode"];
+
 const expectedSignatures = new Map([
   ["vivi_get_abi_version", "VIVI_EXPORT uint32_t vivi_get_abi_version(void);"],
   [
@@ -429,7 +431,11 @@ if (nativeCAbi) {
   ];
   const nativeExports = nativeExportMatches.map((match) => match[1]);
   const nativeExportSet = new Set(nativeExports);
-  const expectedNativeFunctions = [...expectedFunctions, ...expectedV02Functions];
+  const expectedNativeFunctions = [
+    ...expectedFunctions,
+    ...expectedV02Functions,
+    ...expectedPngFunctions,
+  ];
   for (const functionName of expectedNativeFunctions) {
     if (!nativeExportSet.has(functionName)) {
       failures.push(
@@ -440,7 +446,7 @@ if (nativeCAbi) {
   for (const functionName of nativeExports) {
     if (!expectedNativeFunctions.includes(functionName)) {
       failures.push(
-        `${nativeCAbiPath} exports a function outside the ABI 0.1 + feature-gated ABI 0.2 surface: ${functionName}`,
+        `${nativeCAbiPath} exports a function outside the ABI 0.1 + feature-gated ABI 0.2/PNG surfaces: ${functionName}`,
       );
     }
   }
@@ -450,12 +456,25 @@ if (nativeCAbi) {
   for (const match of nativeExportMatches) {
     const functionName = match[1];
     const featureGated = hasAdjacentFeatureGate(nativeCAbi, match.index ?? 0, "abi-v02");
+    const pngFeatureGated = hasAdjacentFeatureGate(
+      nativeCAbi,
+      match.index ?? 0,
+      "png-v1",
+    );
     if (expectedV02Functions.includes(functionName) && !featureGated) {
       failures.push(`${functionName} must be gated by the abi-v02 Cargo feature`);
     }
     if (expectedFunctions.includes(functionName) && featureGated) {
       failures.push(
         `${functionName} is inherited ABI 0.1 and must remain enabled by default`,
+      );
+    }
+    if (expectedPngFunctions.includes(functionName) && !pngFeatureGated) {
+      failures.push(`${functionName} must be gated by the png-v1 Cargo feature`);
+    }
+    if (expectedFunctions.includes(functionName) && pngFeatureGated) {
+      failures.push(
+        `${functionName} is inherited ABI 0.1 and must not require the png-v1 feature`,
       );
     }
   }

@@ -34,7 +34,7 @@ default.
 | `@vivi2d/loader` | Internal | Browser texture extraction helpers over `@vivi2d/model` file data. It must not depend on `@vivi2d/core` or editor internals. |
 | `@vivi2d/runtime` | Internal | Narrow Runtime Spec v1 facade over the TypeScript reference runtime. It now builds a small `dist` facade for export-shape review while remaining private/internal until conformance, packaging, and API/legal review are complete. |
 | `@vivi2d/runtime-wasm` | Internal | Experimental WASM-wrapper boundary. It now embeds the private native Rust WASM evaluator behind explicit backend diagnostics while keeping portable and TypeScript reference paths for conformance. It remains private until memory-growth failure behavior, fuzz, benchmark, packaging, and export reviews are complete. |
-| `@vivi2d/runtime-c-abi` | Internal | Header-only C ABI design-freeze workspace. It has no native implementation or public support promise yet. |
+| `@vivi2d/runtime-c-abi` | Internal | Internal C header source paired with private native implementations in `@vivi2d/runtime-native`; ABI 0.2 and strict PNG entry points remain default-off feature builds, with no public support promise. |
 | `@vivi2d/runtime-native` | Internal | Private Rust workspace for the future native core, C ABI, and WASM bindings. It currently includes strict JSON preflight plus fixture-backed native evaluation for static meshes, parameters, expression presets, binding, skinning, IK, hit testing, and pendulum physics, but has no public support promise. |
 | `@vivi2d/renderer-pixi` | Internal | Renderer adapter candidate, but public surface is not frozen. |
 | `@vivi2d/renderer-three` | Internal | Renderer adapter candidate, but public surface is not frozen. |
@@ -163,6 +163,10 @@ requests.
   not by itself make the package public.
 - `@vivi2d/runtime-c-abi` remains the reviewed header source of truth. `npm run
   check:runtime-c-abi` validates the frozen header shape and sample host.
+- Its tracked `vivi_png.h` is an internal, non-packed contract artifact. The
+  default-off Rust `png-v1` feature alone adds `vivi_png_inspect` and
+  `vivi_png_decode`; `npm run check:runtime-png` pins the header, dependency
+  closure, pack inventory, exact symbol isolation, and C11/C++17 native hosts.
 - `@vivi2d/runtime-native` is an internal implementation workspace. `npm run
   check:runtime-native` validates Rust formatting, Clippy, unit tests, strict
   JSON parser preflight, fixture-backed native evaluation, C ABI

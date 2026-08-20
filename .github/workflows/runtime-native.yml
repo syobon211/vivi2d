@@ -15,6 +15,7 @@ on:
       - "scripts/check-runtime-c-abi.mjs"
       - "scripts/check-runtime-c-abi-link.mjs"
       - "scripts/check-runtime-c-abi-v02-host-smoke.mjs"
+      - "scripts/check-runtime-png.mjs"
       - "scripts/check-native-artifact-policy.mjs"
       - "scripts/check-runtime-native-wasm.mjs"
       - "scripts/generate-runtime-native-wasm-module.mjs"
@@ -34,6 +35,8 @@ jobs:
     name: Native Check (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    env:
+      RUSTUP_TOOLCHAIN: 1.89.0
     strategy:
       fail-fast: false
       matrix:
@@ -54,9 +57,16 @@ jobs:
       - run: cargo clippy --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-core --no-default-features --features render-v02 --all-targets -- -D warnings
       - run: cargo test --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features abi-v02 --all-targets
       - run: cargo clippy --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features abi-v02 --all-targets -- -D warnings
+      - run: cargo test --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features png-v1 --all-targets
+      - run: cargo clippy --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features png-v1 --all-targets -- -D warnings
+      - run: cargo test --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features abi-v02,png-v1 --all-targets
+      - run: cargo clippy --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features abi-v02,png-v1 --all-targets -- -D warnings
+      - run: cargo check --manifest-path packages/runtime-native/Cargo.toml -p vivi-png-ref --target wasm32-unknown-unknown
       - run: npm run check:runtime-c-abi-link
-      - run: npx biome check scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs
+      - run: npx biome check scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs scripts/check-runtime-png.mjs
       - name: Verify ABI 0.1/0.2 exports and host-observation parity subset
         run: npm run check:runtime-c-abi-v02-host-smoke
+      - name: Verify strict PNG reference decoder and feature-isolated C ABI
+        run: npm run check:runtime-png
       - run: cargo build --manifest-path packages/runtime-native/Cargo.toml --workspace --release
       - run: npm run check:native-artifact-policy

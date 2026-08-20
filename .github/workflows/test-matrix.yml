@@ -119,6 +119,7 @@ jobs:
           scripts/check-release-gates.test.mjs
           scripts/check-runtime-c-abi-link.mjs
           scripts/check-runtime-c-abi.mjs
+          scripts/check-runtime-png.mjs
           scripts/check-runtime-wasm-browser.mjs
           scripts/check-ui-module-budget.mjs
           scripts/check-user-docs.mjs

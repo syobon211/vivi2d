@@ -82,6 +82,7 @@ function runNpmPack() {
   const result = spawnSync(command, commandArgs, {
     cwd: root,
     encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
     stdio: ["ignore", "pipe", "pipe"],
   });
   if (result.status !== 0) {

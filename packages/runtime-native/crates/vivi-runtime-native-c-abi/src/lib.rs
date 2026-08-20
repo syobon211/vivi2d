@@ -9,6 +9,8 @@
 use std::cell::Cell;
 use std::cell::RefCell;
 use std::ffi::{CStr, CString, c_char};
+#[cfg(feature = "png-v1")]
+use std::mem::align_of;
 use std::mem::{offset_of, size_of};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::ptr;
@@ -34,6 +36,69 @@ const C_ABI_VERSION: u32 = ABI_VERSION;
 
 /// C ABI status code.
 pub type ViviStatus = i32;
+
+/// PNG profile C ABI status code.
+#[cfg(feature = "png-v1")]
+pub type ViviPngStatus = i32;
+
+/// Allocation-free PNG inspection result.
+#[cfg(feature = "png-v1")]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ViviPngInfo {
+    /// Caller-provided struct size.
+    pub struct_size: u32,
+    /// Decoded image width.
+    pub width: u32,
+    /// Decoded image height.
+    pub height: u32,
+    /// Reserved output field. This is zero on success.
+    pub _reserved0: u32,
+    /// Required caller output capacity in bytes.
+    pub required_output_bytes: u64,
+}
+
+/// Frozen resource limits for the `vivi2d.png.rgba8.v1` profile.
+#[cfg(feature = "png-v1")]
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ViviPngLimits {
+    /// Structure size.
+    pub struct_size: u32,
+    /// Maximum accepted PNG width.
+    pub max_width: u32,
+    /// Maximum accepted PNG height.
+    pub max_height: u32,
+    /// Reserved field. This is always zero.
+    pub _reserved0: u32,
+    /// Maximum accepted pixel count.
+    pub max_pixels: u64,
+    /// Maximum accepted compressed input length.
+    pub max_png_input_bytes: u64,
+    /// Maximum decoded RGBA8 byte length.
+    pub max_texture_bytes: u64,
+}
+
+#[cfg(feature = "png-v1")]
+const _: () = {
+    assert!(size_of::<ViviPngStatus>() == 4);
+    assert!(size_of::<ViviPngInfo>() == 24);
+    assert!(align_of::<ViviPngInfo>() == 8);
+    assert!(offset_of!(ViviPngInfo, struct_size) == 0);
+    assert!(offset_of!(ViviPngInfo, width) == 4);
+    assert!(offset_of!(ViviPngInfo, height) == 8);
+    assert!(offset_of!(ViviPngInfo, _reserved0) == 12);
+    assert!(offset_of!(ViviPngInfo, required_output_bytes) == 16);
+    assert!(size_of::<ViviPngLimits>() == 40);
+    assert!(align_of::<ViviPngLimits>() == 8);
+    assert!(offset_of!(ViviPngLimits, struct_size) == 0);
+    assert!(offset_of!(ViviPngLimits, max_width) == 4);
+    assert!(offset_of!(ViviPngLimits, max_height) == 8);
+    assert!(offset_of!(ViviPngLimits, _reserved0) == 12);
+    assert!(offset_of!(ViviPngLimits, max_pixels) == 16);
+    assert!(offset_of!(ViviPngLimits, max_png_input_bytes) == 24);
+    assert!(offset_of!(ViviPngLimits, max_texture_bytes) == 32);
+};
 
 /// C ABI blend mode enum storage.
 pub type ViviBlendMode = i32;
@@ -352,6 +417,44 @@ struct ExpressionPresetStrings {
 #[unsafe(no_mangle)]
 pub extern "C" fn vivi_get_abi_version() -> u32 {
     C_ABI_VERSION
+}
+
+/// Inspect one PNG using the frozen `vivi2d.png.rgba8.v1` profile.
+#[cfg(feature = "png-v1")]
+#[unsafe(no_mangle)]
+pub extern "C" fn vivi_png_inspect(
+    bytes: *const u8,
+    len: u64,
+    declared_width: u32,
+    declared_height: u32,
+    out_info: *mut ViviPngInfo,
+) -> ViviPngStatus {
+    png_ffi_boundary(|| png_inspect_impl(bytes, len, declared_width, declared_height, out_info))
+}
+
+/// Decode one PNG into a caller-owned RGBA8 output buffer.
+#[cfg(feature = "png-v1")]
+#[unsafe(no_mangle)]
+pub extern "C" fn vivi_png_decode(
+    bytes: *const u8,
+    len: u64,
+    expected_content_sha256: *const u8,
+    declared_width: u32,
+    declared_height: u32,
+    output_ptr: *mut u8,
+    output_capacity: u64,
+) -> ViviPngStatus {
+    png_ffi_boundary(|| {
+        png_decode_impl(
+            bytes,
+            len,
+            expected_content_sha256,
+            declared_width,
+            declared_height,
+            output_ptr,
+            output_capacity,
+        )
+    })
 }
 
 /// Return the native runtime build/package version.
@@ -1845,6 +1948,159 @@ fn unsupported_model_operation(model: *const ViviModel, operation: &str) -> Vivi
     status::UNSUPPORTED_OPERATION
 }
 
+#[cfg(feature = "png-v1")]
+const PNG_OK: ViviPngStatus = 0;
+#[cfg(feature = "png-v1")]
+const PNG_INVALID_ARGUMENT: ViviPngStatus = 1;
+#[cfg(feature = "png-v1")]
+const PNG_LIMIT: ViviPngStatus = 4;
+
+#[cfg(feature = "png-v1")]
+fn png_inspect_impl(
+    bytes: *const u8,
+    len: u64,
+    declared_width: u32,
+    declared_height: u32,
+    out_info: *mut ViviPngInfo,
+) -> ViviPngStatus {
+    let Some(input_range) = checked_const_u8_range(bytes, len) else {
+        return PNG_INVALID_ARGUMENT;
+    };
+    let Some(info_range) = checked_mut_range(out_info, size_of::<ViviPngInfo>()) else {
+        return PNG_INVALID_ARGUMENT;
+    };
+    if ranges_overlap(&input_range, &info_range) {
+        return PNG_INVALID_ARGUMENT;
+    }
+
+    // SAFETY: The output pointer has a non-wrapping, properly aligned range
+    // large enough for the known prefix. The caller initializes this leading
+    // field before calling, as with the other sized C ABI output structs.
+    let caller_struct_size = unsafe { out_info.cast::<u32>().read() } as usize;
+    if !(size_of::<ViviPngInfo>()..=16 * 1024).contains(&caller_struct_size) {
+        return PNG_INVALID_ARGUMENT;
+    }
+
+    // SAFETY: The complete input range was validated above and does not
+    // overlap the output structure.
+    let input = unsafe { slice::from_raw_parts(bytes, input_range.len()) };
+    match vivi_png_ref::inspect(input, declared_width, declared_height) {
+        Ok(info) => {
+            // Commit output fields only after inspection has fully succeeded.
+            // SAFETY: The known output prefix was validated above.
+            unsafe {
+                ptr::addr_of_mut!((*out_info).width).write(info.width);
+                ptr::addr_of_mut!((*out_info).height).write(info.height);
+                ptr::addr_of_mut!((*out_info)._reserved0).write(0);
+                ptr::addr_of_mut!((*out_info).required_output_bytes)
+                    .write(info.required_output_bytes);
+            }
+            PNG_OK
+        }
+        Err(error) => png_error_status(error),
+    }
+}
+
+#[cfg(feature = "png-v1")]
+#[allow(clippy::too_many_arguments)]
+fn png_decode_impl(
+    bytes: *const u8,
+    len: u64,
+    expected_content_sha256: *const u8,
+    declared_width: u32,
+    declared_height: u32,
+    output_ptr: *mut u8,
+    output_capacity: u64,
+) -> ViviPngStatus {
+    let Some(input_range) = checked_const_u8_range(bytes, len) else {
+        return PNG_INVALID_ARGUMENT;
+    };
+    if checked_const_u8_range(expected_content_sha256, vivi_png_ref::SHA256_BYTES as u64).is_none()
+    {
+        return PNG_INVALID_ARGUMENT;
+    }
+    let Some(output_range) = checked_mut_u8_range(output_ptr, output_capacity) else {
+        return PNG_INVALID_ARGUMENT;
+    };
+    if ranges_overlap(&input_range, &output_range) {
+        return PNG_INVALID_ARGUMENT;
+    }
+
+    let mut expected = [0_u8; vivi_png_ref::SHA256_BYTES];
+    // SAFETY: The fixed digest input range was validated above. Copying it to
+    // owned storage avoids retaining an alias while the output is mutable.
+    unsafe {
+        ptr::copy_nonoverlapping(
+            expected_content_sha256,
+            expected.as_mut_ptr(),
+            vivi_png_ref::SHA256_BYTES,
+        );
+    }
+
+    // SAFETY: Both complete ranges were validated above and proven disjoint.
+    let input = unsafe { slice::from_raw_parts(bytes, input_range.len()) };
+    // SAFETY: The output range is non-null, non-wrapping, at most isize::MAX,
+    // and disjoint from every live immutable input range.
+    let output = unsafe { slice::from_raw_parts_mut(output_ptr, output_range.len()) };
+    match vivi_png_ref::decode_into(input, &expected, declared_width, declared_height, output) {
+        Ok(_) => PNG_OK,
+        Err(error) => png_error_status(error),
+    }
+}
+
+#[cfg(feature = "png-v1")]
+fn png_error_status(error: vivi_png_ref::Error) -> ViviPngStatus {
+    error.as_i32()
+}
+
+#[cfg(feature = "png-v1")]
+fn png_ffi_boundary(callback: impl FnOnce() -> ViviPngStatus) -> ViviPngStatus {
+    // The PNG namespace has no INTERNAL status. A caught implementation panic
+    // is failed closed as LIMIT, which is also the specified scratch-allocation
+    // failure class, and no caller output has been committed at that point.
+    match catch_unwind(AssertUnwindSafe(callback)) {
+        Ok(status) => status,
+        Err(_) => PNG_LIMIT,
+    }
+}
+
+#[cfg(feature = "png-v1")]
+fn checked_const_u8_range(pointer: *const u8, len: u64) -> Option<std::ops::Range<usize>> {
+    checked_address_range(pointer.cast_mut(), len)
+}
+
+#[cfg(feature = "png-v1")]
+fn checked_mut_u8_range(pointer: *mut u8, len: u64) -> Option<std::ops::Range<usize>> {
+    checked_address_range(pointer, len)
+}
+
+#[cfg(feature = "png-v1")]
+fn checked_mut_range<T>(pointer: *mut T, len: usize) -> Option<std::ops::Range<usize>> {
+    if pointer.is_null() || !(pointer as usize).is_multiple_of(align_of::<T>()) {
+        return None;
+    }
+    checked_address_range(pointer.cast::<u8>(), len as u64)
+}
+
+#[cfg(feature = "png-v1")]
+fn checked_address_range(pointer: *mut u8, len: u64) -> Option<std::ops::Range<usize>> {
+    if pointer.is_null() {
+        return None;
+    }
+    let len = usize::try_from(len).ok()?;
+    if len > isize::MAX as usize {
+        return None;
+    }
+    let start = pointer as usize;
+    let end = start.checked_add(len)?;
+    Some(start..end)
+}
+
+#[cfg(feature = "png-v1")]
+fn ranges_overlap(left: &std::ops::Range<usize>, right: &std::ops::Range<usize>) -> bool {
+    !left.is_empty() && !right.is_empty() && left.start < right.end && right.start < left.end
+}
+
 fn ffi_boundary(callback: impl FnOnce() -> ViviStatus) -> ViviStatus {
     match catch_unwind(AssertUnwindSafe(callback)) {
         Ok(status) => status,
@@ -2175,6 +2431,86 @@ mod tests {
             ffi_boundary(|| panic!("panic must not cross the C ABI")),
             status::INTERNAL
         );
+    }
+
+    #[cfg(feature = "png-v1")]
+    #[test]
+    fn png_status_layout_and_profile_constants_match_the_frozen_header() {
+        assert_eq!(PNG_OK, 0);
+        assert_eq!(PNG_INVALID_ARGUMENT, 1);
+        assert_eq!(vivi_png_ref::Error::Unsupported.as_i32(), 2);
+        assert_eq!(vivi_png_ref::Error::Malformed.as_i32(), 3);
+        assert_eq!(vivi_png_ref::Error::Limit.as_i32(), 4);
+        assert_eq!(vivi_png_ref::Error::Dimension.as_i32(), 5);
+        assert_eq!(vivi_png_ref::Error::ContentHashMismatch.as_i32(), 6);
+        assert_layout!(ViviPngInfo, 24, 8);
+        assert_offset!(ViviPngInfo, struct_size, 0);
+        assert_offset!(ViviPngInfo, width, 4);
+        assert_offset!(ViviPngInfo, height, 8);
+        assert_offset!(ViviPngInfo, _reserved0, 12);
+        assert_offset!(ViviPngInfo, required_output_bytes, 16);
+        assert_layout!(ViviPngLimits, 40, 8);
+        assert_offset!(ViviPngLimits, struct_size, 0);
+        assert_offset!(ViviPngLimits, max_width, 4);
+        assert_offset!(ViviPngLimits, max_height, 8);
+        assert_offset!(ViviPngLimits, _reserved0, 12);
+        assert_offset!(ViviPngLimits, max_pixels, 16);
+        assert_offset!(ViviPngLimits, max_png_input_bytes, 24);
+        assert_offset!(ViviPngLimits, max_texture_bytes, 32);
+        assert_eq!(vivi_png_ref::PROFILE, "vivi2d.png.rgba8.v1");
+        assert_eq!(vivi_png_ref::SHA256_BYTES, 32);
+        assert_eq!(vivi_png_ref::MAX_WIDTH, 8_192);
+        assert_eq!(vivi_png_ref::MAX_HEIGHT, 8_192);
+        assert_eq!(vivi_png_ref::MAX_PIXELS, 67_108_864);
+        assert_eq!(vivi_png_ref::MAX_PNG_INPUT_BYTES, 67_108_864);
+        assert_eq!(vivi_png_ref::MAX_TEXTURE_BYTES, 268_435_456);
+    }
+
+    #[cfg(feature = "png-v1")]
+    #[test]
+    fn png_pointer_preflight_rejects_invalid_ranges_without_writing() {
+        let input = [0_u8; 8];
+        let mut info = ViviPngInfo {
+            struct_size: size_of::<ViviPngInfo>() as u32,
+            width: 11,
+            height: 12,
+            _reserved0: 13,
+            required_output_bytes: 14,
+        };
+        assert_eq!(
+            vivi_png_inspect(ptr::null(), 0, 1, 1, &mut info),
+            PNG_INVALID_ARGUMENT
+        );
+        assert_eq!((info.width, info.height, info._reserved0), (11, 12, 13));
+
+        assert_eq!(
+            vivi_png_inspect(usize::MAX.wrapping_sub(1) as *const u8, 8, 1, 1, &mut info,),
+            PNG_INVALID_ARGUMENT
+        );
+        assert_eq!(info.required_output_bytes, 14);
+
+        info.struct_size = (size_of::<ViviPngInfo>() - 1) as u32;
+        assert_eq!(
+            vivi_png_inspect(input.as_ptr(), input.len() as u64, 1, 1, &mut info),
+            PNG_INVALID_ARGUMENT
+        );
+        assert_eq!((info.width, info.height, info._reserved0), (11, 12, 13));
+
+        let mut output = [0xA5_u8; 32];
+        assert_eq!(
+            vivi_png_decode(
+                input.as_ptr(),
+                input.len() as u64,
+                ptr::null(),
+                1,
+                1,
+                output.as_mut_ptr(),
+                output.len() as u64,
+            ),
+            PNG_INVALID_ARGUMENT
+        );
+        assert_eq!(output, [0xA5; 32]);
+        assert_eq!(png_ffi_boundary(|| panic!("contained")), PNG_LIMIT);
     }
 
     #[test]

@@ -79,6 +79,7 @@
       "scripts/check-release-gates.test.mjs",
       "scripts/check-runtime-c-abi-link.mjs",
       "scripts/check-runtime-c-abi.mjs",
+      "scripts/check-runtime-png.mjs",
       "scripts/check-runtime-wasm-browser.mjs",
       "scripts/check-secrets.mjs",
       "scripts/check-security-patterns.mjs",
@@ -581,6 +582,16 @@
         ".github/workflows/runtime-native.yml"
       ],
       "notes": "Builds the default ABI 0.1 and feature-isolated ABI 0.2 dynamic libraries, verifies their exact 31/37-symbol public export sets (including ABI 0.2/editor absence from the default binary), and compares ABI 0.1 mesh/update observations for a valid unmasked tracked fixture before running the ABI 0.2 implementation smoke subset. This is not Frozen full conformance and does not publish the local 0.2 header.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-png",
+      "command": "npm run check:runtime-png",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private PNG header and Rust dependency closure, proves the runtime-c-abi package inventory, verifies exact default/ABI 0.2 export isolation, and runs C11/C++17 hosts against feature-isolated PNG dynamic and static libraries on all three native CI operating systems.",
       "intentionallySplit": true,
       "escalatable": true
     },
