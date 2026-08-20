@@ -354,6 +354,7 @@ name = "vivi-asset-host-local"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "sha2",
  "tempfile",
  "vivi-asset-resolver",
  "vivi-asset-store-local",

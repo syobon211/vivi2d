@@ -12,7 +12,7 @@ that should own the change.
 | Project schema or migration | `packages/model/` | Keep public/private profile markers explicit and update hostile fixture coverage. |
 | Read-only authoring parse, atlas readiness, or evaluation projection | `packages/editor-host/` | Consume only `@vivi2d/model/internal/project-format-v11` and `@vivi2d/model/internal/evaluation-payload-v1`; inject atlas resolver/materializer ports. `buildRuntimePayload` projects data only; keep mutation, ordinary/public save, UI, desktop, provider, and runtime engine/renderer dependencies or execution outside this package. |
 | Runtime evaluation | `packages/core/src/runtime.ts`, `packages/runtime/`, `packages/runtime-wasm/`, `packages/runtime-native/` | Runtime packages must consume public-profile data and stay independent from editor stores. |
-| Private local Asset resolution, persistence, or activation preflight | `packages/runtime-native/crates/vivi-asset-{resolver,store-local,host-local}/` | Keep the host native-only and principal-bound. Treat database paths as trusted host input, return owned/redacted attestations, and keep bridges, IPC, ACL/path derivation, capability advertisement, evaluation/GPU activation, and lifecycle policy in separately reviewed slices. |
+| Private local Asset resolution, persistence, manifest-closure ingestion, or activation preflight | `packages/runtime-native/crates/vivi-asset-{resolver,store-local,host-local}/` | Keep the host native-only and principal-bound. Preflight the expected reference, exact normalized closure, all object bytes, and strict decode before writes; attempt the descriptor last as the sole logical publication point and return only redacted attestations. Treat database paths as trusted host input, and keep bridges, IPC, ACL/path derivation, capability advertisement, evaluation/GPU activation, orphan cleanup, and lifecycle policy in separately reviewed slices. |
 | Renderer adapter | `packages/renderer-pixi/`, `packages/renderer-three/`, or `packages/renderer-phaser/` | Prefer `RuntimeMeshSnapshot` and `getRenderList()` over editor-project structural access. |
 | Provider integration | `packages/provider-sdk/` or a separate provider repository | Treat providers as untrusted; validate paths, outputs, cancellation, and payload size. |
 | Viewer API origin, auth, permissions, rate limits, or transport | `packages/viewer/electron/viewer-api-*.cjs` plus `packages/viewer/src/__tests__/viewer-api-*.test.ts` | Keep protocol/security helpers testable without rendering React. |
@@ -56,6 +56,22 @@ Asset readiness is an initialization-time runtime-atlas validation snapshot,
 not a storage lease or pin: resolve missing assets and re-initialize the
 session, while extension `blobRefs` remain edit-only and outside W7a Evaluation
 readiness.
+
+Local manifest ingestion takes one exact closure: the raw manifest object plus
+each unique referenced chunk exactly once after case-insensitive digest
+normalization, with at most nine objects under the host's 64 MiB PNG ceiling.
+Validate reference kind, size, and media before inspecting the closure. Then
+validate the complete set and strict reconstructed PNG before the first write,
+insert chunks in first manifest occurrence order, then the raw manifest, and
+publish only by inserting the descriptor last. A chunk or manifest write
+failure may leave immutable unreferenced objects for a future GC policy, but
+must not make a partial closure resolvable. A Store error returned after
+descriptor insertion is attempted is outcome-ambiguous because its SQLite
+commit may precede a failed post-commit boundary check; retry the immutable
+operation to reconcile either state. Do not log or return manifest, chunk,
+reconstructed PNG, RGBA,
+database-path, principal, or native-store detail. These per-call validation
+bounds are not a caller quota, rate limit, or concurrency policy.
 
 ## Adding A Domain Command
 

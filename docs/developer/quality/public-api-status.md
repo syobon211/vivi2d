@@ -193,8 +193,35 @@ requests.
   in-process orchestration foundation over the resolver and local store. `npm
   run check:runtime-asset-host-local` pins its source and dependency inventory,
   Rust 1.89 native-only evidence, exact consumer graph, bounded embedded
-  materialization and referenced resolution attestations, and all-or-nothing
-  activation-plan preflight. Plans accept at most 32 sorted, unique IDs matching
+  materialization and referenced resolution attestations, exact manifest-closure
+  ingestion, and all-or-nothing activation-plan preflight. Manifest ingestion
+  accepts an expected `chunk_manifest` / `image/png` reference and a closure
+  containing the raw manifest object plus each unique referenced chunk exactly
+  once after case-insensitive digest normalization. The 64 MiB PNG limit permits
+  at most nine supplied objects: one manifest plus at most eight unique chunks.
+  Invalid, missing, extra, or case-colliding supplied digests are
+  `RefSetMismatch`. Expected-reference kind, size, and media preflight precedes
+  closure cardinality and payload inspection. Before any write the host then
+  validates the resolver's bounded duplicate-aware approved Stage 1/Stage 2
+  parser and received-value JCS address, every object digest and declared size,
+  and a full strict PNG decode. It then inserts unique chunks in first manifest
+  occurrence order, the received raw manifest, and the exact descriptor last.
+  The descriptor is the sole logical publication point.
+  Chunk or manifest write failure never attempts it and may leave immutable
+  unreferenced GC candidates. A Store error after descriptor insertion is
+  attempted is outcome-ambiguous because SQLite may have committed before a
+  failed post-commit boundary check; an idempotent retry reconciles either
+  state. This ingestion path never creates a descriptor for a partial closure.
+  An impossible durable-parser divergence during publication is redacted to the
+  host `Store` domain without a stable Asset code. Only `VerifiedAtlasAssetV1`
+  metadata is returned, never the manifest, chunks, logical PNG, or RGBA
+  buffers. The validation payload classes are approximately
+  451 MiB at their combined ceilings: up to 65 MiB of caller-supplied unique
+  chunks plus raw manifest, 64 MiB each for staged snapshot caching and logical
+  reconstruction, 256 MiB of RGBA, and about 2 MiB of raw/JCS manifest work,
+  plus parser, allocator, and store overhead. This is a bounded per-call class,
+  not an exact total peak-memory guarantee, caller quota, rate limit, or
+  concurrency policy. Plans accept at most 32 sorted, unique IDs matching
   `^atlas:[A-Za-z0-9_-]{1,120}$`; each decoded image is at most 8192 pixels in
   either dimension, and the aggregate limits are 67,108,864 pixels and
   268,435,456 RGBA bytes. The host
@@ -207,16 +234,16 @@ requests.
   latest-generation comparison, stale-result rejection, the texture-upload
   transaction, and atomic publication. The Rust API accepts a typed plan, so a
   future bridge must perform bounded raw-JSON parsing, duplicate-key rejection,
-  and Stage 1 validation against the approved byte-identical schema copy before
-  constructing it. The host preserves resolver, local-store, and
+  and Stage 1 validation against the approved byte-identical texture-plan schema
+  copy before constructing it. The host preserves resolver, local-store, and
   host-plan error domains while keeping diagnostics redacted: AssetRef
   preflight reports the resolver's `MediaTypeMismatch`, `LimitExceeded`, or
   `HashMismatch` codes, store failures remain the neutral host `Store` kind
   with an optional redacted local-store kind, and missing assets remain a
   result state rather than an error.
   Passing any Asset gate does not connect W7a or Electron IPC, add a language
-  bridge, C ABI or WASM export, implement full manifest-closure ingestion,
-  path/principal derivation or ACLs, quotas, cancellation, GC or server
+  bridge, C ABI or WASM export, implement path/principal derivation or ACLs,
+  quotas, cancellation, orphan cleanup or general GC, or server
   lifecycle, load evaluations, activate or upload GPU textures, advertise
   referenced-asset capability, or authorize publication.
 

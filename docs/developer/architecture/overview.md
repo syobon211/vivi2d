@@ -68,6 +68,14 @@ locale, media, frontmatter, and future website route contract is tracked in
   ordinary/public save, UI, desktop, provider, and runtime engine/renderer
   dependencies or execution stay outside this package; `buildRuntimePayload`
   is an Evaluation Payload data projection only.
+- `packages/runtime-native` owns private Rust runtime experiments and the
+  consumer-zero local Asset host. The host may ingest one caller-supplied PNG
+  chunk-manifest closure only after the expected reference, strict manifest,
+  exact normalized object set, chunk bytes, and full PNG decode all pass before
+  the first store write. It attempts the descriptor last as the sole logical
+  publication point. Language/IPC bridges, trusted path and principal
+  derivation, ACLs, evaluation loading, GPU activation, and capability
+  advertisement remain separately reviewed boundaries.
 - `packages/core` is intentionally kept as a private runtime/math
   compatibility package during the alpha refactor. Schema, parser,
   public-profile, load-limit, Runtime Spec, and model-owned parameter sanitizer

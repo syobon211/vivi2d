@@ -23,6 +23,67 @@ pub struct VerifiedAtlasAssetV1 {
     pub png: VerifiedPngV1,
 }
 
+/// One externally supplied physical object in a referenced-PNG manifest
+/// closure. The wire address is retained until case-insensitive closure
+/// validation; payload bytes are deliberately private and redacted from
+/// `Debug` output.
+pub struct ReferencedPngClosureObjectV1<'a> {
+    pub(crate) wire_object_address: &'a str,
+    pub(crate) payload: &'a [u8],
+}
+
+impl fmt::Debug for ReferencedPngClosureObjectV1<'_> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("ReferencedPngClosureObjectV1")
+            .field("wire_object_address_len", &self.wire_object_address.len())
+            .field("payload_bytes_len", &self.payload.len())
+            .finish()
+    }
+}
+
+impl<'a> ReferencedPngClosureObjectV1<'a> {
+    /// Creates one borrowed closure object without copying its payload.
+    #[must_use]
+    pub const fn new(wire_object_address: &'a str, payload: &'a [u8]) -> Self {
+        Self {
+            wire_object_address,
+            payload,
+        }
+    }
+}
+
+/// Caller-supplied exact physical closure for one chunk-manifest PNG. The set
+/// contains the manifest object itself and one object per unique chunk digest;
+/// an ordered repeated chunk is supplied only once.
+pub struct ReferencedPngManifestClosureV1<'a> {
+    pub(crate) objects: Vec<ReferencedPngClosureObjectV1<'a>>,
+}
+
+impl fmt::Debug for ReferencedPngManifestClosureV1<'_> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let total_payload_bytes = self.objects.iter().try_fold(0_u64, |total, object| {
+            u64::try_from(object.payload.len())
+                .ok()
+                .and_then(|length| total.checked_add(length))
+        });
+        formatter
+            .debug_struct("ReferencedPngManifestClosureV1")
+            .field("object_count", &self.objects.len())
+            .field("total_payload_bytes", &total_payload_bytes)
+            .finish()
+    }
+}
+
+impl<'a> ReferencedPngManifestClosureV1<'a> {
+    /// Creates a closure request. Exact-set and payload validation occurs as
+    /// one fail-closed host preflight before any durable store write.
+    #[must_use]
+    pub fn new(objects: Vec<ReferencedPngClosureObjectV1<'a>>) -> Self {
+        Self { objects }
+    }
+}
+
 /// Readiness attestation for one referenced atlas during read-only authoring
 /// initialization. Activation uses [`PrepareActivationTextureSetV1`] instead
 /// and retains the complete owned resolver output.

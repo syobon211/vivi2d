@@ -64,8 +64,31 @@ src/ and electron/
   orchestration foundation. It opens a trusted absolute local-store path with
   an opaque principal, fully decodes and materializes bounded embedded PNGs,
   fully resolves referenced assets, and returns redacted attestations. Its
-  activation-plan preflight accepts at most 32 sorted, unique IDs matching
-  `^atlas:[A-Za-z0-9_-]{1,120}$`,
+  manifest-ingestion seam accepts an expected `chunk_manifest` / `image/png`
+  reference, one raw manifest object, and each unique chunk object exactly once.
+  The host-specific 64 MiB PNG ceiling bounds that closure to at most nine
+  objects: one manifest plus at most eight unique chunks. The exact normalized
+  closure includes the manifest object; repeated chunk digests in the manifest
+  are supplied once, while an invalid, missing, extra, or case-colliding
+  supplied digest is `RefSetMismatch`. Expected-reference kind, size, and media
+  preflight precedes closure cardinality and payload inspection. The host then
+  validates the duplicate-aware approved manifest Stage 1/Stage 2 and
+  received-value JCS address, every supplied object's digest and declared size,
+  and the fully reconstructed strict PNG decode before the first store write.
+  It then writes unique chunks in first-manifest-occurrence order, the received
+  raw manifest, and finally the exact descriptor. That descriptor is the sole
+  logical publication point. A chunk or manifest write failure never attempts
+  it and may leave immutable, unreferenced GC candidates. Once descriptor
+  insertion is attempted, a returned store error is outcome-ambiguous because
+  SQLite may have committed before the post-commit boundary check failed; an
+  idempotent retry reconciles either state. This ingestion path never creates a
+  descriptor for a partial closure. The result is only `VerifiedAtlasAssetV1`
+  metadata, not manifest, chunk, logical PNG, or RGBA bytes. An impossible
+  durable-parser divergence during publication is redacted to the host `Store`
+  domain without a stable Asset code. The validation work is bounded per call
+  but is not a quota, rate limit, concurrency limit, or exact total peak-memory
+  guarantee. Its activation-plan preflight accepts at most 32 sorted, unique
+  IDs matching `^atlas:[A-Za-z0-9_-]{1,120}$`,
   checks the reviewed dimension and aggregate decoded-byte budgets, re-resolves
   every reference, and returns an owned `ReadyPng` set or deterministic missing
   IDs atomically. It carries a caller generation from 0 through JavaScript's
@@ -76,12 +99,13 @@ src/ and electron/
   latest-generation comparison, stale-result rejection, texture upload
   transaction, and atomic publication. This Rust API accepts an already typed
   plan; a future bridge owns bounded raw-JSON parsing, duplicate-key rejection,
-  and approved-schema Stage 1 validation before constructing that value. The
-  host does not own manifest-closure ingestion, path/principal
-  derivation or ACLs, quotas, cancellation, GC, server lifecycle, a language
-  bridge, IPC, C ABI or WASM exports, evaluation loading, GPU activation, or
-  capability advertisement. Those connections require separately reviewed
-  slices.
+  and approved-schema Stage 1 validation for that texture-plan value. The
+  manifest ingestion above instead reuses the resolver's already approved
+  bounded, duplicate-aware parser. The host does not own path/principal
+  derivation or ACLs, quotas, cancellation, orphan cleanup or general GC,
+  server lifecycle, a language bridge, IPC, C ABI or WASM exports, evaluation
+  loading, GPU activation, or capability advertisement. Those connections
+  require separately reviewed slices.
 - `editor-host` consumes only the reviewed internal Project Format v11 and Evaluation Payload v1 model friends. `buildRuntimePayload` is a data projection; UI, desktop, provider, runtime engine/renderer dependencies or execution, mutation, and ordinary/public save surfaces stay outside it.
 - Providers are untrusted boundaries and must not mutate projects directly.
 - Electron privileged APIs stay behind main/preload IPC contracts.

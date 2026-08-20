@@ -28,7 +28,7 @@ const expectedHostFiles = [
 ].sort();
 
 const pinnedHostFiles = [
-  ["Cargo.toml", 489, "5d161cd152611213a554bed3319f4c1ccd70d2a935546867c1415f6a8cc34e20"],
+  ["Cargo.toml", 543, "3e84ee055ebd261e58e3cc973805d566a13c3b76d6014956836cbee7e6143b4b"],
   [
     hostTexturePlanSchemaRelativePath,
     approvedTexturePlanSchemaBytes,
@@ -41,23 +41,23 @@ const pinnedHostFiles = [
   ],
   [
     "src/host.rs",
-    11_847,
-    "c48024d1d38505cff2dfee9694f62ca3cdc168a8733fc066cf90b966e94985f2",
+    22_651,
+    "ef259d5900310f4129944a604647a44b6f9f3e801c0b68e942fc1d9e89b73d7a",
   ],
   [
     "src/lib.rs",
-    1_299,
-    "99ed65c9c0513ab8ddc8d3b24349ba1b5af4ff3df847615ecf64ad170c962c79",
+    1_365,
+    "b3ac5d3b8ca9ef899a408b660c2fb309de874413016b78baff1b7706e0266525",
   ],
   [
     "src/model.rs",
-    4_874,
-    "f2a60165c7e23945acd8ece6f6047c8413a1c004cbef7672c71f423cd28b3d5a",
+    7_148,
+    "8bfaa759cd6f794697f4f66264c5f5bf13ebf1297c5c9894cd6d5d13006750a3",
   ],
   [
     "src/tests.rs",
-    23_616,
-    "aebb465a40883fbe289cfca7782427c2f9667c1dd23cae898f6fdfb26eb8ef8b",
+    47_919,
+    "ef29c7e8436dc07fbd1e8c6924aa02160bb0c1665334fd52c7bacf9481731ba4",
   ],
 ];
 
@@ -70,11 +70,18 @@ const requiredTestNames = [
   "activation_ready_set_is_ordered_owned_complete_and_generation_bound",
   "activation_texture_count_and_reference_size_limits_precede_store_io",
   "asset_reference_preflight_preserves_resolver_codes_before_store_io",
+  "closure_cardinality_syntax_and_case_collisions_are_zero_write_refset_failures",
   "embedded_materialization_returns_exact_attestation_and_reopens_as_reference",
+  "manifest_closure_dto_debug_never_exposes_addresses_or_payload",
+  "manifest_physical_logical_media_dimension_and_decode_faults_are_zero_write",
+  "manifest_reference_preflight_precedes_oversized_closure_without_writes",
   "open_preserves_only_the_redacted_store_kind",
+  "referenced_manifest_ingestion_succeeds_reopens_and_is_idempotent",
   "referenced_missing_is_a_state_distinct_from_hard_errors",
+  "repeated_digest_is_supplied_and_persisted_once_in_first_occurrence_order",
   "request_generation_safe_integer_boundaries_are_preserved_without_reads",
   "store_failures_remain_redacted_and_never_fabricate_asset_codes",
+  "write_failures_are_redacted_ordered_and_descriptor_last",
 ];
 
 const expectedPublicItemsByFile = {
@@ -89,6 +96,8 @@ const expectedPublicItemsByFile = {
     "PreparedActivationTextureSetV1",
     "PreparedActivationTextureV1",
     "ReferencedAtlasResolutionV1",
+    "ReferencedPngClosureObjectV1",
+    "ReferencedPngManifestClosureV1",
     "VerifiedAtlasAssetV1",
     "VerifiedPngV1",
   ],
@@ -97,6 +106,7 @@ const expectedPublicItemsByFile = {
 const expectedPublicFunctionsByFile = {
   "src/error.rs": ["asset_code", "kind", "store_kind"],
   "src/host.rs": [
+    "ingest_referenced_png_manifest_closure",
     "materialize_embedded_png",
     "open",
     "prepare_activation_texture_set",
@@ -108,6 +118,8 @@ const expectedPublicFunctionsByFile = {
     "into_parts",
     "into_parts",
     "into_parts",
+    "new",
+    "new",
     "ready_png",
     "request_generation",
     "request_generation",
@@ -145,6 +157,8 @@ const expectedRootReexports = [
   "PrincipalId",
   "ReadyPng",
   "ReferencedAtlasResolutionV1",
+  "ReferencedPngClosureObjectV1",
+  "ReferencedPngManifestClosureV1",
   "StorageKind",
   "VerifiedAtlasAssetV1",
   "VerifiedPngV1",
@@ -157,10 +171,11 @@ try {
   const metadata = assertCargoBoundary();
   assertDependencyPins(metadata);
   assertHostContract();
+  assertManifestIngestionContract();
   assertNativeOnlyIsolation(metadata);
   assertToolchainGateAndDocs();
   console.log(
-    "[runtime-asset-host-local] passed (bounded orchestration, exact dependencies, native isolation)",
+    "[runtime-asset-host-local] passed (exact manifest ingestion, bounded orchestration, native isolation)",
   );
 } catch (error) {
   console.error("[runtime-asset-host-local] failed:");
@@ -405,6 +420,7 @@ function assertCargoBoundary() {
 
   const expectedDirect = [
     directDependency("base64", "^0.22", "dev", true, []),
+    directDependency("sha2", "^0.10", "dev", false, []),
     directDependency("tempfile", "^3", "dev", true, []),
     directDependency("vivi-asset-resolver", "*", "normal", false, [], "path"),
     directDependency("vivi-asset-store-local", "*", "normal", false, [], "path"),
@@ -456,6 +472,7 @@ function assertCargoBoundary() {
     .sort();
   const expectedLockDependencies = [
     "base64",
+    "sha2",
     "tempfile",
     "vivi-asset-resolver",
     "vivi-asset-store-local",
@@ -510,6 +527,7 @@ function assertHostContract() {
     .join("\n");
   for (const evidence of [
     "LocalAssetHost",
+    "ingest_referenced_png_manifest_closure",
     "materialize_embedded_png",
     "resolve_referenced_png",
     "prepare_activation_texture_set",
@@ -521,6 +539,8 @@ function assertHostContract() {
     "PrepareActivationTextureSetV1",
     "PreparedActivationTextureSetV1",
     "MissingActivationTexturesV1",
+    "ReferencedPngClosureObjectV1",
+    "ReferencedPngManifestClosureV1",
     "request_generation",
     "const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;",
     "vivi2d.evaluationTexturePlan.v1",
@@ -546,11 +566,17 @@ function assertHostContract() {
     "AssetErrorCode::MediaTypeMismatch",
     "AssetErrorCode::LimitExceeded",
     "AssetErrorCode::HashMismatch",
+    "AssetErrorCode::RefSetMismatch",
     "asset_code",
     "store_kind",
     "prepare_embedded_png",
     "materialize_prepared_png",
     "LocalImmutableAssetStore",
+    "parse_chunk_manifest",
+    "validate_exact_closure",
+    "put_verified_chunk_if_absent",
+    "put_chunk_manifest_if_absent",
+    "put_descriptor_if_absent",
     "impl fmt::Debug for PreparedActivationTextureV1",
     'field("logical_bytes_len"',
     'field("rgba_bytes_len"',
@@ -606,6 +632,148 @@ function assertHostContract() {
   for (const [pattern, label] of forbiddenPatterns) {
     if (pattern.test(productionSource)) {
       throw new Error(`local Asset host contains forbidden ${label}`);
+    }
+  }
+}
+
+function assertManifestIngestionContract() {
+  const hostSource = readText(`${hostRoot}/src/host.rs`);
+  const modelSource = readText(`${hostRoot}/src/model.rs`);
+
+  for (const evidence of [
+    "const MAX_REFERENCED_PNG_CLOSURE_OBJECTS: usize = 9;",
+    "ReferencedPngClosureObjectV1",
+    "ReferencedPngManifestClosureV1",
+    "ingest_referenced_png_manifest_closure",
+    "ingest_referenced_png_manifest_closure_into_store",
+    "validate_referenced_png_manifest_closure",
+    "ReferencedPngManifestWriteStore",
+    "StagedReferencedPngClosure",
+    "StagedReadError::Allocation",
+    "map_publication_error",
+    "OperationError::Asset(_) => LocalAssetHostError::from_store_kind(None)",
+    "Every fallible caller/Asset check is complete before the first durable",
+    "Digest::from_hex",
+    "parse_chunk_manifest",
+    "manifest.required_object_addresses()",
+    "validate_exact_closure",
+    "resolve_png_with_store",
+    "put_verified_chunk_if_absent",
+    "put_chunk_manifest_if_absent",
+    "put_descriptor_if_absent",
+    "Descriptor::from_reference(reference)",
+    "AssetErrorCode::UnsupportedKind",
+    "AssetErrorCode::RefSetMismatch",
+    "AssetErrorCode::HashMismatch",
+    "AssetErrorCode::LimitExceeded",
+    "drop(ready);",
+  ]) {
+    if (!hostSource.includes(evidence) && !modelSource.includes(evidence)) {
+      throw new Error(`manifest-ingestion contract evidence drifted: ${evidence}`);
+    }
+  }
+
+  if (
+    !/pub fn ingest_referenced_png_manifest_closure\([\s\S]*?reference: &AssetRef,[\s\S]*?closure: &ReferencedPngManifestClosureV1<'_>,[\s\S]*?declared_width: u32,[\s\S]*?declared_height: u32,[\s\S]*?\) -> Result<VerifiedAtlasAssetV1, LocalAssetHostError>/.test(
+      hostSource,
+    )
+  ) {
+    throw new Error(
+      "manifest-ingestion public signature or attestation-only result drifted",
+    );
+  }
+
+  const writeStart = hostSource.indexOf(
+    "pub(crate) fn ingest_referenced_png_manifest_closure_into_store",
+  );
+  const writeEnd = hostSource.indexOf(
+    "\nfn validate_referenced_png_manifest_closure",
+    writeStart,
+  );
+  const writeSource = hostSource.slice(writeStart, writeEnd);
+  const writeOrder = [
+    "let validated = validate_referenced_png_manifest_closure",
+    "let mut publication_chunks = Vec::new()",
+    "let manifest_bytes = validated",
+    "let descriptor = Descriptor::from_reference(reference)",
+    "let attestation = verified_attestation(",
+    "Every fallible caller/Asset check is complete before the first durable",
+    ".put_verified_chunk_if_absent",
+    ".put_chunk_manifest_if_absent",
+    ".put_descriptor_if_absent",
+    "Ok(attestation)",
+  ].map((evidence) => writeSource.indexOf(evidence));
+  if (
+    writeStart < 0 ||
+    writeEnd < 0 ||
+    writeOrder.some((index) => index < 0) ||
+    writeOrder.some(
+      (index, position) => position > 0 && index <= writeOrder[position - 1],
+    )
+  ) {
+    throw new Error(
+      "manifest ingestion must finish its publication plan before writes and keep chunk/manifest/descriptor/attestation order",
+    );
+  }
+
+  const validationStart = hostSource.indexOf(
+    "fn validate_referenced_png_manifest_closure",
+  );
+  const validationEnd = hostSource.indexOf("\nfn verified_attestation", validationStart);
+  const validationSource = hostSource.slice(validationStart, validationEnd);
+  const validationOrder = [
+    "reference.storage_kind != StorageKind::ChunkManifest",
+    "validate_asset_shape(reference)?",
+    "closure.objects.len() > MAX_REFERENCED_PNG_CLOSURE_OBJECTS",
+    "let mut objects = HashMap::new()",
+    "Digest::from_hex",
+    "parse_chunk_manifest",
+    "validate_exact_closure",
+    "resolve_png_with_store",
+    "drop(ready);",
+  ].map((evidence) => validationSource.indexOf(evidence));
+  if (
+    validationStart < 0 ||
+    validationEnd < 0 ||
+    validationOrder.some((index) => index < 0) ||
+    validationOrder.some(
+      (index, position) => position > 0 && index <= validationOrder[position - 1],
+    )
+  ) {
+    throw new Error(
+      "manifest closure must bound cardinality before allocation and fully validate/decode before writes",
+    );
+  }
+
+  for (const typeName of [
+    "ReferencedPngClosureObjectV1",
+    "ReferencedPngManifestClosureV1",
+  ]) {
+    if (
+      new RegExp(`#\\[derive\\([^\\]]*Debug[^\\]]*\\)\\]\\s*pub struct ${typeName}`).test(
+        modelSource,
+      )
+    ) {
+      throw new Error(`${typeName} payload-bearing Debug must remain manually redacted`);
+    }
+    if (!modelSource.includes(`impl fmt::Debug for ${typeName}`)) {
+      throw new Error(`${typeName} must retain its manual redacted Debug implementation`);
+    }
+  }
+  if (
+    /^\s*pub\s+(?:wire_object_address|payload|objects)\s*:/m.test(modelSource) ||
+    /\.field\("(?:wire_object_address|payload|objects)"/.test(modelSource)
+  ) {
+    throw new Error("manifest request fields or Debug output expose raw closure data");
+  }
+  for (const evidence of [
+    '.field("wire_object_address_len"',
+    '.field("payload_bytes_len"',
+    '.field("object_count"',
+    '.field("total_payload_bytes"',
+  ]) {
+    if (!modelSource.includes(evidence)) {
+      throw new Error(`manifest request Debug redaction evidence drifted: ${evidence}`);
     }
   }
 }
@@ -726,9 +894,23 @@ function assertToolchainGateAndDocs() {
   }
   for (const evidence of [
     "byte-identical approved texture-plan schema copy",
+    "exact normalized manifest-closure ingestion",
+    "at most nine supplied objects",
+    "descriptor-last logical commit",
+    "Expected-reference kind/size/media preflight precedes closure inspection",
+    "Validation and caller-derived Asset failures occur before writes",
+    "chunk or manifest write failures never attempt the descriptor",
+    "outcome-ambiguous",
+    "immutable operation is retryable",
+    "durable-parser divergence during publication",
+    "without a stable Asset code",
+    "per-call validation bounds",
+    "not a caller quota",
+    "exact total peak-memory guarantee",
     "Raw-JSON parsing",
     "duplicate-key rejection",
-    "Stage 1 schema validation remain bridge-owned",
+    "typed texture plans remain bridge-owned",
+    "manifest ingestion reuses the resolver's approved bounded duplicate-aware Stage 1/Stage 2 parser",
   ]) {
     if (!gate.notes?.includes(evidence)) {
       throw new Error(`local Asset host gate note is missing ${evidence}`);
@@ -774,6 +956,19 @@ function assertToolchainGateAndDocs() {
     "WASM",
     "capability advertisement",
     "manifest-closure ingestion",
+    "at most nine",
+    "RefSetMismatch",
+    "received-value JCS",
+    "first manifest occurrence order",
+    "sole logical publication point",
+    "outcome-ambiguous",
+    "idempotent retry",
+    "unreferenced GC candidates",
+    "durable-parser divergence",
+    "without a stable Asset code",
+    "approximately 451 MiB",
+    "bounded per-call class",
+    "not an exact total peak-memory guarantee",
     "path/principal derivation or ACLs",
     "quotas",
     "cancellation",
@@ -792,6 +987,16 @@ function assertToolchainGateAndDocs() {
   ]) {
     if (!documentation.includes(evidence)) {
       throw new Error(`local Asset host documentation is missing ${evidence}`);
+    }
+  }
+  for (const staleNonGoal of [
+    "does not own manifest-closure ingestion",
+    "implement full manifest-closure ingestion",
+  ]) {
+    if (documentation.includes(staleNonGoal)) {
+      throw new Error(
+        `local Asset host documentation retains stale non-goal: ${staleNonGoal}`,
+      );
     }
   }
 }

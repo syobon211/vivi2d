@@ -1,9 +1,11 @@
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use vivi_asset_resolver::{
-    AssetError, AssetErrorCode, AssetReadStore, AssetRef, OperationError, PrincipalId, ResolvePng,
-    StorageKind, materialize_prepared_png, prepare_embedded_png,
-    resolve_referenced_png as resolve_png_with_store,
+    AssetError, AssetErrorCode, AssetReadStore, AssetRef, Descriptor, Digest, EmbeddedBlobStore,
+    ObjectRead, ObjectSnapshot, ObjectState, OperationError, ParsedManifest, PrincipalId,
+    ResolvePng, StorageKind, materialize_prepared_png, parse_chunk_manifest, prepare_embedded_png,
+    resolve_referenced_png as resolve_png_with_store, validate_exact_closure,
 };
 use vivi_asset_store_local::{LocalImmutableAssetStore, LocalStoreError, LocalStoreErrorKind};
 
@@ -11,8 +13,8 @@ use crate::error::LocalAssetHostError;
 use crate::model::{
     EVALUATION_TEXTURE_PLAN_SCHEMA_V1, EvaluationTexturePlanV1, MissingActivationTexturesV1,
     PNG_MEDIA_TYPE, PNG_PROFILE_V1, PrepareActivationTextureSetV1, PreparedActivationTextureSetV1,
-    PreparedActivationTextureV1, ReferencedAtlasResolutionV1, SRGB_COLOR_SPACE,
-    STRAIGHT_ALPHA_MODE, VerifiedAtlasAssetV1, VerifiedPngV1,
+    PreparedActivationTextureV1, ReferencedAtlasResolutionV1, ReferencedPngManifestClosureV1,
+    SRGB_COLOR_SPACE, STRAIGHT_ALPHA_MODE, VerifiedAtlasAssetV1, VerifiedPngV1,
 };
 
 const MAX_TEXTURES: usize = 32;
@@ -24,6 +26,7 @@ const MAX_TOTAL_TEXTURE_RGBA_BYTES: u64 = 268_435_456;
 const MAX_PNG_INPUT_BYTES: u64 = 67_108_864;
 const MAX_BLOB_BYTES: u64 = 16_777_216;
 const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
+const MAX_REFERENCED_PNG_CLOSURE_OBJECTS: usize = 9;
 
 /// Principal-bound facade over one private immutable SQLite Asset store.
 /// Neither its principal nor its path is observable through this API.
@@ -58,6 +61,29 @@ impl LocalAssetHost {
         let asset = materialize_prepared_png(&mut self.store, &self.principal, &prepared)
             .map_err(map_local_operation_error)?;
         Ok(verified_attestation(asset, info.width, info.height))
+    }
+
+    /// Validates an exact referenced-PNG manifest closure and fully decodes
+    /// its logical PNG before performing any durable write. Publication is
+    /// descriptor-last: unique chunks in first manifest-occurrence order,
+    /// then the received manifest bytes, then the exact descriptor.
+    pub fn ingest_referenced_png_manifest_closure(
+        &mut self,
+        reference: &AssetRef,
+        closure: &ReferencedPngManifestClosureV1<'_>,
+        declared_width: u32,
+        declared_height: u32,
+    ) -> Result<VerifiedAtlasAssetV1, LocalAssetHostError> {
+        let classify = |error: LocalStoreError| Some(error.kind());
+        ingest_referenced_png_manifest_closure_into_store(
+            &mut self.store,
+            &self.principal,
+            reference,
+            closure,
+            declared_width,
+            declared_height,
+            &classify,
+        )
     }
 
     /// Re-resolves and strictly decodes a referenced PNG for W7a readiness.
@@ -96,6 +122,265 @@ impl LocalAssetHost {
             &classify,
         )
     }
+}
+
+pub(crate) trait ReferencedPngManifestWriteStore {
+    type Error;
+
+    fn put_verified_chunk_if_absent(
+        &mut self,
+        principal: &PrincipalId,
+        address: Digest,
+        bytes: &[u8],
+    ) -> Result<(), OperationError<Self::Error>>;
+
+    fn put_chunk_manifest_if_absent(
+        &mut self,
+        principal: &PrincipalId,
+        raw: &[u8],
+    ) -> Result<(), OperationError<Self::Error>>;
+
+    fn put_descriptor_if_absent(
+        &mut self,
+        principal: &PrincipalId,
+        reference: &AssetRef,
+        descriptor: &Descriptor,
+    ) -> Result<(), OperationError<Self::Error>>;
+}
+
+impl ReferencedPngManifestWriteStore for LocalImmutableAssetStore {
+    type Error = LocalStoreError;
+
+    fn put_verified_chunk_if_absent(
+        &mut self,
+        principal: &PrincipalId,
+        address: Digest,
+        bytes: &[u8],
+    ) -> Result<(), OperationError<Self::Error>> {
+        LocalImmutableAssetStore::put_verified_chunk_if_absent(self, principal, address, bytes)
+            .map_err(OperationError::StoreUnavailable)
+    }
+
+    fn put_chunk_manifest_if_absent(
+        &mut self,
+        principal: &PrincipalId,
+        raw: &[u8],
+    ) -> Result<(), OperationError<Self::Error>> {
+        LocalImmutableAssetStore::put_chunk_manifest_if_absent(self, principal, raw).map(|_| ())
+    }
+
+    fn put_descriptor_if_absent(
+        &mut self,
+        principal: &PrincipalId,
+        reference: &AssetRef,
+        descriptor: &Descriptor,
+    ) -> Result<(), OperationError<Self::Error>> {
+        EmbeddedBlobStore::put_descriptor_if_absent(self, principal, reference, descriptor)
+            .map_err(OperationError::StoreUnavailable)
+    }
+}
+
+struct ValidatedReferencedPngClosure<'a> {
+    manifest: ParsedManifest,
+    objects: HashMap<Digest, &'a [u8]>,
+    width: u32,
+    height: u32,
+}
+
+struct StagedReferencedPngClosure<'a> {
+    principal: PrincipalId,
+    reference: AssetRef,
+    descriptor: Descriptor,
+    objects: &'a HashMap<Digest, &'a [u8]>,
+}
+
+enum StagedReadError {
+    Allocation,
+}
+
+impl AssetReadStore for StagedReferencedPngClosure<'_> {
+    type Error = StagedReadError;
+
+    fn descriptor(
+        &self,
+        principal: &PrincipalId,
+        expected: &AssetRef,
+    ) -> Result<Option<Descriptor>, Self::Error> {
+        Ok(
+            (principal == &self.principal && expected == &self.reference)
+                .then(|| self.descriptor.clone()),
+        )
+    }
+
+    fn object(
+        &self,
+        principal: &PrincipalId,
+        object_address: Digest,
+        max_bytes: u64,
+    ) -> Result<ObjectRead, Self::Error> {
+        if principal != &self.principal {
+            return Ok(ObjectRead::Missing);
+        }
+        let Some(bytes) = self.objects.get(&object_address) else {
+            return Ok(ObjectRead::Missing);
+        };
+        let Ok(length) = u64::try_from(bytes.len()) else {
+            return Ok(ObjectRead::TooLarge);
+        };
+        if length > max_bytes {
+            return Ok(ObjectRead::TooLarge);
+        }
+        let mut owned = Vec::new();
+        owned
+            .try_reserve_exact(bytes.len())
+            .map_err(|_| StagedReadError::Allocation)?;
+        owned.extend_from_slice(bytes);
+        Ok(ObjectRead::Snapshot(ObjectSnapshot {
+            address: object_address,
+            storage_generation: 0,
+            state: ObjectState::Active,
+            bytes: owned,
+        }))
+    }
+}
+
+pub(crate) fn ingest_referenced_png_manifest_closure_into_store<S, F>(
+    store: &mut S,
+    principal: &PrincipalId,
+    reference: &AssetRef,
+    closure: &ReferencedPngManifestClosureV1<'_>,
+    declared_width: u32,
+    declared_height: u32,
+    classify_store_error: &F,
+) -> Result<VerifiedAtlasAssetV1, LocalAssetHostError>
+where
+    S: ReferencedPngManifestWriteStore,
+    F: Fn(S::Error) -> Option<LocalStoreErrorKind>,
+{
+    let validated = validate_referenced_png_manifest_closure(
+        principal,
+        reference,
+        closure,
+        declared_width,
+        declared_height,
+    )?;
+
+    let mut written_chunks = HashSet::new();
+    written_chunks
+        .try_reserve(validated.manifest.chunks.len())
+        .map_err(|_| asset_ingestion_error(AssetErrorCode::LimitExceeded))?;
+    let mut publication_chunks = Vec::new();
+    publication_chunks
+        .try_reserve_exact(validated.manifest.chunks.len())
+        .map_err(|_| asset_ingestion_error(AssetErrorCode::LimitExceeded))?;
+    for chunk in &validated.manifest.chunks {
+        if written_chunks.insert(chunk.sha256) {
+            let bytes = validated
+                .objects
+                .get(&chunk.sha256)
+                .ok_or_else(|| asset_ingestion_error(AssetErrorCode::RefSetMismatch))?;
+            publication_chunks.push((chunk.sha256, *bytes));
+        }
+    }
+    let manifest_bytes = validated
+        .objects
+        .get(&validated.manifest.object_address)
+        .ok_or_else(|| asset_ingestion_error(AssetErrorCode::RefSetMismatch))?;
+    let descriptor = Descriptor::from_reference(reference);
+    let attestation = verified_attestation(reference.clone(), validated.width, validated.height);
+
+    // Every fallible caller/Asset check is complete before the first durable
+    // write. From this point onward, failures belong only to publication.
+    for (address, bytes) in publication_chunks {
+        store
+            .put_verified_chunk_if_absent(principal, address, bytes)
+            .map_err(|error| map_publication_error(error, classify_store_error))?;
+    }
+    store
+        .put_chunk_manifest_if_absent(principal, manifest_bytes)
+        .map_err(|error| map_publication_error(error, classify_store_error))?;
+
+    store
+        .put_descriptor_if_absent(principal, reference, &descriptor)
+        .map_err(|error| map_publication_error(error, classify_store_error))?;
+
+    Ok(attestation)
+}
+
+fn validate_referenced_png_manifest_closure<'payload>(
+    principal: &PrincipalId,
+    reference: &AssetRef,
+    closure: &ReferencedPngManifestClosureV1<'payload>,
+    declared_width: u32,
+    declared_height: u32,
+) -> Result<ValidatedReferencedPngClosure<'payload>, LocalAssetHostError> {
+    if reference.storage_kind != StorageKind::ChunkManifest {
+        return Err(asset_ingestion_error(AssetErrorCode::UnsupportedKind));
+    }
+    validate_asset_shape(reference)?;
+    if closure.objects.len() > MAX_REFERENCED_PNG_CLOSURE_OBJECTS {
+        return Err(asset_ingestion_error(AssetErrorCode::RefSetMismatch));
+    }
+
+    let mut objects = HashMap::new();
+    objects
+        .try_reserve(closure.objects.len())
+        .map_err(|_| asset_ingestion_error(AssetErrorCode::LimitExceeded))?;
+    let mut supplied_wire = Vec::new();
+    supplied_wire
+        .try_reserve_exact(closure.objects.len())
+        .map_err(|_| asset_ingestion_error(AssetErrorCode::LimitExceeded))?;
+    for object in &closure.objects {
+        let address = Digest::from_hex(object.wire_object_address)
+            .map_err(|_| asset_ingestion_error(AssetErrorCode::RefSetMismatch))?;
+        if objects.insert(address, object.payload).is_some() {
+            return Err(asset_ingestion_error(AssetErrorCode::RefSetMismatch));
+        }
+        supplied_wire.push(object.wire_object_address);
+    }
+
+    let manifest_bytes = objects
+        .get(&reference.object_address)
+        .ok_or_else(|| asset_ingestion_error(AssetErrorCode::RefSetMismatch))?;
+    let manifest = parse_chunk_manifest(manifest_bytes).map_err(LocalAssetHostError::from_asset)?;
+    if manifest.object_address != reference.object_address {
+        return Err(asset_ingestion_error(AssetErrorCode::HashMismatch));
+    }
+    validate_exact_closure(&manifest.required_object_addresses(), &supplied_wire)
+        .map_err(LocalAssetHostError::from_asset)?;
+
+    let staged = StagedReferencedPngClosure {
+        principal: principal.clone(),
+        reference: reference.clone(),
+        descriptor: Descriptor::from_reference(reference),
+        objects: &objects,
+    };
+    let ready = resolve_png_with_store(
+        &staged,
+        principal,
+        reference,
+        declared_width,
+        declared_height,
+    )
+    .map_err(|error| match error {
+        OperationError::Asset(error) => LocalAssetHostError::from_asset(error),
+        OperationError::StoreUnavailable(StagedReadError::Allocation) => {
+            asset_ingestion_error(AssetErrorCode::LimitExceeded)
+        }
+    })?;
+    let ResolvePng::Ready(ready) = ready else {
+        return Err(asset_ingestion_error(AssetErrorCode::RefSetMismatch));
+    };
+    let width = ready.decoded().info.width;
+    let height = ready.decoded().info.height;
+    drop(ready);
+
+    Ok(ValidatedReferencedPngClosure {
+        manifest,
+        objects,
+        width,
+        height,
+    })
 }
 
 fn verified_attestation(reference: AssetRef, width: u32, height: u32) -> VerifiedAtlasAssetV1 {
@@ -200,6 +485,25 @@ where
 fn map_local_operation_error(error: OperationError<LocalStoreError>) -> LocalAssetHostError {
     let classify = |store_error: LocalStoreError| Some(store_error.kind());
     map_operation_error(error, &classify)
+}
+
+fn map_publication_error<E, F>(
+    error: OperationError<E>,
+    classify_store_error: &F,
+) -> LocalAssetHostError
+where
+    F: Fn(E) -> Option<LocalStoreErrorKind>,
+{
+    match error {
+        // All caller-owned Asset validation finished before publication. An
+        // adapter that contradicts that attestation while writing is an
+        // integrity/storage failure, never a new caller Asset failure after
+        // orphan candidates may have been written.
+        OperationError::Asset(_) => LocalAssetHostError::from_store_kind(None),
+        OperationError::StoreUnavailable(error) => {
+            LocalAssetHostError::from_store_kind(classify_store_error(error))
+        }
+    }
 }
 
 fn map_operation_error<E, F>(
@@ -331,5 +635,12 @@ fn asset_preflight_error(code: AssetErrorCode) -> LocalAssetHostError {
     LocalAssetHostError::from_asset(AssetError::new(
         code,
         "evaluation texture AssetRef preflight failed",
+    ))
+}
+
+fn asset_ingestion_error(code: AssetErrorCode) -> LocalAssetHostError {
+    LocalAssetHostError::from_asset(AssetError::new(
+        code,
+        "referenced PNG manifest closure ingestion failed",
     ))
 }
