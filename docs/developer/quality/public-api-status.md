@@ -173,8 +173,9 @@ requests.
   runtime/model-load/update/expression smoke, and native WASM release-artifact
   export/load/snapshot/hit-test validation, but it does not create a public ABI
   support policy or publication promise.
-- Its private `vivi-runtime-native-evaluation` crate is a consumer-zero
-  Evaluation Payload v1 validation foundation. `npm run
+- Its private `vivi-runtime-native-evaluation` crate is an Evaluation Payload
+  v1 validation foundation whose exact sole production consumer is
+  `vivi-runtime-native-preactivation`. `npm run
   check:runtime-native-evaluation` pins the byte-identical approved model schema
   copy, bounded duplicate-aware parsing, Stage 1/schema and Stage 2/semantic
   validation, approved-schema reachable accepted-set parity in one shared
@@ -194,14 +195,19 @@ requests.
   `stateMachines` as unsupported after Stage 1 and Stage 2; this is not a
   generic parser for every schema-valid payload. Success returns only a
   validated, inventory-bearing Runtime Spec v1.0 loader-preflight candidate,
-  eligible for future lowering or activation only after A-09 is resolved. Input
+  eligible only for the isolated preactivation correlation boundary. Adopted
+  Amendment 1 A-09 remains normative: its nested wire shape and arbitrary
+  finite binary64 domain are not pending or reopened. Core lowering remains
+  blocked until a separately reviewed follow-on contract defines finite
+  binary64-to-f32 conversion/loss policy and audits all 13 Evaluation blend
+  modes. Input
   ceilings and explicit fallible reservations do not promise recoverable
   handling for every hidden `serde_json::Map` or serializer allocation failure.
   This slice does not lower into `CoreRuntimeModel`, evaluate, convert arbitrary
   finite binary64 values to `f32`, expose C ABI/editor or WASM symbols
   or headers, perform filesystem/network I/O, connect a language/IPC bridge,
   activate Assets or GPU resources, advertise a capability, or publish an API.
-  A-09 and EDH-01 remain open.
+  The follow-on lowering contract and EDH-01 remain open.
 - Its private `vivi-asset-resolver` crate is a foundation boundary only. `npm
   run check:runtime-asset-resolver` pins the approved Asset Model schema and
   static validator evidence, dependency license/checksum closure, Rust toolchain
@@ -275,6 +281,46 @@ requests.
   quotas, cancellation, orphan cleanup or general GC, or server
   lifecycle, load evaluations, activate or upload GPU textures, advertise
   referenced-asset capability, or authorize publication.
+- Its private native-only `vivi-runtime-native-preactivation` crate is the
+  consumer-zero coordinator and exact sole production consumer of both the
+  Evaluation validator and local Asset host. `npm run
+  check:runtime-native-preactivation` pins its exact source/API/test/direct
+  dependency and Cargo.lock inventories, dependency license/checksum closures,
+  consumer graph, Rust 1.89 native tests/Clippy, rustdoc with
+  warnings denied, and three-OS native workflow wiring. It consumes one
+  validated candidate, one typed texture plan, and an explicit out-of-band
+  `request_generation`. Before any Asset/store read, it requires that value to
+  equal the candidate generation under the host JavaScript-safe maximum
+  9,007,199,254,740,991 and passes the same value to the host. It correlates
+  exact schema/count and every case-sensitive `id`/`width`/`height` tuple
+  positionally; the candidate's at-most-32 strict UTF-8 byte-sorted inventory
+  fixes plan count/order. The host's existing pre-read preflight, rather than
+  duplicated policy, owns frozen `image/png`, `srgb`, `straight`, and
+  `AssetRef` shape checks. Generation mismatch is `Correlation` before the safe
+  ceiling or plan; equal above-ceiling input is `ResourceLimitExceeded`; safe
+  tuple mismatch is `Correlation`; host fixed-plan, resolver, store, and output
+  contradictions retain `InvalidTexturePlan`, `Asset`, `Store`, and `Internal`.
+  The validator's full-`u64` candidate
+  contract is unchanged. Missing collection continues after reads begin so a
+  later Asset or Store hard error wins; neither hard errors nor Missing expose
+  partial Ready state. The Ready path defensively rechecks generation, count,
+  order, IDs, Asset references, decoded dimensions, and checked pixel/RGBA
+  totals, then moves the candidate, plan, and resolver-owned textures into one
+  private, all-or-nothing owned result. The coordinator implementation moves
+  and does not clone logical PNG/RGBA data. Only preactivation wrapper/error
+  `Debug` is redacted; authorized accessors expose the host set and `ReadyPng`
+  metadata with existing dependency `Debug`/`Clone`, a future bridge/logging
+  carry-forward boundary. Correlation and postcondition checks add no
+  collection allocation; owned inputs and host outputs are moved, while
+  dependency allocations retain their own reviewed bounds. This is not a
+  global recoverable-OOM claim, and a future coordinator collection allocation
+  must use fallible reservation. This is preactivation only: it
+  does not establish generation
+  freshness, reject stale work, lower into runtime-native core, evaluate or
+  convert values to `f32`, expose C ABI/editor headers or symbols, connect
+  runtime-native WASM or a language/IPC bridge, upload GPU resources, atomically
+  publish a runtime model, advertise a capability, or authorize publication.
+  The follow-on lowering contract and EDH-01 remain open.
 
 `npm run check:package-boundaries` enforces the most important publication
 guard: a package cannot become public while still exporting `src/*`, and

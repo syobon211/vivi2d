@@ -795,9 +795,12 @@ function assertNativeOnlyIsolation(metadata) {
     );
   }
   const hostConsumers = consumersOf(metadata, "vivi-asset-host-local");
-  if (hostConsumers.length !== 0) {
+  if (
+    JSON.stringify(hostConsumers) !==
+    JSON.stringify(["vivi-runtime-native-preactivation"])
+  ) {
     throw new Error(
-      `local Asset host must remain consumer-zero: ${hostConsumers.join(", ")}`,
+      `local Asset host production consumer isolation drifted: ${hostConsumers.join(", ")}`,
     );
   }
 

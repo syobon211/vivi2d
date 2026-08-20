@@ -69,7 +69,7 @@ locale, media, frontmatter, and future website route contract is tracked in
   dependencies or execution stay outside this package; `buildRuntimePayload`
   is an Evaluation Payload data projection only.
 - `packages/runtime-native` owns private Rust runtime experiments. Its
-  consumer-zero `vivi-runtime-native-evaluation` foundation performs bounded,
+  `vivi-runtime-native-evaluation` foundation performs bounded,
   duplicate-aware Evaluation Payload v1 parsing, byte-identical approved-schema
   Stage 1 validation, semantic Stage 2 validation, and stable texture-binding
   inventory construction on native and `wasm32-unknown-unknown`. A shared
@@ -86,20 +86,59 @@ locale, media, frontmatter, and future website route contract is tracked in
   Runtime Spec v1.0 loader preflight rejects nonempty `clips` or `stateMachines`
   as unsupported; this is not a generic parser that returns every schema-valid
   payload. Success means only a validated, inventory-bearing Runtime Spec v1.0
-  loader-preflight candidate, eligible for future lowering or activation only
-  after A-09 is resolved. The raw ceilings and explicit fallible reservations
+  loader-preflight candidate. Its exact sole production consumer is the
+  separately isolated `vivi-runtime-native-preactivation` crate. Adopted
+  Amendment 1 A-09 remains normative: its nested wire shape and arbitrary
+  finite binary64 domain are not pending or reopened. Core lowering remains
+  blocked until a separately reviewed follow-on contract defines finite
+  binary64-to-f32 conversion/loss policy and audits all 13 Evaluation blend
+  modes. The raw ceilings and explicit fallible reservations
   do not promise recoverable handling for every hidden
   `serde_json::Map` or serializer allocation failure. The crate does not
   lower into `CoreRuntimeModel`, evaluate a model, convert finite binary64
   values to `f32`, expose C ABI/editor or WASM symbols, perform I/O, or connect
-  an editor host; A-09 and EDH-01 remain open boundaries.
-  The consumer-zero local Asset host may ingest one caller-supplied PNG
+  an editor host; the follow-on lowering contract and EDH-01 remain open
+  boundaries.
+  The local Asset host may ingest one caller-supplied PNG
   chunk-manifest closure only after the expected reference, strict manifest,
   exact normalized object set, chunk bytes, and full PNG decode all pass before
   the first store write. It attempts the descriptor last as the sole logical
   publication point. Language/IPC bridges, trusted path and principal
-  derivation, ACLs, evaluation consumer wiring, GPU activation, and capability
+  derivation, ACLs, GPU activation, and capability
   advertisement remain separately reviewed boundaries.
+  Its exact sole production consumer is `vivi-runtime-native-preactivation`, a
+  private native-only coordinator that consumes one validated Evaluation
+  candidate, one typed texture plan, and an explicit out-of-band
+  `request_generation`. Before any Asset/store read it requires that generation
+  to equal the candidate generation within the host's JavaScript-safe ceiling
+  and passes that same value to the host,
+  correlates exact schema/count and every case-sensitive
+  `id`/`width`/`height` tuple positionally; the candidate's at-most-32 strict
+  UTF-8 byte-sorted inventory fixes plan count and order. The existing host
+  preflight, rather than duplicated policy, owns frozen `image/png`/`srgb`/
+  `straight` and `AssetRef` shape checks. Generation mismatch is `Correlation`
+  before the safe ceiling or plan, equal above-ceiling input is
+  `ResourceLimitExceeded`, safe schema/count/tuple mismatch is `Correlation`,
+  and host/Asset/store/output contradictions retain their typed domains.
+  Every such failure precedes reads where its owner promises preflight. Once reads begin,
+  the host continues past Missing bindings so a later Asset or Store hard error
+  wins; neither hard errors nor Missing expose partial Ready values. A Ready
+  result is defensively rechecked for generation, count, order, IDs,
+  references, decoded dimensions, and aggregate totals before one owned,
+  all-or-nothing candidate-plus-texture bundle is returned. The coordinator
+  implementation moves ownership and does not clone logical PNG/RGBA buffers;
+  only preactivation wrapper/error `Debug` is redacted. Authorized accessors
+  expose the host set and `ReadyPng` metadata, so the dependency's existing
+  `Debug`/`Clone` behavior remains a future bridge/logging carry-forward
+  boundary. Correlation and postcondition checks add no collection allocation;
+  owned inputs and host outputs are moved, while dependency allocations retain
+  their own reviewed bounds. This is not a global recoverable-OOM claim, and a
+  future coordinator collection allocation must use fallible reservation.
+  This boundary does not establish generation freshness, reject
+  stale work, lower or evaluate a runtime model, convert values to `f32`,
+  upload GPU resources, publish atomically to the runtime, add C ABI/editor or
+  WASM exports, connect a language/IPC bridge, or advertise a capability. The
+  follow-on lowering contract and EDH-01 remain open.
 - `packages/core` is intentionally kept as a private runtime/math
   compatibility package during the alpha refactor. Schema, parser,
   public-profile, load-limit, Runtime Spec, and model-owned parameter sanitizer

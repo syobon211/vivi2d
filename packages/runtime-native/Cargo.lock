@@ -418,6 +418,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "vivi-runtime-native-preactivation"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "serde_json",
+ "tempfile",
+ "vivi-asset-host-local",
+ "vivi-runtime-native-evaluation",
+]
+
+[[package]]
 name = "vivi-runtime-native-wasm"
 version = "0.1.0"
 dependencies = [

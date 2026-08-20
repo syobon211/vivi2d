@@ -511,7 +511,7 @@ try {
   assertGateAndDocumentationWiring();
   runRustdocGate();
   console.log(
-    "[runtime-native-evaluation] passed (approved-schema reachable accepted-set parity, consumer-zero native+wasm isolation)",
+    "[runtime-native-evaluation] passed (approved-schema reachable accepted-set parity, sole-preactivation-consumer native+wasm isolation)",
   );
 } catch (error) {
   console.error("[runtime-native-evaluation] failed:");
@@ -1347,7 +1347,11 @@ function assertDependencyClosure(metadata) {
 
 function assertConsumerZeroAndBridgeIsolation(metadata) {
   const consumers = consumersOf(metadata, "vivi-runtime-native-evaluation");
-  assertExactJson(consumers, [], "Evaluation foundation Cargo consumers");
+  assertExactJson(
+    consumers,
+    ["vivi-runtime-native-preactivation"],
+    "Evaluation foundation Cargo consumers",
+  );
 
   for (const packageName of [
     "vivi-runtime-native-core",
@@ -1404,7 +1408,7 @@ function assertConsumerZeroAndBridgeIsolation(metadata) {
       /vivi[-_]runtime[-_]native[-_]evaluation/i.test(source) ||
       /\bload_evaluation_payload\b/.test(source)
     ) {
-      throw new Error(`${filePath} wires the consumer-zero Evaluation crate`);
+      throw new Error(`${filePath} wires the Evaluation crate outside preactivation`);
     }
   }
 
@@ -1778,7 +1782,7 @@ function assertGateAndDocumentationWiring() {
     throw new Error("Evaluation quality-gate manifest entry drifted");
   }
   for (const evidence of [
-    "consumer-zero",
+    "exact sole production consumer, vivi-runtime-native-preactivation",
     "byte-identical approved model schema copy",
     "approved-schema reachable accepted-set parity",
     "without claiming generic JSON Schema branch coverage beyond that artifact",
@@ -1801,7 +1805,9 @@ function assertGateAndDocumentationWiring() {
     "after both validation stages",
     "generic schema-valid payload parser",
     "loader-preflight candidate",
-    "eligible for future lowering or activation only after A-09",
+    "Adopted Amendment 1 A-09 remains normative",
+    "separately reviewed follow-on contract defines finite binary64-to-f32 conversion/loss policy",
+    "all 13 Evaluation blend modes",
     "hidden serde_json::Map or serializer allocation failure",
     "dependency license/checksum closure",
     "rustdoc with warnings denied",
@@ -1809,11 +1815,22 @@ function assertGateAndDocumentationWiring() {
     "C ABI/editor symbols and headers",
     "unsafe code",
     "f32 lowering or evaluation",
-    "A-09",
     "EDH-01",
   ]) {
     if (!gate.notes?.includes(evidence)) {
       throw new Error(`Evaluation gate note is missing ${evidence}`);
+    }
+  }
+  for (const stale of [
+    "A-09 contract amendment is resolved",
+    "A-09 contract amendment remains a blocker",
+    "A-09 and EDH-01 remain open",
+    "The A-09 contract amendment and EDH-01 remain open",
+    "only after A-09 is resolved",
+    "blocked on the A-09 contract amendment",
+  ]) {
+    if (gate.notes?.includes(stale)) {
+      throw new Error(`Evaluation gate note retains stale A-09 wording: ${stale}`);
     }
   }
 
@@ -1868,7 +1885,8 @@ function assertGateAndDocumentationWiring() {
   }
   for (const evidence of [
     "vivi-runtime-native-evaluation",
-    "consumer-zero",
+    "sole production consumer",
+    "vivi-runtime-native-preactivation",
     "Evaluation Payload v1",
     "duplicate-aware",
     "approved-schema reachable accepted-set parity",
@@ -1889,18 +1907,31 @@ function assertGateAndDocumentationWiring() {
     "nonempty `clips` or `stateMachines`",
     "not a generic parser",
     "Runtime Spec v1.0 loader-preflight candidate",
-    "eligible for future lowering or activation only after A-09",
+    "Adopted Amendment 1 A-09 remains normative",
+    "separately reviewed follow-on contract defines finite binary64-to-f32 conversion/loss policy",
+    "all 13 Evaluation blend modes",
     "hidden `serde_json::Map`",
     "f32",
     "C ABI/editor",
     "WASM",
     "filesystem/network I/O",
     "unsafe code",
-    "A-09",
     "EDH-01",
   ]) {
     if (!documentation.includes(evidence)) {
       throw new Error(`Evaluation documentation is missing ${evidence}`);
+    }
+  }
+  for (const stale of [
+    "A-09 contract amendment is resolved",
+    "A-09 contract amendment remains a blocker",
+    "A-09 and EDH-01 remain open",
+    "The A-09 contract amendment and EDH-01 remain open",
+    "only after A-09 is resolved",
+    "blocked on the A-09 contract amendment",
+  ]) {
+    if (documentation.includes(stale)) {
+      throw new Error(`Evaluation documentation retains stale A-09 wording: ${stale}`);
     }
   }
 }

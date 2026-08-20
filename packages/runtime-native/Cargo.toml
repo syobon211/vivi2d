@@ -5,6 +5,7 @@ members = [
   "crates/vivi-asset-store-local",
   "crates/vivi-png-ref",
   "crates/vivi-runtime-native-evaluation",
+  "crates/vivi-runtime-native-preactivation",
   "crates/vivi-runtime-native-core",
   "crates/vivi-runtime-native-c-abi",
   "crates/vivi-runtime-native-wasm",

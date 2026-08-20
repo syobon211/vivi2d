@@ -124,6 +124,7 @@
     "check:runtime-asset-resolver": "node scripts/check-runtime-asset-resolver.mjs && npm run check:asset-resolver --workspace @vivi2d/runtime-native",
     "check:runtime-asset-store-local": "node scripts/check-runtime-asset-store-local.mjs && npm run check:asset-store-local --workspace @vivi2d/runtime-native",
     "check:runtime-native-evaluation": "node scripts/check-runtime-native-evaluation.mjs && npm run check:evaluation --workspace @vivi2d/runtime-native",
+    "check:runtime-native-preactivation": "node scripts/check-runtime-native-preactivation.mjs && npm run check:preactivation --workspace @vivi2d/runtime-native",
     "check:runtime-native": "npm run check --workspace @vivi2d/runtime-native",
     "check:security-patterns": "node scripts/check-security-patterns.mjs",
     "check:direct-model-mutations": "node scripts/check-direct-model-mutations.mjs",

@@ -51,6 +51,8 @@ body:
         - check:provider-conformance
         - check:core-model-current-fixtures
         - check:model-fixtures
+        - check:model-jsc-portability
+        - check:model-schema-validators
         - check:samples:static
         - check:samples-public-surface
         - check:security-patterns
@@ -67,6 +69,13 @@ body:
         - check:release-surface
         - check:runtime-c-abi
         - check:runtime-c-abi-link
+        - check:runtime-c-abi-v02-host-smoke
+        - check:runtime-png
+        - check:runtime-asset-resolver
+        - check:runtime-asset-store-local
+        - check:runtime-asset-host-local
+        - check:runtime-native-evaluation
+        - check:runtime-native-preactivation
         - check:runtime-native
         - check:native-artifact-policy
         - test:runtime-wasm:browser
