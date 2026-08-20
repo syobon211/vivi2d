@@ -121,6 +121,7 @@
     "check:runtime-c-abi-v02-host-smoke": "node scripts/check-runtime-c-abi-v02-host-smoke.mjs",
     "check:runtime-png": "node scripts/check-runtime-png.mjs",
     "check:runtime-asset-resolver": "node scripts/check-runtime-asset-resolver.mjs && npm run check:asset-resolver --workspace @vivi2d/runtime-native",
+    "check:runtime-asset-store-local": "node scripts/check-runtime-asset-store-local.mjs && npm run check:asset-store-local --workspace @vivi2d/runtime-native",
     "check:runtime-native": "npm run check --workspace @vivi2d/runtime-native",
     "check:security-patterns": "node scripts/check-security-patterns.mjs",
     "check:direct-model-mutations": "node scripts/check-direct-model-mutations.mjs",

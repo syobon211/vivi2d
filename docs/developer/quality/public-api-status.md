@@ -35,7 +35,7 @@ default.
 | `@vivi2d/runtime` | Internal | Narrow Runtime Spec v1 facade over the TypeScript reference runtime. It now builds a small `dist` facade for export-shape review while remaining private/internal until conformance, packaging, and API/legal review are complete. |
 | `@vivi2d/runtime-wasm` | Internal | Experimental WASM-wrapper boundary. It now embeds the private native Rust WASM evaluator behind explicit backend diagnostics while keeping portable and TypeScript reference paths for conformance. It remains private until memory-growth failure behavior, fuzz, benchmark, packaging, and export reviews are complete. |
 | `@vivi2d/runtime-c-abi` | Internal | Internal C header source paired with private native implementations in `@vivi2d/runtime-native`; ABI 0.2 and strict PNG entry points remain default-off feature builds, with no public support promise. |
-| `@vivi2d/runtime-native` | Internal | Private Rust workspace for the future native core, C ABI, WASM bindings, strict PNG decoder, and Asset Model v1 resolver foundation. The resolver validates its tracked approved schema before semantic checks and returns owned, principal-scoped asset snapshots; it is not an editor-host, desktop IPC, capability-advertisement, GPU-upload, or public C ABI surface. The workspace has no public support promise. |
+| `@vivi2d/runtime-native` | Internal | Private Rust workspace for the future native core, C ABI, WASM bindings, strict PNG decoder, Asset Model v1 resolver foundation, and its principal-bound native SQLite store. The resolver validates its tracked approved schema before semantic checks and returns owned snapshots; the store remains disconnected from editor-host, desktop IPC, capability advertisement, activation/GPU upload, and the public C ABI. The workspace has no public support promise. |
 | `@vivi2d/renderer-pixi` | Internal | Renderer adapter candidate, but public surface is not frozen. |
 | `@vivi2d/renderer-three` | Internal | Renderer adapter candidate, but public surface is not frozen. |
 | `@vivi2d/renderer-phaser` | Internal | Renderer adapter candidate, but public surface is not frozen. |
@@ -176,9 +176,21 @@ requests.
 - Its private `vivi-asset-resolver` crate is a foundation boundary only. `npm
   run check:runtime-asset-resolver` pins the approved Asset Model schema and
   static validator evidence, dependency license/checksum closure, Rust toolchain
-  metadata, and exact C ABI non-expansion. Passing that gate does not connect
-  W7a or Electron IPC, advertise referenced-asset capability, upload textures,
-  or authorize publication.
+  metadata, its exact single local-store consumer, and C ABI non-expansion.
+- Its private native-only `vivi-asset-store-local` crate is a principal-bound,
+  immutable SQLite-backed adapter for the resolver traits. `npm run
+  check:runtime-asset-store-local` pins its source/schema/configuration and
+  dependency inventory, Rust 1.89 native evidence, exact SQLite `UTF-8`
+  encoding, rollback-journal mode, and isolation from WASM and language
+  bridges. The reviewed dependency is `rusqlite` 0.40.2 with
+  `libsqlite3-sys` 0.38.2's bundled SQLite 3.53.2;
+  the Rust crates are MIT-licensed and the bundled SQLite source is public
+  domain. The store is one logical database, not a promise that SQLite will
+  never create a transient rollback-journal sidecar; WAL is outside the
+  reviewed boundary.
+  Passing either Asset gate does not connect W7a or Electron IPC, implement
+  server lifecycle/GC or activation, advertise referenced-asset capability,
+  upload textures, or authorize publication.
 
 `npm run check:package-boundaries` enforces the most important publication
 guard: a package cannot become public while still exporting `src/*`, and

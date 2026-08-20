@@ -606,6 +606,16 @@
       "escalatable": true
     },
     {
+      "npmScript": "check:runtime-asset-store-local",
+      "command": "npm run check:runtime-asset-store-local",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private principal-bound local Asset store, its exact SQLite schema/configuration/source/dependency inventory, transactional write and bounded-read evidence, Rust 1.89 metadata, and native-only isolation from WASM, C ABI, W7a, Electron IPC, activation, and capability advertisement. The sibling workflow runs its tests and Clippy from an isolated clean target on Windows, macOS, and Linux.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
       "npmScript": "check:runtime-native",
       "command": "npm run check:runtime-native",
       "requiredWorkflows": [

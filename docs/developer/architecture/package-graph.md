@@ -31,7 +31,7 @@ src/ and electron/
 | `packages/editor-core` | UI-free editor domain commands, safe Auto Setup plans, and authoring safety helpers. |
 | `packages/editor-host` | Read-only, host-neutral Project Format v11 parsing, host-injected atlas resolution/materialization attestations, and Evaluation Payload v1 projection over the two reviewed model friend entry points. |
 | `packages/core` | Runtime-neutral math/evaluation compatibility while alpha refactors continue. |
-| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, and the private Asset Model resolver foundation. |
+| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, the private Asset Model resolver foundation, and its native-only principal-bound local store adapter. |
 | `packages/renderer-*` | Renderer adapters that consume runtime snapshots instead of editor project internals. |
 | `packages/web` | Experimental browser SDK and Web Component entry points. |
 | `packages/viewer` | Standalone viewer app, local Viewer API preview, and viewer UX. |
@@ -46,6 +46,20 @@ src/ and electron/
   on the approved Asset Model schema and `vivi-png-ref`, but it does not own W7a
   host wiring, Electron IPC, capability advertisement, GPU upload, or C ABI
   symbols. Those connections require separately reviewed slices.
+- `vivi-asset-store-local` is the resolver's only production consumer. It owns
+  native SQLite persistence for a principal-bound immutable local store. The
+  store is one logical database in rollback-journal mode; SQLite may create a
+  transient journal sidecar while committing, and WAL is not part of this
+  boundary. Its schema starts at `user_version=1`, requires SQLite `UTF-8`
+  encoding, and rejects unknown schema identities rather than migrating them in
+  this slice. Its narrow ingestion seam accepts only raw-SHA-verified 1-8 MiB
+  chunks or manifests accepted by the
+  approved strict parser and JCS-address calculation; it exposes no arbitrary
+  address, update, or delete API. It does not own server lifecycle/GC, W7a or
+  Electron wiring, activation, capability advertisement, C ABI symbols, or
+  WASM exports. A future reviewed native host adapter may invoke this Rust API
+  while owning lifecycle and IPC policy; the database path and principal are
+  not an IPC contract in this slice.
 - `editor-host` consumes only the reviewed internal Project Format v11 and Evaluation Payload v1 model friends. `buildRuntimePayload` is a data projection; UI, desktop, provider, runtime engine/renderer dependencies or execution, mutation, and ordinary/public save surfaces stay outside it.
 - Providers are untrusted boundaries and must not mutate projects directly.
 - Electron privileged APIs stay behind main/preload IPC contracts.

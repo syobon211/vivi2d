@@ -627,9 +627,9 @@ function assertCargoBoundary() {
     )
     .map((pkg) => pkg.name)
     .sort();
-  if (resolverConsumers.length !== 0) {
+  if (JSON.stringify(resolverConsumers) !== JSON.stringify(["vivi-asset-store-local"])) {
     throw new Error(
-      `resolver foundation gained production consumers: ${resolverConsumers.join(", ")}`,
+      `resolver production consumer isolation drifted: ${resolverConsumers.join(", ")}`,
     );
   }
   const pngConsumers = metadata.packages
