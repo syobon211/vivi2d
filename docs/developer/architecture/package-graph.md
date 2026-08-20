@@ -31,7 +31,7 @@ src/ and electron/
 | `packages/editor-core` | UI-free editor domain commands, safe Auto Setup plans, and authoring safety helpers. |
 | `packages/editor-host` | Read-only, host-neutral Project Format v11 parsing, host-injected atlas resolution/materialization attestations, and Evaluation Payload v1 projection over the two reviewed model friend entry points. |
 | `packages/core` | Runtime-neutral math/evaluation compatibility while alpha refactors continue. |
-| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, the private Asset Model resolver foundation, and its native-only principal-bound local store adapter. |
+| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, the private Asset Model resolver foundation, its native-only principal-bound local store adapter, and the private in-process local Asset host orchestration foundation. |
 | `packages/renderer-*` | Renderer adapters that consume runtime snapshots instead of editor project internals. |
 | `packages/web` | Experimental browser SDK and Web Component entry points. |
 | `packages/viewer` | Standalone viewer app, local Viewer API preview, and viewer UX. |
@@ -46,7 +46,8 @@ src/ and electron/
   on the approved Asset Model schema and `vivi-png-ref`, but it does not own W7a
   host wiring, Electron IPC, capability advertisement, GPU upload, or C ABI
   symbols. Those connections require separately reviewed slices.
-- `vivi-asset-store-local` is the resolver's only production consumer. It owns
+- `vivi-asset-store-local` and `vivi-asset-host-local` are the resolver's exact
+  reviewed production consumers. The store owns
   native SQLite persistence for a principal-bound immutable local store. The
   store is one logical database in rollback-journal mode; SQLite may create a
   transient journal sidecar while committing, and WAL is not part of this
@@ -57,9 +58,30 @@ src/ and electron/
   approved strict parser and JCS-address calculation; it exposes no arbitrary
   address, update, or delete API. It does not own server lifecycle/GC, W7a or
   Electron wiring, activation, capability advertisement, C ABI symbols, or
-  WASM exports. A future reviewed native host adapter may invoke this Rust API
-  while owning lifecycle and IPC policy; the database path and principal are
-  not an IPC contract in this slice.
+  WASM exports. Its only production consumer is `vivi-asset-host-local`; the
+  database path and principal are not an IPC contract in either slice.
+- `vivi-asset-host-local` is a private native-only, principal-bound Rust
+  orchestration foundation. It opens a trusted absolute local-store path with
+  an opaque principal, fully decodes and materializes bounded embedded PNGs,
+  fully resolves referenced assets, and returns redacted attestations. Its
+  activation-plan preflight accepts at most 32 sorted, unique IDs matching
+  `^atlas:[A-Za-z0-9_-]{1,120}$`,
+  checks the reviewed dimension and aggregate decoded-byte budgets, re-resolves
+  every reference, and returns an owned `ReadyPng` set or deterministic missing
+  IDs atomically. It carries a caller generation from 0 through JavaScript's
+  maximum safe integer and rejects a larger generation before I/O. The frozen
+  `vivi2d.evaluationTexturePlan.v1` bindings use `image/png`, `srgb`, and
+  `straight`. The generation is correlation data only: this host does not
+  establish monotonicity or freshness. A later activation coordinator owns the
+  latest-generation comparison, stale-result rejection, texture upload
+  transaction, and atomic publication. This Rust API accepts an already typed
+  plan; a future bridge owns bounded raw-JSON parsing, duplicate-key rejection,
+  and approved-schema Stage 1 validation before constructing that value. The
+  host does not own manifest-closure ingestion, path/principal
+  derivation or ACLs, quotas, cancellation, GC, server lifecycle, a language
+  bridge, IPC, C ABI or WASM exports, evaluation loading, GPU activation, or
+  capability advertisement. Those connections require separately reviewed
+  slices.
 - `editor-host` consumes only the reviewed internal Project Format v11 and Evaluation Payload v1 model friends. `buildRuntimePayload` is a data projection; UI, desktop, provider, runtime engine/renderer dependencies or execution, mutation, and ordinary/public save surfaces stay outside it.
 - Providers are untrusted boundaries and must not mutate projects directly.
 - Electron privileged APIs stay behind main/preload IPC contracts.

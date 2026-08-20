@@ -35,7 +35,7 @@ default.
 | `@vivi2d/runtime` | Internal | Narrow Runtime Spec v1 facade over the TypeScript reference runtime. It now builds a small `dist` facade for export-shape review while remaining private/internal until conformance, packaging, and API/legal review are complete. |
 | `@vivi2d/runtime-wasm` | Internal | Experimental WASM-wrapper boundary. It now embeds the private native Rust WASM evaluator behind explicit backend diagnostics while keeping portable and TypeScript reference paths for conformance. It remains private until memory-growth failure behavior, fuzz, benchmark, packaging, and export reviews are complete. |
 | `@vivi2d/runtime-c-abi` | Internal | Internal C header source paired with private native implementations in `@vivi2d/runtime-native`; ABI 0.2 and strict PNG entry points remain default-off feature builds, with no public support promise. |
-| `@vivi2d/runtime-native` | Internal | Private Rust workspace for the future native core, C ABI, WASM bindings, strict PNG decoder, Asset Model v1 resolver foundation, and its principal-bound native SQLite store. The resolver validates its tracked approved schema before semantic checks and returns owned snapshots; the store remains disconnected from editor-host, desktop IPC, capability advertisement, activation/GPU upload, and the public C ABI. The workspace has no public support promise. |
+| `@vivi2d/runtime-native` | Internal | Private Rust workspace for the future native core, C ABI, WASM bindings, strict PNG decoder, Asset Model v1 resolver foundation, its principal-bound native SQLite store, and a native-only in-process local Asset host orchestration foundation. The resolver validates its tracked approved schema before semantic checks and returns owned snapshots; the host performs bounded materialization, resolution, and activation-plan preflight without connecting editor-host, desktop IPC, capability advertisement, evaluation/GPU activation, or the public C ABI. The workspace has no public support promise. |
 | `@vivi2d/renderer-pixi` | Internal | Renderer adapter candidate, but public surface is not frozen. |
 | `@vivi2d/renderer-three` | Internal | Renderer adapter candidate, but public surface is not frozen. |
 | `@vivi2d/renderer-phaser` | Internal | Renderer adapter candidate, but public surface is not frozen. |
@@ -176,7 +176,8 @@ requests.
 - Its private `vivi-asset-resolver` crate is a foundation boundary only. `npm
   run check:runtime-asset-resolver` pins the approved Asset Model schema and
   static validator evidence, dependency license/checksum closure, Rust toolchain
-  metadata, its exact single local-store consumer, and C ABI non-expansion.
+  metadata, its exact local-store and local-host consumers, and C ABI
+  non-expansion.
 - Its private native-only `vivi-asset-store-local` crate is a principal-bound,
   immutable SQLite-backed adapter for the resolver traits. `npm run
   check:runtime-asset-store-local` pins its source/schema/configuration and
@@ -187,10 +188,37 @@ requests.
   the Rust crates are MIT-licensed and the bundled SQLite source is public
   domain. The store is one logical database, not a promise that SQLite will
   never create a transient rollback-journal sidecar; WAL is outside the
-  reviewed boundary.
-  Passing either Asset gate does not connect W7a or Electron IPC, implement
-  server lifecycle/GC or activation, advertise referenced-asset capability,
-  upload textures, or authorize publication.
+  reviewed boundary. Its only production consumer is the local Asset host.
+- Its private native-only `vivi-asset-host-local` crate is a principal-bound,
+  in-process orchestration foundation over the resolver and local store. `npm
+  run check:runtime-asset-host-local` pins its source and dependency inventory,
+  Rust 1.89 native-only evidence, exact consumer graph, bounded embedded
+  materialization and referenced resolution attestations, and all-or-nothing
+  activation-plan preflight. Plans accept at most 32 sorted, unique IDs matching
+  `^atlas:[A-Za-z0-9_-]{1,120}$`; each decoded image is at most 8192 pixels in
+  either dimension, and the aggregate limits are 67,108,864 pixels and
+  268,435,456 RGBA bytes. The host
+  accepts request generations only through 9,007,199,254,740,991 and rejects a
+  larger value before I/O. The frozen `vivi2d.evaluationTexturePlan.v1`
+  bindings require `image/png`, `srgb`, and `straight`, while the decoder
+  attestation is `vivi2d.png.rgba8.v1`. Both ready and missing outcomes carry
+  the request generation, but the host does not establish generation
+  monotonicity or freshness. A later activation coordinator owns
+  latest-generation comparison, stale-result rejection, the texture-upload
+  transaction, and atomic publication. The Rust API accepts a typed plan, so a
+  future bridge must perform bounded raw-JSON parsing, duplicate-key rejection,
+  and Stage 1 validation against the approved byte-identical schema copy before
+  constructing it. The host preserves resolver, local-store, and
+  host-plan error domains while keeping diagnostics redacted: AssetRef
+  preflight reports the resolver's `MediaTypeMismatch`, `LimitExceeded`, or
+  `HashMismatch` codes, store failures remain the neutral host `Store` kind
+  with an optional redacted local-store kind, and missing assets remain a
+  result state rather than an error.
+  Passing any Asset gate does not connect W7a or Electron IPC, add a language
+  bridge, C ABI or WASM export, implement full manifest-closure ingestion,
+  path/principal derivation or ACLs, quotas, cancellation, GC or server
+  lifecycle, load evaluations, activate or upload GPU textures, advertise
+  referenced-asset capability, or authorize publication.
 
 `npm run check:package-boundaries` enforces the most important publication
 guard: a package cannot become public while still exporting `src/*`, and

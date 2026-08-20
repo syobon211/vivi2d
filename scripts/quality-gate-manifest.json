@@ -616,6 +616,16 @@
       "escalatable": true
     },
     {
+      "npmScript": "check:runtime-asset-host-local",
+      "command": "npm run check:runtime-asset-host-local",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private native-only local Asset host, its exact source and dependency closure, its byte-identical approved texture-plan schema copy, the exact reviewed resolver/store consumer edges, Rust 1.89 metadata, bounded in-process materialization/resolution and activation-plan preflight, and continued isolation from language bridges, C ABI, WASM, W7a/Electron wiring, GPU/runtime activation, and capability advertisement. Raw-JSON parsing, duplicate-key rejection, and Stage 1 schema validation remain bridge-owned. The sibling workflow runs its focused tests and Clippy from an isolated clean target on Windows, macOS, and Linux.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
       "npmScript": "check:runtime-native",
       "command": "npm run check:runtime-native",
       "requiredWorkflows": [

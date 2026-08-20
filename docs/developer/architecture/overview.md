@@ -26,7 +26,7 @@ packages/
   runtime/                 Narrow Runtime Spec facade and conformance entry point
   runtime-wasm/            Private WASM evaluator wrapper and browser smoke target
   runtime-c-abi/           Private C ABI header and native host-test boundary
-  runtime-native/          Private Rust native evaluator workspace
+  runtime-native/          Private Rust evaluator and local Asset foundations
   renderer-pixi/           Pixi rendering and editor/runtime sync boundary
   renderer-three/          Three.js runtime adapter
   renderer-phaser/         Phaser runtime adapter

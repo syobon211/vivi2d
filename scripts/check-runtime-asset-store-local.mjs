@@ -779,13 +779,16 @@ function assertSqliteBoundary() {
 
 function assertNativeOnlyIsolation(metadata) {
   const resolverConsumers = consumersOf(metadata, "vivi-asset-resolver");
-  if (JSON.stringify(resolverConsumers) !== JSON.stringify(["vivi-asset-store-local"])) {
+  if (
+    JSON.stringify(resolverConsumers) !==
+    JSON.stringify(["vivi-asset-host-local", "vivi-asset-store-local"])
+  ) {
     throw new Error(
       `resolver production consumer isolation drifted: ${resolverConsumers.join(", ")}`,
     );
   }
   const storeConsumers = consumersOf(metadata, "vivi-asset-store-local");
-  if (storeConsumers.length !== 0) {
+  if (JSON.stringify(storeConsumers) !== JSON.stringify(["vivi-asset-host-local"])) {
     throw new Error(
       `local Asset store gained a production consumer: ${storeConsumers.join(", ")}`,
     );

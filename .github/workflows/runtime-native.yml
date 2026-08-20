@@ -10,6 +10,7 @@ on:
       - "docs/developer/quality/release-policy.md"
       - "package.json"
       - "package-lock.json"
+      - "packages/model/src/evaluation-payload-v1/evaluation-texture-plan-v1.schema.json"
       - "packages/runtime-native/Cargo.lock"
       - "packages/runtime-c-abi/**"
       - "packages/runtime-native/**"
@@ -17,6 +18,7 @@ on:
       - "scripts/check-runtime-c-abi-link.mjs"
       - "scripts/check-runtime-c-abi-v02-host-smoke.mjs"
       - "scripts/check-runtime-png.mjs"
+      - "scripts/check-runtime-asset-host-local.mjs"
       - "scripts/check-runtime-asset-resolver.mjs"
       - "scripts/check-runtime-asset-store-local.mjs"
       - "scripts/check-native-artifact-policy.mjs"
@@ -67,6 +69,10 @@ jobs:
         run: npm run check:runtime-asset-store-local
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/vivi-asset-store-local-native
+      - name: Verify private local Asset host on a clean native target
+        run: npm run check:runtime-asset-host-local
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/vivi-asset-host-local-native
       - run: npm run check:runtime-native
       - run: cargo test --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-core --no-default-features --features render-v02
       - run: cargo clippy --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-core --no-default-features --features render-v02 --all-targets -- -D warnings
@@ -78,7 +84,7 @@ jobs:
       - run: cargo clippy --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features abi-v02,png-v1 --all-targets -- -D warnings
       - run: cargo check --manifest-path packages/runtime-native/Cargo.toml -p vivi-png-ref --target wasm32-unknown-unknown
       - run: npm run check:runtime-c-abi-link
-      - run: npx biome check scripts/check-runtime-asset-resolver.mjs scripts/check-runtime-asset-store-local.mjs scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs scripts/check-runtime-png.mjs
+      - run: npx biome check scripts/check-runtime-asset-host-local.mjs scripts/check-runtime-asset-resolver.mjs scripts/check-runtime-asset-store-local.mjs scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs scripts/check-runtime-png.mjs
       - name: Verify ABI 0.1/0.2 exports and host-observation parity subset
         run: npm run check:runtime-c-abi-v02-host-smoke
       - name: Verify strict PNG reference decoder and feature-isolated C ABI

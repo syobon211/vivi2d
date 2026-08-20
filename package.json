@@ -120,6 +120,7 @@
     "check:runtime-c-abi-link": "node scripts/check-runtime-c-abi-link.mjs",
     "check:runtime-c-abi-v02-host-smoke": "node scripts/check-runtime-c-abi-v02-host-smoke.mjs",
     "check:runtime-png": "node scripts/check-runtime-png.mjs",
+    "check:runtime-asset-host-local": "node scripts/check-runtime-asset-host-local.mjs && npm run check:asset-host-local --workspace @vivi2d/runtime-native",
     "check:runtime-asset-resolver": "node scripts/check-runtime-asset-resolver.mjs && npm run check:asset-resolver --workspace @vivi2d/runtime-native",
     "check:runtime-asset-store-local": "node scripts/check-runtime-asset-store-local.mjs && npm run check:asset-store-local --workspace @vivi2d/runtime-native",
     "check:runtime-native": "npm run check --workspace @vivi2d/runtime-native",

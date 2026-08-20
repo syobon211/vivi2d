@@ -627,7 +627,10 @@ function assertCargoBoundary() {
     )
     .map((pkg) => pkg.name)
     .sort();
-  if (JSON.stringify(resolverConsumers) !== JSON.stringify(["vivi-asset-store-local"])) {
+  if (
+    JSON.stringify(resolverConsumers) !==
+    JSON.stringify(["vivi-asset-host-local", "vivi-asset-store-local"])
+  ) {
     throw new Error(
       `resolver production consumer isolation drifted: ${resolverConsumers.join(", ")}`,
     );

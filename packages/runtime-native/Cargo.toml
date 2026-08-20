@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "crates/vivi-asset-host-local",
   "crates/vivi-asset-resolver",
   "crates/vivi-asset-store-local",
   "crates/vivi-png-ref",
