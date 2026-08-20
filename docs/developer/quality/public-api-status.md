@@ -173,6 +173,35 @@ requests.
   runtime/model-load/update/expression smoke, and native WASM release-artifact
   export/load/snapshot/hit-test validation, but it does not create a public ABI
   support policy or publication promise.
+- Its private `vivi-runtime-native-evaluation` crate is a consumer-zero
+  Evaluation Payload v1 validation foundation. `npm run
+  check:runtime-native-evaluation` pins the byte-identical approved model schema
+  copy, bounded duplicate-aware parsing, Stage 1/schema and Stage 2/semantic
+  validation, approved-schema reachable accepted-set parity in one shared
+  AJV/Rust corpus, stable texture-binding inventory, dependency/license/checksum
+  closure, Rust 1.89 metadata, native tests/Clippy, rustdoc with warnings denied,
+  and wasm32 compile/Clippy evidence. It does not claim generic JSON Schema
+  branch coverage beyond paths reachable through the approved artifact. The
+  gate fixes the raw ceilings at 67,108,864 input bytes, depth 64, 8,000,000
+  JSON tokens, and 67,108,864 UTF-8 bytes per decoded string. Stage 1 rejects
+  unknown structural fields before Stage 2 semantics; producer-side forbidden
+  scanning is outside this crate,
+  while opaque keys under `skins`, `bindPoseInverse`, and expression `values`
+  remain data. Caller generation remains opaque across the full `u64` range.
+  Numeric values are finite and binary64-normalized; source number lexemes and
+  negative zero are not preserved. `atlas:<sourceAtlasId>` bindings are sorted by
+  UTF-8 bytes. Runtime Spec v1.0 loader preflight rejects nonempty `clips` or
+  `stateMachines` as unsupported after Stage 1 and Stage 2; this is not a
+  generic parser for every schema-valid payload. Success returns only a
+  validated, inventory-bearing Runtime Spec v1.0 loader-preflight candidate,
+  eligible for future lowering or activation only after A-09 is resolved. Input
+  ceilings and explicit fallible reservations do not promise recoverable
+  handling for every hidden `serde_json::Map` or serializer allocation failure.
+  This slice does not lower into `CoreRuntimeModel`, evaluate, convert arbitrary
+  finite binary64 values to `f32`, expose C ABI/editor or WASM symbols
+  or headers, perform filesystem/network I/O, connect a language/IPC bridge,
+  activate Assets or GPU resources, advertise a capability, or publish an API.
+  A-09 and EDH-01 remain open.
 - Its private `vivi-asset-resolver` crate is a foundation boundary only. `npm
   run check:runtime-asset-resolver` pins the approved Asset Model schema and
   static validator evidence, dependency license/checksum closure, Rust toolchain

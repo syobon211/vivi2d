@@ -626,6 +626,16 @@
       "escalatable": true
     },
     {
+      "npmScript": "check:runtime-native-evaluation",
+      "command": "npm run check:runtime-native-evaluation",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private consumer-zero Evaluation Payload v1 validation foundation, its byte-identical approved model schema copy, and approved-schema reachable accepted-set parity through one shared AJV/Rust corpus without claiming generic JSON Schema branch coverage beyond that artifact. It pins duplicate-aware transport ceilings of 67,108,864 raw bytes, depth 64, 8,000,000 JSON tokens, and 67,108,864 UTF-8 bytes per decoded string. Stage 1 rejects unknown structural fields before Stage 2 semantics; producer-side forbidden scanning is outside this crate, while opaque skins, bindPoseInverse, and expression-values keys remain data. It pins finite, binary64-normalized numeric values without source-number-lexeme or negative-zero preservation and without f32 storage or casts, the full opaque u64 request-generation range, stable texture-binding inventory using atlas:<sourceAtlasId> in UTF-8 byte order, and the Runtime Spec v1.0 loader-preflight policy that rejects nonempty clips or stateMachines as unsupported after both validation stages. Success is only a validated, inventory-bearing loader-preflight candidate, not a generic schema-valid payload parser; it is eligible for future lowering or activation only after A-09 is resolved. Explicit fallible reservations and ceilings do not promise recoverable handling for every hidden serde_json::Map or serializer allocation failure. It also pins dependency license/checksum closure, Rust 1.89 metadata, native tests and Clippy, rustdoc with warnings denied, and wasm32 compile and Clippy evidence. It remains disconnected from runtime-native core, C ABI/editor symbols and headers, WASM exports, language or IPC bridges, filesystem and network I/O, unsafe code, f32 lowering or evaluation, Asset activation, GPU upload, and capability advertisement; A-09 and EDH-01 remain open.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
       "npmScript": "check:runtime-native",
       "command": "npm run check:runtime-native",
       "requiredWorkflows": [

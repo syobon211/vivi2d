@@ -81,6 +81,7 @@ const commands = [
   ["npm", ["run", "check:runtime-asset-resolver"]],
   ["npm", ["run", "check:runtime-asset-store-local"]],
   ["npm", ["run", "check:runtime-asset-host-local"]],
+  ["npm", ["run", "check:runtime-native-evaluation"]],
   ["npm", ["run", "check:runtime-native"]],
   ["npm", ["run", "check:native-artifact-policy"]],
   ["npm", ["run", "test:runtime-wasm:browser"]],

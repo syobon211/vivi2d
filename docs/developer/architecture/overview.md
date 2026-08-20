@@ -68,13 +68,37 @@ locale, media, frontmatter, and future website route contract is tracked in
   ordinary/public save, UI, desktop, provider, and runtime engine/renderer
   dependencies or execution stay outside this package; `buildRuntimePayload`
   is an Evaluation Payload data projection only.
-- `packages/runtime-native` owns private Rust runtime experiments and the
-  consumer-zero local Asset host. The host may ingest one caller-supplied PNG
+- `packages/runtime-native` owns private Rust runtime experiments. Its
+  consumer-zero `vivi-runtime-native-evaluation` foundation performs bounded,
+  duplicate-aware Evaluation Payload v1 parsing, byte-identical approved-schema
+  Stage 1 validation, semantic Stage 2 validation, and stable texture-binding
+  inventory construction on native and `wasm32-unknown-unknown`. A shared
+  AJV/Rust corpus pins approved-schema reachable accepted-set parity; it does
+  not claim generic JSON Schema branch coverage beyond that artifact. Stage 1
+  rejects unknown structural fields before Stage 2 semantics; producer-side
+  forbidden scanning is outside this crate. Opaque keys under `skins`,
+  `bindPoseInverse`, and expression `values` remain data. Raw input is limited to 67,108,864
+  bytes, container depth to 64, JSON tokens to 8,000,000, and each decoded
+  string to 67,108,864 UTF-8 bytes. Caller generation is opaque data across the
+  full `u64` range; bindings use `atlas:<sourceAtlasId>` and UTF-8 byte order.
+  Accepted numeric values are finite and binary64-normalized; source number
+  lexemes and negative zero are not preserved. After Stage 1 and Stage 2,
+  Runtime Spec v1.0 loader preflight rejects nonempty `clips` or `stateMachines`
+  as unsupported; this is not a generic parser that returns every schema-valid
+  payload. Success means only a validated, inventory-bearing Runtime Spec v1.0
+  loader-preflight candidate, eligible for future lowering or activation only
+  after A-09 is resolved. The raw ceilings and explicit fallible reservations
+  do not promise recoverable handling for every hidden
+  `serde_json::Map` or serializer allocation failure. The crate does not
+  lower into `CoreRuntimeModel`, evaluate a model, convert finite binary64
+  values to `f32`, expose C ABI/editor or WASM symbols, perform I/O, or connect
+  an editor host; A-09 and EDH-01 remain open boundaries.
+  The consumer-zero local Asset host may ingest one caller-supplied PNG
   chunk-manifest closure only after the expected reference, strict manifest,
   exact normalized object set, chunk bytes, and full PNG decode all pass before
   the first store write. It attempts the descriptor last as the sole logical
   publication point. Language/IPC bridges, trusted path and principal
-  derivation, ACLs, evaluation loading, GPU activation, and capability
+  derivation, ACLs, evaluation consumer wiring, GPU activation, and capability
   advertisement remain separately reviewed boundaries.
 - `packages/core` is intentionally kept as a private runtime/math
   compatibility package during the alpha refactor. Schema, parser,

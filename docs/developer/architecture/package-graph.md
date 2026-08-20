@@ -31,7 +31,7 @@ src/ and electron/
 | `packages/editor-core` | UI-free editor domain commands, safe Auto Setup plans, and authoring safety helpers. |
 | `packages/editor-host` | Read-only, host-neutral Project Format v11 parsing, host-injected atlas resolution/materialization attestations, and Evaluation Payload v1 projection over the two reviewed model friend entry points. |
 | `packages/core` | Runtime-neutral math/evaluation compatibility while alpha refactors continue. |
-| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, the private Asset Model resolver foundation, its native-only principal-bound local store adapter, and the private in-process local Asset host orchestration foundation. |
+| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, the private consumer-zero Evaluation Payload validation foundation, the private Asset Model resolver foundation, its native-only principal-bound local store adapter, and the private in-process local Asset host orchestration foundation. |
 | `packages/renderer-*` | Renderer adapters that consume runtime snapshots instead of editor project internals. |
 | `packages/web` | Experimental browser SDK and Web Component entry points. |
 | `packages/viewer` | Standalone viewer app, local Viewer API preview, and viewer UX. |
@@ -42,6 +42,31 @@ src/ and electron/
 
 - Public or experimental packages must not import root editor app internals.
 - Runtime packages consume public-profile data, not private authoring drafts.
+- `vivi-runtime-native-evaluation` is a private, consumer-zero Rust foundation.
+  It performs bounded duplicate-aware parsing, byte-identical approved-schema
+  Stage 1 validation, semantic Stage 2 validation, and deterministic stable
+  texture-binding inventory construction for Evaluation Payload v1. Stage 1
+  rejects unknown structural fields before Stage 2 semantics; producer-side
+  forbidden scanning is outside this crate, and opaque `skins`,
+  `bindPoseInverse`, and expression-`values` keys remain data. Its ceilings are
+  67,108,864 raw bytes, depth 64, 8,000,000 JSON tokens, and 67,108,864 UTF-8
+  bytes per decoded string. Accepted numeric values are finite and
+  binary64-normalized; source number lexemes and negative zero are not
+  preserved. It accepts caller generation across the full `u64` range as
+  opaque data, and sorts
+  `atlas:<sourceAtlasId>` bindings by UTF-8 bytes. Its Runtime Spec v1.0
+  loader-preflight policy rejects nonempty `clips` or `stateMachines` as
+  unsupported only after Stage 1 and Stage 2; it is not a generic parser for
+  every schema-valid payload. Success returns only a validated,
+  inventory-bearing Runtime Spec v1.0 loader-preflight candidate, eligible for
+  future lowering or activation only after A-09 is resolved. Explicit fallible
+  reservations and input ceilings do not claim recoverable handling for every
+  hidden `serde_json::Map` or serializer allocation failure. It compiles
+  for native and `wasm32-unknown-unknown`, but has no runtime-native core edge,
+  model lowering or evaluation, `f32` conversion, C ABI/editor symbol or header,
+  WASM export, language/IPC bridge, filesystem or network I/O, unsafe code,
+  Asset activation, GPU upload, or capability advertisement. A-09 and EDH-01
+  remain open and require separately reviewed slices.
 - `vivi-asset-resolver` is an internal data-integrity foundation: it may depend
   on the approved Asset Model schema and `vivi-png-ref`, but it does not own W7a
   host wiring, Electron IPC, capability advertisement, GPU upload, or C ABI

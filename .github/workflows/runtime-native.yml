@@ -5,12 +5,17 @@ on:
     paths:
       - ".github/workflows/runtime-native.yml"
       - "docs/developer/api/spec/runtime-spec-v1.md"
+      - "docs/developer/architecture/overview.md"
       - "docs/developer/architecture/package-graph.md"
+      - "docs/developer/contributing/package-boundaries.md"
       - "docs/developer/quality/public-api-status.md"
       - "docs/developer/quality/release-policy.md"
       - "package.json"
       - "package-lock.json"
+      - "packages/model/src/evaluation-payload-v1.ts"
+      - "packages/model/src/evaluation-payload-v1/evaluation-payload-v1.schema.json"
       - "packages/model/src/evaluation-payload-v1/evaluation-texture-plan-v1.schema.json"
+      - "packages/model/src/internal/generated/evaluation-v1-validators.mjs"
       - "packages/runtime-native/Cargo.lock"
       - "packages/runtime-c-abi/**"
       - "packages/runtime-native/**"
@@ -21,9 +26,12 @@ on:
       - "scripts/check-runtime-asset-host-local.mjs"
       - "scripts/check-runtime-asset-resolver.mjs"
       - "scripts/check-runtime-asset-store-local.mjs"
+      - "scripts/check-runtime-native-evaluation.mjs"
       - "scripts/check-native-artifact-policy.mjs"
       - "scripts/check-runtime-native-wasm.mjs"
       - "scripts/generate-runtime-native-wasm-module.mjs"
+      - "scripts/generate-schema-validators.mjs"
+      - "scripts/quality-gate-manifest.json"
       - "scripts/run-quality-gates.mjs"
       - "tests/conformance/runtime-v1/basic-mesh.fixture.json"
   workflow_dispatch:
@@ -57,6 +65,14 @@ jobs:
       - run: rustup default 1.89.0
       - run: rustup target add wasm32-unknown-unknown
       - run: rustup show
+      - name: Verify consumer-zero Evaluation Payload foundation on a clean native target
+        run: npm run check:runtime-native-evaluation
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/vivi-runtime-native-evaluation-native
+      - name: Compile Evaluation Payload foundation tests and run Clippy for wasm32
+        run: npm run check:evaluation:wasm32 --workspace @vivi2d/runtime-native
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/vivi-runtime-native-evaluation-wasm32
       - name: Verify private Asset Model resolver on a clean native target
         run: npm run check:runtime-asset-resolver
         env:
@@ -84,7 +100,7 @@ jobs:
       - run: cargo clippy --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features abi-v02,png-v1 --all-targets -- -D warnings
       - run: cargo check --manifest-path packages/runtime-native/Cargo.toml -p vivi-png-ref --target wasm32-unknown-unknown
       - run: npm run check:runtime-c-abi-link
-      - run: npx biome check scripts/check-runtime-asset-host-local.mjs scripts/check-runtime-asset-resolver.mjs scripts/check-runtime-asset-store-local.mjs scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs scripts/check-runtime-png.mjs
+      - run: npx biome check scripts/check-runtime-asset-host-local.mjs scripts/check-runtime-asset-resolver.mjs scripts/check-runtime-asset-store-local.mjs scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs scripts/check-runtime-native-evaluation.mjs scripts/check-runtime-png.mjs
       - name: Verify ABI 0.1/0.2 exports and host-observation parity subset
         run: npm run check:runtime-c-abi-v02-host-smoke
       - name: Verify strict PNG reference decoder and feature-isolated C ABI
