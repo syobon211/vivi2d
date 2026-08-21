@@ -197,17 +197,19 @@ requests.
   validated, inventory-bearing Runtime Spec v1.0 loader-preflight candidate,
   eligible only for the isolated preactivation correlation boundary. Adopted
   Amendment 1 A-09 remains normative: its nested wire shape and arbitrary
-  finite binary64 domain are not pending or reopened. Core lowering remains
-  blocked until a separately reviewed follow-on contract defines finite
-  binary64-to-f32 conversion/loss policy and audits all 13 Evaluation blend
-  modes. Input
+  finite binary64 domain are not pending or reopened. The separately reviewed
+  Evaluation Lowering Contract v1 adopts the downstream direct
+  binary64-to-binary32 projection policy, all 13 blend-mode dispositions,
+  feature precedence, and consumer-zero foundation scope. Input
   ceilings and explicit fallible reservations do not promise recoverable
   handling for every hidden `serde_json::Map` or serializer allocation failure.
   This slice does not lower into `CoreRuntimeModel`, evaluate, convert arbitrary
   finite binary64 values to `f32`, expose C ABI/editor or WASM symbols
   or headers, perform filesystem/network I/O, connect a language/IPC bridge,
   activate Assets or GPU resources, advertise a capability, or publish an API.
-  The follow-on lowering contract and EDH-01 remain open.
+  Derived evaluator connection remains blocked on the separate deterministic
+  operation/FMA/checkpoint and transcendental-math prerequisite; EDH-01 remains
+  open.
 - Its private `vivi-asset-resolver` crate is a foundation boundary only. `npm
   run check:runtime-asset-resolver` pins the approved Asset Model schema and
   static validator evidence, dependency license/checksum closure, Rust toolchain
@@ -282,7 +284,7 @@ requests.
   lifecycle, load evaluations, activate or upload GPU textures, advertise
   referenced-asset capability, or authorize publication.
 - Its private native-only `vivi-runtime-native-preactivation` crate is the
-  consumer-zero coordinator and exact sole production consumer of both the
+  coordinator and exact sole production consumer of both the
   Evaluation validator and local Asset host. `npm run
   check:runtime-native-preactivation` pins its exact source/API/test/direct
   dependency and Cargo.lock inventories, dependency license/checksum closures,
@@ -314,13 +316,45 @@ requests.
   collection allocation; owned inputs and host outputs are moved, while
   dependency allocations retain their own reviewed bounds. This is not a
   global recoverable-OOM claim, and a future coordinator collection allocation
-  must use fallible reservation. This is preactivation only: it
+  must use fallible reservation. Its pure correlation seam returns a move-only
+  correlated-input token after the generation/ceiling/tuple checks; both the
+  existing host path and the lowering foundation consume this seam so
+  correlation is not duplicated. Its exact sole production consumer is
+  `vivi-runtime-native-evaluation-lowering`. This is preactivation only: it
   does not establish generation
   freshness, reject stale work, lower into runtime-native core, evaluate or
   convert values to `f32`, expose C ABI/editor headers or symbols, connect
   runtime-native WASM or a language/IPC bridge, upload GPU resources, atomically
   publish a runtime model, advertise a capability, or authorize publication.
-  The follow-on lowering contract and EDH-01 remain open.
+- Its private native-only `vivi-runtime-native-evaluation-lowering` crate is a
+  consumer-zero foundation with exact direct dependencies on preactivation and
+  `serde_json`. `npm run check:runtime-native-evaluation-lowering` pins its exact
+  source/API/test/dependency/lock inventories, Rust 1.89 native tests/Clippy and
+  rustdoc, three-OS workflow wiring, the approved contract/vector/approval
+  identities, and its negative consumer/export graph. It consumes the move-only
+  pure correlation seam exactly once and proves only overall phases 1–3 plus
+  lowering categories 1–9. Categories 1–8 perform the allocation-free feature
+  and direct-projection preflight; category 9 performs checked/fallible
+  reservation before single direct-projection materialization. It preserves blend
+  values `normal=0`, `multiply=1`, `screen=2`, and `add=3`, rejects the nine
+  extended modes and approved unsupported structures before host reads, rounds
+  once with round-to-nearest-ties-to-even, canonicalizes accepted zero to
+  positive zero, and rejects overflow, nonzero-to-zero underflow, and nonzero
+  binary32 subnormal results. The owned non-Clone result is explicitly
+  foundation/preflight state, not a complete `LoweredEvaluationCandidateV1`.
+  It exposes only generation and aggregate counts, with no public
+  candidate/value/plan/`AssetRef`/ID accessor or consuming `into_parts`.
+  Category 10 parameter bindings, physics, IK, skinning, and mandatory
+  zero-step derived evaluation, plus category 11 topology, identity,
+  mask-command construction, invariant sealing, complete model-ready snapshots,
+  texture attachment, and activation remain absent. The crate has no direct Asset-host dependency, host/store
+  argument, or host call, and no runtime-native core, C ABI/editor, WASM,
+  TypeScript, language/IPC, GPU, publication, or capability edge. Derived
+  evaluator connection still requires a separately adopted exact primitive
+  operation graph, FMA policy, non-finite checkpoint schedule, and deterministic
+  transcendental kernel or proven safe-domain/margin policy. The gate does not
+  claim hosted CI green merely from workflow wiring, public support, production
+  reachability, or EDH-01 closure.
 
 `npm run check:package-boundaries` enforces the most important publication
 guard: a package cannot become public while still exporting `src/*`, and

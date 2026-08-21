@@ -89,16 +89,18 @@ locale, media, frontmatter, and future website route contract is tracked in
   loader-preflight candidate. Its exact sole production consumer is the
   separately isolated `vivi-runtime-native-preactivation` crate. Adopted
   Amendment 1 A-09 remains normative: its nested wire shape and arbitrary
-  finite binary64 domain are not pending or reopened. Core lowering remains
-  blocked until a separately reviewed follow-on contract defines finite
-  binary64-to-f32 conversion/loss policy and audits all 13 Evaluation blend
-  modes. The raw ceilings and explicit fallible reservations
+  finite binary64 domain are not pending or reopened. The separately reviewed
+  Evaluation Lowering Contract v1 now fixes the downstream direct
+  binary64-to-binary32 projection policy, all 13 Evaluation blend-mode
+  dispositions, feature precedence, and the consumer-zero foundation boundary.
+  The raw ceilings and explicit fallible reservations
   do not promise recoverable handling for every hidden
   `serde_json::Map` or serializer allocation failure. The crate does not
   lower into `CoreRuntimeModel`, evaluate a model, convert finite binary64
   values to `f32`, expose C ABI/editor or WASM symbols, perform I/O, or connect
-  an editor host; the follow-on lowering contract and EDH-01 remain open
-  boundaries.
+  an editor host. Derived evaluator connection remains blocked on the adopted
+  contract's separate deterministic primitive-operation/FMA/checkpoint and
+  transcendental-math prerequisite; EDH-01 remains open.
   The local Asset host may ingest one caller-supplied PNG
   chunk-manifest closure only after the expected reference, strict manifest,
   exact normalized object set, chunk bytes, and full PNG decode all pass before
@@ -133,12 +135,40 @@ locale, media, frontmatter, and future website route contract is tracked in
   boundary. Correlation and postcondition checks add no collection allocation;
   owned inputs and host outputs are moved, while dependency allocations retain
   their own reviewed bounds. This is not a global recoverable-OOM claim, and a
-  future coordinator collection allocation must use fallible reservation.
+  future coordinator collection allocation must use fallible reservation. Its
+  pure correlation seam returns a move-only correlated-input token; both this
+  existing host path and the private lowering foundation consume that seam, so
+  generation/ceiling/tuple correlation is not reimplemented or run twice.
   This boundary does not establish generation freshness, reject
   stale work, lower or evaluate a runtime model, convert values to `f32`,
   upload GPU resources, publish atomically to the runtime, add C ABI/editor or
-  WASM exports, connect a language/IPC bridge, or advertise a capability. The
-  follow-on lowering contract and EDH-01 remain open.
+  WASM exports, connect a language/IPC bridge, or advertise a capability.
+- `vivi-runtime-native-evaluation-lowering` is a private native-only,
+  consumer-zero foundation. It depends only on preactivation and `serde_json`,
+  reuses the move-only pure correlation seam exactly once, and proves only
+  overall phases 1–3 plus lowering categories 1–9. Categories 1–8 are the
+  approved allocation-free feature/direct-projection preflight; category 9 is
+  checked/fallible reservation followed by single direct-projection
+  materialization. The result retains private foundation/preflight state rather
+  than claiming a complete `LoweredEvaluationCandidateV1`. Its source pins the exact approved
+  Evaluation Lowering Contract v1 draft, vector, and approval identities. Four
+  blend modes (`normal`, `multiply`, `screen`, and `add`) keep values 0 through
+  3; the other nine modes and the approved unsupported structures fail closed
+  before any host read. Projection performs one round-to-nearest-ties-to-even
+  binary32 conversion, canonicalizes accepted zero to positive zero, and
+  rejects overflow, nonzero-to-zero underflow, and nonzero binary32 subnormal
+  results. Category 10 derived evaluation and category 11 topology, identity,
+  mask-command construction, invariant sealing, and model-ready output are not
+  implemented. The Foundation exposes only generation and aggregate counts: no
+  candidate/value/plan/`AssetRef`/ID accessor or consuming `into_parts` is
+  public. It does not run parameter bindings, physics, IK, skinning, or any
+  other derived evaluator path. It has no direct Asset-host dependency,
+  host/store argument, or host call, and no runtime-native core, C ABI/editor,
+  WASM, TypeScript, language/IPC, GPU, publication, or capability edge. Derived
+  evaluation remains closed until the separately reviewed exact
+  primitive operation graph, FMA policy, non-finite checkpoint schedule, and
+  deterministic transcendental kernel or proven safe-domain/margin policy are
+  adopted. EDH-01 remains open.
 - `packages/core` is intentionally kept as a private runtime/math
   compatibility package during the alpha refactor. Schema, parser,
   public-profile, load-limit, Runtime Spec, and model-owned parameter sanitizer

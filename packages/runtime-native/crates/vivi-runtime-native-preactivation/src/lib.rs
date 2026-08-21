@@ -23,10 +23,11 @@ mod coordinator;
 mod error;
 mod model;
 
-pub use coordinator::prepare_evaluation_activation_v1;
+pub use coordinator::{correlate_evaluation_activation_v1, prepare_evaluation_activation_v1};
 pub use error::{EvaluationPreactivationError, EvaluationPreactivationErrorKind};
 pub use model::{
-    MissingEvaluationActivationV1, PrepareEvaluationActivationV1, PreparedEvaluationActivationV1,
+    CorrelatedEvaluationActivationV1, MissingEvaluationActivationV1, PrepareEvaluationActivationV1,
+    PreparedEvaluationActivationV1,
 };
 pub use vivi_asset_host_local::{
     AssetErrorCode, AssetRef, Digest, EvaluationTextureBindingV1, EvaluationTexturePlanV1,

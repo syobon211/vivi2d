@@ -5,8 +5,8 @@ use vivi_asset_host_local::{
 use vivi_runtime_native_evaluation::ValidatedEvaluationPayloadV1;
 
 use crate::{
-    EvaluationPreactivationError, MissingEvaluationActivationV1, PrepareEvaluationActivationV1,
-    PreparedEvaluationActivationV1,
+    CorrelatedEvaluationActivationV1, EvaluationPreactivationError, MissingEvaluationActivationV1,
+    PrepareEvaluationActivationV1, PreparedEvaluationActivationV1,
 };
 
 const EVALUATION_TEXTURE_PLAN_SCHEMA_V1: &str = "vivi2d.evaluationTexturePlan.v1";
@@ -40,6 +40,33 @@ pub fn prepare_evaluation_activation_v1(
     })
 }
 
+/// Purely correlates one request generation, validated candidate, and typed
+/// Evaluation texture plan before any host/store access.
+///
+/// Precedence is exact: a generation mismatch wins first, an equal generation
+/// above the JavaScript-safe ceiling wins second, and exact schema/count/
+/// positional case-sensitive ID/dimension tuple correlation follows. Success
+/// returns a private move-only proof token; it does not validate host-owned
+/// fixed fields or `AssetRef` values, lower the candidate, read assets, or make
+/// activation state.
+pub fn correlate_evaluation_activation_v1(
+    request_generation: u64,
+    candidate: ValidatedEvaluationPayloadV1,
+    plan: EvaluationTexturePlanV1,
+) -> Result<CorrelatedEvaluationActivationV1, EvaluationPreactivationError> {
+    if request_generation != candidate.request_generation() {
+        return Err(EvaluationPreactivationError::correlation());
+    }
+    if request_generation > MAX_JAVASCRIPT_SAFE_INTEGER {
+        return Err(EvaluationPreactivationError::resource_limit_exceeded());
+    }
+    correlate(&candidate, &plan)?;
+    Ok(CorrelatedEvaluationActivationV1 {
+        candidate,
+        texture_plan: plan,
+    })
+}
+
 pub(crate) fn prepare_with<F>(
     request_generation: u64,
     candidate: ValidatedEvaluationPayloadV1,
@@ -52,15 +79,10 @@ where
         &EvaluationTexturePlanV1,
     ) -> Result<PrepareActivationTextureSetV1, LocalAssetHostError>,
 {
-    if request_generation != candidate.request_generation() {
-        return Err(EvaluationPreactivationError::correlation());
-    }
-    if request_generation > MAX_JAVASCRIPT_SAFE_INTEGER {
-        return Err(EvaluationPreactivationError::resource_limit_exceeded());
-    }
-    correlate(&candidate, &plan)?;
-    let outcome =
-        prepare(request_generation, &plan).map_err(EvaluationPreactivationError::from_host)?;
+    let correlated = correlate_evaluation_activation_v1(request_generation, candidate, plan)?;
+    let outcome = prepare(request_generation, &correlated.texture_plan)
+        .map_err(EvaluationPreactivationError::from_host)?;
+    let (candidate, plan) = correlated.into_parts();
 
     match outcome {
         PrepareActivationTextureSetV1::Ready(prepared_textures) => {

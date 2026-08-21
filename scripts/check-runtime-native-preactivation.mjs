@@ -8,6 +8,8 @@ const nativeManifestPath = "packages/runtime-native/Cargo.toml";
 const preactivationRoot =
   "packages/runtime-native/crates/vivi-runtime-native-preactivation";
 const preactivationManifestPath = `${preactivationRoot}/Cargo.toml`;
+const loweringRoot =
+  "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering";
 
 const expectedPreactivationFiles = [
   "Cargo.toml",
@@ -22,8 +24,8 @@ const pinnedPreactivationFiles = [
   ["Cargo.toml", 612, "d203cbf4a16fd220da0e335d8e872cb02ca25649a0961b4ce22d1d283cbab543"],
   [
     "src/coordinator.rs",
-    8_021,
-    "cb6bbbb33751e16312e1f2c05ae0fe8c8bbca0f32c641144e300b31ea4b72a2b",
+    9_103,
+    "dab960e170b24f39c7dbfaf14a2e9fa0a06610bcdcca0d436721b4181bd872f9",
   ],
   [
     "src/error.rs",
@@ -32,18 +34,18 @@ const pinnedPreactivationFiles = [
   ],
   [
     "src/lib.rs",
-    1_870,
-    "8a146ad297c14f6eff2253b397efdabd6f97b3ac6623dc1003a973a0a862f985",
+    1_946,
+    "3e625af7d5c94f5f91789c3c15d44e711801bca4a73a27354812790f3ff39344",
   ],
   [
     "src/model.rs",
-    5_850,
-    "878cf937e45750e2d896d6cad85d883522101eb4ed5ecd7f5c8d5ad35bbdb741",
+    7_229,
+    "a4297f02adcc564b952f1a5d968c2ed70c8ca7039bce8cde36d0b9cad487901e",
   ],
   [
     "src/tests.rs",
-    23_605,
-    "23a3ad6170f3ec039ce32b3502cce5bba905df1dd8ccd7a25ae3586e26546fdc",
+    24_790,
+    "7f91054274f257e113899c50178dbd97f0f302ab0b0594247bbc9effa2095a35",
   ],
 ];
 
@@ -61,6 +63,7 @@ const requiredTestNames = [
   "real_sqlite_ready_bundle_is_owned_correlated_and_postcondition_checked",
   "schema_count_case_order_and_dimension_correlation_fail_pre_read",
   "store_cause_mapping_is_typed_and_redacted",
+  "pure_correlation_token_is_redacted_and_moves_inputs_without_clone",
   "zero_one_and_max_safe_generation_reach_the_host_unchanged",
 ];
 
@@ -69,13 +72,17 @@ const expectedPublicItemsByFile = {
   "src/error.rs": ["EvaluationPreactivationError", "EvaluationPreactivationErrorKind"],
   "src/lib.rs": [],
   "src/model.rs": [
+    "CorrelatedEvaluationActivationV1",
     "MissingEvaluationActivationV1",
     "PrepareEvaluationActivationV1",
     "PreparedEvaluationActivationV1",
   ],
 };
 const expectedPublicFunctionsByFile = {
-  "src/coordinator.rs": ["prepare_evaluation_activation_v1"],
+  "src/coordinator.rs": [
+    "correlate_evaluation_activation_v1",
+    "prepare_evaluation_activation_v1",
+  ],
   "src/error.rs": ["asset_code", "kind", "store_kind"],
   "src/lib.rs": [],
   "src/model.rs": [
@@ -83,8 +90,10 @@ const expectedPublicFunctionsByFile = {
     "candidate",
     "into_parts",
     "into_parts",
+    "into_parts",
     "missing_textures",
     "prepared_textures",
+    "request_generation",
     "request_generation",
     "request_generation",
     "request_generation",
@@ -95,6 +104,7 @@ const expectedPublicFunctionsByFile = {
 const expectedRootReexports = [
   "AssetErrorCode",
   "AssetRef",
+  "CorrelatedEvaluationActivationV1",
   "Digest",
   "EvaluationPayloadError",
   "EvaluationPayloadErrorKind",
@@ -115,6 +125,7 @@ const expectedRootReexports = [
   "RequiredTextureBindingV1",
   "StorageKind",
   "ValidatedEvaluationPayloadV1",
+  "correlate_evaluation_activation_v1",
   "parse_evaluation_payload_v1",
   "prepare_evaluation_activation_v1",
 ].sort();
@@ -345,7 +356,7 @@ function assertConsumerGraph(metadata) {
   );
   assertExactJson(
     consumersOf(metadata, "vivi-runtime-native-preactivation"),
-    [],
+    ["vivi-runtime-native-evaluation-lowering"],
     "preactivation production consumer graph",
   );
 
@@ -418,7 +429,8 @@ function assertPublicSurface() {
 
   const normalizedLib = libSource.replace(/\s+/g, " ");
   if (
-    !normalizedLib.includes("pub use coordinator::prepare_evaluation_activation_v1") ||
+    !normalizedLib.includes("correlate_evaluation_activation_v1") ||
+    !normalizedLib.includes("prepare_evaluation_activation_v1") ||
     !normalizedLib.includes("#![forbid(unsafe_code)]") ||
     !normalizedLib.includes("#![deny(missing_docs)]")
   ) {
@@ -445,12 +457,15 @@ function assertPreactivationContract() {
 
   const normalizedCoordinator = coordinator.replace(/\s+/g, " ");
   for (const evidence of [
+    "pub fn correlate_evaluation_activation_v1(",
     "pub fn prepare_evaluation_activation_v1(",
     "host: &LocalAssetHost",
     "request_generation: u64",
     "candidate: ValidatedEvaluationPayloadV1",
     "plan: EvaluationTexturePlanV1",
     "candidate.request_generation()",
+    "CorrelatedEvaluationActivationV1",
+    "correlated.into_parts()",
     "host.prepare_activation_texture_set(generation, plan)",
   ]) {
     if (!normalizedCoordinator.includes(evidence)) {
@@ -473,24 +488,42 @@ function assertPreactivationContract() {
     }
   }
 
-  const mismatchIndex = coordinator.indexOf(
+  const correlationBody = /pub fn correlate_evaluation_activation_v1\([\s\S]*?\n\}/m.exec(
+    coordinator,
+  )?.[0];
+  if (!correlationBody) {
+    throw new Error("preactivation pure correlation entry point is missing");
+  }
+  const mismatchIndex = correlationBody.indexOf(
     "if request_generation != candidate.request_generation()",
   );
-  const safeIntegerIndex = coordinator.indexOf(
+  const safeIntegerIndex = correlationBody.indexOf(
     "if request_generation > MAX_JAVASCRIPT_SAFE_INTEGER",
   );
-  const correlateIndex = coordinator.indexOf("correlate(&candidate, &plan)?");
-  const prepareIndex = coordinator.indexOf("prepare(request_generation, &plan)");
+  const correlateIndex = correlationBody.indexOf("correlate(&candidate, &plan)?");
   if (
     mismatchIndex < 0 ||
     safeIntegerIndex <= mismatchIndex ||
-    correlateIndex <= safeIntegerIndex ||
-    prepareIndex <= correlateIndex
+    correlateIndex <= safeIntegerIndex
   ) {
     throw new Error(
-      "preactivation precedence must be generation mismatch, safe ceiling, correlation, then host invocation",
+      "preactivation pure seam precedence must be generation mismatch, safe ceiling, then tuple correlation",
     );
   }
+  const prepareWithBody = /pub\(crate\) fn prepare_with<[\s\S]*?\n\}/m.exec(
+    coordinator,
+  )?.[0];
+  if (!prepareWithBody) throw new Error("preactivation host composition seam is missing");
+  assertOrderedEvidence(
+    prepareWithBody,
+    [
+      "correlate_evaluation_activation_v1(",
+      "prepare(request_generation, &correlated.texture_plan)",
+      "correlated.into_parts()",
+      "match outcome",
+    ],
+    "preactivation pure-correlation/host composition order",
+  );
 
   for (const evidence of [
     "pre_read",
@@ -509,6 +542,7 @@ function assertPreactivationContract() {
   }
 
   for (const structName of [
+    "CorrelatedEvaluationActivationV1",
     "PreparedEvaluationActivationV1",
     "MissingEvaluationActivationV1",
     "EvaluationPreactivationError",
@@ -650,9 +684,12 @@ function assertGateAndDocumentationWiring() {
   }
   for (const evidence of [
     "native-only",
-    "consumer-zero",
     "exact two direct production dependencies",
     "sole production consumer of both foundations",
+    "exact sole production consumer, vivi-runtime-native-evaluation-lowering",
+    "pure seam",
+    "move-only correlated-input token",
+    "reuse that same seam exactly once",
     "explicit out-of-band request_generation",
     "candidate generation",
     "same generation to the host",
@@ -686,8 +723,8 @@ function assertGateAndDocumentationWiring() {
     "language/IPC bridges",
     "capability advertisement",
     "Adopted Amendment 1 A-09 remains normative",
-    "separately reviewed follow-on contract defines finite binary64-to-f32 conversion/loss policy",
-    "all 13 Evaluation blend modes",
+    "Evaluation Lowering Contract v1 is adopted",
+    "deterministic primitive-operation/FMA/checkpoint and transcendental-math connection prerequisite remains open",
     "EDH-01 remains open",
   ]) {
     if (!gate.notes?.includes(evidence)) {
@@ -701,6 +738,8 @@ function assertGateAndDocumentationWiring() {
     "The A-09 contract amendment and EDH-01 remain open",
     "only after A-09 is resolved",
     "blocked on the A-09 contract amendment",
+    "The follow-on lowering contract remains open",
+    "Core lowering remains blocked until a separately reviewed follow-on contract",
   ]) {
     if (gate.notes?.includes(stale)) {
       throw new Error(`preactivation gate note retains stale A-09 wording: ${stale}`);
@@ -746,8 +785,8 @@ function assertGateAndDocumentationWiring() {
       "vivi-runtime-native-preactivation",
       "native-only",
       "Adopted Amendment 1 A-09 remains normative",
-      "separately reviewed follow-on contract defines finite binary64-to-f32 conversion/loss policy",
-      "all 13 Evaluation blend modes",
+      "Evaluation Lowering Contract v1",
+      "deterministic",
       "EDH-01",
     ]) {
       if (!contents.includes(evidence)) {
@@ -767,14 +806,19 @@ function assertGateAndDocumentationWiring() {
     "The A-09 contract amendment and EDH-01 remain open",
     "only after A-09 is resolved",
     "blocked on the A-09 contract amendment",
+    "The follow-on lowering contract remains open",
+    "Core lowering remains blocked until a separately reviewed follow-on contract",
   ]) {
     if (documentation.includes(stale)) {
       throw new Error(`preactivation documentation retains stale A-09 wording: ${stale}`);
     }
   }
   for (const evidence of [
-    "consumer-zero",
     "sole production consumer",
+    "vivi-runtime-native-evaluation-lowering",
+    "move-only",
+    "correlated-input token",
+    "exactly once",
     "validated candidate",
     "typed texture plan",
     "explicit out-of-band",
@@ -1018,12 +1062,13 @@ function assertReferenceAllowlist() {
     "packages/runtime-native/package.json",
     "scripts/check-runtime-asset-host-local.mjs",
     "scripts/check-runtime-native-evaluation.mjs",
+    "scripts/check-runtime-native-evaluation-lowering.mjs",
     "scripts/check-runtime-native-preactivation.mjs",
     "scripts/quality-gate-manifest.json",
     "scripts/run-quality-gates.mjs",
   ]);
   const referencePattern =
-    /vivi[-_]runtime[-_]native[-_]preactivation|prepare_evaluation_activation_v1|(?:Prepare|Prepared|Missing)EvaluationActivationV1/;
+    /vivi[-_]runtime[-_]native[-_]preactivation|(?:prepare|correlate)_evaluation_activation_v1|(?:Correlated|Prepare|Prepared|Missing)EvaluationActivationV1/;
   const files = runCapture("git", [
     "ls-files",
     "--cached",
@@ -1033,7 +1078,11 @@ function assertReferenceAllowlist() {
     .split(/\r?\n/)
     .filter(Boolean);
   for (const relativePath of files) {
-    if (allowed.has(relativePath) || relativePath.startsWith(`${preactivationRoot}/`)) {
+    if (
+      allowed.has(relativePath) ||
+      relativePath.startsWith(`${preactivationRoot}/`) ||
+      relativePath.startsWith(`${loweringRoot}/`)
+    ) {
       continue;
     }
     const filePath = resolve(relativePath);
@@ -1127,6 +1176,17 @@ function assertExactJson(actual, expected, label) {
     throw new Error(
       `${label} drifted\nexpected=${JSON.stringify(expected, null, 2)}\nactual=${JSON.stringify(actual, null, 2)}`,
     );
+  }
+}
+
+function assertOrderedEvidence(source, evidence, label) {
+  let offset = -1;
+  for (const item of evidence) {
+    const nextOffset = source.indexOf(item, offset + 1);
+    if (nextOffset <= offset) {
+      throw new Error(`${label} is missing ordered evidence: ${item}`);
+    }
+    offset = nextOffset;
   }
 }
 

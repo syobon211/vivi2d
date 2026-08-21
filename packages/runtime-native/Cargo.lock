@@ -418,6 +418,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "vivi-runtime-native-evaluation-lowering"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sha2",
+ "vivi-runtime-native-preactivation",
+]
+
+[[package]]
 name = "vivi-runtime-native-preactivation"
 version = "0.1.0"
 dependencies = [

@@ -31,7 +31,7 @@ src/ and electron/
 | `packages/editor-core` | UI-free editor domain commands, safe Auto Setup plans, and authoring safety helpers. |
 | `packages/editor-host` | Read-only, host-neutral Project Format v11 parsing, host-injected atlas resolution/materialization attestations, and Evaluation Payload v1 projection over the two reviewed model friend entry points. |
 | `packages/core` | Runtime-neutral math/evaluation compatibility while alpha refactors continue. |
-| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, the private Evaluation Payload validation foundation, the private Asset Model resolver foundation, its native-only principal-bound local store adapter, the private in-process local Asset host, and their private native-only preactivation coordinator. |
+| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, the private Evaluation Payload validation foundation, the private Asset Model resolver foundation, its native-only principal-bound local store adapter, the private in-process local Asset host, their private native-only preactivation coordinator, and the consumer-zero Evaluation lowering foundation. |
 | `packages/renderer-*` | Renderer adapters that consume runtime snapshots instead of editor project internals. |
 | `packages/web` | Experimental browser SDK and Web Component entry points. |
 | `packages/viewer` | Standalone viewer app, local Viewer API preview, and viewer UX. |
@@ -62,16 +62,18 @@ src/ and electron/
   inventory-bearing Runtime Spec v1.0 loader-preflight candidate, eligible only
   for the isolated preactivation correlation boundary. Adopted Amendment 1
   A-09 remains normative: its nested wire shape and arbitrary finite binary64
-  domain are not pending or reopened. Core lowering remains blocked until a
-  separately reviewed follow-on contract defines finite binary64-to-f32
-  conversion/loss policy and audits all 13 Evaluation blend modes. Explicit
+  domain are not pending or reopened. Evaluation Lowering Contract v1 is adopted
+  for its direct binary64-to-binary32 projection, all 13 blend-mode
+  dispositions, feature precedence, and consumer-zero foundation scope. Exact
+  derived-evaluation operation/FMA/checkpoint and transcendental math policy is
+  still a separately reviewed connection prerequisite. Explicit
   fallible reservations and input ceilings do not claim recoverable handling for every
   hidden `serde_json::Map` or serializer allocation failure. It compiles
   for native and `wasm32-unknown-unknown`, but has no runtime-native core edge,
   model lowering or evaluation, `f32` conversion, C ABI/editor symbol or header,
   WASM export, language/IPC bridge, filesystem or network I/O, unsafe code,
-  GPU upload, or capability advertisement. The follow-on lowering contract and
-  EDH-01 remain open and require separately reviewed slices.
+  GPU upload, or capability advertisement. EDH-01 remains open and requires a
+  separately reviewed slice.
 - `vivi-asset-resolver` is an internal data-integrity foundation: it may depend
   on the approved Asset Model schema and `vivi-png-ref`, but it does not own W7a
   host wiring, Electron IPC, capability advertisement, GPU upload, or C ABI
@@ -136,8 +138,8 @@ src/ and electron/
   server lifecycle, a language bridge, IPC, C ABI or WASM exports, evaluation
   loading, GPU activation, or capability advertisement. Those connections
   require separately reviewed slices.
-- `vivi-runtime-native-preactivation` is the private native-only, consumer-zero
-  coordinator and the exact sole production consumer of both
+- `vivi-runtime-native-preactivation` is the private native-only coordinator and
+  the exact sole production consumer of both
   `vivi-runtime-native-evaluation` and `vivi-asset-host-local`. It consumes a
   validated candidate and typed `vivi2d.evaluationTexturePlan.v1` value. Before
   any Asset/store read it requires an explicit out-of-band
@@ -166,13 +168,45 @@ src/ and electron/
   postcondition checks add no collection allocation; owned inputs and host
   outputs are moved, while dependency allocations retain their own reviewed
   bounds. This is not a global recoverable-OOM claim, and a future coordinator
-  collection allocation must use fallible reservation. It does not establish
+  collection allocation must use fallible reservation. A pure correlation seam
+  returns one move-only correlated-input token after the generation mismatch,
+  JavaScript-safe ceiling, and exact tuple checks. The existing host path and
+  the lowering foundation both use that seam so correlation executes exactly
+  once. Preactivation's exact sole production consumer is
+  `vivi-runtime-native-evaluation-lowering`. It does not establish
   generation freshness,
   reject stale work, lower to runtime-native core, evaluate, convert values to
   `f32`, expose C ABI/editor headers or symbols, connect runtime-native WASM or
   a language/IPC bridge, upload GPU resources, atomically publish a runtime
-  model, or advertise a capability. The follow-on lowering contract and
-  EDH-01 remain open.
+  model, or advertise a capability.
+- `vivi-runtime-native-evaluation-lowering` is a private native-only,
+  consumer-zero Rust foundation with exact direct production dependencies on
+  `vivi-runtime-native-preactivation` and `serde_json`. It reuses the move-only
+  pure correlation seam exactly once and proves only overall phases 1–3 plus
+  lowering categories 1–9: allocation-free categories 1–8 feature/direct-
+  projection preflight, then category-9 checked/fallible reservation and single
+  direct-projection materialization. Its output is explicitly
+  foundation/preflight state, not a
+  complete `LoweredEvaluationCandidateV1`; it does not claim the mandatory
+  zero-step derived evaluator, complete initial snapshots, texture attachment,
+  or activation boundary. The source pins the exact approved Evaluation
+  Lowering Contract v1 draft/vector/approval identities. It preserves blend
+  values `normal=0`, `multiply=1`, `screen=2`, and `add=3`, rejects the nine
+  extended modes and approved unsupported structures before host reads, and
+  uses one round-to-nearest-ties-to-even binary32 projection with accepted-zero
+  canonicalization plus fail-closed overflow, underflow, and subnormal
+  classification. Category 10 derived evaluation and category 11 topology,
+  identity, mask-command construction, invariant sealing, and model-ready
+  output remain absent. The Foundation exposes only generation and aggregate
+  counts; it has no public candidate/value/plan/`AssetRef`/ID accessor or
+  consuming `into_parts`. Parameter bindings, physics, IK, skinning, and every
+  other derived evaluator path remain absent. The crate has no direct Asset-host
+  dependency, host/store argument, or host call, and no runtime-native core, C
+  ABI/editor, WASM, TypeScript, language/IPC, GPU, publication, or capability
+  edge. Connecting derived evaluation requires a separately adopted
+  exact primitive operation graph, FMA policy, non-finite checkpoint schedule,
+  and deterministic transcendental kernel or proven safe-domain/margin policy.
+  EDH-01 remains open.
 - `editor-host` consumes only the reviewed internal Project Format v11 and Evaluation Payload v1 model friends. `buildRuntimePayload` is a data projection; UI, desktop, provider, runtime engine/renderer dependencies or execution, mutation, and ordinary/public save surfaces stay outside it.
 - Providers are untrusted boundaries and must not mutate projects directly.
 - Electron privileged APIs stay behind main/preload IPC contracts.

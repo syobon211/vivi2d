@@ -1806,8 +1806,9 @@ function assertGateAndDocumentationWiring() {
     "generic schema-valid payload parser",
     "loader-preflight candidate",
     "Adopted Amendment 1 A-09 remains normative",
-    "separately reviewed follow-on contract defines finite binary64-to-f32 conversion/loss policy",
-    "all 13 Evaluation blend modes",
+    "Evaluation Lowering Contract v1 is adopted",
+    "all 13 Evaluation blend-mode dispositions",
+    "deterministic primitive-operation/FMA/checkpoint and transcendental-math connection prerequisite remains open",
     "hidden serde_json::Map or serializer allocation failure",
     "dependency license/checksum closure",
     "rustdoc with warnings denied",
@@ -1908,8 +1909,9 @@ function assertGateAndDocumentationWiring() {
     "not a generic parser",
     "Runtime Spec v1.0 loader-preflight candidate",
     "Adopted Amendment 1 A-09 remains normative",
-    "separately reviewed follow-on contract defines finite binary64-to-f32 conversion/loss policy",
-    "all 13 Evaluation blend modes",
+    "Evaluation Lowering Contract v1",
+    "all 13",
+    "deterministic",
     "hidden `serde_json::Map`",
     "f32",
     "C ABI/editor",
@@ -1929,6 +1931,8 @@ function assertGateAndDocumentationWiring() {
     "The A-09 contract amendment and EDH-01 remain open",
     "only after A-09 is resolved",
     "blocked on the A-09 contract amendment",
+    "The follow-on lowering contract remains open",
+    "Core lowering remains blocked until a separately reviewed follow-on contract",
   ]) {
     if (documentation.includes(stale)) {
       throw new Error(`Evaluation documentation retains stale A-09 wording: ${stale}`);

@@ -76,6 +76,7 @@ body:
         - check:runtime-asset-host-local
         - check:runtime-native-evaluation
         - check:runtime-native-preactivation
+        - check:runtime-native-evaluation-lowering
         - check:runtime-native
         - check:native-artifact-policy
         - test:runtime-wasm:browser

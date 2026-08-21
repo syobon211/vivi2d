@@ -1,0 +1,21 @@
+[package]
+name = "vivi-runtime-native-evaluation-lowering"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "vivi_runtime_native_evaluation_lowering"
+path = "src/lib.rs"
+
+[dependencies]
+# The foundation borrows only the already validated, binary64-normalized JSON
+# value. It does not parse raw JSON or duplicate Evaluation validation.
+serde_json = { version = "1.0", default-features = false, features = ["std"] }
+vivi-runtime-native-preactivation = { path = "../vivi-runtime-native-preactivation", default-features = false }
+
+[dev-dependencies]
+sha2 = { version = "0.10", default-features = false }

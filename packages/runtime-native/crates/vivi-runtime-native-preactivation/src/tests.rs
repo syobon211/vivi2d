@@ -10,8 +10,8 @@ use crate::coordinator::{prepare_with, validate_missing_shape, validate_ready_sh
 use crate::{
     AssetErrorCode, AssetRef, Digest, EvaluationPreactivationErrorKind, EvaluationTextureBindingV1,
     EvaluationTexturePlanV1, LocalAssetHost, LocalStoreErrorKind, PrepareEvaluationActivationV1,
-    PrincipalId, StorageKind, ValidatedEvaluationPayloadV1, parse_evaluation_payload_v1,
-    prepare_evaluation_activation_v1,
+    PrincipalId, StorageKind, ValidatedEvaluationPayloadV1, correlate_evaluation_activation_v1,
+    parse_evaluation_payload_v1, prepare_evaluation_activation_v1,
 };
 
 const PNG_BASE64: &str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMQMgljAAABlQCdTUEI3wAAAABJRU5ErkJggg==";
@@ -263,6 +263,40 @@ fn schema_count_case_order_and_dimension_correlation_fail_pre_read() {
         ]),
         EvaluationPreactivationErrorKind::Correlation,
     );
+}
+
+#[test]
+fn pure_correlation_token_is_redacted_and_moves_inputs_without_clone() {
+    let generation = 9;
+    let sensitive_id = "private_correlation_marker_81f2";
+    let candidate = candidate(generation, &[(sensitive_id, 2, 3)]);
+    let plan = texture_plan(vec![texture_binding(
+        &format!("atlas:{sensitive_id}"),
+        missing_blob(4),
+        2,
+        3,
+    )]);
+    let candidate_schema_pointer = candidate.value()["schema"]
+        .as_str()
+        .expect("schema is a string")
+        .as_ptr();
+    let plan_id_pointer = plan.textures[0].id.as_ptr();
+
+    let correlated = correlate_evaluation_activation_v1(generation, candidate, plan)
+        .expect("exact tuple correlates");
+    assert_eq!(correlated.request_generation(), generation);
+    let debug = format!("{correlated:?}");
+    assert!(!debug.contains(sensitive_id));
+
+    let (candidate, plan) = correlated.into_parts();
+    assert_eq!(
+        candidate.value()["schema"]
+            .as_str()
+            .expect("schema is a string")
+            .as_ptr(),
+        candidate_schema_pointer
+    );
+    assert_eq!(plan.textures[0].id.as_ptr(), plan_id_pointer);
 }
 
 #[test]

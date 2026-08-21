@@ -5,6 +5,41 @@ use vivi_asset_host_local::{
 };
 use vivi_runtime_native_evaluation::ValidatedEvaluationPayloadV1;
 
+/// Owned proof that one Evaluation candidate and typed texture plan passed the
+/// approved pure generation and tuple-correlation boundary.
+///
+/// This private-crate token is move-only and performs no host/store access. It
+/// is neither lowering output nor activation-ready state. Its fields remain
+/// private so downstream private foundations cannot fabricate correlation.
+pub struct CorrelatedEvaluationActivationV1 {
+    pub(crate) candidate: ValidatedEvaluationPayloadV1,
+    pub(crate) texture_plan: EvaluationTexturePlanV1,
+}
+
+impl CorrelatedEvaluationActivationV1 {
+    /// Returns the exactly correlated request generation.
+    #[must_use]
+    pub const fn request_generation(&self) -> u64 {
+        self.candidate.request_generation()
+    }
+
+    /// Consumes the proof and moves its correlated inputs to one private owner.
+    #[must_use]
+    pub fn into_parts(self) -> (ValidatedEvaluationPayloadV1, EvaluationTexturePlanV1) {
+        (self.candidate, self.texture_plan)
+    }
+}
+
+impl fmt::Debug for CorrelatedEvaluationActivationV1 {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("CorrelatedEvaluationActivationV1")
+            .field("request_generation", &self.request_generation())
+            .field("texture_binding_count", &self.texture_plan.textures.len())
+            .finish()
+    }
+}
+
 /// A complete preactivation result or a deterministic missing-texture state.
 pub enum PrepareEvaluationActivationV1 {
     /// Every correlated texture was resolved and retained as owned data.
