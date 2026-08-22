@@ -330,12 +330,18 @@ requests.
   consumer-zero foundation with exact direct dependencies on preactivation and
   `serde_json`. `npm run check:runtime-native-evaluation-lowering` pins its exact
   source/API/test/dependency/lock inventories, Rust 1.89 native tests/Clippy and
-  rustdoc, three-OS workflow wiring, the approved contract/vector/approval
-  identities, and its negative consumer/export graph. It consumes the move-only
+  rustdoc, three-OS workflow wiring, the approved parent
+  contract/vector/approval identities, the separately approved Category 9
+  reservation contract (41,002 bytes), vector plus byte-identical tracked
+  fixture (210,149 bytes), approval record (18,793 bytes), and its negative
+  consumer/export graph. The checker independently derives all 39 allocation
+  sites and denial tuples, 82 formula programs, 30 fixed layouts, concrete
+  census totals, and the 37-test requirement corpus rather than trusting
+  self-validation flags. It consumes the move-only
   pure correlation seam exactly once and proves only overall phases 1–3 plus
   lowering categories 1–9. Categories 1–8 perform the allocation-free feature
   and direct-projection preflight; category 9 performs checked/fallible
-  reservation before single direct-projection materialization. It preserves blend
+  reservation before single typed-plan/direct-projection materialization. It preserves blend
   values `normal=0`, `multiply=1`, `screen=2`, and `add=3`, rejects the nine
   extended modes and approved unsupported structures before host reads, rounds
   once with round-to-nearest-ties-to-even, canonicalizes accepted zero to
@@ -349,7 +355,15 @@ requests.
   mask-command construction, invariant sealing, complete model-ready snapshots,
   texture attachment, and activation remain absent. The crate has no direct Asset-host dependency, host/store
   argument, or host call, and no runtime-native core, C ABI/editor, WASM,
-  TypeScript, language/IPC, GPU, publication, or capability edge. Derived
+  TypeScript, language/IPC, GPU, publication, or capability edge. Native gate
+  evidence includes the library corpus, a single-thread post-reservation
+  allocator trap, and a host `wasm_compile` test that invokes pinned Rust 1.89
+  `rustc` for `wasm32-unknown-unknown` over exact production `error.rs`,
+  `model.rs`, `reservation.rs`, and `lower.rs`; test-only dependency stubs plus
+  an actual `lower_evaluation_foundation_v1` probe make the census, reserve,
+  and materialize call graph compile/codegen-visible. It adds no
+  full-package wasm target and proves no wasm execution, parity,
+  product/dependency WASM support, or runtime-WASM edge. Derived
   Evaluation Deterministic Math Contract v1 now adopts the exact primitive
   operation graph, FMA policy, non-finite checkpoint schedule, and deterministic
   transcendental kernel, but category-10 connection remains closed until that
@@ -391,12 +405,13 @@ requests.
   system-allocator forwarding; `forbid(unsafe_code)` applies only to production
   rlib source, not the harness or dependencies. No lowerer,
   runtime-native core, TypeScript, C ABI/editor, runtime-WASM, GPU,
-  activation/publication, or capability consumer is connected. Category 9 full
-  evaluator reservation remains open. Category 10 remains disconnected pending
+  activation/publication, or capability consumer is connected. Category 9
+  reservation is now a separate lowering implementation candidate gated by its
+  own review; the oracle remains consumer-zero and disconnected from it.
+  Category 10 remains disconnected pending
   supported-target native plus test-only wasm execution, expanded transcendental
   coverage, machine DAG/checkpoint bijection, complete compound traces,
-  category-9 evaluator-wide post-reservation allocation proof, obligation
-  bindings, and separate implementation review. Category 11
+  obligation bindings, and the remaining separate implementation reviews. Category 11
   topology/sealing/model-ready output and
   EDH-01 remain open. Its broad repository-reference pass may enumerate Git
   paths, but must never open, hash, or scan the three protected user-owned dirty

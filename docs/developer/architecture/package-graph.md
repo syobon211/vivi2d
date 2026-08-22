@@ -186,12 +186,17 @@ src/ and electron/
   pure correlation seam exactly once and proves only overall phases 1–3 plus
   lowering categories 1–9: allocation-free categories 1–8 feature/direct-
   projection preflight, then category-9 checked/fallible reservation and single
-  direct-projection materialization. Its output is explicitly
+  typed-plan/direct-projection materialization. Its output is explicitly
   foundation/preflight state, not a
   complete `LoweredEvaluationCandidateV1`; it does not claim the mandatory
   zero-step derived evaluator, complete initial snapshots, texture attachment,
   or activation boundary. The source pins the exact approved Evaluation
-  Lowering Contract v1 draft/vector/approval identities. It preserves blend
+  Lowering Contract v1 draft/vector/approval identities and the separately
+  approved Category 9 reservation contract (41,002 bytes), vector plus
+  byte-identical tracked fixture (210,149 bytes), and approval record (18,793
+  bytes). The checker independently derives the 39 allocation-site/failure
+  bijection, 82 formula programs, 30 fixed layouts, concrete census totals, and
+  37-test requirement corpus rather than accepting self-validation flags. It preserves blend
   values `normal=0`, `multiply=1`, `screen=2`, and `add=3`, rejects the nine
   extended modes and approved unsupported structures before host reads, and
   uses one round-to-nearest-ties-to-even binary32 projection with accepted-zero
@@ -204,7 +209,14 @@ src/ and electron/
   other derived evaluator path remain absent. The crate has no direct Asset-host
   dependency, host/store argument, or host call, and no runtime-native core, C
   ABI/editor, WASM, TypeScript, language/IPC, GPU, publication, or capability
-  edge. Evaluation Deterministic Math Contract v1 now adopts the exact primitive
+  edge. The native gate runs the library corpus, the post-reservation allocator
+  trap with one test thread, and a host `wasm_compile` test that invokes pinned
+  Rust 1.89 `rustc` for `wasm32-unknown-unknown` over exact production
+  `error.rs`, `model.rs`, `reservation.rs`, and `lower.rs`; test-only
+  dependency stubs plus an actual `lower_evaluation_foundation_v1` probe make
+  the census, reserve, and materialize call graph compile/codegen-visible. It
+  adds no full-package wasm target and proves no wasm execution, parity,
+  product/dependency WASM support, or runtime-WASM edge. Evaluation Deterministic Math Contract v1 now adopts the exact primitive
   operation graph, FMA policy, non-finite checkpoint schedule, and deterministic
   transcendental kernel, but implementation connection remains closed until its
   category-10 gates pass. EDH-01 remains open.
@@ -240,11 +252,12 @@ src/ and electron/
   only to the production rlib source, not that harness or dependencies. The
   oracle has no lowering, core, TypeScript, C ABI/editor,
   production-WASM, GPU, activation/publication, or capability connection.
-  Category 9 full reservation stays open; category 10 remains disconnected
+  Category 9 reservation is now a separate lowering implementation candidate
+  gated by its own review, with no oracle edge; category 10 remains disconnected
   pending supported-target native plus test-only wasm execution, expanded
   transcendental cases, machine DAG/checkpoint bijection, complete compound
-  traces, category-9 evaluator-wide post-reservation allocation proof,
-  obligation bindings, and separate implementation review. Category 11 and
+  traces, obligation bindings, and the remaining separate implementation
+  reviews. Category 11 and
   EDH-01 remain open.
 - `editor-host` consumes only the reviewed internal Project Format v11 and Evaluation Payload v1 model friends. `buildRuntimePayload` is a data projection; UI, desktop, provider, runtime engine/renderer dependencies or execution, mutation, and ordinary/public save surfaces stay outside it.
 - Providers are untrusted boundaries and must not mutate projects directly.

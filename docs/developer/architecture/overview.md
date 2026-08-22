@@ -149,10 +149,16 @@ locale, media, frontmatter, and future website route contract is tracked in
   reuses the move-only pure correlation seam exactly once, and proves only
   overall phases 1–3 plus lowering categories 1–9. Categories 1–8 are the
   approved allocation-free feature/direct-projection preflight; category 9 is
-  checked/fallible reservation followed by single direct-projection
+  checked/fallible reservation followed by single typed-plan/direct-projection
   materialization. The result retains private foundation/preflight state rather
-  than claiming a complete `LoweredEvaluationCandidateV1`. Its source pins the exact approved
-  Evaluation Lowering Contract v1 draft, vector, and approval identities. Four
+  than claiming a complete `LoweredEvaluationCandidateV1`. Its source pins the
+  exact approved Evaluation Lowering Contract v1 draft, vector, and approval
+  identities plus the separately approved Category 9 reservation contract at
+  41,002 bytes, vector and byte-identical tracked fixture at 210,149 bytes, and
+  approval record at 18,793 bytes. The focused checker independently derives
+  all 39 allocation sites and denial tuples, 82 formula programs, 30 fixed
+  layout assertions, concrete census totals, and the 37-test requirement
+  corpus instead of trusting the vector's proof booleans. Four
   blend modes (`normal`, `multiply`, `screen`, and `add`) keep values 0 through
   3; the other nine modes and the approved unsupported structures fail closed
   before any host read. Projection performs one round-to-nearest-ties-to-even
@@ -165,7 +171,15 @@ locale, media, frontmatter, and future website route contract is tracked in
   public. It does not run parameter bindings, physics, IK, skinning, or any
   other derived evaluator path. It has no direct Asset-host dependency,
   host/store argument, or host call, and no runtime-native core, C ABI/editor,
-  WASM, TypeScript, language/IPC, GPU, publication, or capability edge. The
+  WASM, TypeScript, language/IPC, GPU, publication, or capability edge. Native
+  evidence includes a single-thread post-reservation allocator trap and a host
+  `wasm_compile` test that invokes pinned Rust 1.89 `rustc` for
+  `wasm32-unknown-unknown` against the exact production `error.rs`, `model.rs`,
+  `reservation.rs`, and `lower.rs`; test-only dependency stubs plus an actual
+  `lower_evaluation_foundation_v1` probe make the census, reserve, and
+  materialize call graph compile/codegen-visible. There is no
+  full-package wasm target gate; this is not wasm execution, parity, product or
+  dependency WASM support, or a runtime-WASM edge. The
   exact primitive operation graph, FMA policy, non-finite checkpoint schedule,
   and deterministic transcendental kernel are now adopted by Evaluation
   Deterministic Math Contract v1, but category-10 connection remains closed
@@ -202,12 +216,13 @@ locale, media, frontmatter, and future website route contract is tracked in
   `forbid(unsafe_code)` applies to the production rlib source, not that harness
   or the dependency closure. No crate consumes the oracle, and it has no
   lowering, runtime-native core, TypeScript, C ABI/editor, production-WASM,
-  GPU, activation, publication, or capability edge. Category 9 full evaluator
-  reservation remains open. Category 10 remains disconnected pending all
+  GPU, activation, publication, or capability edge. Category 9 reservation is
+  now a separate lowering implementation candidate gated by its own review;
+  the oracle remains consumer-zero and disconnected from it. Category 10
+  remains disconnected pending all
   supported-target native and test-only wasm execution, expanded transcendental
-  coverage, machine DAG/checkpoint bijection, compound traces, category-9
-  evaluator-wide post-reservation allocation proof, obligation bindings, and
-  separate implementation review. Category
+  coverage, machine DAG/checkpoint bijection, compound traces, obligation
+  bindings, and the remaining separate implementation reviews. Category
   11 topology/sealing/model-ready output and EDH-01 also remain open.
 - `packages/core` is intentionally kept as a private runtime/math
   compatibility package during the alpha refactor. Schema, parser,
