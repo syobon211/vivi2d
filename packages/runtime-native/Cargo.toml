@@ -6,6 +6,7 @@ members = [
   "crates/vivi-png-ref",
   "crates/vivi-runtime-native-evaluation",
   "crates/vivi-runtime-native-evaluation-lowering",
+  "crates/vivi-runtime-native-evaluation-math",
   "crates/vivi-runtime-native-preactivation",
   "crates/vivi-runtime-native-core",
   "crates/vivi-runtime-native-c-abi",

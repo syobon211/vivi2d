@@ -31,7 +31,7 @@ src/ and electron/
 | `packages/editor-core` | UI-free editor domain commands, safe Auto Setup plans, and authoring safety helpers. |
 | `packages/editor-host` | Read-only, host-neutral Project Format v11 parsing, host-injected atlas resolution/materialization attestations, and Evaluation Payload v1 projection over the two reviewed model friend entry points. |
 | `packages/core` | Runtime-neutral math/evaluation compatibility while alpha refactors continue. |
-| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, the private Evaluation Payload validation foundation, the private Asset Model resolver foundation, its native-only principal-bound local store adapter, the private in-process local Asset host, their private native-only preactivation coordinator, and the consumer-zero Evaluation lowering foundation. |
+| `packages/runtime*` | Runtime facade, WASM/native experiments, C ABI checks, conformance surfaces, the private Evaluation Payload validation foundation, the private Asset Model resolver foundation, its native-only principal-bound local store adapter, the private in-process local Asset host, their private native-only preactivation coordinator, the consumer-zero Evaluation lowering foundation, and the consumer-zero deterministic-math oracle foundation. |
 | `packages/renderer-*` | Renderer adapters that consume runtime snapshots instead of editor project internals. |
 | `packages/web` | Experimental browser SDK and Web Component entry points. |
 | `packages/viewer` | Standalone viewer app, local Viewer API preview, and viewer UX. |
@@ -64,9 +64,10 @@ src/ and electron/
   A-09 remains normative: its nested wire shape and arbitrary finite binary64
   domain are not pending or reopened. Evaluation Lowering Contract v1 is adopted
   for its direct binary64-to-binary32 projection, all 13 blend-mode
-  dispositions, feature precedence, and consumer-zero foundation scope. Exact
-  derived-evaluation operation/FMA/checkpoint and transcendental math policy is
-  still a separately reviewed connection prerequisite. Explicit
+  dispositions, feature precedence, and consumer-zero foundation scope.
+  Evaluation Deterministic Math Contract v1 also adopts the exact downstream
+  operation/FMA/checkpoint and transcendental policy, while its implementation
+  and execution requirements remain category-10 connection gates. Explicit
   fallible reservations and input ceilings do not claim recoverable handling for every
   hidden `serde_json::Map` or serializer allocation failure. It compiles
   for native and `wasm32-unknown-unknown`, but has no runtime-native core edge,
@@ -203,10 +204,48 @@ src/ and electron/
   other derived evaluator path remain absent. The crate has no direct Asset-host
   dependency, host/store argument, or host call, and no runtime-native core, C
   ABI/editor, WASM, TypeScript, language/IPC, GPU, publication, or capability
-  edge. Connecting derived evaluation requires a separately adopted
-  exact primitive operation graph, FMA policy, non-finite checkpoint schedule,
-  and deterministic transcendental kernel or proven safe-domain/margin policy.
-  EDH-01 remains open.
+  edge. Evaluation Deterministic Math Contract v1 now adopts the exact primitive
+  operation graph, FMA policy, non-finite checkpoint schedule, and deterministic
+  transcendental kernel, but implementation connection remains closed until its
+  category-10 gates pass. EDH-01 remains open.
+- `vivi-runtime-native-evaluation-math` is a private, consumer-zero,
+  unpublished `no_std`/`forbid(unsafe_code)` rlib with no incoming Cargo edge.
+  Its only direct production dependencies are exact `fpmath =0.1.1`
+  (`default-features=false`, `soft-float`) and direct `rustc_apfloat =0.2.3`
+  (`default-features=false`, no named features). Cargo requirements ignore build
+  metadata, so the full `0.2.3+llvm-462a31f5a5ab` identity is separately pinned
+  by lock/source/archive/checker. The checker pins the complete four-package
+  production/build closure, including registry source, Cargo.lock checksums,
+  archive bytes/hashes, license
+  metadata, resolved `bitflags`/`smallvec` features, and the reviewed
+  `rustc_apfloat` build script. It also pins exact bytes/hashes and function/call
+  anchors for the reviewed 18-member `fpmath`, two-member APFloat, and
+  four-member `bitflags` selected runtime semantic source projection. This
+  projection is fail-closed implementation-review evidence, not a formal
+  whole-program/compiler reachability proof or whole-dependency audit. Its
+  crate-private raw-`D64` wrapper uses APFloat
+  for primitive arithmetic, comparisons, and `c_fmod`, and `SoftF64` raw-bit
+  paths for `sin`/`cos`/`atan2`/`acos`/`sqrt`; it preserves signed zero and
+  subnormals and canonicalizes NaN. Host-float/libm, FMA/`mul_add`,
+  reassociation, IEEE remainder, decimal or host conversion, `SoftF32`, serde,
+  I/O, filesystem, network, FFI, and production exports are forbidden. The
+  oracle implements exactly the 21 raw-bit callables and does not implement
+  checkpoints, graph scheduling, or status mapping; those obligations remain
+  future category-10 evaluator work. The
+  approved vector fixture and exact source/test identities are pinned. Native
+  raw-bit tests and Rust 1.89 rustfmt/Clippy/rustdoc are gated on three OSes;
+  `wasm32-unknown-unknown` is compile/Clippy-only and is not raw-bit execution
+  evidence. The native allocator trap is a separate test-only crate with
+  necessary `unsafe` system-allocator forwarding; `forbid(unsafe_code)` applies
+  only to the production rlib source, not that harness or dependencies. The
+  oracle has no lowering, core, TypeScript, C ABI/editor,
+  production-WASM, GPU, activation/publication, or capability connection.
+  Category 9 full reservation stays open; category 10 remains disconnected
+  pending supported-target native plus test-only wasm execution, expanded
+  transcendental cases, machine DAG/checkpoint bijection, complete compound
+  traces, category-9 evaluator-wide post-reservation allocation proof,
+  obligation bindings, and separate implementation review. Category 11 and
+  EDH-01 remain open.
 - `editor-host` consumes only the reviewed internal Project Format v11 and Evaluation Payload v1 model friends. `buildRuntimePayload` is a data projection; UI, desktop, provider, runtime engine/renderer dependencies or execution, mutation, and ordinary/public save surfaces stay outside it.
 - Providers are untrusted boundaries and must not mutate projects directly.
 - Electron privileged APIs stay behind main/preload IPC contracts.

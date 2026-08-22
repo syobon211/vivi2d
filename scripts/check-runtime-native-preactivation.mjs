@@ -1063,6 +1063,7 @@ function assertReferenceAllowlist() {
     "scripts/check-runtime-asset-host-local.mjs",
     "scripts/check-runtime-native-evaluation.mjs",
     "scripts/check-runtime-native-evaluation-lowering.mjs",
+    "scripts/check-runtime-native-evaluation-math.mjs",
     "scripts/check-runtime-native-preactivation.mjs",
     "scripts/quality-gate-manifest.json",
     "scripts/run-quality-gates.mjs",

@@ -109,6 +109,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d45db016d36b838f563236e9193d0ee6ce38f3f68b6c94e914b4929c96bbb890"
 
 [[package]]
+name = "fpmath"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f617488244e3bd5aa86da93efaf4072579a301832ca5a9c7e3493563b509a43d"
+dependencies = [
+ "rustc_apfloat",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -219,6 +228,16 @@ dependencies = [
  "fallible-iterator",
  "fallible-streaming-iterator",
  "libsqlite3-sys",
+ "smallvec",
+]
+
+[[package]]
+name = "rustc_apfloat"
+version = "0.2.3+llvm-462a31f5a5ab"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "486c2179b4796f65bfe2ee33679acf0927ac83ecf583ad6c91c3b4570911b9ad"
+dependencies = [
+ "bitflags",
  "smallvec",
 ]
 
@@ -424,6 +443,14 @@ dependencies = [
  "serde_json",
  "sha2",
  "vivi-runtime-native-preactivation",
+]
+
+[[package]]
+name = "vivi-runtime-native-evaluation-math"
+version = "0.1.0"
+dependencies = [
+ "fpmath",
+ "rustc_apfloat",
 ]
 
 [[package]]

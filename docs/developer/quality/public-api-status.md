@@ -207,9 +207,9 @@ requests.
   finite binary64 values to `f32`, expose C ABI/editor or WASM symbols
   or headers, perform filesystem/network I/O, connect a language/IPC bridge,
   activate Assets or GPU resources, advertise a capability, or publish an API.
-  Derived evaluator connection remains blocked on the separate deterministic
-  operation/FMA/checkpoint and transcendental-math prerequisite; EDH-01 remains
-  open.
+  Evaluation Deterministic Math Contract v1 now adopts the downstream
+  operation/FMA/checkpoint and transcendental policy, but category-10
+  implementation/connection gates and EDH-01 remain open.
 - Its private `vivi-asset-resolver` crate is a foundation boundary only. `npm
   run check:runtime-asset-resolver` pins the approved Asset Model schema and
   static validator evidence, dependency license/checksum closure, Rust toolchain
@@ -350,11 +350,58 @@ requests.
   texture attachment, and activation remain absent. The crate has no direct Asset-host dependency, host/store
   argument, or host call, and no runtime-native core, C ABI/editor, WASM,
   TypeScript, language/IPC, GPU, publication, or capability edge. Derived
-  evaluator connection still requires a separately adopted exact primitive
+  Evaluation Deterministic Math Contract v1 now adopts the exact primitive
   operation graph, FMA policy, non-finite checkpoint schedule, and deterministic
-  transcendental kernel or proven safe-domain/margin policy. The gate does not
+  transcendental kernel, but category-10 connection remains closed until that
+  contract's implementation and execution gates pass. The gate does not
   claim hosted CI green merely from workflow wiring, public support, production
   reachability, or EDH-01 closure.
+- Its private `vivi-runtime-native-evaluation-math` crate is an unpublished,
+  consumer-zero, rlib-only `no_std`/`forbid(unsafe_code)` deterministic-math
+  oracle foundation with no product-public API. `npm run
+  check:runtime-native-evaluation-math` pins its exact source/API/test/fixture
+  bytes, the approved Evaluation Deterministic Math Contract v1
+  draft/vector/approval identities, its empty production-consumer graph, and
+  the complete dependency identity/license/checksum/archive/feature/build
+  closure. It separately pins exact member bytes/hashes and function/call
+  anchors for the reviewed 18-member `fpmath`, two-member APFloat, and
+  four-member `bitflags` selected runtime semantic source projection. That
+  projection is fail-closed implementation-review evidence, not a formal
+  whole-program/compiler reachability proof or whole-dependency audit.
+  Direct production dependencies are exact `fpmath =0.1.1` with default features
+  disabled and only `soft-float`, and direct `rustc_apfloat =0.2.3` with default
+  features disabled and no named features. Cargo requirements ignore build
+  metadata, so the full `0.2.3+llvm-462a31f5a5ab` identity is separately pinned
+  by lock/source/archive/checker; the closure also pins `bitflags 2.13.1`,
+  `smallvec 1.15.2`, and the
+  reviewed `rustc_apfloat` build script. The crate-private raw-`D64` wrapper uses
+  APFloat for primitive arithmetic, quiet comparisons, and `c_fmod`, and
+  `SoftF64` raw-bit paths for `sin`/`cos`/`atan2`/`acos`/`sqrt`; it preserves
+  signed zero/subnormals and canonicalizes NaN. Host `f64` arithmetic/libm,
+  FMA/`mul_add`, reassociation, IEEE remainder, decimal/host conversion,
+  `SoftF32`, serde, I/O, filesystem, network, FFI, and production exports remain
+  forbidden. It implements exactly the 21 raw-bit callables and does not
+  implement checkpoints, graph scheduling, or status mapping; those obligations
+  remain future category-10 evaluator work. The focused gate runs Rust 1.89
+  rustfmt, native corpus tests, Clippy, rustdoc with warnings denied, and wires
+  three-OS CI. It only compiles
+  and Clippies the test target for `wasm32-unknown-unknown`; that is not wasm
+  raw-bit execution, cross-target parity, or hosted-green evidence. Its native
+  allocator trap is a separate test-only crate with necessary `unsafe`
+  system-allocator forwarding; `forbid(unsafe_code)` applies only to production
+  rlib source, not the harness or dependencies. No lowerer,
+  runtime-native core, TypeScript, C ABI/editor, runtime-WASM, GPU,
+  activation/publication, or capability consumer is connected. Category 9 full
+  evaluator reservation remains open. Category 10 remains disconnected pending
+  supported-target native plus test-only wasm execution, expanded transcendental
+  coverage, machine DAG/checkpoint bijection, complete compound traces,
+  category-9 evaluator-wide post-reservation allocation proof, obligation
+  bindings, and separate implementation review. Category 11
+  topology/sealing/model-ready output and
+  EDH-01 remain open. Its broad repository-reference pass may enumerate Git
+  paths, but must never open, hash, or scan the three protected user-owned dirty
+  bodies whose exact path set is pinned in the checker. This foundation is
+  internal and carries no public support or publication promise.
 
 `npm run check:package-boundaries` enforces the most important publication
 guard: a package cannot become public while still exporting `src/*`, and

@@ -26,7 +26,7 @@ packages/
   runtime/                 Narrow Runtime Spec facade and conformance entry point
   runtime-wasm/            Private WASM evaluator wrapper and browser smoke target
   runtime-c-abi/           Private C ABI header and native host-test boundary
-  runtime-native/          Private Rust evaluator and local Asset foundations
+  runtime-native/          Private Rust evaluator, deterministic-math oracle, and local Asset foundations
   renderer-pixi/           Pixi rendering and editor/runtime sync boundary
   renderer-three/          Three.js runtime adapter
   renderer-phaser/         Phaser runtime adapter
@@ -98,9 +98,10 @@ locale, media, frontmatter, and future website route contract is tracked in
   `serde_json::Map` or serializer allocation failure. The crate does not
   lower into `CoreRuntimeModel`, evaluate a model, convert finite binary64
   values to `f32`, expose C ABI/editor or WASM symbols, perform I/O, or connect
-  an editor host. Derived evaluator connection remains blocked on the adopted
-  contract's separate deterministic primitive-operation/FMA/checkpoint and
-  transcendental-math prerequisite; EDH-01 remains open.
+  an editor host. Evaluation Deterministic Math Contract v1 now adopts the
+  downstream operation/FMA/checkpoint and transcendental policy, but
+  category-10 connection remains blocked on its implementation and execution
+  gates; EDH-01 remains open.
   The local Asset host may ingest one caller-supplied PNG
   chunk-manifest closure only after the expected reference, strict manifest,
   exact normalized object set, chunk bytes, and full PNG decode all pass before
@@ -164,11 +165,50 @@ locale, media, frontmatter, and future website route contract is tracked in
   public. It does not run parameter bindings, physics, IK, skinning, or any
   other derived evaluator path. It has no direct Asset-host dependency,
   host/store argument, or host call, and no runtime-native core, C ABI/editor,
-  WASM, TypeScript, language/IPC, GPU, publication, or capability edge. Derived
-  evaluation remains closed until the separately reviewed exact
-  primitive operation graph, FMA policy, non-finite checkpoint schedule, and
-  deterministic transcendental kernel or proven safe-domain/margin policy are
-  adopted. EDH-01 remains open.
+  WASM, TypeScript, language/IPC, GPU, publication, or capability edge. The
+  exact primitive operation graph, FMA policy, non-finite checkpoint schedule,
+  and deterministic transcendental kernel are now adopted by Evaluation
+  Deterministic Math Contract v1, but category-10 connection remains closed
+  until that contract's implementation, corpus, allocation, and review gates
+  pass. EDH-01 remains open.
+- `vivi-runtime-native-evaluation-math` is a private, consumer-zero,
+  `no_std`, `forbid(unsafe_code)`, unpublished rlib oracle foundation. It has
+  exactly two direct production dependencies: `fpmath =0.1.1` with only the
+  `soft-float` feature and direct `rustc_apfloat =0.2.3`, both with default
+  features disabled. Because Cargo requirements ignore build metadata, the
+  complete `rustc_apfloat 0.2.3+llvm-462a31f5a5ab` identity is separately
+  fixed by lock/source/archive/checker. The pinned production/build closure also
+  fixes `bitflags 2.13.1` and `smallvec 1.15.2`, including checksums, licenses,
+  resolved features, and the reviewed `rustc_apfloat` build script. The checker
+  additionally pins the reviewed 18-member `fpmath`, two-member APFloat, and
+  four-member `bitflags` selected runtime semantic source projection by exact
+  bytes, hashes, and function/call anchors. This is fail-closed evidence for the
+  separate implementation review, not a formal whole-program/compiler
+  reachability proof or a whole-dependency audit. Its crate-private
+  raw-`D64` wrapper uses APFloat binary64 arithmetic/comparisons/`c_fmod` and
+  `SoftF64` raw-bit `sin`/`cos`/`atan2`/`acos`/`sqrt`, with canonical NaN,
+  distinct signed zero, and preserved subnormals. Host `f64` arithmetic/libm,
+  FMA/`mul_add`, reassociation, IEEE remainder, decimal/host conversion,
+  `SoftF32`, serde, I/O, filesystem, network, FFI, and production exports stay
+  outside the boundary. The oracle implements exactly the 21 raw-bit callables;
+  it does not implement checkpoints, graph scheduling, or status mapping. Those
+  checkpoint obligations remain future category-10 evaluator work. Its tracked
+  fixture is byte-identical to the approved
+  Evaluation Deterministic Math Contract v1 vectors. The gate executes the raw
+  kernel/comparison/utility corpus natively and compiles the identical rlib and
+  tests for `wasm32-unknown-unknown`; that wasm step is compile-only, not
+  cross-target raw-bit execution. The native allocator trap is a separate
+  test-only crate whose system-allocator forwarding necessarily uses `unsafe`;
+  `forbid(unsafe_code)` applies to the production rlib source, not that harness
+  or the dependency closure. No crate consumes the oracle, and it has no
+  lowering, runtime-native core, TypeScript, C ABI/editor, production-WASM,
+  GPU, activation, publication, or capability edge. Category 9 full evaluator
+  reservation remains open. Category 10 remains disconnected pending all
+  supported-target native and test-only wasm execution, expanded transcendental
+  coverage, machine DAG/checkpoint bijection, compound traces, category-9
+  evaluator-wide post-reservation allocation proof, obligation bindings, and
+  separate implementation review. Category
+  11 topology/sealing/model-ready output and EDH-01 also remain open.
 - `packages/core` is intentionally kept as a private runtime/math
   compatibility package during the alpha refactor. Schema, parser,
   public-profile, load-limit, Runtime Spec, and model-owned parameter sanitizer

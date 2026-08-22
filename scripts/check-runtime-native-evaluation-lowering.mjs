@@ -1176,7 +1176,7 @@ function assertGateAndDocumentationWiring() {
     '"scripts/check-runtime-native-evaluation-lowering.mjs"',
     "npm run check:runtime-native-evaluation-lowering",
     "$" + "{{ runner.temp }}/vivi-runtime-native-evaluation-lowering-native",
-    "scripts/check-runtime-native-evaluation-lowering.mjs scripts/check-runtime-native-evaluation.mjs",
+    "scripts/check-runtime-native-evaluation-lowering.mjs scripts/check-runtime-native-evaluation-math.mjs scripts/check-runtime-native-evaluation.mjs",
   ]) {
     if (!workflow.includes(evidence)) {
       throw new Error(
@@ -1470,7 +1470,10 @@ function assertReferenceAllowlist() {
     "packages/runtime-native/Cargo.lock",
     "packages/runtime-native/Cargo.toml",
     "packages/runtime-native/package.json",
+    "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/fixtures/evaluation-deterministic-math-v1-vectors.json",
+    "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/src/tests.rs",
     "scripts/check-runtime-native-evaluation-lowering.mjs",
+    "scripts/check-runtime-native-evaluation-math.mjs",
     "scripts/check-runtime-native-evaluation.mjs",
     "scripts/check-runtime-native-preactivation.mjs",
     "scripts/quality-gate-manifest.json",
