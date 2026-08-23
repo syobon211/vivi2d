@@ -16,6 +16,8 @@ public acceptance gates without documenting the private product implementation.
 - Normative details belong in the relevant specification, schema, fixture, or
   ADR. The [package boundary policy](../contributing/package-boundaries.md) is
   canonical for deciding where a contribution belongs.
+- The [contract status matrix](./multiplatform-contract-status.md) distinguishes
+  tracked foundations from public compatibility promises.
 - If this roadmap and the package boundary policy appear inconsistent, stop and
   apply the stricter boundary until the project owner resolves the conflict.
 
@@ -110,6 +112,10 @@ provider-neutral.
 Implementation-specific endpoints, storage layouts, resource names, operational
 runbooks, and private client APIs are not part of this roadmap. They require
 separate designs in the repository that owns the implementation.
+
+The first proposed composition of these contracts is the
+[Multiplatform Exchange Profile v1 draft](../api/spec/multiplatform-exchange-profile-v1.draft.md).
+It is a design candidate only and does not promote any contract in this table.
 
 ## Public Security, Privacy, and Conformance Gates
 

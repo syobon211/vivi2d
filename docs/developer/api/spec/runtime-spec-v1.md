@@ -57,8 +57,9 @@ continue to produce the same legacy mesh results.
 The default ABI 0.1 build and the WASM runtime remain isolated from this ABI 0.2
 feature. They do not expose the new symbols or activate draw-command lowering;
 the legacy constructor continues to ignore `clipMaskIds` as it did before this
-feature. The public ABI 0.2 loader accepts `clipMaskIds` but does not accept the
-editor-only `clipMasks`/INVERT wire representation.
+feature. The ABI 0.2 loader accepts the public version 10 profile's
+`clipMaskIds` but does not accept the editor-only `clipMasks`/INVERT wire
+representation.
 
 The ABI 0.2 loader also fails closed on malformed render topology that had no
 defined ABI 0.1 behavior. This includes duplicate mesh IDs, mask fields on
@@ -100,13 +101,14 @@ facade for:
 - update stepping with validated delta time
 
 The facade intentionally hides editor project mutation from host code. WASM and
-future C ABI implementations must match the facade through the conformance
-suite before any public native, WASM, or C ABI release.
+C ABI implementations must match the facade through the conformance suite
+before any public native, WASM, or C ABI release.
 
-The current C ABI artifact lives under `packages/runtime-c-abi/` as a private
-header-only design boundary. It mirrors Runtime Spec v1 names and error codes
-for review, but it is not a native runtime implementation and carries no public
-ABI support promise.
+The current C ABI surface remains private. Its default 0.1 header lives under
+`packages/runtime-c-abi/`, and feature-gated native implementation slices exist
+under `packages/runtime-native/`. Neither the tracked header nor those internal
+implementation slices create a public ABI support promise; a selected version
+must match this specification through the conformance suite before promotion.
 
 Current implementation note: `RuntimeModel.update()` snapshots the
 `PublicViviModel` runtime state before evaluation and restores that snapshot if

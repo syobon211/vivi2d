@@ -7,6 +7,15 @@ This page is navigation only. Publication status lives in
 
 - [Runtime Spec v1](spec/runtime-spec-v1.md)
 
+## Draft Interoperability Profiles
+
+- [Multiplatform Exchange Profile v1 (draft)](spec/multiplatform-exchange-profile-v1.draft.md)
+
+Draft profiles are reviewable design candidates, not stable compatibility
+promises. Their owning contracts, schemas, fixtures, and status-ledger entries
+must be promoted separately and atomically before an implementation claims
+conformance.
+
 Migration and conformance notes for future spec revisions belong under
 [`migrations/`](migrations/).
 
