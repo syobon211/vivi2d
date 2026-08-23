@@ -70,6 +70,15 @@ See-through nodes are missing. If the Vivi2D compat plugin is missing or
 mismatched, user-facing troubleshooting should say the Vivi2D compat plugin is
 missing or mismatched. These are different failures.
 
+Exact node and default matching proves compatibility metadata only; it does not
+prove inference readiness. The current ready UX is incomplete because the
+upstream backend, required model availability and loadability, GPU or declared
+CPU execution path, VRAM, free disk, and cost policy are not all preflighted.
+Keep `compatible` and `ready` as distinct states. Before enabling a run or any
+cloud-backed expansion, perform a bounded preflight for those prerequisites and
+return actionable failure details. The Vivi2D compat plugin does not contain or
+maintain the upstream inference backend or model weights.
+
 ## Repository Boundary
 
 This repository contains the TypeScript adapter, user/developer documentation,
@@ -84,6 +93,13 @@ The Python custom-node source lives under:
 ```text
 integrations/comfyui/vivi2d_compat_plugin/
 ```
+
+The tracked source record described below is the authority for which source tree
+may be packaged or released. An adjacent or separately cloned checkout is not a
+canonical source merely because it has a similar name. A checkout with different
+bytes, provenance, or license status is an obsolete or experimental scaffold
+until an explicitly reviewed source-record update says otherwise; release and
+synchronization tooling must never select it implicitly.
 
 The install target remains:
 
@@ -123,10 +139,11 @@ as ready for production use.
 Before a public route or release note tells users to install the Vivi2D compat
 plugin, Vivi2D must publish a canonical source record for that plugin. The
 tracked source record lives at
-`docs/developer/quality/comfyui-plugin-source-record.json`. It may stay
-`status: "draft"` while `docs/user/publication-manifest.json` keeps
-`integrations/comfyui` unpublished, but publication gates must fail if the route
-is promoted before the record is complete and reviewed. The record must include:
+`docs/developer/quality/comfyui-plugin-source-record.json`; its current state is
+`publicOssSourceAllowed` with `reviewed: true`. A future replacement record may
+stay `status: "draft"` while `docs/user/publication-manifest.json` keeps the
+corresponding route unpublished, but publication gates must fail if a route is
+promoted before its record is complete and reviewed. The record must include:
 
 - Package or source location.
 - Plugin version.
@@ -185,6 +202,13 @@ User-facing docs should not say:
 ## Required Checks When This Changes
 
 Changes to this layout or detection contract should run:
+
+The repository-wide `check:docs-public-surface` and
+`check:docs-architecture` commands may enumerate and read repository text. Do
+not run either command in a protected-boundary session unless its exact
+protected-path exclusions have been implemented, pinned, and independently
+verified. In such a session, run exact-file checks only and report both
+repository-wide checks as pending rather than crediting them.
 
 ```sh
 npm run test -- packages/provider-comfyui/src/__tests__ --no-coverage

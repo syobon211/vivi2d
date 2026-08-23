@@ -124,6 +124,17 @@ nodes run as local user code, generated results are reviewed in Vivi2D, and raw
 paths, prompts, tool logs, and provider response bodies must not become saved
 project data or public docs.
 
+The current ComfyUI integration does not yet complete this authority flow: its
+generated bundle can proceed directly into project loading without a distinct
+editor-owned proposal review and acceptance step. Treat that as an implementation
+gap, not as an exception to this boundary. The existing loopback/local path is
+not end-to-end production-safe until the consumer validates a bounded manifest
+before any referenced layer download, enforces cumulative artifact budgets
+while streaming, presents an explicit review-and-accept surface, and moves
+Electron network and WebSocket ownership into the main process. Remote or
+cloud-backed expansion is a separate later gate and must not expand renderer
+network authority.
+
 ## Viewer API Flow
 
 ```mermaid

@@ -1,8 +1,9 @@
 # Architecture
 
 This document describes the repository structure that is currently implemented.
-Vivi2D is still pre-1.0, so package boundaries may change before the first OSS
-release, but the checked-in code currently follows the boundaries below.
+Vivi2D is a public pre-1.0 OSS alpha, so package boundaries may change before
+the first stable release, but the checked-in code currently follows the
+boundaries below.
 
 ## Current Repository Layers
 
@@ -33,18 +34,27 @@ packages/
   provider-sdk/            Provider capability and artifact contracts
   web/                     Experimental Web Component package
   viewer/                  Standalone Electron viewer app
+  viewer-api-client/       Typed Viewer API client package
   viewer-bridge-obs/       Optional internal viewer bridge adapter
   provider-comfyui/        SDK-backed ComfyUI provider adapter
 ```
 
-Long-form design notes and exploratory plans are local-only and belong under
-ignored `docs/backlog/`. Release-facing docs should stay in tracked `docs/`.
-Optional provider plugins, such as the Python ComfyUI custom-node scaffold, live
-in separate repositories outside this Apache-2.0 editor/runtime repo unless the
-release checklist records separate license, dependency, and distribution review.
-A local development checkout may sit next to this repository, but it is not part
-of the Vivi2D workspace or release artifact. The current ComfyUI custom-node
-install layout is tracked in
+Exploratory plans may live under locally ignored `docs/backlog/` or
+`docs/developer/plan/`, but an ignored draft is not canonical architecture and
+does not authorize implementation, purchasing, deployment, or publication.
+Secret-free release-facing architecture and roadmaps belong in tracked `docs/`
+only after explicit owner review. Plans containing confidential product
+implementation details, private source excerpts, credentials, private product
+identifiers, assets, or distribution configuration belong in a separately hosted repository
+whose visibility has been verified as private.
+
+Optional third-party or provider plugins normally live outside this Apache-2.0
+editor/runtime repository. The reviewed Vivi2D ComfyUI compatibility plugin is
+the explicit in-repository exception: its canonical source is pinned by
+`docs/developer/quality/comfyui-plugin-source-record.json`. Its install target
+is still an external ComfyUI checkout, and the source record does not approve
+bundling ComfyUI, upstream plugins, model weights, or a combined custom-node
+pack. The install layout is tracked in
 [`comfyui-plugin-layout.md`](comfyui-plugin-layout.md).
 
 User-facing documentation is a separate public surface from developer docs. Its

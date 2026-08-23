@@ -33,6 +33,64 @@ it must never open, hash, or scan the three protected user-owned dirty bodies
 whose exact path set is pinned in
 `scripts/check-runtime-native-evaluation-math.mjs`.
 
+Repository-wide documentation checks such as
+`npm run check:docs-architecture` and
+`npm run check:docs-public-surface` may enumerate and read repository text. Do
+not run them in a protected-boundary session unless their exact protected-path
+exclusions have been implemented, pinned, and independently verified. Use
+exact-file validation instead and report the repository-wide checks as pending,
+not passed, until that proof exists.
+
+## Private iOS Repository Boundary
+
+The Vivi2D iOS app and its proprietary product implementation are private and
+must live only in a separate repository whose visibility has been confirmed as
+private. This repository (`syobon211/vivi2d`) is public, so every branch, tag,
+pull request, commit, and pushed object must be treated as public. A
+non-default branch is not a private workspace.
+
+Never add, stage, commit, or push any private iOS product material to this
+repository, including:
+
+- iOS app/product UI and product-host or proprietary integration code in
+  Swift, Objective-C, or Metal;
+- Xcode project/workspace files and app configuration, including product
+  assets, bundle identifiers, `Info.plist` files, entitlements, and private
+  environment configuration;
+- signing or provisioning data;
+- product-specific App Store Connect or TestFlight submission records,
+  credentials, screenshots, review-account data, and distribution
+  configuration; and
+- iOS application build artifacts, archives, symbols, or product-specific
+  release documentation.
+
+Generic, secret-free platform compliance and portability documentation may be
+public under the planning and shared-surface rules below.
+
+Platform-neutral formats and protocols, shared runtime and C ABI code,
+fixtures, conformance tests, portability documentation, and portable-target
+compile checks or evidence may remain in this public repository. This is
+allowed even when those OSS surfaces mention, support, are tested for, or are
+consumed by iOS or Apple targets. They must remain independently reviewable and
+must not contain private app/UI/host implementation, proprietary product
+integration, credentials, signing or provisioning data, distribution
+configuration, or private product assets.
+
+A secret-free architecture or roadmap may describe the boundary around the
+proprietary iOS product and may be tracked in this public repository only after
+an explicit project-owner decision to make that plan public. A locally ignored
+draft is noncanonical: its presence in this checkout or an ignore rule does not
+make it approved, durable, or private. Plans containing confidential product
+implementation details, private source excerpts, credentials, private product
+identifiers, assets, or distribution configuration must live in a separate repository whose
+private visibility has been verified. Tracking a plan is documentation only and
+does not authorize implementation.
+
+Before beginning private iOS product work, switch to the separately configured
+private repository and verify its visibility with the hosting provider. Do not
+infer privacy from a repository, branch, or ignore-rule name. Credentials and
+signing secrets must never be committed, including to the private repository.
+
 ## Import Rules
 
 Use package boundaries instead of reaching through another package's internals.
