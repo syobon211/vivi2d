@@ -48,6 +48,12 @@ implementation details, private source excerpts, credentials, private product
 identifiers, assets, or distribution configuration belong in a separately hosted repository
 whose visibility has been verified as private.
 
+The owner-approved, secret-free direction for Windows OSS interoperability with
+a separately developed proprietary iOS companion is summarized in
+[`multiplatform-roadmap.md`](multiplatform-roadmap.md). That roadmap is
+documentation only: shared contracts remain normative in their owning specs,
+and private product implementation stays outside this repository.
+
 Optional third-party or provider plugins normally live outside this Apache-2.0
 editor/runtime repository. The reviewed Vivi2D ComfyUI compatibility plugin is
 the explicit in-repository exception: its canonical source is pinned by
