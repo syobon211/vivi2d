@@ -7,8 +7,12 @@
 - Owner: `@syobon211`
 - Repository: `syobon211/vivi2d`
 - Pull request: [#107](https://github.com/syobon211/vivi2d/pull/107)
-- Head disposition: freeze the signed commit containing this PR-number update;
-  its exact SHA is preserved by the PR head ref and the final archive tag
+- Head disposition: freeze the final signed CI-remediation commit containing
+  this record update; its exact SHA is preserved by the PR head ref and the
+  final archive tag
+- Superseded freeze candidate:
+  `40c3923fe0be96c55fa5d5dd6f7f479d925f6357`; cross-platform CI rejected it,
+  and it was neither tagged nor merged
 - Integration base: `da60e5bac2c52bbcb02d4f1ac8066d95d895fedb`
 - Historical range base: `ee41eacf85166f28f2efe96d368ac4ec964a4cd8`
 - Historical range head: `8e3dab509f6d2a85adc5bff1a41fc97347bf9a9c`
@@ -37,9 +41,26 @@ the separately reviewed and signed pull request #105 on `main`. The original
 23-commit source history remains reachable through the source branch and the
 source-history archive tag above.
 
-If the historical range, authorship, integration base, or pull-request content
-changes, this decision becomes stale and requires a new owner review. If the
-pull request is closed without merge, this exception expires unused.
+If the historical range, authorship, integration base, or committed
+pull-request tree changes outside the owner-authorized remediation below, this
+decision becomes stale and requires a new owner review. Truthful status-only
+edits to the pull-request description do not change this decision. If the pull
+request is closed without merge, this exception expires unused.
+
+The owner-directed execution of the approved integration sequence includes the
+scoped remediation of the rejected freeze candidate. That remediation is
+limited to these exact paths:
+
+- `docs/developer/quality/dco-cumulative-pr-exception-2026-08-24.md`;
+- `packages/runtime-native/crates/vivi-asset-store-local/src/filesystem.rs`;
+- `packages/runtime-native/crates/vivi-asset-store-local/src/tests.rs`;
+- `scripts/check-runtime-asset-store-local.mjs`;
+- `scripts/check-runtime-c-abi-link.mjs`;
+- `scripts/lib/runtime-c-abi-compiler.mjs`; and
+- `scripts/lib/runtime-c-abi-compiler.test.mjs`.
+
+These changes do not alter the historical range or broaden the exception. Any
+later head-changing change makes this updated decision stale.
 
 ## Ordered Historical Commit Manifest
 
@@ -105,8 +126,9 @@ No outside contributor or co-author is present in the scoped range.
    integration base without rewriting the 22 commits.
 2. Push the integration branch, create the pull request, and record its number
    and planned final archive tag in a signed update to this document.
-3. Freeze that exact updated head, then complete all required checks and
-   independent review against it.
+3. After any head-changing CI remediation, update this record in the same
+   signed commit, freeze that exact resulting head, and repeat all required
+   checks and independent review against it.
 4. Create and push an annotated, non-release archive tag at the final reviewed
    pre-squash head. Do not move that tag if the head later changes.
 5. Squash-merge only after the required checks, independent review, and all

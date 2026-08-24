@@ -181,13 +181,15 @@ fn validate_database_file(path: &Path) -> Result<FileIdentity, LocalStoreError> 
         if metadata.nlink() != 1 || metadata.mode() & 0o077 != 0 {
             return Err(path_rejected());
         }
-        return Ok(FileIdentity {
+        Ok(FileIdentity {
             device: metadata.dev(),
             inode: metadata.ino(),
-        });
+        })
     }
     #[cfg(windows)]
-    return windows_file_identity(path, false)?.ok_or_else(path_rejected);
+    {
+        windows_file_identity(path, false)?.ok_or_else(path_rejected)
+    }
 }
 
 fn metadata_or_missing(

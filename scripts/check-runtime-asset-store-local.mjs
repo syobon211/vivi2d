@@ -31,7 +31,7 @@ const pinnedStoreFiles = [
   [
     "src/filesystem.rs",
     12_719,
-    "a44f61a02b5e6d90f4294f4de079032c2020b59b85ac4b9001862f66d7257cd7",
+    "9206c660c76f92f93e4ee14e5c9368e283a7067614e5fd29c156680e47662a05",
   ],
   ["src/lib.rs", 469, "ca85a461e3d70f703f7e1d382e1f8122e0d1577a0a5f26254fbcab3d26832489"],
   [
@@ -51,8 +51,8 @@ const pinnedStoreFiles = [
   ],
   [
     "src/tests.rs",
-    31_749,
-    "a9efb63003fcbab330a40e90a2d431f45941de9e662fbecb129c197509640c05",
+    32_055,
+    "56f4a4d0082c58b8618897f0792980773471fb641374a50af9ab0c6367c56b71",
   ],
 ];
 

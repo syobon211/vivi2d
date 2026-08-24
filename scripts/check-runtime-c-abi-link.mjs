@@ -8,6 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
+import { selectCCompiler } from "./lib/runtime-c-abi-compiler.mjs";
 
 const root = process.cwd();
 const nativeManifest = path.join(root, "packages/runtime-native/Cargo.toml");
@@ -153,20 +154,12 @@ function findImportLibrary() {
 }
 
 function findCCompiler() {
-  const requested = process.env.CC?.trim();
-  if (requested && commandExists(requested)) {
-    return { command: requested, kind: compilerKind(requested) };
-  }
-  for (const command of ["cc", "gcc", "clang", "cl", "clang-cl"]) {
-    if (commandExists(command)) {
-      return { command, kind: compilerKind(command) };
-    }
-  }
-  const vcvars = findVcvars64();
-  if (vcvars) {
-    return { command: "cl", kind: "msvc", vcvars };
-  }
-  return null;
+  return selectCCompiler({
+    platform: process.platform,
+    requested: process.env.CC,
+    commandExists,
+    findVcvars64,
+  });
 }
 
 function findVcvars64() {
@@ -200,13 +193,6 @@ function safeReaddir(directory) {
   } catch {
     return [];
   }
-}
-
-function compilerKind(command) {
-  const baseName = path.basename(command).toLowerCase();
-  return baseName === "cl" || baseName === "cl.exe" || baseName.startsWith("clang-cl")
-    ? "msvc"
-    : "unix";
 }
 
 function commandExists(command) {

@@ -31,9 +31,25 @@ fn principal() -> PrincipalId {
 }
 
 fn database() -> (TempDir, PathBuf) {
-    let directory = tempfile::tempdir().expect("private temporary directory");
+    let directory = private_tempdir();
     let path = directory.path().join("assets.sqlite3");
     (directory, path)
+}
+
+fn private_tempdir() -> TempDir {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        tempfile::Builder::new()
+            .permissions(fs::Permissions::from_mode(0o700))
+            .tempdir()
+            .expect("private temporary directory")
+    }
+    #[cfg(not(unix))]
+    {
+        tempfile::tempdir().expect("private temporary directory")
+    }
 }
 
 fn digest(bytes: &[u8]) -> Digest {
@@ -292,7 +308,7 @@ fn immutable_inserts_are_idempotent_and_never_overwrite() {
 
 #[test]
 fn concurrent_first_open_and_same_insert_converge() {
-    let directory = tempfile::tempdir().expect("private temporary directory");
+    let directory = private_tempdir();
     let bytes = b"concurrent immutable object".to_vec();
     let address = digest(&bytes);
     for round in 0..16 {
