@@ -121,7 +121,7 @@ jobs:
       - name: Verify C ABI link smoke (Unix)
         if: runner.os != 'Windows'
         run: npm run check:runtime-c-abi-link
-      - name: Verify C ABI linkage and ABI 0.1/0.2 host smoke (Windows)
+      - name: Verify C ABI linkage, ABI 0.1/0.2 host smoke, and PNG ABI (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
@@ -137,15 +137,16 @@ jobs:
           if (!(Test-Path $vcvars)) {
             throw "vcvars64.bat was not found"
           }
-          cmd /c "`"$vcvars`" && npm run check:runtime-c-abi-link && npm run check:runtime-c-abi-v02-host-smoke"
+          cmd /c "`"$vcvars`" && npm run check:runtime-c-abi-link && npm run check:runtime-c-abi-v02-host-smoke && npm run check:runtime-png"
           if ($LASTEXITCODE -ne 0) {
-            throw "MSVC C ABI checks failed with exit code $LASTEXITCODE"
+            throw "MSVC C ABI and PNG checks failed with exit code $LASTEXITCODE"
           }
       - run: npx biome check scripts/check-runtime-asset-host-local.mjs scripts/check-runtime-asset-resolver.mjs scripts/check-runtime-asset-store-local.mjs scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs scripts/check-runtime-native-evaluation-lowering.mjs scripts/check-runtime-native-evaluation-math.mjs scripts/check-runtime-native-evaluation.mjs scripts/check-runtime-native-preactivation.mjs scripts/check-runtime-png.mjs
       - name: Verify ABI 0.1/0.2 exports and host-observation parity subset
         if: runner.os != 'Windows'
         run: npm run check:runtime-c-abi-v02-host-smoke
       - name: Verify strict PNG reference decoder and feature-isolated C ABI
+        if: runner.os != 'Windows'
         run: npm run check:runtime-png
       - run: cargo build --manifest-path packages/runtime-native/Cargo.toml --workspace --release
       - run: npm run check:native-artifact-policy

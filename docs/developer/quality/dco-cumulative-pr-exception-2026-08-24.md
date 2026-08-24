@@ -22,6 +22,11 @@
     exposed the same private-parent fixture gap in native preactivation tests on
     macOS and Ubuntu and missing MSVC environment initialization for Windows C
     ABI link, export, and host-smoke coverage; it was neither tagged nor merged
+  - `becf3c9cbb30cde1ed032fffb478ec22a7aeb97a`; the fourth cross-platform CI
+    pass verified the Unix preactivation fix and the initialized Windows C ABI
+    link, export, and host-smoke checks, then exposed that the later Windows PNG
+    ABI gate still ran outside the initialized MSVC environment; it was neither
+    tagged nor merged
 - Integration base: `da60e5bac2c52bbcb02d4f1ac8066d95d895fedb`
 - Historical range base: `ee41eacf85166f28f2efe96d368ac4ec964a4cd8`
 - Historical range head: `8e3dab509f6d2a85adc5bff1a41fc97347bf9a9c`
