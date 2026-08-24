@@ -1,8 +1,9 @@
 # Architecture
 
 This document describes the repository structure that is currently implemented.
-Vivi2D is still pre-1.0, so package boundaries may change before the first OSS
-release, but the checked-in code currently follows the boundaries below.
+Vivi2D is a public pre-1.0 OSS alpha, so package boundaries may change before
+the first stable release, but the checked-in code currently follows the
+boundaries below.
 
 ## Current Repository Layers
 
@@ -21,29 +22,45 @@ packages/
   core/                    Runtime-neutral evaluation, validation, math, and compatibility shims
   model/                   File/profile types, schemas, migrations, serialization, and runtime spec constants
   editor-core/             UI-free editor command and safe plan contracts
+  editor-host/             Read-only v11 parse, host-injected atlas readiness, and evaluation projection
   loader/                  Browser texture extraction helpers over the model contract
   runtime/                 Narrow Runtime Spec facade and conformance entry point
   runtime-wasm/            Private WASM evaluator wrapper and browser smoke target
   runtime-c-abi/           Private C ABI header and native host-test boundary
-  runtime-native/          Private Rust native evaluator workspace
+  runtime-native/          Private Rust evaluator, deterministic-math oracle, and local Asset foundations
   renderer-pixi/           Pixi rendering and editor/runtime sync boundary
   renderer-three/          Three.js runtime adapter
   renderer-phaser/         Phaser runtime adapter
   provider-sdk/            Provider capability and artifact contracts
   web/                     Experimental Web Component package
   viewer/                  Standalone Electron viewer app
+  viewer-api-client/       Typed Viewer API client package
   viewer-bridge-obs/       Optional internal viewer bridge adapter
   provider-comfyui/        SDK-backed ComfyUI provider adapter
 ```
 
-Long-form design notes and exploratory plans are local-only and belong under
-ignored `docs/backlog/`. Release-facing docs should stay in tracked `docs/`.
-Optional provider plugins, such as the Python ComfyUI custom-node scaffold, live
-in separate repositories outside this Apache-2.0 editor/runtime repo unless the
-release checklist records separate license, dependency, and distribution review.
-A local development checkout may sit next to this repository, but it is not part
-of the Vivi2D workspace or release artifact. The current ComfyUI custom-node
-install layout is tracked in
+Exploratory plans may live under locally ignored `docs/backlog/` or
+`docs/developer/plan/`, but an ignored draft is not canonical architecture and
+does not authorize implementation, purchasing, deployment, or publication.
+Secret-free release-facing architecture and roadmaps belong in tracked `docs/`
+only after explicit owner review. Plans containing confidential product
+implementation details, private source excerpts, credentials, private product
+identifiers, assets, or distribution configuration belong in a separately hosted repository
+whose visibility has been verified as private.
+
+The owner-approved, secret-free direction for Windows OSS interoperability with
+a separately developed proprietary iOS companion is summarized in
+[`multiplatform-roadmap.md`](multiplatform-roadmap.md). That roadmap is
+documentation only: shared contracts remain normative in their owning specs,
+and private product implementation stays outside this repository.
+
+Optional third-party or provider plugins normally live outside this Apache-2.0
+editor/runtime repository. The reviewed Vivi2D ComfyUI compatibility plugin is
+the explicit in-repository exception: its canonical source is pinned by
+`docs/developer/quality/comfyui-plugin-source-record.json`. Its install target
+is still an external ComfyUI checkout, and the source record does not approve
+bundling ComfyUI, upstream plugins, model weights, or a combined custom-node
+pack. The install layout is tracked in
 [`comfyui-plugin-layout.md`](comfyui-plugin-layout.md).
 
 User-facing documentation is a separate public surface from developer docs. Its
@@ -60,6 +77,169 @@ locale, media, frontmatter, and future website route contract is tracked in
   extraction targets. It may depend on `packages/core` and `packages/model`,
   but must not depend on React, Electron, renderer adapters, providers, or
   Zustand stores.
+- `packages/editor-host` is the private read-only authoring host. Its production
+  sources may consume only the reviewed
+  `@vivi2d/model/internal/project-format-v11` and
+  `@vivi2d/model/internal/evaluation-payload-v1` friend entry points. Mutation,
+  ordinary/public save, UI, desktop, provider, and runtime engine/renderer
+  dependencies or execution stay outside this package; `buildRuntimePayload`
+  is an Evaluation Payload data projection only.
+- `packages/runtime-native` owns private Rust runtime experiments. Its
+  `vivi-runtime-native-evaluation` foundation performs bounded,
+  duplicate-aware Evaluation Payload v1 parsing, byte-identical approved-schema
+  Stage 1 validation, semantic Stage 2 validation, and stable texture-binding
+  inventory construction on native and `wasm32-unknown-unknown`. A shared
+  AJV/Rust corpus pins approved-schema reachable accepted-set parity; it does
+  not claim generic JSON Schema branch coverage beyond that artifact. Stage 1
+  rejects unknown structural fields before Stage 2 semantics; producer-side
+  forbidden scanning is outside this crate. Opaque keys under `skins`,
+  `bindPoseInverse`, and expression `values` remain data. Raw input is limited to 67,108,864
+  bytes, container depth to 64, JSON tokens to 8,000,000, and each decoded
+  string to 67,108,864 UTF-8 bytes. Caller generation is opaque data across the
+  full `u64` range; bindings use `atlas:<sourceAtlasId>` and UTF-8 byte order.
+  Accepted numeric values are finite and binary64-normalized; source number
+  lexemes and negative zero are not preserved. After Stage 1 and Stage 2,
+  Runtime Spec v1.0 loader preflight rejects nonempty `clips` or `stateMachines`
+  as unsupported; this is not a generic parser that returns every schema-valid
+  payload. Success means only a validated, inventory-bearing Runtime Spec v1.0
+  loader-preflight candidate. Its exact sole production consumer is the
+  separately isolated `vivi-runtime-native-preactivation` crate. Adopted
+  Amendment 1 A-09 remains normative: its nested wire shape and arbitrary
+  finite binary64 domain are not pending or reopened. The separately reviewed
+  Evaluation Lowering Contract v1 now fixes the downstream direct
+  binary64-to-binary32 projection policy, all 13 Evaluation blend-mode
+  dispositions, feature precedence, and the consumer-zero foundation boundary.
+  The raw ceilings and explicit fallible reservations
+  do not promise recoverable handling for every hidden
+  `serde_json::Map` or serializer allocation failure. The crate does not
+  lower into `CoreRuntimeModel`, evaluate a model, convert finite binary64
+  values to `f32`, expose C ABI/editor or WASM symbols, perform I/O, or connect
+  an editor host. Evaluation Deterministic Math Contract v1 now adopts the
+  downstream operation/FMA/checkpoint and transcendental policy, but
+  category-10 connection remains blocked on its implementation and execution
+  gates; EDH-01 remains open.
+  The local Asset host may ingest one caller-supplied PNG
+  chunk-manifest closure only after the expected reference, strict manifest,
+  exact normalized object set, chunk bytes, and full PNG decode all pass before
+  the first store write. It attempts the descriptor last as the sole logical
+  publication point. Language/IPC bridges, trusted path and principal
+  derivation, ACLs, GPU activation, and capability
+  advertisement remain separately reviewed boundaries.
+  Its exact sole production consumer is `vivi-runtime-native-preactivation`, a
+  private native-only coordinator that consumes one validated Evaluation
+  candidate, one typed texture plan, and an explicit out-of-band
+  `request_generation`. Before any Asset/store read it requires that generation
+  to equal the candidate generation within the host's JavaScript-safe ceiling
+  and passes that same value to the host,
+  correlates exact schema/count and every case-sensitive
+  `id`/`width`/`height` tuple positionally; the candidate's at-most-32 strict
+  UTF-8 byte-sorted inventory fixes plan count and order. The existing host
+  preflight, rather than duplicated policy, owns frozen `image/png`/`srgb`/
+  `straight` and `AssetRef` shape checks. Generation mismatch is `Correlation`
+  before the safe ceiling or plan, equal above-ceiling input is
+  `ResourceLimitExceeded`, safe schema/count/tuple mismatch is `Correlation`,
+  and host/Asset/store/output contradictions retain their typed domains.
+  Every such failure precedes reads where its owner promises preflight. Once reads begin,
+  the host continues past Missing bindings so a later Asset or Store hard error
+  wins; neither hard errors nor Missing expose partial Ready values. A Ready
+  result is defensively rechecked for generation, count, order, IDs,
+  references, decoded dimensions, and aggregate totals before one owned,
+  all-or-nothing candidate-plus-texture bundle is returned. The coordinator
+  implementation moves ownership and does not clone logical PNG/RGBA buffers;
+  only preactivation wrapper/error `Debug` is redacted. Authorized accessors
+  expose the host set and `ReadyPng` metadata, so the dependency's existing
+  `Debug`/`Clone` behavior remains a future bridge/logging carry-forward
+  boundary. Correlation and postcondition checks add no collection allocation;
+  owned inputs and host outputs are moved, while dependency allocations retain
+  their own reviewed bounds. This is not a global recoverable-OOM claim, and a
+  future coordinator collection allocation must use fallible reservation. Its
+  pure correlation seam returns a move-only correlated-input token; both this
+  existing host path and the private lowering foundation consume that seam, so
+  generation/ceiling/tuple correlation is not reimplemented or run twice.
+  This boundary does not establish generation freshness, reject
+  stale work, lower or evaluate a runtime model, convert values to `f32`,
+  upload GPU resources, publish atomically to the runtime, add C ABI/editor or
+  WASM exports, connect a language/IPC bridge, or advertise a capability.
+- `vivi-runtime-native-evaluation-lowering` is a private native-only,
+  consumer-zero foundation. It depends only on preactivation and `serde_json`,
+  reuses the move-only pure correlation seam exactly once, and proves only
+  overall phases 1–3 plus lowering categories 1–9. Categories 1–8 are the
+  approved allocation-free feature/direct-projection preflight; category 9 is
+  checked/fallible reservation followed by single typed-plan/direct-projection
+  materialization. The result retains private foundation/preflight state rather
+  than claiming a complete `LoweredEvaluationCandidateV1`. Its source pins the
+  exact approved Evaluation Lowering Contract v1 draft, vector, and approval
+  identities plus the separately approved Category 9 reservation contract at
+  41,002 bytes, vector and byte-identical tracked fixture at 210,149 bytes, and
+  approval record at 18,793 bytes. The focused checker independently derives
+  all 39 allocation sites and denial tuples, 82 formula programs, 30 fixed
+  layout assertions, concrete census totals, and the 37-test requirement
+  corpus instead of trusting the vector's proof booleans. Four
+  blend modes (`normal`, `multiply`, `screen`, and `add`) keep values 0 through
+  3; the other nine modes and the approved unsupported structures fail closed
+  before any host read. Projection performs one round-to-nearest-ties-to-even
+  binary32 conversion, canonicalizes accepted zero to positive zero, and
+  rejects overflow, nonzero-to-zero underflow, and nonzero binary32 subnormal
+  results. Category 10 derived evaluation and category 11 topology, identity,
+  mask-command construction, invariant sealing, and model-ready output are not
+  implemented. The Foundation exposes only generation and aggregate counts: no
+  candidate/value/plan/`AssetRef`/ID accessor or consuming `into_parts` is
+  public. It does not run parameter bindings, physics, IK, skinning, or any
+  other derived evaluator path. It has no direct Asset-host dependency,
+  host/store argument, or host call, and no runtime-native core, C ABI/editor,
+  WASM, TypeScript, language/IPC, GPU, publication, or capability edge. Native
+  evidence includes a single-thread post-reservation allocator trap and a host
+  `wasm_compile` test that invokes pinned Rust 1.89 `rustc` for
+  `wasm32-unknown-unknown` against the exact production `error.rs`, `model.rs`,
+  `reservation.rs`, and `lower.rs`; test-only dependency stubs plus an actual
+  `lower_evaluation_foundation_v1` probe make the census, reserve, and
+  materialize call graph compile/codegen-visible. There is no
+  full-package wasm target gate; this is not wasm execution, parity, product or
+  dependency WASM support, or a runtime-WASM edge. The
+  exact primitive operation graph, FMA policy, non-finite checkpoint schedule,
+  and deterministic transcendental kernel are now adopted by Evaluation
+  Deterministic Math Contract v1, but category-10 connection remains closed
+  until that contract's implementation, corpus, allocation, and review gates
+  pass. EDH-01 remains open.
+- `vivi-runtime-native-evaluation-math` is a private, consumer-zero,
+  `no_std`, `forbid(unsafe_code)`, unpublished rlib oracle foundation. It has
+  exactly two direct production dependencies: `fpmath =0.1.1` with only the
+  `soft-float` feature and direct `rustc_apfloat =0.2.3`, both with default
+  features disabled. Because Cargo requirements ignore build metadata, the
+  complete `rustc_apfloat 0.2.3+llvm-462a31f5a5ab` identity is separately
+  fixed by lock/source/archive/checker. The pinned production/build closure also
+  fixes `bitflags 2.13.1` and `smallvec 1.15.2`, including checksums, licenses,
+  resolved features, and the reviewed `rustc_apfloat` build script. The checker
+  additionally pins the reviewed 18-member `fpmath`, two-member APFloat, and
+  four-member `bitflags` selected runtime semantic source projection by exact
+  bytes, hashes, and function/call anchors. This is fail-closed evidence for the
+  separate implementation review, not a formal whole-program/compiler
+  reachability proof or a whole-dependency audit. Its crate-private
+  raw-`D64` wrapper uses APFloat binary64 arithmetic/comparisons/`c_fmod` and
+  `SoftF64` raw-bit `sin`/`cos`/`atan2`/`acos`/`sqrt`, with canonical NaN,
+  distinct signed zero, and preserved subnormals. Host `f64` arithmetic/libm,
+  FMA/`mul_add`, reassociation, IEEE remainder, decimal/host conversion,
+  `SoftF32`, serde, I/O, filesystem, network, FFI, and production exports stay
+  outside the boundary. The oracle implements exactly the 21 raw-bit callables;
+  it does not implement checkpoints, graph scheduling, or status mapping. Those
+  checkpoint obligations remain future category-10 evaluator work. Its tracked
+  fixture is byte-identical to the approved
+  Evaluation Deterministic Math Contract v1 vectors. The gate executes the raw
+  kernel/comparison/utility corpus natively and compiles the identical rlib and
+  tests for `wasm32-unknown-unknown`; that wasm step is compile-only, not
+  cross-target raw-bit execution. The native allocator trap is a separate
+  test-only crate whose system-allocator forwarding necessarily uses `unsafe`;
+  `forbid(unsafe_code)` applies to the production rlib source, not that harness
+  or the dependency closure. No crate consumes the oracle, and it has no
+  lowering, runtime-native core, TypeScript, C ABI/editor, production-WASM,
+  GPU, activation, publication, or capability edge. Category 9 reservation is
+  now a separate lowering implementation candidate gated by its own review;
+  the oracle remains consumer-zero and disconnected from it. Category 10
+  remains disconnected pending all
+  supported-target native and test-only wasm execution, expanded transcendental
+  coverage, machine DAG/checkpoint bijection, compound traces, obligation
+  bindings, and the remaining separate implementation reviews. Category
+  11 topology/sealing/model-ready output and EDH-01 also remain open.
 - `packages/core` is intentionally kept as a private runtime/math
   compatibility package during the alpha refactor. Schema, parser,
   public-profile, load-limit, Runtime Spec, and model-owned parameter sanitizer

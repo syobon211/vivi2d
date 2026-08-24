@@ -57,6 +57,7 @@
       "scripts/check-ipc-contract-sync.mjs",
       "scripts/check-import-cycles.mjs",
       "scripts/check-license-policy.mjs",
+      "scripts/check-model-jsc-portability.mjs",
       "scripts/check-native-artifact-policy.mjs",
       "scripts/check-oss-readiness.mjs",
       "scripts/check-github-release-alpha.mjs",
@@ -78,6 +79,7 @@
       "scripts/check-release-gates.test.mjs",
       "scripts/check-runtime-c-abi-link.mjs",
       "scripts/check-runtime-c-abi.mjs",
+      "scripts/check-runtime-png.mjs",
       "scripts/check-runtime-wasm-browser.mjs",
       "scripts/check-secrets.mjs",
       "scripts/check-security-patterns.mjs",
@@ -93,6 +95,7 @@
       "scripts/generate-sbom.mjs",
       "scripts/lib/repo.test.mjs",
       "scripts/lib/repo.mjs",
+      "scripts/generate-schema-validators.mjs",
       "scripts/generate-third-party-notices.mjs",
       "scripts/generate-web-sdk-basic-fixture.mjs",
       "scripts/run-quality-gates.mjs"
@@ -111,6 +114,22 @@
     {
       "npmScript": "check:packages-types",
       "command": "npm run check:packages-types",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:model-schema-validators",
+      "command": "npm run check:model-schema-validators",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:model-jsc-portability",
+      "command": "npm run check:model-jsc-portability",
       "requiredWorkflows": [
         ".github/workflows/quality-gates.yml"
       ],
@@ -553,6 +572,96 @@
         ".github/workflows/runtime-c-abi.yml",
         ".github/workflows/runtime-native.yml"
       ],
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-c-abi-v02-host-smoke",
+      "command": "npm run check:runtime-c-abi-v02-host-smoke",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Builds the default ABI 0.1 and feature-isolated ABI 0.2 dynamic libraries, verifies their exact 31/37-symbol public export sets (including ABI 0.2/editor absence from the default binary), and compares ABI 0.1 mesh/update observations for a valid unmasked tracked fixture before running the ABI 0.2 implementation smoke subset. This is not Frozen full conformance and does not publish the local 0.2 header.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-png",
+      "command": "npm run check:runtime-png",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private PNG header, Rust dependency closure, and exact two-consumer graph (the resolver direct path edge plus the C ABI optional png-v1 edge), proves the runtime-c-abi package inventory, verifies exact default/ABI 0.2 export isolation, and runs C11/C++17 hosts against feature-isolated PNG dynamic and static libraries on all three native CI operating systems.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-asset-resolver",
+      "command": "npm run check:runtime-asset-resolver",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private Asset Model v1 resolver foundation, approved schema and live AJV 2020-12 parity with its static Rust equivalent, dependency license/checksum closure, Rust 1.89 metadata, exact C ABI non-expansion, and default native tests/Clippy. The sibling workflow also compiles tests and runs Clippy for wasm32-unknown-unknown from an isolated clean target.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-asset-store-local",
+      "command": "npm run check:runtime-asset-store-local",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private principal-bound local Asset store, its exact SQLite schema/configuration/source/dependency inventory, transactional write and bounded-read evidence, Rust 1.89 metadata, and native-only isolation from WASM, C ABI, W7a, Electron IPC, activation, and capability advertisement. The sibling workflow runs its tests and Clippy from an isolated clean target on Windows, macOS, and Linux.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-asset-host-local",
+      "command": "npm run check:runtime-asset-host-local",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private native-only local Asset host, its exact source and dependency closure, its byte-identical approved texture-plan schema copy, the exact reviewed resolver/store consumer edges, Rust 1.89 metadata, bounded in-process materialization/resolution, exact normalized manifest-closure ingestion with at most nine supplied objects and a descriptor-last logical commit, activation-plan preflight, and continued isolation from language bridges, C ABI, WASM, W7a/Electron wiring, GPU/runtime activation, and capability advertisement. Expected-reference kind/size/media preflight precedes closure inspection. Validation and caller-derived Asset failures occur before writes; chunk or manifest write failures never attempt the descriptor; a Store error after descriptor insertion is attempted is outcome-ambiguous and the immutable operation is retryable. An impossible durable-parser divergence during publication is redacted to Store without a stable Asset code. These are per-call validation bounds, not a caller quota, rate limit, concurrency policy, or exact total peak-memory guarantee. Raw-JSON parsing, duplicate-key rejection, and Stage 1 schema validation for typed texture plans remain bridge-owned; manifest ingestion reuses the resolver's approved bounded duplicate-aware Stage 1/Stage 2 parser. The sibling workflow runs its focused tests and Clippy from an isolated clean target on Windows, macOS, and Linux.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-native-evaluation",
+      "command": "npm run check:runtime-native-evaluation",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private Evaluation Payload v1 validation foundation and its exact sole production consumer, vivi-runtime-native-preactivation, its byte-identical approved model schema copy, and approved-schema reachable accepted-set parity through one shared AJV/Rust corpus without claiming generic JSON Schema branch coverage beyond that artifact. It pins duplicate-aware transport ceilings of 67,108,864 raw bytes, depth 64, 8,000,000 JSON tokens, and 67,108,864 UTF-8 bytes per decoded string. Stage 1 rejects unknown structural fields before Stage 2 semantics; producer-side forbidden scanning is outside this crate, while opaque skins, bindPoseInverse, and expression-values keys remain data. It pins finite, binary64-normalized numeric values without source-number-lexeme or negative-zero preservation and without f32 storage or casts, the full opaque u64 request-generation range, stable texture-binding inventory using atlas:<sourceAtlasId> in UTF-8 byte order, and the Runtime Spec v1.0 loader-preflight policy that rejects nonempty clips or stateMachines as unsupported after both validation stages. Success is only a validated, inventory-bearing loader-preflight candidate, not a generic schema-valid payload parser; it may enter only the separately isolated preactivation correlation boundary. Adopted Amendment 1 A-09 remains normative: its nested wire shape and arbitrary finite binary64 domain are not pending or reopened. Evaluation Lowering Contract v1 is adopted for the downstream direct binary64-to-binary32 projection policy, feature precedence, and all 13 Evaluation blend-mode dispositions without changing this parser. Explicit fallible reservations and ceilings do not promise recoverable handling for every hidden serde_json::Map or serializer allocation failure. It also pins dependency license/checksum closure, Rust 1.89 metadata, native tests and Clippy, rustdoc with warnings denied, and wasm32 compile and Clippy evidence. It remains disconnected from runtime-native core, C ABI/editor symbols and headers, WASM exports, language or IPC bridges, filesystem and network I/O, unsafe code, f32 lowering or evaluation, GPU upload, and capability advertisement. The contract's deterministic primitive-operation/FMA/checkpoint and transcendental-math connection prerequisite remains open, and EDH-01 remains open.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-native-preactivation",
+      "command": "npm run check:runtime-native-preactivation",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private native-only Evaluation preactivation coordinator, its exact two direct production dependencies (vivi-runtime-native-evaluation and vivi-asset-host-local), and its exact sole production consumer, vivi-runtime-native-evaluation-lowering. This is the sole production consumer of both foundations. Before any Asset/store read, one pure seam consumes one validated candidate and one typed texture plan into a move-only correlated-input token. It requires the candidate generation to equal an explicit out-of-band request_generation within the local-host JavaScript-safe ceiling of 9,007,199,254,740,991. The existing host path and the lowering foundation reuse that same seam exactly once, and the host path passes that same generation to the host without narrowing the Evaluation candidate's full-u64 parser contract. It correlates the exact schema/count and case-sensitive positional id/width/height tuples; the validated candidate's at-most-32 strict UTF-8 byte-sorted inventory thereby fixes plan count and order. The host's existing pre-read preflight, rather than duplicated policy, owns the frozen image/png, srgb, straight, and AssetRef shape checks. Error precedence is exact: generation mismatch is Correlation before the safe ceiling or plan, an equal above-ceiling generation is ResourceLimitExceeded before plan checks, safe schema/count/tuple mismatch is Correlation, host fixed-plan rejection is InvalidTexturePlan, resolver and store failures remain Asset and Store, and a trusted output contradiction is Internal. After reads begin, Missing accumulation continues so a later Asset or Store hard error wins; hard errors and Missing outcomes never expose partial Ready values. A Ready result is defended by postcondition checks over generation, count, order, IDs, references, decoded dimensions, checked aggregate pixels, and checked aggregate RGBA bytes. Success is one owned, all-or-nothing candidate-plus-texture bundle with private fields. The coordinator implementation moves ownership and does not clone logical PNG or RGBA buffers; only preactivation wrapper/error Debug output is redacted. Explicit authorized accessors expose the host set and ReadyPng metadata, whose existing dependency Debug/Clone behavior is a future bridge/logging carry-forward boundary. Correlation and postcondition checks add no collection allocation; owned inputs and host outputs are moved, while dependency allocations retain their own reviewed bounds. This is not a global recoverable-OOM claim, and any future coordinator collection allocation must use fallible reservation. The gate pins exact source, API, test, dependency, lock, license/checksum closure, and consumer inventories, Rust 1.89 metadata, native tests/Clippy, rustdoc with warnings denied, and the three-OS native workflow. The crate is statically disconnected from runtime-native core, C ABI/editor headers or exports, runtime-native WASM dependencies or exports, f32 lowering, model evaluation, GPU upload, language/IPC bridges, capability advertisement, generation freshness, stale-result rejection, and atomic runtime publication. Adopted Amendment 1 A-09 remains normative: its nested wire shape and arbitrary finite binary64 domain are not pending or reopened. Evaluation Lowering Contract v1 is adopted for the downstream consumer-zero foundation, while this crate performs no lowering. The contract's deterministic primitive-operation/FMA/checkpoint and transcendental-math connection prerequisite remains open, and EDH-01 remains open.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-native-evaluation-lowering",
+      "command": "npm run check:runtime-native-evaluation-lowering",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private native-only, consumer-zero Evaluation Lowering Contract v1 foundation and its exact direct production dependencies on vivi-runtime-native-preactivation and serde_json. It reuses preactivation's move-only pure correlated-input token so caller-generation mismatch, the JavaScript-safe ceiling, and exact candidate/typed-plan schema/count/case-sensitive positional id/width/height correlation execute exactly once before lowering. The foundation proves only outer phases 1-3 and lowering categories 1-9: allocation-free recursive feature scans run in normative order, and direct-projection classification precedes checked count/size calculations and fallible reservation; only after reservation does single-cast materialization fill retained records. It does not execute category 10 derived evaluation or category 11 topology/identity/sealing, and it does not construct a model-ready or activation-ready value. The gate pins the adopted parent local-only contract draft at 41,556 bytes / SHA-256 2b8f731033b9eb579b33ff66da7efd0036f2b82b5326f74a0df5db8c2718bc20, the tracked byte-identical vector copy at 90,906 bytes / SHA-256 eadd382db0f9c08b61b2f714cde7714d0706aaa5ed2c0edf99f7ad2fa27b5f9b, and the local-only APPROVE record at 20,624 bytes / SHA-256 76c17745960b824530b1d6b0252f47e013cbef850d5245419c58e56f3364526b with P0/P1/P2 none, P3 two, and no required edits. The parent vectors' external-review-required value is the frozen historical pre-review status, not the adoption state. The separately approved Category 9 reservation contract is pinned at 41,002 bytes / SHA-256 69a5c75855b43d18e030ebb02d29bdcd73ecc7e6a28c0ec0892191dedfc67ade, its local vector and byte-identical tracked fixture at 210,149 bytes / SHA-256 06111e2868d6d007062dcf36dc8bffeaa8b45da5f6a0651a5a61492866b37ecc, and its APPROVE record at 18,793 bytes / SHA-256 8c039ba1a55920629b9855eecb6d312ad60326f7a696b074f1b4387997154272. The checker independently recomputes the Category 9 vector's exact 37-key / 568-ID inventory, 11 logical buckets, 82 formula/AST programs, 39 ordered allocation sites and denial tuples, 30 target-fixed layout assertions, concrete census/range/byte totals, materializer/lifecycle references, portability neighbors, 37-test requirement corpus, and published counts rather than trusting selfValidation booleans. Tests drive all 30 scalar projection records, the 13 blend modes across all 7 recursive scan contexts, applicable eligibility and precedence cases, and reservation ordering; the 191 row-level plus 23 owner-context future obligations are not claimed as executable fixture bodies in this foundation. Direct projection performs one IEEE-754 binary32 round-to-nearest-ties-to-even cast, canonicalizes accepted signed zero to positive zero, accepts ordinary normal precision loss, and rejects non-finite, overflow, nonzero-to-zero underflow, and rounded nonzero binary32 subnormal results with the approved private kinds/status mappings. The four blend values remain normal=0, multiply=1, screen=2, and add=3; nine extended modes and the approved unsupported structures fail closed before reads without fallback. The result is non-Clone private Foundation/Preflight state with only generation and aggregate-count accessors plus redacted Debug; it exposes no candidate, JSON value, texture plan, AssetRef, identifier, or into_parts accessor. There is no direct Asset-host dependency, host/store argument, or host call. Parameter bindings, physics, IK solving, skinning, culling/topology or mask-command construction, complete initial snapshots, texture attachment, sealing as LoweredEvaluationCandidateV1, runtime-core model construction, and activation remain absent. Exact primitive operation graph/parenthesization, FMA policy, non-finite checkpoint schedule, and a deterministic transcendental kernel or separately reviewed proven safe-domain/margin policy remain required before category 10 or any core/native/TypeScript evaluator connection. The crate remains disconnected from runtime-native core, C ABI/editor headers or exports, runtime-native WASM dependencies or exports, TypeScript/language/IPC bridges, GPU upload, publication, and capability advertisement; its production source performs no filesystem/network I/O and has no host/store call or argument. The gate pins exact source/API/test/dependency/lock inventories, consumer-zero graph, Rust 1.89 native all-target tests and Clippy, including a host `wasm_compile` integration test that invokes pinned rustc for `wasm32-unknown-unknown` against exact production `error.rs`, `model.rs`, `reservation.rs`, and `lower.rs`; test-only dependency stubs plus an actual `lower_evaluation_foundation_v1` probe make the census, reserve, and materialize call graph compile/codegen-visible. The checker separately invokes the native `no_allocation` allocator trap with `--test-threads=1`, then runs rustdoc with warnings denied. The existing package command and three-OS native workflow wiring remain byte-identical. It intentionally adds no full-package wasm target command or workflow step because the existing dependency closure is not wasm32-compatible; host compile/instrumentation is not wasm execution, cross-target parity, product/dependency WASM support, or a runtime-WASM edge; it does so without claiming hosted CI green, production reachability, public support, or EDH-01 closure.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:runtime-native-evaluation-math",
+      "command": "npm run check:runtime-native-evaluation-math",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Pins the private consumer-zero vivi-runtime-native-evaluation-math oracle foundation to the exact approved Evaluation Deterministic Math Contract v1 draft, vectors, and APPROVE record plus the byte-identical tracked fixture. It pins the complete production/build closure to direct fpmath =0.1.1 with default features disabled and soft-float only, direct rustc_apfloat =0.2.3 with default features disabled and no named features, bitflags 2.13.1 with no named features, and smallvec 1.15.2 with const_generics and union. Cargo requirements ignore build metadata, so the full rustc_apfloat 0.2.3+llvm-462a31f5a5ab identity is separately pinned by exact registry source, Cargo.lock checksum, archive bytes/hash, and checker; license metadata, requested/resolved features, rustc_apfloat build-script scope, and the reviewed fpmath/APFloat/bitflags source-member and function projection are also pinned. The production crate is publish=false, rlib-only, no_std, and forbid(unsafe_code), and its callable wrapper stays crate-private. It implements exactly the 21 raw-bit callables and does not implement checkpoints, graph scheduling, or status mapping; those obligations remain future category-10 evaluator work. Its raw-D64 boundary uses rustc_apfloat Double for primitive arithmetic/comparison and c_fmod, fpmath SoftF64 for sin/cos/atan2/acos/sqrt, canonical NaN, signed-zero and subnormal preservation, and no host-f64 arithmetic/libm, FMA/mul_add, reassociation, ieee_rem, decimal conversion, SoftF32, host conversion, filesystem, network, FFI, serde, or production export. The focused gate pins exact source/API/test/fixture identities, the crate's empty production-consumer graph, no lowerer/core/TypeScript/C ABI/runtime-WASM connection, the exact source-call allowlist and reviewed selected dependency source-member/function projection, the separate single-thread native allocator trap, Rust 1.89 rustfmt/native tests/Clippy/rustdoc, three-OS workflow wiring, and wasm32-unknown-unknown compile/Clippy source instrumentation only. Its broad repository-reference pass may enumerate Git paths but must never open, hash, or scan the three protected user-owned dirty bodies whose exact path set is pinned in the checker. That selected projection is fail-closed evidence for external implementation review, not a formal whole-program/compiler reachability proof or whole-dependency audit. The allocator trap is a separate test-only crate whose system-allocator forwarding necessarily uses unsafe; the production rlib's forbid(unsafe_code) does not describe that harness or dependencies. Compile-only wasm evidence is not raw-bit execution or cross-target parity, workflow wiring is not hosted CI green, and dependency-wide no-allocation/no-unsafe/security/license-fitness claims are not made. Category 9 full evaluator reservation remains open, as does evaluator-wide post-reservation allocation proof; category 10 remains disconnected pending all supported-target native plus test-only wasm raw-bit execution, expanded transcendental coverage, machine DAG/checkpoint bijection, complete compound traces, exact obligation bindings, and separate implementation review; category 11 topology/sealing/model-ready output and EDH-01 remain open.",
       "intentionallySplit": true,
       "escalatable": true
     },

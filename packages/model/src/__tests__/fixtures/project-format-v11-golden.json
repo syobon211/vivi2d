@@ -1,0 +1,346 @@
+{
+  "schema": "vivi2d.contractFreeze.projectFormatV11Fixtures.v1",
+  "jcs": [
+    {
+      "id": "empty-object",
+      "inputJson": "{}",
+      "expectedCanonical": "{}",
+      "expectedUtf8Bytes": 2,
+      "expectedSha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "id": "object-key-order",
+      "inputJson": "{\"b\":2,\"a\":1}",
+      "expectedCanonical": "{\"a\":1,\"b\":2}",
+      "expectedUtf8Bytes": 13,
+      "expectedSha256": "43258cff783fe7036d8a43033f830adfc60ec037382473548ac742b888292777"
+    },
+    {
+      "id": "unicode-code-units-no-normalization",
+      "inputJson": "{\"nfd\":\"e\\u0301\",\"nfc\":\"é\",\"astral\":\"😀\"}",
+      "expectedCanonical": "{\"astral\":\"😀\",\"nfc\":\"é\",\"nfd\":\"é\"}",
+      "expectedUtf8Bytes": 40,
+      "expectedSha256": "663bc3a652e3f8faafb087d21783aa2e32d6608303fb509d0f0679dca2561f9c"
+    },
+    {
+      "id": "number-integer",
+      "inputJson": "1",
+      "expectedCanonical": "1",
+      "expectedUtf8Bytes": 1,
+      "expectedSha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    },
+    {
+      "id": "number-decimal-spelling",
+      "inputJson": "1.0",
+      "expectedCanonical": "1",
+      "expectedUtf8Bytes": 1,
+      "expectedSha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    },
+    {
+      "id": "number-exponent-spelling",
+      "inputJson": "1e0",
+      "expectedCanonical": "1",
+      "expectedUtf8Bytes": 1,
+      "expectedSha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+    },
+    {
+      "id": "negative-zero",
+      "inputJson": "-0",
+      "expectedCanonical": "0",
+      "expectedUtf8Bytes": 1,
+      "expectedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "id": "max-safe-integer",
+      "inputJson": "9007199254740991",
+      "expectedCanonical": "9007199254740991",
+      "expectedUtf8Bytes": 16,
+      "expectedSha256": "f40b423c2dd95ff2b2f027e22208f438cf7242862e5e746860e697308c9add26"
+    },
+    {
+      "id": "first-unsafe-integer",
+      "inputJson": "9007199254740992",
+      "expectedError": "VIVI_FMT_INT_PRECISION_LOSS"
+    },
+    {
+      "id": "int64-max",
+      "inputJson": "9223372036854775807",
+      "expectedError": "VIVI_FMT_INT_PRECISION_LOSS"
+    },
+    {
+      "id": "duplicate-map-key",
+      "inputJson": "{\"a\":1,\"a\":2}",
+      "expectedError": "VIVI_FMT_DUPLICATE_MAP_KEY"
+    },
+    {
+      "id": "container-depth-64",
+      "inputGenerator": {
+        "kind": "nestedArrays",
+        "count": 64,
+        "leaf": 0
+      },
+      "depthDefinition": "A scalar is depth 0 and every containing array/object adds 1; therefore the root array in this vector is depth 64.",
+      "expectedCanonicalLength": 129,
+      "expectedSha256": "f0244ae1938270f711155b0a26a4307cde7050495140dd858a88a1cfc378cf40"
+    },
+    {
+      "id": "container-depth-65",
+      "inputGenerator": {
+        "kind": "nestedArrays",
+        "count": 65,
+        "leaf": 0
+      },
+      "expectedError": "VIVI_FMT_DEPTH_EXCEEDED"
+    }
+  ],
+  "v10RoundTrip": {
+    "input": {
+      "version": 10,
+      "profile": "publicProfileV1",
+      "project": {
+        "name": "contract-freeze-v10",
+        "width": 64,
+        "height": 64,
+        "layers": [],
+        "parameters": [],
+        "clips": [],
+        "scenes": [],
+        "physicsGroups": [],
+        "lipsyncConfig": {
+          "enabled": false,
+          "gain": 2,
+          "smoothing": 0.7,
+          "source": "microphone",
+          "targetParameterId": null,
+          "threshold": 0.02
+        },
+        "skins": {},
+        "parameterBindings": [],
+        "sceneBlends": [],
+        "ikControllers": [],
+        "offscreenTargets": [],
+        "expressionPresets": [],
+        "colliders": [],
+        "stateMachines": []
+      },
+      "atlases": [
+        {
+          "image": "AA==",
+          "width": 1,
+          "height": 1,
+          "entries": [
+            {
+              "layerId": "mesh-a",
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            }
+          ]
+        },
+        {
+          "image": "AQ==",
+          "width": 2,
+          "height": 2,
+          "entries": []
+        }
+      ]
+    },
+    "expectedVersion": 10,
+    "expectedRootKeySet": [
+      "atlases",
+      "profile",
+      "project",
+      "version"
+    ],
+    "expectedProjectKeySet": [
+      "clips",
+      "colliders",
+      "expressionPresets",
+      "height",
+      "ikControllers",
+      "layers",
+      "lipsyncConfig",
+      "name",
+      "offscreenTargets",
+      "parameterBindings",
+      "parameters",
+      "physicsGroups",
+      "sceneBlends",
+      "scenes",
+      "skins",
+      "stateMachines",
+      "width"
+    ],
+    "expectedAtlasKeySets": [
+      [
+        "entries",
+        "height",
+        "image",
+        "width"
+      ],
+      [
+        "entries",
+        "height",
+        "image",
+        "width"
+      ]
+    ],
+    "expectedAtlasEntryKeySets": [
+      [
+        "height",
+        "layerId",
+        "width",
+        "x",
+        "y"
+      ]
+    ],
+    "forbiddenV11Keys": [
+      "assetMode",
+      "assets",
+      "documentId",
+      "embeddedAssets",
+      "extensions",
+      "requires",
+      "schema"
+    ]
+  },
+  "requiresAggregation": [
+    {
+      "id": "aggregate-max-union-and-utf8-sort",
+      "sources": [
+        {
+          "kind": "known",
+          "requirements": [
+            {
+              "id": "z-renderer",
+              "minVersion": 1,
+              "requiredFor": [
+                "render"
+              ]
+            },
+            {
+              "id": "é-extension",
+              "minVersion": 4,
+              "requiredFor": [
+                "edit"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "requirements": [
+            {
+              "id": "z-renderer",
+              "minVersion": 3,
+              "requiredFor": [
+                "edit",
+                "render"
+              ]
+            },
+            {
+              "id": "alpha",
+              "minVersion": 2,
+              "requiredFor": [
+                "render"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "opaque",
+          "requirements": [
+            {
+              "id": "z-renderer",
+              "minVersion": 3,
+              "requiredFor": [
+                "render",
+                "edit"
+              ]
+            }
+          ]
+        }
+      ],
+      "expected": [
+        {
+          "id": "alpha",
+          "minVersion": 2,
+          "requiredFor": [
+            "render"
+          ]
+        },
+        {
+          "id": "z-renderer",
+          "minVersion": 3,
+          "requiredFor": [
+            "render",
+            "edit"
+          ]
+        },
+        {
+          "id": "é-extension",
+          "minVersion": 4,
+          "requiredFor": [
+            "edit"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "opaque-mismatch",
+      "sources": [
+        {
+          "kind": "opaque",
+          "requirements": [
+            {
+              "id": "opaque-feature",
+              "minVersion": 1,
+              "requiredFor": [
+                "render"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "known",
+          "requirements": [
+            {
+              "id": "opaque-feature",
+              "minVersion": 2,
+              "requiredFor": [
+                "edit"
+              ]
+            }
+          ]
+        }
+      ],
+      "expectedError": "VIVI_FMT_REQUIRES_MISMATCH"
+    },
+    {
+      "id": "duplicate-id-in-source",
+      "sources": [
+        {
+          "kind": "known",
+          "requirements": [
+            {
+              "id": "duplicate",
+              "minVersion": 1,
+              "requiredFor": [
+                "render"
+              ]
+            },
+            {
+              "id": "duplicate",
+              "minVersion": 1,
+              "requiredFor": [
+                "edit"
+              ]
+            }
+          ]
+        }
+      ],
+      "expectedError": "VIVI_FMT_DUPLICATE_REQUIRES_ID"
+    }
+  ]
+}

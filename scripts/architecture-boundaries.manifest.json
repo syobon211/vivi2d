@@ -106,6 +106,37 @@
       ]
     },
     {
+      "label": "editor-host must stay read-only and host-neutral",
+      "phase": "Q0",
+      "owner": "architecture-maintainers",
+      "layer": "editor-host",
+      "allowedUpstream": ["model"],
+      "publicationIntent": "internal",
+      "testOnlyExceptions": [],
+      "allowlist": [],
+      "pathPrefix": "packages/editor-host/src/",
+      "forbidden": [
+        "^(?!\\.|packages/editor-host(?:/|$)|@vivi2d/model/internal/(?:project-format-v11|evaluation-payload-v1)$)",
+        "^@/(?:.*)",
+        "^@vivi2d/(?!model(?:/|$))",
+        "^@vivi2d/model(?:$|/(?!internal/(?:project-format-v11|evaluation-payload-v1)$).*)",
+        "^packages/(?!editor-host/)",
+        "^src/",
+        "^apps/",
+        "^electron(?:/|$)",
+        "^node:",
+        "^(?:assert|buffer|child_process|crypto|events|fs|http|https|module|net|os|path|process|stream|url|util|worker_threads)(?:/|$)",
+        "^pixi\\.js(?:/|$)",
+        "^react(?:/|$)",
+        "^react-dom(?:/|$)",
+        "^three(?:/|$)",
+        "^phaser(?:/|$)",
+        "^vtubestudio(?:/|$)",
+        "^obs-websocket-js(?:/|$)",
+        "^zustand(?:/|$)"
+      ]
+    },
+    {
       "label": "provider-comfyui must stay provider-only",
       "phase": "Q0",
       "owner": "provider-boundary-maintainers",

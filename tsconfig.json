@@ -25,6 +25,8 @@
       "@vivi2d/model/*": ["./packages/model/src/*"],
       "@vivi2d/editor-core": ["./packages/editor-core/src/index.ts"],
       "@vivi2d/editor-core/*": ["./packages/editor-core/src/*"],
+      "@vivi2d/editor-host": ["./packages/editor-host/src/index.ts"],
+      "@vivi2d/editor-host/*": ["./packages/editor-host/src/*"],
       "@vivi2d/loader": ["./packages/loader/src/index.ts"],
       "@vivi2d/loader/*": ["./packages/loader/src/*"],
       "@vivi2d/runtime": ["./packages/runtime/src/index.ts"],

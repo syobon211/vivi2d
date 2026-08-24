@@ -1,0 +1,3314 @@
+{
+  "contract": "evaluation-lowering-v1",
+  "draft": 1,
+  "status": "external-review-required",
+  "numericFieldInventorySummary": {
+    "schemaSha256": "8d65b5ddea137a71894e57ba6e14c94576aad63b2b7586728fa2bcca5bb125a3",
+    "total": 100,
+    "domainCounts": {
+      "f64": 84,
+      "integer": 16
+    },
+    "candidateReachableCounts": {
+      "true": 76,
+      "false": 24
+    },
+    "loweringClassCounts": {
+      "exact-int": 15,
+      "direct-f32": 5,
+      "transitive-f32": 35,
+      "binary64-only": 21,
+      "unreachable": 24
+    }
+  },
+  "numericFieldPathNotation": {
+    "dot": "object property traversal",
+    "brackets": "[] means every array element; [n] means one fixed tuple slot",
+    "braces": "{name} means every value of an ID-keyed object map",
+    "recursiveLayers": "layers(recursive) means every LayerNode reached by depth-first traversal of top-level layers and the children array of any layer kind",
+    "alternation": "(a|b) denotes the same reusable schema field at either named branch; it is one canonical field shape unless tuple slots are enumerated",
+    "counting": "reusable RGB and keyframe numeric definitions are counted once per canonical field shape; six affine tuple slots are distinct; number|null leaves count as number; integer definitions are expanded at each concrete instance use site"
+  },
+  "numericFieldInventory": [
+    {
+      "id": "nf001",
+      "path": "canvas.width",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf001-checked-target-or-explicit-erasure",
+        "nf001-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf002",
+      "path": "canvas.height",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf002-checked-target-or-explicit-erasure",
+        "nf002-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf003",
+      "path": "layers(recursive)[].(multiplyColor|screenColor).r",
+      "domain": "f64",
+      "loweringClass": "direct-f32",
+      "candidateReachable": true,
+      "coverageProfile": "direct-f32",
+      "requiredVectorIds": [
+        "nf003-accept-lossy",
+        "nf003-positive-overflow",
+        "nf003-negative-overflow",
+        "nf003-positive-small-reject",
+        "nf003-negative-small-reject"
+      ]
+    },
+    {
+      "id": "nf004",
+      "path": "layers(recursive)[].(multiplyColor|screenColor).g",
+      "domain": "f64",
+      "loweringClass": "direct-f32",
+      "candidateReachable": true,
+      "coverageProfile": "direct-f32",
+      "requiredVectorIds": [
+        "nf004-accept-lossy",
+        "nf004-positive-overflow",
+        "nf004-negative-overflow",
+        "nf004-positive-small-reject",
+        "nf004-negative-small-reject"
+      ]
+    },
+    {
+      "id": "nf005",
+      "path": "layers(recursive)[].(multiplyColor|screenColor).b",
+      "domain": "f64",
+      "loweringClass": "direct-f32",
+      "candidateReachable": true,
+      "coverageProfile": "direct-f32",
+      "requiredVectorIds": [
+        "nf005-accept-lossy",
+        "nf005-positive-overflow",
+        "nf005-negative-overflow",
+        "nf005-positive-small-reject",
+        "nf005-negative-small-reject"
+      ]
+    },
+    {
+      "id": "nf006",
+      "path": "layers(recursive)[].mesh.vertices[]",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf006-operation-reaches-projected-output",
+        "nf006-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf007",
+      "path": "layers(recursive)[].mesh.uvs[]",
+      "domain": "f64",
+      "loweringClass": "direct-f32",
+      "candidateReachable": true,
+      "coverageProfile": "direct-f32",
+      "requiredVectorIds": [
+        "nf007-accept-lossy",
+        "nf007-positive-overflow",
+        "nf007-negative-overflow",
+        "nf007-positive-small-reject",
+        "nf007-negative-small-reject"
+      ]
+    },
+    {
+      "id": "nf008",
+      "path": "layers(recursive)[].mesh.indices[]",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf008-checked-target-or-explicit-erasure",
+        "nf008-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf009",
+      "path": "layers(recursive)[].mesh.divisionsX",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf009-checked-target-or-explicit-erasure",
+        "nf009-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf010",
+      "path": "layers(recursive)[].mesh.divisionsY",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf010-checked-target-or-explicit-erasure",
+        "nf010-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf011",
+      "path": "layers(recursive)[].bone.angle",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf011-operation-reaches-projected-output",
+        "nf011-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf012",
+      "path": "layers(recursive)[].bone.length",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf012-operation-reaches-projected-output",
+        "nf012-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf013",
+      "path": "layers(recursive)[].bone.scaleX",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf013-operation-reaches-projected-output",
+        "nf013-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf014",
+      "path": "layers(recursive)[].bone.scaleY",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf014-operation-reaches-projected-output",
+        "nf014-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf015",
+      "path": "layers(recursive)[].controlPoints[].x",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf015-no-f32-publication",
+        "nf015-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf016",
+      "path": "layers(recursive)[].controlPoints[].y",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf016-no-f32-publication",
+        "nf016-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf017",
+      "path": "layers(recursive)[].controlPoints[].handleInX",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf017-no-f32-publication",
+        "nf017-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf018",
+      "path": "layers(recursive)[].controlPoints[].handleInY",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf018-no-f32-publication",
+        "nf018-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf019",
+      "path": "layers(recursive)[].controlPoints[].handleOutX",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf019-no-f32-publication",
+        "nf019-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf020",
+      "path": "layers(recursive)[].controlPoints[].handleOutY",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf020-no-f32-publication",
+        "nf020-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf021",
+      "path": "layers(recursive)[].controlPoints[].width",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf021-no-f32-publication",
+        "nf021-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf022",
+      "path": "layers(recursive)[].controlPoints[].opacity",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf022-no-f32-publication",
+        "nf022-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf023",
+      "path": "layers(recursive)[].style.color",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf023-no-f32-publication",
+        "nf023-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf024",
+      "path": "layers(recursive)[].style.baseWidth",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf024-no-f32-publication",
+        "nf024-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf025",
+      "path": "layers(recursive)[].opacity",
+      "domain": "f64",
+      "loweringClass": "direct-f32",
+      "candidateReachable": true,
+      "coverageProfile": "direct-f32",
+      "requiredVectorIds": [
+        "nf025-accept-lossy",
+        "nf025-positive-overflow",
+        "nf025-negative-overflow",
+        "nf025-positive-small-reject",
+        "nf025-negative-small-reject"
+      ]
+    },
+    {
+      "id": "nf026",
+      "path": "layers(recursive)[].x",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf026-operation-reaches-projected-output",
+        "nf026-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf027",
+      "path": "layers(recursive)[].y",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf027-operation-reaches-projected-output",
+        "nf027-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf028",
+      "path": "layers(recursive)[].width",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf028-no-f32-publication",
+        "nf028-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf029",
+      "path": "layers(recursive)[].height",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf029-no-f32-publication",
+        "nf029-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf030",
+      "path": "layers(recursive)[].drawOrder",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf030-checked-target-or-explicit-erasure",
+        "nf030-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf031",
+      "path": "parameters[].minValue",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf031-operation-reaches-projected-output",
+        "nf031-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf032",
+      "path": "parameters[].maxValue",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf032-operation-reaches-projected-output",
+        "nf032-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf033",
+      "path": "parameters[].defaultValue",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf033-operation-reaches-projected-output",
+        "nf033-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf034",
+      "path": "parameterBindings[].bindingPoints[].paramValue",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf034-operation-reaches-projected-output",
+        "nf034-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf035",
+      "path": "parameterBindings[].bindingPoints[].targetValue",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf035-operation-reaches-projected-output",
+        "nf035-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf036",
+      "path": "skins{meshId}.weights[][].weight",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf036-operation-reaches-projected-output",
+        "nf036-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf037",
+      "path": "skins{meshId}.bindPoseInverse{boneId}[0]",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf037-operation-reaches-projected-output",
+        "nf037-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf038",
+      "path": "skins{meshId}.bindPoseInverse{boneId}[1]",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf038-operation-reaches-projected-output",
+        "nf038-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf039",
+      "path": "skins{meshId}.bindPoseInverse{boneId}[2]",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf039-operation-reaches-projected-output",
+        "nf039-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf040",
+      "path": "skins{meshId}.bindPoseInverse{boneId}[3]",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf040-operation-reaches-projected-output",
+        "nf040-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf041",
+      "path": "skins{meshId}.bindPoseInverse{boneId}[4]",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf041-operation-reaches-projected-output",
+        "nf041-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf042",
+      "path": "skins{meshId}.bindPoseInverse{boneId}[5]",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf042-operation-reaches-projected-output",
+        "nf042-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf043",
+      "path": "ikControllers[].boneChain[].minAngle",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf043-operation-reaches-projected-output",
+        "nf043-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf044",
+      "path": "ikControllers[].boneChain[].maxAngle",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf044-operation-reaches-projected-output",
+        "nf044-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf045",
+      "path": "ikControllers[].parameterMappings[].angleMin",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf045-no-f32-publication",
+        "nf045-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf046",
+      "path": "ikControllers[].parameterMappings[].angleMax",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf046-no-f32-publication",
+        "nf046-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf047",
+      "path": "ikControllers[].parameterMappings[].paramMin",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf047-no-f32-publication",
+        "nf047-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf048",
+      "path": "ikControllers[].parameterMappings[].paramMax",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf048-no-f32-publication",
+        "nf048-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf049",
+      "path": "ikControllers[].targetX",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf049-operation-reaches-projected-output",
+        "nf049-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf050",
+      "path": "ikControllers[].targetY",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf050-operation-reaches-projected-output",
+        "nf050-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf051",
+      "path": "ikControllers[].influence",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf051-operation-reaches-projected-output",
+        "nf051-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf052",
+      "path": "ikControllers[].poleTargetX",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf052-operation-reaches-projected-output",
+        "nf052-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf053",
+      "path": "ikControllers[].poleTargetY",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf053-operation-reaches-projected-output",
+        "nf053-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf054",
+      "path": "ikControllers[].maxIterations",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf054-checked-target-or-explicit-erasure",
+        "nf054-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf055",
+      "path": "physicsGroups[].pendulums[].length",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf055-operation-reaches-projected-output",
+        "nf055-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf056",
+      "path": "physicsGroups[].pendulums[].mass",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf056-operation-reaches-projected-output",
+        "nf056-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf057",
+      "path": "physicsGroups[].pendulums[].damping",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf057-operation-reaches-projected-output",
+        "nf057-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf058",
+      "path": "physicsGroups[].inputs[].weight",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf058-operation-reaches-projected-output",
+        "nf058-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf059",
+      "path": "physicsGroups[].outputs[].pendulumIndex",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf059-checked-target-or-explicit-erasure",
+        "nf059-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf060",
+      "path": "physicsGroups[].outputs[].weight",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf060-operation-reaches-projected-output",
+        "nf060-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf061",
+      "path": "physicsGroups[].gravityDirection",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf061-operation-reaches-projected-output",
+        "nf061-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf062",
+      "path": "physicsGroups[].gravityStrength",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf062-operation-reaches-projected-output",
+        "nf062-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf063",
+      "path": "physicsGroups[].wind",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf063-operation-reaches-projected-output",
+        "nf063-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf064",
+      "path": "colliders[].shape.x",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf064-no-f32-publication",
+        "nf064-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf065",
+      "path": "colliders[].shape.y",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf065-no-f32-publication",
+        "nf065-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf066",
+      "path": "colliders[].shape.width",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf066-no-f32-publication",
+        "nf066-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf067",
+      "path": "colliders[].shape.height",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf067-no-f32-publication",
+        "nf067-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf068",
+      "path": "colliders[].shape.radius",
+      "domain": "f64",
+      "loweringClass": "binary64-only",
+      "candidateReachable": true,
+      "coverageProfile": "binary64-only",
+      "requiredVectorIds": [
+        "nf068-no-f32-publication",
+        "nf068-retain-or-explicit-erasure"
+      ]
+    },
+    {
+      "id": "nf069",
+      "path": "expressionPresets[].values{parameterId}",
+      "domain": "f64",
+      "loweringClass": "transitive-f32",
+      "candidateReachable": true,
+      "coverageProfile": "transitive-f32",
+      "requiredVectorIds": [
+        "nf069-operation-reaches-projected-output",
+        "nf069-applicable-phase-status-and-rollback"
+      ]
+    },
+    {
+      "id": "nf070",
+      "path": "expressionPresets[].hotkey",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf070-checked-target-or-explicit-erasure",
+        "nf070-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf071",
+      "path": "clips[].(tracks[].keyframes[]|boneTracks[].keyframes[]|ikControllerTracks[].(targetXKeyframes|targetYKeyframes)[]).frame",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf071-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf072",
+      "path": "clips[].(tracks[].keyframes[]|boneTracks[].keyframes[]|ikControllerTracks[].(targetXKeyframes|targetYKeyframes)[]).value",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf072-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf073",
+      "path": "clips[].(tracks[].keyframes[]|boneTracks[].keyframes[]|ikControllerTracks[].(targetXKeyframes|targetYKeyframes)[]).cp1x",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf073-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf074",
+      "path": "clips[].(tracks[].keyframes[]|boneTracks[].keyframes[]|ikControllerTracks[].(targetXKeyframes|targetYKeyframes)[]).cp1y",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf074-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf075",
+      "path": "clips[].(tracks[].keyframes[]|boneTracks[].keyframes[]|ikControllerTracks[].(targetXKeyframes|targetYKeyframes)[]).cp2x",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf075-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf076",
+      "path": "clips[].(tracks[].keyframes[]|boneTracks[].keyframes[]|ikControllerTracks[].(targetXKeyframes|targetYKeyframes)[]).cp2y",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf076-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf077",
+      "path": "clips[].(tracks[].keyframes[]|boneTracks[].keyframes[]|ikControllerTracks[].(targetXKeyframes|targetYKeyframes)[]).ellipseRatio",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf077-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf078",
+      "path": "clips[].(tracks[].keyframes[]|boneTracks[].keyframes[]|ikControllerTracks[].(targetXKeyframes|targetYKeyframes)[]).snsOscillations",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf078-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf079",
+      "path": "clips[].(tracks[].keyframes[]|boneTracks[].keyframes[]|ikControllerTracks[].(targetXKeyframes|targetYKeyframes)[]).snsDamping",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf079-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf080",
+      "path": "clips[].imageSequenceTracks[].entries[].startFrame",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf080-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf081",
+      "path": "clips[].audioTracks[].startFrame",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf081-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf082",
+      "path": "clips[].audioTracks[].sourceDurationSeconds",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf082-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf083",
+      "path": "clips[].audioTracks[].gain",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf083-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf084",
+      "path": "clips[].lipSyncTracks[].analysisFps",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf084-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf085",
+      "path": "clips[].lipSyncTracks[].samples[]",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf085-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf086",
+      "path": "clips[].lipSyncTracks[].sourceDurationSecondsAtBake",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf086-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf087",
+      "path": "clips[].lipSyncTracks[].gain",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf087-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf088",
+      "path": "clips[].duration",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf088-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf089",
+      "path": "clips[].fps",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf089-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf090",
+      "path": "stateMachines[].transitions[].conditions[].threshold",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf090-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf091",
+      "path": "stateMachines[].states[].blendTree.entries[].threshold",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf091-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf092",
+      "path": "stateMachines[].transitions[].transitionDuration",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf092-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf093",
+      "path": "stateMachines[].transitions[].priority",
+      "domain": "integer",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf093-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf094",
+      "path": "stateMachines[].weight",
+      "domain": "f64",
+      "loweringClass": "unreachable",
+      "candidateReachable": false,
+      "coverageProfile": "unreachable",
+      "requiredVectorIds": [
+        "nf094-upstream-no-candidate"
+      ]
+    },
+    {
+      "id": "nf095",
+      "path": "atlases[].width",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf095-checked-target-or-explicit-erasure",
+        "nf095-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf096",
+      "path": "atlases[].height",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf096-checked-target-or-explicit-erasure",
+        "nf096-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf097",
+      "path": "atlases[].entries[].x",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf097-checked-target-or-explicit-erasure",
+        "nf097-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf098",
+      "path": "atlases[].entries[].y",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf098-checked-target-or-explicit-erasure",
+        "nf098-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf099",
+      "path": "atlases[].entries[].width",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf099-checked-target-or-explicit-erasure",
+        "nf099-no-f32-route"
+      ]
+    },
+    {
+      "id": "nf100",
+      "path": "atlases[].entries[].height",
+      "domain": "integer",
+      "loweringClass": "exact-int",
+      "candidateReachable": true,
+      "coverageProfile": "exact-int",
+      "requiredVectorIds": [
+        "nf100-checked-target-or-explicit-erasure",
+        "nf100-no-f32-route"
+      ]
+    }
+  ],
+  "numericOwnerDispositions": [
+    {
+      "fieldFamily": "common-layer.multiplyColor|screenColor.rgb",
+      "owners": {
+        "viviMesh": "allocation-free-direct-f32",
+        "group": "erase-runtime-inert-metadata-after-feature-scan",
+        "bone": "erase-runtime-inert-metadata-after-feature-scan",
+        "artPath": "feature-status-2-precedes-numeric-work"
+      }
+    },
+    {
+      "fieldFamily": "common-layer.opacity",
+      "owners": {
+        "viviMesh": "allocation-free-direct-f32",
+        "group": "erase-runtime-inert-metadata",
+        "bone": "erase-runtime-inert-metadata",
+        "artPath": "feature-status-2-precedes-numeric-work"
+      }
+    },
+    {
+      "fieldFamily": "common-layer.x|y",
+      "owners": {
+        "viviMesh-unskinned": "allocation-free-direct-f32; hit offset is the projected-f32 value widened to f64",
+        "viviMesh-skinned": "erase-input-and-publish-positive-zero",
+        "bone": "retain-binary64-and-feed-derived-skin-ik-output",
+        "group": "erase-runtime-inert-metadata",
+        "artPath": "feature-status-2-precedes-numeric-work"
+      }
+    },
+    {
+      "fieldFamily": "common-layer.width|height",
+      "owners": {
+        "group": "erase-runtime-inert-metadata",
+        "bone": "erase-runtime-inert-metadata",
+        "viviMesh": "erase-runtime-inert-metadata",
+        "artPath": "feature-status-2-precedes-numeric-work"
+      }
+    },
+    {
+      "fieldFamily": "mesh.vertices",
+      "owners": {
+        "viviMesh-unskinned": "allocation-free-direct-f32",
+        "viviMesh-skinned": "retain-binary64-input-and-project-derived-f32"
+      }
+    },
+    {
+      "fieldFamily": "mesh.uvs",
+      "owners": {
+        "viviMesh": "allocation-free-direct-f32"
+      }
+    },
+    {
+      "fieldFamily": "bone.angle|length|scaleX|scaleY",
+      "owners": {
+        "bone": "retain-binary64-and-feed-derived-skin-ik-output"
+      }
+    },
+    {
+      "fieldFamily": "artPath.controlPoints|style",
+      "owners": {
+        "artPath": "feature-status-2-precedes-numeric-work"
+      }
+    },
+    {
+      "fieldFamily": "ikControllers.parameterMappings",
+      "owners": {
+        "ikController": "feature-status-2-precedes-numeric-work"
+      }
+    },
+    {
+      "fieldFamily": "parameters|bindings|skins|ik|physics|expressions",
+      "owners": {
+        "evaluator": "retain-binary64-and-project-only-derived-render-output"
+      }
+    },
+    {
+      "fieldFamily": "colliders.shape.x|y|width|height|radius",
+      "owners": {
+        "rect-or-circle": "retain-binary64-for-hit-testing; never-publish-f32",
+        "mesh-collider": "no-numeric-shape-fields; consume-projected-mesh-vertices-and-projected-f32-offset-widened-to-f64"
+      }
+    }
+  ],
+  "integerUseDispositions": [
+    {
+      "id": "int-01",
+      "path": "canvas.width",
+      "target": "private-u64-canvas-metadata",
+      "narrowing": "none"
+    },
+    {
+      "id": "int-02",
+      "path": "canvas.height",
+      "target": "private-u64-canvas-metadata",
+      "narrowing": "none"
+    },
+    {
+      "id": "int-03",
+      "path": "layers(recursive)[].drawOrder",
+      "target": "viviMesh-i32-snapshot-and-topology; erase-for-group-bone; artPath-feature-first",
+      "narrowing": "schema-signed-int32",
+      "omittedDefault": 500
+    },
+    {
+      "id": "int-04",
+      "path": "layers(recursive)[].mesh.indices[]",
+      "target": "u32-index-buffer",
+      "narrowing": "Stage2-value-below-65536"
+    },
+    {
+      "id": "int-05",
+      "path": "layers(recursive)[].mesh.divisionsX",
+      "target": "erase-after-validation",
+      "narrowing": "none"
+    },
+    {
+      "id": "int-06",
+      "path": "layers(recursive)[].mesh.divisionsY",
+      "target": "erase-after-validation",
+      "narrowing": "none"
+    },
+    {
+      "id": "int-07",
+      "path": "ikControllers[].maxIterations",
+      "target": "bounded-u32-or-usize-evaluator-input",
+      "narrowing": "schema-1-to-1024; omitted-default-10"
+    },
+    {
+      "id": "int-08",
+      "path": "physicsGroups[].outputs[].pendulumIndex",
+      "target": "checked-u32-or-usize-evaluator-index",
+      "narrowing": "Stage2-index-below-pendulum-count"
+    },
+    {
+      "id": "int-09",
+      "path": "expressionPresets[].hotkey",
+      "target": "exact-u64-and-canonical-base10-metadata",
+      "narrowing": "none"
+    },
+    {
+      "id": "int-10",
+      "path": "stateMachines[].transitions[].priority",
+      "target": "upstream-unreachable",
+      "narrowing": "none"
+    },
+    {
+      "id": "int-11",
+      "path": "atlases[].width",
+      "target": "u32-texture-dimension",
+      "narrowing": "schema-1-to-8192"
+    },
+    {
+      "id": "int-12",
+      "path": "atlases[].height",
+      "target": "u32-texture-dimension",
+      "narrowing": "schema-1-to-8192"
+    },
+    {
+      "id": "int-13",
+      "path": "atlases[].entries[].x",
+      "target": "erase-after-stable-binding-validation",
+      "narrowing": "none"
+    },
+    {
+      "id": "int-14",
+      "path": "atlases[].entries[].y",
+      "target": "erase-after-stable-binding-validation",
+      "narrowing": "none"
+    },
+    {
+      "id": "int-15",
+      "path": "atlases[].entries[].width",
+      "target": "erase-after-stable-binding-validation",
+      "narrowing": "none"
+    },
+    {
+      "id": "int-16",
+      "path": "atlases[].entries[].height",
+      "target": "erase-after-stable-binding-validation",
+      "narrowing": "none"
+    }
+  ],
+  "numericCoverageProfiles": {
+    "direct-f32": {
+      "requiredPerFieldContext": [
+        "accept-lossy-normal",
+        "reject-positive-overflow",
+        "reject-negative-overflow",
+        "reject-positive-underflow-or-subnormal",
+        "reject-negative-underflow-or-subnormal"
+      ]
+    },
+    "transitive-f32": {
+      "requiredPerFieldContext": [
+        "named-operation-reaches-projected-output",
+        "status-and-rollback-for-each-applicable-phase"
+      ],
+      "phaseApplicability": {
+        "initial-and-update": [
+          "bone-transform",
+          "parameter-default-or-input",
+          "parameter-binding",
+          "skin-weight-or-bind-pose",
+          "eligible-ik",
+          "bone-owner-common-x-y"
+        ],
+        "update-required-and-initial-when-consumed-by-zero-step-initialization": [
+          "physics-coefficient-or-weight-or-gravity-or-wind"
+        ],
+        "explicit-application-and-following-update": [
+          "expression-preset-value-when-applied"
+        ],
+        "owner-conditioned": [
+          "mesh-unskinned-direct",
+          "mesh-skinned-derived",
+          "group-erased",
+          "artPath-feature-first"
+        ]
+      }
+    },
+    "binary64-only": {
+      "requiredPerFieldContext": [
+        "no-f32-publication",
+        "retain-or-explicit-feature-first-erasure"
+      ]
+    },
+    "exact-int": {
+      "requiredPerFieldContext": [
+        "checked-target-or-explicit-erasure",
+        "no-f32-route"
+      ]
+    },
+    "unreachable": {
+      "requiredPerFieldContext": [
+        "upstream-nonempty-clip-or-state-machine-status-2"
+      ]
+    }
+  },
+  "numericCoverageBinding": {
+    "rule": "every numericFieldInventory row receives stable id nf001..nf100 and coverageProfile equal to loweringClass; owner-conditioned outcomes are expanded by numericOwnerDispositions",
+    "requiredCoverage": "100-of-100-before-core-connection",
+    "ownerDispositionCoverageProfiles": {
+      "allocation-free-direct-f32": "direct-f32",
+      "retain-binary64-and-feed-derived-skin-ik-output": "transitive-f32",
+      "retain-binary64-and-project-only-derived-render-output": "transitive-f32",
+      "retain-binary64-for-hit-testing; never-publish-f32": "binary64-only",
+      "erase-runtime-inert-metadata": "explicit-erasure-no-f32-publication",
+      "erase-runtime-inert-metadata-after-feature-scan": "explicit-erasure-no-f32-publication",
+      "feature-status-2-precedes-numeric-work": "feature-precedes-no-numeric-work"
+    },
+    "ownerContextOverrides": [
+      {
+        "inventoryIds": [
+          "nf003",
+          "nf004",
+          "nf005"
+        ],
+        "contexts": [
+          "viviMesh:direct-f32",
+          "group:explicit-erasure",
+          "bone:explicit-erasure",
+          "artPath:feature-status-2"
+        ],
+        "requiredOwnerContextVectorIds": [
+          "nf003-nf004-nf005-owner-context-01",
+          "nf003-nf004-nf005-owner-context-02",
+          "nf003-nf004-nf005-owner-context-03",
+          "nf003-nf004-nf005-owner-context-04"
+        ]
+      },
+      {
+        "inventoryIds": [
+          "nf006"
+        ],
+        "contexts": [
+          "viviMesh-unskinned:direct-f32",
+          "viviMesh-skinned:transitive-f32"
+        ],
+        "requiredOwnerContextVectorIds": [
+          "nf006-owner-context-01",
+          "nf006-owner-context-02"
+        ]
+      },
+      {
+        "inventoryIds": [
+          "nf025"
+        ],
+        "contexts": [
+          "viviMesh:direct-f32",
+          "group:explicit-erasure",
+          "bone:explicit-erasure",
+          "artPath:feature-status-2"
+        ],
+        "requiredOwnerContextVectorIds": [
+          "nf025-owner-context-01",
+          "nf025-owner-context-02",
+          "nf025-owner-context-03",
+          "nf025-owner-context-04"
+        ]
+      },
+      {
+        "inventoryIds": [
+          "nf026",
+          "nf027"
+        ],
+        "contexts": [
+          "viviMesh-unskinned:direct-f32",
+          "viviMesh-skinned:explicit-erasure-and-positive-zero",
+          "bone:transitive-f32",
+          "group:explicit-erasure",
+          "artPath:feature-status-2"
+        ],
+        "requiredOwnerContextVectorIds": [
+          "nf026-nf027-owner-context-01",
+          "nf026-nf027-owner-context-02",
+          "nf026-nf027-owner-context-03",
+          "nf026-nf027-owner-context-04",
+          "nf026-nf027-owner-context-05"
+        ]
+      },
+      {
+        "inventoryIds": [
+          "nf028",
+          "nf029"
+        ],
+        "contexts": [
+          "group:explicit-erasure",
+          "bone:explicit-erasure",
+          "viviMesh:explicit-erasure",
+          "artPath:feature-status-2"
+        ],
+        "requiredOwnerContextVectorIds": [
+          "nf028-nf029-owner-context-01",
+          "nf028-nf029-owner-context-02",
+          "nf028-nf029-owner-context-03",
+          "nf028-nf029-owner-context-04"
+        ]
+      },
+      {
+        "inventoryIds": [
+          "nf030"
+        ],
+        "contexts": [
+          "viviMesh:exact-i32",
+          "group:explicit-erasure",
+          "bone:explicit-erasure",
+          "artPath:feature-status-2"
+        ],
+        "requiredOwnerContextVectorIds": [
+          "nf030-owner-context-01",
+          "nf030-owner-context-02",
+          "nf030-owner-context-03",
+          "nf030-owner-context-04"
+        ]
+      }
+    ]
+  },
+  "numericProjection": [
+    {
+      "id": "positive-zero-canonical",
+      "inputBinary64Bits": "0000000000000000",
+      "expected": "accept",
+      "outputBinary32Bits": "00000000"
+    },
+    {
+      "id": "negative-zero-canonical",
+      "inputBinary64Bits": "8000000000000000",
+      "expected": "accept",
+      "outputBinary32Bits": "00000000"
+    },
+    {
+      "id": "positive-one-exact",
+      "inputBinary64Bits": "3ff0000000000000",
+      "expected": "accept",
+      "outputBinary32Bits": "3f800000"
+    },
+    {
+      "id": "negative-one-exact",
+      "inputBinary64Bits": "bff0000000000000",
+      "expected": "accept",
+      "outputBinary32Bits": "bf800000"
+    },
+    {
+      "id": "decimal-point-one-normal-loss",
+      "inputBinary64Bits": "3fb999999999999a",
+      "expected": "accept",
+      "outputBinary32Bits": "3dcccccd"
+    },
+    {
+      "id": "round-ties-to-even-down",
+      "inputBinary64Bits": "3ff0000010000000",
+      "expected": "accept",
+      "outputBinary32Bits": "3f800000"
+    },
+    {
+      "id": "just-above-rounding-midpoint",
+      "inputBinary64Bits": "3ff0000010000001",
+      "expected": "accept",
+      "outputBinary32Bits": "3f800001"
+    },
+    {
+      "id": "round-ties-to-even-up",
+      "inputBinary64Bits": "3ff0000030000000",
+      "expected": "accept",
+      "outputBinary32Bits": "3f800002"
+    },
+    {
+      "id": "integer-16777217-rounds-to-16777216",
+      "inputBinary64Bits": "4170000010000000",
+      "expected": "accept",
+      "outputBinary32Bits": "4b800000"
+    },
+    {
+      "id": "maximum-finite-binary32",
+      "inputBinary64Bits": "47efffffe0000000",
+      "expected": "accept",
+      "outputBinary32Bits": "7f7fffff"
+    },
+    {
+      "id": "next-binary64-after-maximum-binary32-still-rounds-finite",
+      "inputBinary64Bits": "47efffffe0000001",
+      "expected": "accept",
+      "outputBinary32Bits": "7f7fffff"
+    },
+    {
+      "id": "binary32-overflow-boundary-predecessor",
+      "inputBinary64Bits": "47efffffefffffff",
+      "expected": "accept",
+      "outputBinary32Bits": "7f7fffff"
+    },
+    {
+      "id": "binary32-overflow-rounding-boundary",
+      "inputBinary64Bits": "47effffff0000000",
+      "expected": "reject",
+      "roundedBinary32Bits": "7f800000",
+      "privateKind": "NumericOverflow",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "negative-binary32-overflow-boundary-predecessor",
+      "inputBinary64Bits": "c7efffffefffffff",
+      "expected": "accept",
+      "outputBinary32Bits": "ff7fffff"
+    },
+    {
+      "id": "negative-binary32-overflow-rounding-boundary",
+      "inputBinary64Bits": "c7effffff0000000",
+      "expected": "reject",
+      "roundedBinary32Bits": "ff800000",
+      "privateKind": "NumericOverflow",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "maximum-finite-binary64-overflow",
+      "inputBinary64Bits": "7fefffffffffffff",
+      "expected": "reject",
+      "roundedBinary32Bits": "7f800000",
+      "privateKind": "NumericOverflow",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "minimum-positive-normal-binary32",
+      "inputBinary64Bits": "3810000000000000",
+      "expected": "accept",
+      "outputBinary32Bits": "00800000"
+    },
+    {
+      "id": "negative-minimum-normal-binary32",
+      "inputBinary64Bits": "b810000000000000",
+      "expected": "accept",
+      "outputBinary32Bits": "80800000"
+    },
+    {
+      "id": "normal-subnormal-tie-rounds-normal",
+      "inputBinary64Bits": "380fffffe0000000",
+      "expected": "accept",
+      "outputBinary32Bits": "00800000"
+    },
+    {
+      "id": "negative-normal-subnormal-tie-rounds-normal",
+      "inputBinary64Bits": "b80fffffe0000000",
+      "expected": "accept",
+      "outputBinary32Bits": "80800000"
+    },
+    {
+      "id": "normal-subnormal-tie-predecessor",
+      "inputBinary64Bits": "380fffffdfffffff",
+      "expected": "reject",
+      "roundedBinary32Bits": "007fffff",
+      "privateKind": "NumericSubnormal",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "negative-normal-subnormal-tie-predecessor",
+      "inputBinary64Bits": "b80fffffdfffffff",
+      "expected": "reject",
+      "roundedBinary32Bits": "807fffff",
+      "privateKind": "NumericSubnormal",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "below-normal-subnormal-tie-rounds-subnormal",
+      "inputBinary64Bits": "380fffffd0000000",
+      "expected": "reject",
+      "roundedBinary32Bits": "007fffff",
+      "privateKind": "NumericSubnormal",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "largest-positive-subnormal-rejected",
+      "inputBinary64Bits": "380fffffc0000000",
+      "expected": "reject",
+      "roundedBinary32Bits": "007fffff",
+      "privateKind": "NumericSubnormal",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "largest-negative-subnormal-rejected",
+      "inputBinary64Bits": "b80fffffc0000000",
+      "expected": "reject",
+      "roundedBinary32Bits": "807fffff",
+      "privateKind": "NumericSubnormal",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "minimum-positive-subnormal-rejected",
+      "inputBinary64Bits": "36a0000000000000",
+      "expected": "reject",
+      "roundedBinary32Bits": "00000001",
+      "privateKind": "NumericSubnormal",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "half-minimum-subnormal-underflow",
+      "inputBinary64Bits": "3690000000000000",
+      "expected": "reject",
+      "roundedBinary32Bits": "00000000",
+      "privateKind": "NumericUnderflow",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "negative-half-minimum-subnormal-underflow",
+      "inputBinary64Bits": "b690000000000000",
+      "expected": "reject",
+      "roundedBinary32Bits": "80000000",
+      "privateKind": "NumericUnderflow",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "above-half-minimum-subnormal-rounds-subnormal",
+      "inputBinary64Bits": "3690000000000001",
+      "expected": "reject",
+      "roundedBinary32Bits": "00000001",
+      "privateKind": "NumericSubnormal",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    },
+    {
+      "id": "negative-above-half-minimum-subnormal-rounds-subnormal",
+      "inputBinary64Bits": "b690000000000001",
+      "expected": "reject",
+      "roundedBinary32Bits": "80000001",
+      "privateKind": "NumericSubnormal",
+      "initialStatus": 14,
+      "dynamicStatus": 9
+    }
+  ],
+  "blendModes": [
+    {
+      "input": "normal",
+      "expected": "accept",
+      "runtimeValue": 0
+    },
+    {
+      "input": "multiply",
+      "expected": "accept",
+      "runtimeValue": 1
+    },
+    {
+      "input": "screen",
+      "expected": "accept",
+      "runtimeValue": 2
+    },
+    {
+      "input": "add",
+      "expected": "accept",
+      "runtimeValue": 3
+    },
+    {
+      "input": "overlay",
+      "expected": "reject",
+      "status": 2
+    },
+    {
+      "input": "darken",
+      "expected": "reject",
+      "status": 2
+    },
+    {
+      "input": "lighten",
+      "expected": "reject",
+      "status": 2
+    },
+    {
+      "input": "color-dodge",
+      "expected": "reject",
+      "status": 2
+    },
+    {
+      "input": "color-burn",
+      "expected": "reject",
+      "status": 2
+    },
+    {
+      "input": "hard-light",
+      "expected": "reject",
+      "status": 2
+    },
+    {
+      "input": "soft-light",
+      "expected": "reject",
+      "status": 2
+    },
+    {
+      "input": "difference",
+      "expected": "reject",
+      "status": 2
+    },
+    {
+      "input": "exclusion",
+      "expected": "reject",
+      "status": 2
+    }
+  ],
+  "blendScanContexts": [
+    "group-visible",
+    "group-invisible",
+    "bone-visible",
+    "bone-invisible",
+    "viviMesh-visible",
+    "viviMesh-invisible",
+    "viviMesh-mask-only"
+  ],
+  "blendCoverageBinding": {
+    "rule": "execute the Cartesian product of all 13 blendModes and all 7 blendScanContexts",
+    "requiredCases": 91,
+    "unsupportedPlusNumericFault": "unsupported blend status 2 wins with zero store reads"
+  },
+  "derivedProjection": [
+    {
+      "id": "initial-derived-positive-infinity",
+      "derivedBinary64Bits": "7ff0000000000000",
+      "phase": "initial",
+      "expected": "reject-before-read",
+      "privateKind": "NumericNonFinite",
+      "status": 14
+    },
+    {
+      "id": "initial-derived-quiet-nan",
+      "derivedBinary64Bits": "7ff8000000000000",
+      "phase": "initial",
+      "expected": "reject-before-read",
+      "privateKind": "NumericNonFinite",
+      "status": 14
+    },
+    {
+      "id": "dynamic-derived-negative-infinity",
+      "derivedBinary64Bits": "fff0000000000000",
+      "phase": "update",
+      "expected": "reject-transactionally",
+      "privateKind": "NumericNonFinite",
+      "status": 9
+    }
+  ],
+  "eligibility": [
+    {
+      "id": "art-path-even-when-invisible",
+      "shape": "any artPath layer",
+      "expected": "reject-before-read",
+      "privateKind": "UnsupportedLayer",
+      "status": 2
+    },
+    {
+      "id": "mask-on-group",
+      "shape": "group with clipMaskIds or clipMasks",
+      "expected": "reject-before-read",
+      "privateKind": "UnsupportedMaskPlacement",
+      "status": 2
+    },
+    {
+      "id": "mask-on-bone",
+      "shape": "bone with clipMaskIds or clipMasks",
+      "expected": "reject-before-read",
+      "privateKind": "UnsupportedMaskPlacement",
+      "status": 2
+    },
+    {
+      "id": "non-empty-ik-parameter-mappings",
+      "shape": "IK controller with one or more parameterMappings",
+      "expected": "reject-before-read",
+      "privateKind": "UnsupportedIkParameterMappings",
+      "status": 2
+    },
+    {
+      "id": "duplicate-ik-bone-id",
+      "shape": "one IK boneChain contains the same boneId twice",
+      "expected": "reject-before-read",
+      "privateKind": "UnsupportedDuplicateIkBone",
+      "status": 2
+    },
+    {
+      "id": "multiple-ik-controllers",
+      "shape": "two or more IK controllers",
+      "expected": "reject-before-read",
+      "privateKind": "UnsupportedMultipleIkControllers",
+      "status": 2
+    },
+    {
+      "id": "multiple-enabled-physics-groups",
+      "shape": "two or more enabled physics groups",
+      "expected": "reject-before-read",
+      "privateKind": "UnsupportedMultipleEnabledPhysicsGroups",
+      "status": 2
+    },
+    {
+      "id": "ik-base-influence-below-zero",
+      "shape": "IK controller with influence < 0",
+      "expected": "reject-before-read",
+      "privateKind": "InvalidIkRange",
+      "status": 14
+    },
+    {
+      "id": "ik-base-influence-above-one",
+      "shape": "IK controller with influence > 1",
+      "expected": "reject-before-read",
+      "privateKind": "InvalidIkRange",
+      "status": 14
+    },
+    {
+      "id": "ik-reversed-angle-range",
+      "shape": "IK bone constraint with minAngle > maxAngle",
+      "expected": "reject-before-read",
+      "privateKind": "InvalidIkRange",
+      "status": 14
+    },
+    {
+      "id": "zero-ik-controllers",
+      "shape": "empty IK controller array",
+      "expected": "accept"
+    },
+    {
+      "id": "ik-base-influence-closed-boundaries",
+      "shape": "one IK controller tested at base influence 0 and 1",
+      "expected": "accept",
+      "acceptedValues": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ik-equal-angle-range",
+      "shape": "IK bone constraint with minAngle equal to maxAngle",
+      "expected": "accept"
+    },
+    {
+      "id": "ik-bound-influence-clamps",
+      "shape": "binding-derived IK influence tested below 0 and above 1",
+      "expected": "accept",
+      "inputValues": [
+        -1,
+        2
+      ],
+      "effectiveValues": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ordinary-mask-edges",
+      "shape": "viviMesh with ordered clipMaskIds",
+      "expected": "accept",
+      "normalizedInvertBits": [
+        false,
+        false
+      ]
+    },
+    {
+      "id": "invert-mask-edges",
+      "shape": "viviMesh with ordered clipMasks",
+      "expected": "accept",
+      "normalizedInvertBits": [
+        true,
+        false
+      ]
+    },
+    {
+      "id": "supported-ik-without-parameter-mappings",
+      "shape": "IK controller with empty parameterMappings",
+      "expected": "accept"
+    }
+  ],
+  "maskCommandVectors": [
+    {
+      "id": "one-ordinary-mask",
+      "scope": "target-command-fragment",
+      "targetSlot": 2,
+      "normalizedEdges": [
+        {
+          "sourceSlot": 0,
+          "invert": false
+        }
+      ],
+      "expectedCommands": [
+        [
+          24,
+          2,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          24,
+          1,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          24,
+          3,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "ordered-mixed-invert-siblings",
+      "scope": "target-command-fragment",
+      "targetSlot": 3,
+      "normalizedEdges": [
+        {
+          "sourceSlot": 0,
+          "invert": true
+        },
+        {
+          "sourceSlot": 1,
+          "invert": false
+        }
+      ],
+      "expectedCommands": [
+        [
+          24,
+          2,
+          0,
+          1,
+          1,
+          0
+        ],
+        [
+          24,
+          2,
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          24,
+          1,
+          3,
+          2,
+          0,
+          0
+        ],
+        [
+          24,
+          3,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          24,
+          3,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "equal-draw-order-uses-mesh-slot",
+      "targets": [
+        {
+          "drawOrder": 7,
+          "meshSlot": 4
+        },
+        {
+          "drawOrder": 7,
+          "meshSlot": 2
+        }
+      ],
+      "expectedTargetOrder": [
+        2,
+        4
+      ]
+    },
+    {
+      "id": "legacy-abi-fails-closed-for-nonempty-mask-topology",
+      "requiredFeatureBit": 1,
+      "privateKind": "RequiredRenderFeature",
+      "legacyStatus": 13,
+      "wasmEvaluationSurface": false
+    },
+    {
+      "id": "nested-mask-dependencies-expand-depth-first",
+      "scope": "target-command-fragment",
+      "topology": "mask0 <- mask1; target edges [mask1, mask2]",
+      "expectedCommands": [
+        [
+          24,
+          2,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          24,
+          2,
+          1,
+          2,
+          0,
+          0
+        ],
+        [
+          24,
+          2,
+          2,
+          3,
+          0,
+          0
+        ],
+        [
+          24,
+          1,
+          3,
+          3,
+          0,
+          0
+        ],
+        [
+          24,
+          3,
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          24,
+          3,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          24,
+          3,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "shared-mask-dag-recounts-per-reference",
+      "scope": "target-command-fragment",
+      "topology": "mask1 <- shared0; mask2 <- shared0; target edges [mask1, mask2]",
+      "expectedBeginSlots": [
+        0,
+        1,
+        0,
+        2
+      ],
+      "expectedBeginDepths": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "expectedDraw": [
+        24,
+        1,
+        3,
+        4,
+        0,
+        0
+      ],
+      "expectedEndDepths": [
+        3,
+        2,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "active-mask-depth-eight",
+      "scope": "target-command-fragment",
+      "expectedBeginDepths": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "expectedDrawDepth": 8,
+      "expectedEndDepths": [
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1,
+        0
+      ],
+      "expected": "accept"
+    },
+    {
+      "id": "invisible-source-is-mask-only",
+      "sourceSlot": 0,
+      "sourceVisible": false,
+      "targetSlot": 1,
+      "expectedCompleteStream": [
+        [
+          24,
+          2,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          24,
+          1,
+          1,
+          1,
+          0,
+          0
+        ],
+        [
+          24,
+          3,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "forbiddenOrdinaryDrawSlots": [
+        0
+      ]
+    },
+    {
+      "id": "invalid-mask-graphs-never-reach-lowering",
+      "upstreamCases": [
+        {
+          "fault": "duplicate-edge",
+          "status": 14
+        },
+        {
+          "fault": "missing-source",
+          "status": 14
+        },
+        {
+          "fault": "non-mesh-source",
+          "status": 14
+        },
+        {
+          "fault": "cycle",
+          "status": 14
+        },
+        {
+          "fault": "active-depth-nine",
+          "status": 6
+        }
+      ],
+      "candidateProduced": false
+    }
+  ],
+  "precedence": [
+    "caller-generation-mismatch",
+    "equal-generation-above-js-safe-ceiling",
+    "texture-plan-correlation",
+    "unsupported-layer",
+    "unsupported-mask-placement",
+    "unsupported-blend-mode",
+    "unsupported-ik-parameter-mappings",
+    "unsupported-duplicate-ik-bone",
+    "unsupported-multiple-ik-controllers",
+    "unsupported-multiple-enabled-physics-groups",
+    "invalid-ik-range",
+    "allocation-free-direct-projection",
+    "checked-count-size-and-fallible-reservation",
+    "zero-step-derived-evaluation-and-projection",
+    "typed-topology-identity-invariant",
+    "seal-lowered-candidate",
+    "host-fixed-plan-and-assetref-preflight",
+    "asset-store-read",
+    "attach-prepared-textures-and-recheck-postconditions",
+    "return-not-yet-active-candidate"
+  ],
+  "precedenceCases": [
+    {
+      "id": "generation-mismatch-beats-everything",
+      "faults": [
+        "generation-mismatch",
+        "tuple-correlation",
+        "unsupported-blend",
+        "direct-projection"
+      ],
+      "expectedFirst": "generation-mismatch",
+      "expectedPrivateKind": "Correlation",
+      "expectedStatus": 14,
+      "storeReads": 0
+    },
+    {
+      "id": "unsafe-equal-generation-beats-correlation",
+      "faults": [
+        "equal-generation-above-js-safe-ceiling",
+        "tuple-correlation"
+      ],
+      "expectedFirst": "equal-generation-above-js-safe-ceiling",
+      "expectedStatus": 6,
+      "storeReads": 0
+    },
+    {
+      "id": "tuple-correlation-beats-feature-and-number",
+      "faults": [
+        "tuple-correlation",
+        "unsupported-layer",
+        "direct-projection"
+      ],
+      "expectedFirst": "tuple-correlation",
+      "expectedPrivateKind": "Correlation",
+      "expectedStatus": 14,
+      "storeReads": 0
+    },
+    {
+      "id": "unsupported-feature-beats-direct-projection",
+      "faults": [
+        "unsupported-blend",
+        "direct-projection"
+      ],
+      "expectedFirst": "unsupported-blend",
+      "expectedStatus": 2,
+      "storeReads": 0
+    },
+    {
+      "id": "direct-projection-beats-resource-reservation",
+      "faults": [
+        "direct-projection",
+        "recoverable-allocation"
+      ],
+      "expectedFirst": "direct-projection",
+      "expectedStatus": 14,
+      "storeReads": 0
+    },
+    {
+      "id": "resource-reservation-beats-derived-projection",
+      "faults": [
+        "recoverable-allocation",
+        "derived-projection"
+      ],
+      "expectedFirst": "recoverable-allocation",
+      "expectedStatus": 6,
+      "storeReads": 0
+    },
+    {
+      "id": "derived-projection-beats-host-plan-fault",
+      "faults": [
+        "derived-projection",
+        "host-fixed-plan"
+      ],
+      "expectedFirst": "derived-projection",
+      "expectedStatus": 14,
+      "storeReads": 0
+    }
+  ],
+  "projectionRegistry": [
+    "mesh.vertices[*] final evaluated output",
+    "mesh.uvs[*]",
+    "mesh.x",
+    "mesh.y",
+    "mesh.opacity",
+    "mesh.multiply_color[0..2]",
+    "mesh.screen_color[0..2]",
+    "mesh.multiply_color[3] exact 1.0 when present or 0.0 when unused",
+    "mesh.screen_color[3] exact 1.0 when present or 0.0 when unused"
+  ],
+  "geometryOrderVectors": [
+    {
+      "id": "culling-uses-projected-f32-vertices",
+      "inputVertexBinary64Bits": [
+        "0000000000000000",
+        "0000000000000000",
+        "3ff0000000000000",
+        "3ff0000000000000",
+        "3ff0000010000000",
+        "3ff0000000000000"
+      ],
+      "projectedVertexBinary32Bits": [
+        "00000000",
+        "00000000",
+        "3f800000",
+        "3f800000",
+        "3f800000",
+        "3f800000"
+      ],
+      "preprojectionSignedAreaIsNegative": true,
+      "postprojectionSignedAreaBinary64Bits": "0000000000000000",
+      "expectedFlipped": false
+    },
+    {
+      "id": "unskinned-hit-offset-uses-projected-f32-widened-to-binary64",
+      "publishedMeshXBinary32Bits": "3f800000",
+      "evaluatorMeshXBinary64Bits": "3ff0000010000000",
+      "queryXBinary64Bits": "3ff0000000000000",
+      "queryYBinary64Bits": "3fe0000000000000",
+      "meshVerticesBinary32Bits": [
+        "00000000",
+        "00000000",
+        "3f800000",
+        "00000000",
+        "00000000",
+        "3f800000"
+      ],
+      "expectedHit": true,
+      "requiredHitOffsetBinary64Bits": "3ff0000000000000",
+      "forbiddenAlternative": "retain a second unprojected binary64 mesh x for hit testing"
+    },
+    {
+      "id": "culling-max-f32-coordinates-use-binary64-ordered-accumulation",
+      "projectedVertexBinary32Bits": [
+        "7f7fffff",
+        "7f7fffff",
+        "7f7fffff",
+        "ff7fffff",
+        "ff7fffff",
+        "7f7fffff"
+      ],
+      "accumulatorStartBinary64Bits": "0000000000000000",
+      "accumulationOrder": "vertex-array-order",
+      "accumulationDomain": "exact-f32-to-f64-widening-and-ordinary-f64-multiply-subtract-add",
+      "expectedSignedAreaClass": "finite-negative",
+      "expectedFlipped": true,
+      "forbiddenAlternatives": [
+        "binary32-accumulation-produces-nan",
+        "fma-contraction",
+        "reassociation"
+      ]
+    }
+  ],
+  "textureVectors": [
+    {
+      "id": "zero-textures",
+      "count": 0,
+      "expected": "accept"
+    },
+    {
+      "id": "one-texture",
+      "count": 1,
+      "expected": "accept"
+    },
+    {
+      "id": "maximum-textures",
+      "count": 32,
+      "expected": "accept"
+    },
+    {
+      "id": "utf8-byte-order-and-case",
+      "sourceAtlasIds": [
+        "z",
+        "a",
+        "A"
+      ],
+      "expectedBindingOrder": [
+        "atlas:A",
+        "atlas:a",
+        "atlas:z"
+      ]
+    },
+    {
+      "id": "maximum-source-atlas-id-length",
+      "sourceAtlasIdLength": 120,
+      "expectedBindingIdLength": 126,
+      "expected": "accept"
+    },
+    {
+      "id": "payload-atlas-permutation-does-not-change-table",
+      "payloadOrders": [
+        [
+          "z",
+          "A",
+          "a"
+        ],
+        [
+          "a",
+          "z",
+          "A"
+        ]
+      ],
+      "expectedBindingOrder": [
+        "atlas:A",
+        "atlas:a",
+        "atlas:z"
+      ]
+    },
+    {
+      "id": "shared-atlas-meshes-use-one-binding",
+      "meshIds": [
+        "meshA",
+        "meshB"
+      ],
+      "bindingId": "atlas:shared",
+      "expectedTextureCount": 1
+    },
+    {
+      "id": "embedded-rgba-c-snapshot",
+      "width": 2,
+      "height": 3,
+      "pixelByteLen": 24,
+      "rowStride": 8,
+      "format": "RGBA8_STRAIGHT",
+      "colorSpace": "SRGB",
+      "pixelsNonNull": true,
+      "hostImageIdNull": true,
+      "logicalPngAndRgbaMovedWithoutClone": true
+    },
+    {
+      "id": "forbid-array-index-texture-identity",
+      "sourceAtlasIds": [
+        "foo",
+        "bar"
+      ],
+      "expectedBindingOrder": [
+        "atlas:bar",
+        "atlas:foo"
+      ],
+      "forbiddenSynthesizedForTheseSources": [
+        "atlas:0",
+        "atlas:1"
+      ],
+      "scope": "an atlas:n spelling is valid only when n is the exact sourceAtlasId",
+      "expected": "never-synthesize"
+    },
+    {
+      "id": "numeric-looking-source-atlas-id-is-valid",
+      "sourceAtlasId": "0",
+      "expectedBindingId": "atlas:0",
+      "identitySource": "sourceAtlasId-not-array-index"
+    }
+  ],
+  "ikVectors": [
+    {
+      "id": "ik-zero-controllers",
+      "controllerCount": 0,
+      "expected": "accept"
+    },
+    {
+      "id": "ik-one-controller",
+      "controllerCount": 1,
+      "expected": "accept"
+    },
+    {
+      "id": "ik-two-controllers",
+      "controllerCount": 2,
+      "expected": "reject-before-read",
+      "status": 2
+    },
+    {
+      "id": "ik-max-iterations-default",
+      "wireValue": "omitted",
+      "effectiveValue": 10
+    },
+    {
+      "id": "ik-max-iterations-min",
+      "wireValue": 1,
+      "effectiveValue": 1
+    },
+    {
+      "id": "ik-max-iterations-max",
+      "wireValue": 1024,
+      "effectiveValue": 1024
+    },
+    {
+      "id": "ik-two-bone-exact-chain",
+      "solver": "twoBone",
+      "chainLength": 2,
+      "effectiveSolver": "twoBone"
+    },
+    {
+      "id": "ik-two-bone-non-two-chain-falls-back",
+      "solver": "twoBone",
+      "chainLength": 3,
+      "effectiveSolver": "ccd"
+    },
+    {
+      "id": "ik-empty-chain-is-no-op",
+      "chainLength": 0,
+      "expected": "accept-no-op"
+    },
+    {
+      "id": "ik-bone-chain-order-preserved",
+      "wireBoneOrder": [
+        "bone-z",
+        "bone-a",
+        "bone-m"
+      ],
+      "expectedSolverOrder": [
+        "bone-z",
+        "bone-a",
+        "bone-m"
+      ],
+      "hierarchyResort": false,
+      "hierarchyContiguous": false
+    },
+    {
+      "id": "ik-duplicate-bone-id-rejected-before-range",
+      "wireBoneOrder": [
+        "bone-a",
+        "bone-a"
+      ],
+      "expected": "reject-before-read",
+      "privateKind": "UnsupportedDuplicateIkBone",
+      "status": 2
+    },
+    {
+      "id": "ik-ccd-reachable-target",
+      "solver": "ccd",
+      "targetReachable": true,
+      "expected": "accept"
+    },
+    {
+      "id": "ik-ccd-unreachable-target",
+      "solver": "ccd",
+      "targetReachable": false,
+      "expected": "accept-bounded-result"
+    },
+    {
+      "id": "ik-pole-target-present",
+      "poleTargetX": "present",
+      "poleTargetY": "present",
+      "expected": "accept"
+    },
+    {
+      "id": "ik-pole-target-absent",
+      "poleTargetX": "absent",
+      "poleTargetY": "absent",
+      "expected": "accept-no-pole"
+    },
+    {
+      "id": "ik-pole-target-x-only",
+      "poleTargetX": "present",
+      "poleTargetY": "absent",
+      "expected": "accept-no-pole"
+    },
+    {
+      "id": "ik-pole-target-y-only",
+      "poleTargetX": "absent",
+      "poleTargetY": "present",
+      "expected": "accept-no-pole"
+    },
+    {
+      "id": "ik-bound-influence-below-zero",
+      "boundValue": -1,
+      "effectiveValue": 0
+    },
+    {
+      "id": "ik-bound-influence-above-one",
+      "boundValue": 2,
+      "effectiveValue": 1
+    },
+    {
+      "id": "ik-initial-huge-derived-result",
+      "phase": "initial",
+      "expected": "reject-before-read",
+      "status": 14,
+      "rollback": "no-publication"
+    },
+    {
+      "id": "ik-update-huge-derived-result",
+      "phase": "update",
+      "expected": "reject-transactionally",
+      "status": 9,
+      "rollback": "derived-state-and-generations-byte-identical"
+    }
+  ],
+  "physicsVectors": [
+    {
+      "id": "physics-zero-enabled-with-disabled-extras",
+      "enabledFlags": [
+        false,
+        false,
+        false
+      ],
+      "expected": "accept-no-advance-or-output"
+    },
+    {
+      "id": "physics-one-enabled-with-disabled-extras",
+      "enabledFlags": [
+        false,
+        true,
+        false
+      ],
+      "expected": "accept",
+      "effectiveGroupIndex": 1
+    },
+    {
+      "id": "physics-two-enabled-rejected",
+      "enabledFlags": [
+        true,
+        false,
+        true
+      ],
+      "expected": "reject-before-read",
+      "privateKind": "UnsupportedMultipleEnabledPhysicsGroups",
+      "status": 2
+    },
+    {
+      "id": "physics-zero-step-does-not-advance",
+      "deltaSeconds": 0,
+      "expected": "initialize-and-validate-without-state-advance"
+    },
+    {
+      "id": "physics-positive-fixed-step-order",
+      "deltaSeconds": "1/60",
+      "operationOrder": [
+        "parameter-bindings",
+        "single-enabled-physics-group",
+        "ik",
+        "skinning",
+        "projection"
+      ],
+      "expected": "single-group-output-visible-to-following-ik-and-skinning"
+    }
+  ],
+  "bindingAndSkinningVectors": [
+    {
+      "id": "binding-interpolation-endpoints-and-midpoint",
+      "parameterValues": [
+        0,
+        0.5,
+        1
+      ],
+      "expectedTargetValues": [
+        0,
+        0.5,
+        1
+      ],
+      "domain": "binary64-until-derived-projection"
+    },
+    {
+      "id": "binding-additive-order-is-payload-order",
+      "bindingPointOrder": [
+        0,
+        1,
+        2
+      ],
+      "expected": "deterministic-binary64-result-before-projection"
+    },
+    {
+      "id": "unskinned-vertices-use-direct-projection",
+      "skinPresent": false,
+      "expectedCoverageProfile": "direct-f32"
+    },
+    {
+      "id": "identity-skin-reaches-derived-projection",
+      "skinPresent": true,
+      "bindPose": "identity",
+      "weights": [
+        1
+      ],
+      "expectedCoverageProfile": "transitive-f32"
+    },
+    {
+      "id": "multi-bone-weighted-skinning-order",
+      "weights": [
+        0.25,
+        0.75
+      ],
+      "expected": "binary64-weighted-sum-then-one-f32-projection"
+    },
+    {
+      "id": "sparse-bind-pose-skips-missing-bone-and-uses-rest-remainder",
+      "weights": [
+        {
+          "boneId": "present",
+          "weight": 0.25
+        },
+        {
+          "boneId": "missing-bind-pose",
+          "weight": 0.75
+        }
+      ],
+      "bindPoseInverseKeys": [
+        "present"
+      ],
+      "expectedAppliedWeight": 0.25,
+      "expectedRestWeight": 0.75,
+      "forbiddenFallback": "identity-matrix-for-missing-bind-pose"
+    },
+    {
+      "id": "empty-bind-pose-uses-rest-vertex",
+      "weights": [
+        {
+          "boneId": "bone",
+          "weight": 1
+        }
+      ],
+      "bindPoseInverseKeys": [],
+      "expectedAppliedWeight": 0,
+      "expected": "rest-vertex-unchanged"
+    },
+    {
+      "id": "skinning-initial-overflow",
+      "phase": "initial",
+      "expected": "reject-before-read",
+      "status": 14,
+      "rollback": "no-publication"
+    },
+    {
+      "id": "skinning-update-overflow",
+      "phase": "update",
+      "expected": "reject-transactionally",
+      "status": 9,
+      "rollback": "derived-state-and-generations-byte-identical"
+    }
+  ],
+  "defaultValueVectors": [
+    {
+      "id": "omitted-vivimesh-draw-order-defaults-to-500",
+      "ownerKind": "viviMesh",
+      "drawOrderPresent": false,
+      "expectedDrawOrderI32": 500,
+      "observableUse": "draw-command-and-mesh-collider-order"
+    },
+    {
+      "id": "omitted-vivimesh-culling-defaults-false",
+      "cullingPresent": false,
+      "projectedWindingFlipped": true,
+      "effectiveVisible": true,
+      "expectedCulled": false
+    },
+    {
+      "id": "culling-true-visible-flipped-is-culled",
+      "culling": true,
+      "projectedWindingFlipped": true,
+      "effectiveVisible": true,
+      "expectedCulled": true,
+      "expectedVisible": false
+    },
+    {
+      "id": "culling-true-effectively-invisible-is-not-culled",
+      "culling": true,
+      "projectedWindingFlipped": true,
+      "ancestorVisible": false,
+      "localVisible": true,
+      "expectedEffectiveVisible": false,
+      "expectedCulled": false,
+      "expectedVisible": false
+    },
+    {
+      "id": "omitted-multiply-color-elides-abi-slot",
+      "multiplyColorPresent": false,
+      "expectedHasMultiplyColor": false,
+      "expectedAbiSlotBits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "rendererSemanticDefaultRgb": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "present-multiply-color-publishes-rgb-and-one-alpha",
+      "multiplyColorPresent": true,
+      "inputRgb": [
+        0.25,
+        0.5,
+        1
+      ],
+      "expectedHasMultiplyColor": true,
+      "expectedAbiSlotBits": [
+        "3e800000",
+        "3f000000",
+        "3f800000",
+        "3f800000"
+      ]
+    },
+    {
+      "id": "omitted-screen-color-elides-abi-slot",
+      "screenColorPresent": false,
+      "expectedHasScreenColor": false,
+      "expectedAbiSlotBits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ]
+    },
+    {
+      "id": "present-black-screen-color-is-default-elided",
+      "screenColorPresent": true,
+      "inputRgb": [
+        0,
+        0,
+        0
+      ],
+      "expectedHasScreenColor": false,
+      "expectedAbiSlotBits": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ]
+    },
+    {
+      "id": "present-nonblack-screen-color-publishes-rgb-and-one-alpha",
+      "screenColorPresent": true,
+      "inputRgb": [
+        0,
+        0.5,
+        1
+      ],
+      "expectedHasScreenColor": true,
+      "expectedAbiSlotBits": [
+        "00000000",
+        "3f000000",
+        "3f800000",
+        "3f800000"
+      ]
+    }
+  ],
+  "expressionPresetVectors": [
+    {
+      "id": "expression-preset-array-order-is-index-order",
+      "inputPresetIds": [
+        "preset-z",
+        "preset-a"
+      ],
+      "expectedPresetIndexIds": [
+        "preset-z",
+        "preset-a"
+      ]
+    },
+    {
+      "id": "expression-value-index-is-utf8-byte-order",
+      "inputObjectMemberOrder": [
+        "z",
+        "A",
+        "a"
+      ],
+      "expectedValueIndexParameterIds": [
+        "A",
+        "a",
+        "z"
+      ],
+      "jsonObjectMemberOrderObservable": false
+    },
+    {
+      "id": "expression-value-member-permutation-is-index-invariant",
+      "inputObjectMemberOrders": [
+        [
+          "A",
+          "a",
+          "z"
+        ],
+        [
+          "z",
+          "a",
+          "A"
+        ]
+      ],
+      "expectedValueIndexParameterIds": [
+        "A",
+        "a",
+        "z"
+      ]
+    }
+  ],
+  "preactivationCompositionVectors": [
+    {
+      "id": "empty-texture-set-ready",
+      "expected": "owned-ready-bundle"
+    },
+    {
+      "id": "one-ready-one-missing",
+      "expected": "missing-only; no partial-ready escapes"
+    },
+    {
+      "id": "earlier-missing-later-asset-hard",
+      "expected": "hard-error-wins; ready-and-missing-dropped"
+    },
+    {
+      "id": "earlier-missing-later-store-hard",
+      "expected": "hard-error-wins; ready-and-missing-dropped",
+      "evidence": "approved host loop plus injected seam"
+    },
+    {
+      "id": "sealed-output-generation-contradiction",
+      "expected": "Internal",
+      "status": 10
+    },
+    {
+      "id": "prepared-output-id-order-dimension-assetref-contradiction",
+      "expected": "Internal",
+      "status": 10
+    },
+    {
+      "id": "attach-prepared-rgba-by-move",
+      "expected": "pointer-identity-and-no-large-buffer-clone"
+    }
+  ],
+  "candidateBoundaryVectors": [
+    {
+      "id": "valid-nonempty-clips",
+      "phase": "upstream-runtime-preflight",
+      "expectedStatus": 2,
+      "candidateProduced": false
+    },
+    {
+      "id": "invalid-clip-reference",
+      "phase": "upstream-stage2",
+      "expectedStatus": 14,
+      "candidateProduced": false
+    },
+    {
+      "id": "valid-nonempty-state-machines",
+      "phase": "upstream-runtime-preflight",
+      "expectedStatus": 2,
+      "candidateProduced": false
+    },
+    {
+      "id": "invalid-state-machine-reference",
+      "phase": "upstream-stage2",
+      "expectedStatus": 14,
+      "candidateProduced": false
+    },
+    {
+      "id": "sealed-candidate-contains-nonempty-clip-or-state-machine",
+      "phase": "lowering-invariant",
+      "expectedPrivateKind": "Internal",
+      "expectedStatus": 10
+    }
+  ],
+  "deterministicMathPrerequisite": {
+    "status": "required-not-yet-adopted",
+    "primitiveOperationClosure": {
+      "mustFreeze": [
+        "exact-operation-graph-and-parenthesization",
+        "fma-contraction-policy",
+        "nonfinite-checkpoint-placement-before-or-after-clamp-and-fallback"
+      ],
+      "adversarialCases": [
+        {
+          "id": "physics-finite-product-overflows-before-later-finite-recovery",
+          "inputs": "finite mass and length",
+          "intermediate": "mass-times-length becomes positive infinity",
+          "laterPath": "division by positive infinity and output clamp can become finite",
+          "decisionRequired": "reject at a named earlier checkpoint or explicitly approve the delayed checkpoint"
+        }
+      ]
+    },
+    "projectionReachingOperations": [
+      "sin",
+      "cos",
+      "atan2",
+      "acos",
+      "sqrt"
+    ],
+    "acceptableClosure": [
+      "shared-deterministic-reference-kernel",
+      "separately-reviewed-proven-safe-domain-margin-policy"
+    ],
+    "threeOsCorpusAloneIsSufficient": false,
+    "allowedBeforeClosure": "consumer-zero lowering foundation without core/native/TypeScript evaluator connection or cross-implementation status claim"
+  },
+  "operationVectors": [
+    {
+      "id": "initial-finite-multiplication-produces-infinity",
+      "phase": "initial",
+      "expected": "reject-before-read",
+      "privateKind": "NumericNonFinite",
+      "status": 14
+    },
+    {
+      "id": "dynamic-finite-multiplication-produces-infinity",
+      "phase": "update",
+      "expected": "reject-transactionally",
+      "privateKind": "NumericNonFinite",
+      "status": 9,
+      "rollback": "derived-state-and-generations-byte-identical; a successfully set scalar input remains mutated"
+    },
+    {
+      "id": "initial-derived-finite-binary64-overflows-binary32",
+      "phase": "initial",
+      "derivedBinary64Class": "finite-above-U",
+      "expected": "reject-before-read",
+      "privateKind": "NumericOverflow",
+      "status": 14
+    },
+    {
+      "id": "dynamic-derived-finite-binary64-overflows-binary32",
+      "phase": "update",
+      "derivedBinary64Class": "finite-above-U",
+      "expected": "reject-transactionally",
+      "privateKind": "NumericOverflow",
+      "status": 9,
+      "rollback": "derived-state-and-generations-byte-identical; a successfully set scalar input remains mutated"
+    },
+    {
+      "id": "derived-cancellation-produces-positive-zero",
+      "phase": "initial-and-update",
+      "expectedBinary32Bits": "00000000"
+    },
+    {
+      "id": "initial-derived-subnormal",
+      "phase": "initial",
+      "expected": "reject-before-read",
+      "privateKind": "NumericSubnormal",
+      "status": 14
+    },
+    {
+      "id": "dynamic-derived-subnormal",
+      "phase": "update",
+      "expected": "reject-transactionally",
+      "privateKind": "NumericSubnormal",
+      "status": 9,
+      "rollback": "derived-state-and-generations-byte-identical; a successfully set scalar input remains mutated"
+    },
+    {
+      "id": "initial-derived-nonzero-to-zero-underflow",
+      "phase": "initial",
+      "derivedMagnitude": "below-half-minimum-binary32-subnormal",
+      "expected": "reject-before-read",
+      "privateKind": "NumericUnderflow",
+      "status": 14
+    },
+    {
+      "id": "dynamic-derived-nonzero-to-zero-underflow",
+      "phase": "update",
+      "derivedMagnitude": "below-half-minimum-binary32-subnormal",
+      "expected": "reject-transactionally",
+      "privateKind": "NumericUnderflow",
+      "status": 9,
+      "rollback": "derived-state-and-generations-byte-identical; a successfully set scalar input remains mutated"
+    }
+  ],
+  "sealedLowering": {
+    "input": [
+      "caller-generation",
+      "validated-candidate",
+      "typed-texture-plan"
+    ],
+    "hostOrStoreArgument": false,
+    "consumesCandidate": true,
+    "retainsOriginalJsonCandidate": "optional; complete typed state is normative",
+    "cloneable": false,
+    "owns": [
+      "exact-generation",
+      "correlated-plan",
+      "stable-texture-inventory",
+      "typed-render-topology",
+      "binary64-evaluator-state",
+      "complete-initial-projected-snapshots"
+    ],
+    "largeBufferClone": false,
+    "initialNumericRecomputeAfterReads": false,
+    "debug": "stable kind, generation, and aggregate counts only"
+  },
+  "runtimeSemantics": {
+    "evaluatorDomain": "binary64",
+    "phaseOrder": [
+      "parameter-bindings",
+      "physics",
+      "ik",
+      "mesh-snapshot-projection"
+    ],
+    "ikControllerCardinality": "zero or one; more than one rejects before reads with status 2",
+    "ikControllerOrder": "single payload controller when present",
+    "ikWorldTransformPolicy": "one snapshot before the single controller",
+    "ikFinalWorldTransformPolicy": "recompute parent-before-child after controller local-angle results; use for skinning and final projection",
+    "ikBaseInfluenceDomain": "0..1 inclusive",
+    "ikBoundInfluencePolicy": "explicit clamp to 0..1",
+    "ikConstraintPolicy": "minAngle <= maxAngle",
+    "ikParameterMappings": "activation-ineligible when non-empty",
+    "physicsEnabledGroupCardinality": "zero or one; more than one rejects before reads with status 2",
+    "physicsZeroStepPolicy": "advance only when deltaSeconds > 0; zero initializes and validates without time advancement",
+    "failedDynamicProjection": "status 9 and no derived-state or generation commit"
+  },
+  "diagnosticOrder": {
+    "jsonObjectMemberOrderIsObservable": false,
+    "directProjection": {
+      "meshOrder": "recursive mesh DFS slot order",
+      "fieldOrder": [
+        "unskinned-vertices-elements",
+        "uv-elements",
+        "unskinned-x",
+        "unskinned-y",
+        "opacity",
+        "multiply-r",
+        "multiply-g",
+        "multiply-b",
+        "screen-r",
+        "screen-g",
+        "screen-b"
+      ]
+    },
+    "ikDomain": [
+      "controller-array-order",
+      "base-influence",
+      "boneChain-array-order-min-max-pair"
+    ],
+    "derivedEvaluation": [
+      "parameter-bindings-and-points-payload-order",
+      "single-enabled-physics-group-pendulums-inputs-outputs-order",
+      "pre-ik-world-transforms-parent-before-child-with-dfs-tie",
+      "single-ik-controller-boneChain-order",
+      "post-ik-final-world-transforms-parent-before-child-with-dfs-tie",
+      "skinning-mesh-slot-vertex-weight-order",
+      "final-projection-mesh-slot-registry-component-order"
+    ]
+  },
+  "identity": {
+    "textureBindingId": "atlas:<sourceAtlasId>",
+    "textureTableOrder": "UTF-8 byte order of exact textureBindingId",
+    "meshTableOrder": "recursive payload depth-first pre-order of viviMesh layers",
+    "hostMayNormalizeOrPrefix": false,
+    "textureCounts": [
+      0,
+      1,
+      32
+    ],
+    "caseSensitiveIdExamples": [
+      "atlas:A",
+      "atlas:a",
+      "atlas:z"
+    ],
+    "payloadAtlasPermutationDoesNotChangeIdentity": true,
+    "preparedRgbaOwnership": "move-only through lowering/coordinator; no large-buffer clone"
+  },
+  "nonClaims": [
+    "not an adopted amendment",
+    "no implementation or public ABI approval",
+    "no extended blend equations or feature bit",
+    "no artPath, IK parameterMappings, clips, or state machines",
+    "no WASM Evaluation surface",
+    "no GPU upload or active-model swap",
+    "no EDH-01 closure",
+    "no universal TypeScript/native derived-evaluation or status parity before primitive operation/checkpoint policy and a deterministic reference-math kernel or proven safe-margin policy are separately reviewed and adopted"
+  ]
+}

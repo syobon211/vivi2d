@@ -7,6 +7,7 @@
     "packages/provider-comfyui/src/**/*.ts",
     "packages/core/src/**/*.ts",
     "packages/editor-core/src/**/*.ts",
+    "packages/editor-host/src/**/*.ts",
     "packages/loader/src/**/*.ts",
     "packages/model/src/**/*.ts",
     "packages/provider-sdk/src/**/*.ts",

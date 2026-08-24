@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": [],
+    "paths": {
+      "@vivi2d/model/internal/project-format-v11": [
+        "./portability/project-format-v11.d.ts"
+      ],
+      "@vivi2d/model/internal/evaluation-payload-v1": [
+        "./portability/evaluation-payload-v1.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "src/index.ts",
+    "src/read-only-authoring-host.ts",
+    "portability/*.d.ts"
+  ]
+}

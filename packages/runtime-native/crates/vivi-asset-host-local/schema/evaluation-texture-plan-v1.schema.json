@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vivi2d.com/spec/evaluation-texture-plan-v1.schema.json",
+  "title": "Vivi2D Evaluation Texture Plan v1",
+  "$comment": "Machine-readable freeze artifact adopted by Spec Freeze Amendment 1. The plan implicitly selects decoder profile vivi2d.png.rgba8.v1. Standard JSON Schema cannot enforce sorted output, projected ID uniqueness, the payload-to-plan 1:1 relation, decoded aggregate pixels, or the per-plan aggregate RGBA-byte ceiling.",
+  "x-vivi-status": "approved-amendment-1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "textures"],
+  "properties": {
+    "schema": { "const": "vivi2d.evaluationTexturePlan.v1" },
+    "textures": {
+      "type": "array",
+      "maxItems": 32,
+      "items": { "$ref": "#/$defs/EvaluationTextureBindingV1" },
+      "x-vivi-uniqueBy": "id",
+      "$comment": "IDs must be unique and bindings must be emitted in ascending id order. The set must be in a 1:1 relation with payload atlases after applying the atlas: prefix. Semantic limits are sum(width * height) <= 67108864 pixels and sum(width * height * 4) <= 268435456 bytes."
+    }
+  },
+  "$defs": {
+    "Sha256HexV1": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$",
+      "$comment": "Wire input accepts either hex case. Producers emit lowercase; consumers normalize for equality and lookup."
+    },
+    "NonNegativeSafeIntegerV1": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "TextureDimensionV1": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8192,
+      "$comment": "Concrete per-axis limit adopted for decoder profile vivi2d.png.rgba8.v1 by Spec Freeze Amendment 1."
+    },
+    "TextureBindingIdV1": {
+      "type": "string",
+      "pattern": "^atlas:[A-Za-z0-9_-]{1,120}$"
+    },
+    "PngAssetRefV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objectAddress",
+        "storageKind",
+        "contentSha256",
+        "mediaType",
+        "sizeBytes"
+      ],
+      "properties": {
+        "objectAddress": { "$ref": "#/$defs/Sha256HexV1" },
+        "storageKind": {
+          "type": "string",
+          "enum": ["blob", "chunk_manifest"]
+        },
+        "contentSha256": { "$ref": "#/$defs/Sha256HexV1" },
+        "mediaType": { "const": "image/png" },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 67108864,
+          "$comment": "Per-PNG max input bytes for decoder profile vivi2d.png.rgba8.v1."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "storageKind": { "const": "blob" } },
+            "required": ["storageKind"]
+          },
+          "then": {
+            "properties": {
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 16777216
+              }
+            },
+            "$comment": "For blob, objectAddress must equal contentSha256; equality is semantic."
+          },
+          "else": {
+            "properties": {
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 16777217,
+                "maximum": 67108864
+              }
+            }
+          }
+        }
+      ]
+    },
+    "EvaluationTextureBindingV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "asset",
+        "width",
+        "height",
+        "mediaType",
+        "colorSpace",
+        "alphaMode"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/TextureBindingIdV1" },
+        "asset": { "$ref": "#/$defs/PngAssetRefV1" },
+        "width": { "$ref": "#/$defs/TextureDimensionV1" },
+        "height": { "$ref": "#/$defs/TextureDimensionV1" },
+        "mediaType": { "const": "image/png" },
+        "colorSpace": { "const": "srgb" },
+        "alphaMode": { "const": "straight" }
+      },
+      "$comment": "Declared dimensions must equal the decoded PNG IHDR dimensions. asset.mediaType and this mediaType are both fixed to image/png."
+    }
+  }
+}

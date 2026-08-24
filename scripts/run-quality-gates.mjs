@@ -12,8 +12,10 @@ if (isCi && !includeCoverage) {
 }
 
 const commands = [
+  ["npm", ["run", "check:model-schema-validators"]],
   ["npx", ["tsc", "--noEmit"]],
   ["npm", ["run", "check:packages-types"]],
+  ["npm", ["run", "check:model-jsc-portability"]],
   ["npm", ["run", "check:workspace-layout"]],
   ["npm", ["run", "check:docs-architecture"]],
   ["npm", ["run", "check:task-guide-paths"]],
@@ -74,6 +76,15 @@ const commands = [
   ["npm", ["run", "check:release-surface"]],
   ["npm", ["run", "check:runtime-c-abi"]],
   ["npm", ["run", "check:runtime-c-abi-link"]],
+  ["npm", ["run", "check:runtime-c-abi-v02-host-smoke"]],
+  ["npm", ["run", "check:runtime-png"]],
+  ["npm", ["run", "check:runtime-asset-resolver"]],
+  ["npm", ["run", "check:runtime-asset-store-local"]],
+  ["npm", ["run", "check:runtime-asset-host-local"]],
+  ["npm", ["run", "check:runtime-native-evaluation"]],
+  ["npm", ["run", "check:runtime-native-preactivation"]],
+  ["npm", ["run", "check:runtime-native-evaluation-lowering"]],
+  ["npm", ["run", "check:runtime-native-evaluation-math"]],
   ["npm", ["run", "check:runtime-native"]],
   ["npm", ["run", "check:native-artifact-policy"]],
   ["npm", ["run", "test:runtime-wasm:browser"]],

@@ -1,0 +1,662 @@
+{
+  "schema": "vivi2d.assetResolver.schemaStage1Parity.v1",
+  "vectors": [
+    {
+      "id": "canonical-stage1-and-stage2-accept",
+      "value": {
+        "schema": "vivi2d.assetChunkManifest.v1",
+        "mediaType": "image/png",
+        "contentSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 16777217,
+        "chunkSizeBytes": 8388608,
+        "chunks": [
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 8388608
+          },
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 8388608
+          },
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 1
+          }
+        ]
+      },
+      "stage1Accepted": true,
+      "stage2Accepted": true
+    },
+    {
+      "id": "mathematical-integers-decimal-and-exponent",
+      "rawJson": "{\"schema\":\"vivi2d.assetChunkManifest.v1\",\"mediaType\":\"image/png\",\"contentSha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":1.6777217e7,\"chunkSizeBytes\":8388608.0,\"chunks\":[{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":8.388608e6},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":8388608.0},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":1e0}]}",
+      "stage1Accepted": true,
+      "stage2Accepted": true
+    },
+    {
+      "id": "codepoints-pass-utf8-bytes-fail-stage2",
+      "value": {
+        "schema": "vivi2d.assetChunkManifest.v1",
+        "mediaType": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+        "contentSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 16777217,
+        "chunkSizeBytes": 8388608,
+        "chunks": [
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 8388608
+          },
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 8388608
+          },
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 1
+          }
+        ]
+      },
+      "stage1Accepted": true,
+      "stage2Accepted": false
+    },
+    {
+      "id": "uppercase-digests-accepted",
+      "value": {
+        "schema": "vivi2d.assetChunkManifest.v1",
+        "mediaType": "image/png",
+        "contentSha256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "sizeBytes": 16777217,
+        "chunkSizeBytes": 8388608,
+        "chunks": [
+          {
+            "sha256": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+            "sizeBytes": 8388608
+          },
+          {
+            "sha256": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+            "sizeBytes": 8388608
+          },
+          {
+            "sha256": "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+            "sizeBytes": 1
+          }
+        ]
+      },
+      "stage1Accepted": true,
+      "stage2Accepted": true
+    },
+    {
+      "id": "closed-top-level-rejects-unknown",
+      "value": {
+        "schema": "vivi2d.assetChunkManifest.v1",
+        "mediaType": "image/png",
+        "contentSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 16777217,
+        "chunkSizeBytes": 8388608,
+        "chunks": [
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 8388608
+          },
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 8388608
+          },
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 1
+          }
+        ],
+        "unknown": true
+      },
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "closed-nested-chunk-rejects-unknown",
+      "value": {
+        "schema": "vivi2d.assetChunkManifest.v1",
+        "mediaType": "image/png",
+        "contentSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 16777217,
+        "chunkSizeBytes": 8388608,
+        "chunks": [
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 8388608,
+            "unknown": 1
+          },
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 8388608
+          },
+          {
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+            "sizeBytes": 1
+          }
+        ]
+      },
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "required-member-missing",
+      "value": {
+        "schema": "vivi2d.assetChunkManifest.v1",
+        "mediaType": "image/png",
+        "contentSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 16777217,
+        "chunkSizeBytes": 8388608
+      },
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "member-type-mismatch",
+      "value": {
+        "schema": "vivi2d.assetChunkManifest.v1",
+        "mediaType": "image/png",
+        "contentSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 16777217,
+        "chunkSizeBytes": 8388608,
+        "chunks": "not-an-array"
+      },
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "required-root-schema-missing",
+      "mutations": [
+        {
+          "op": "remove",
+          "pointer": "/schema"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "required-root-mediaType-missing",
+      "mutations": [
+        {
+          "op": "remove",
+          "pointer": "/mediaType"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "required-root-contentSha256-missing",
+      "mutations": [
+        {
+          "op": "remove",
+          "pointer": "/contentSha256"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "required-root-sizeBytes-missing",
+      "mutations": [
+        {
+          "op": "remove",
+          "pointer": "/sizeBytes"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "required-root-chunkSizeBytes-missing",
+      "mutations": [
+        {
+          "op": "remove",
+          "pointer": "/chunkSizeBytes"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "required-root-chunks-missing",
+      "mutations": [
+        {
+          "op": "remove",
+          "pointer": "/chunks"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "root-null-rejected",
+      "value": null,
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "root-array-rejected",
+      "value": [],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "root-string-rejected",
+      "value": "manifest",
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "schema-wrong-type",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/schema",
+          "value": 1
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "schema-const-mismatch",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/schema",
+          "value": "vivi2d.assetChunkManifest.v2"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "media-type-wrong-type",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/mediaType",
+          "value": 7
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "media-empty",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/mediaType",
+          "value": ""
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "media-255-codepoints",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/mediaType",
+          "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "stage1Accepted": true,
+      "stage2Accepted": true
+    },
+    {
+      "id": "media-256-codepoints",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/mediaType",
+          "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "digest-wrong-type",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/contentSha256",
+          "value": 1
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "digest-63-hex",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/contentSha256",
+          "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "digest-65-hex",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/contentSha256",
+          "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "digest-nonhex",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/contentSha256",
+          "value": "gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "root-size-string",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/sizeBytes",
+          "value": "16777217"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "root-size-fraction",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/sizeBytes",
+          "value": 16777217.5
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "root-size-below-min",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/sizeBytes",
+          "value": 16777216
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "root-size-at-max-stage2-sum-reject",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/sizeBytes",
+          "value": 68719476736
+        }
+      ],
+      "stage1Accepted": true,
+      "stage2Accepted": false
+    },
+    {
+      "id": "root-size-above-max",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/sizeBytes",
+          "value": 68719476737
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "chunk-size-const-wrong-type",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/chunkSizeBytes",
+          "value": "8388608"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "chunk-size-const-mismatch",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/chunkSizeBytes",
+          "value": 4194304
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "chunks-two-items",
+      "mutations": [
+        {
+          "op": "resizeChunks",
+          "count": 2,
+          "sizeBytes": 8388608
+        },
+        {
+          "op": "set",
+          "pointer": "/sizeBytes",
+          "value": 16777216
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "chunks-8192-items-boundary",
+      "mutations": [
+        {
+          "op": "resizeChunks",
+          "count": 8192,
+          "sizeBytes": 8388608
+        },
+        {
+          "op": "set",
+          "pointer": "/sizeBytes",
+          "value": 68719476736
+        }
+      ],
+      "stage1Accepted": true,
+      "stage2Accepted": true
+    },
+    {
+      "id": "chunks-8193-items-over",
+      "mutations": [
+        {
+          "op": "resizeChunks",
+          "count": 8193,
+          "sizeBytes": 8388608
+        },
+        {
+          "op": "set",
+          "pointer": "/sizeBytes",
+          "value": 68727865344
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "child-nonobject",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/chunks/0",
+          "value": null
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "child-sha-missing",
+      "mutations": [
+        {
+          "op": "remove",
+          "pointer": "/chunks/0/sha256"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "child-size-missing",
+      "mutations": [
+        {
+          "op": "remove",
+          "pointer": "/chunks/0/sizeBytes"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "child-extra-member",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/chunks/0/extra",
+          "value": true
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "child-bad-digest",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/chunks/0/sha256",
+          "value": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "child-size-zero",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/chunks/0/sizeBytes",
+          "value": 0
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "child-size-over",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/chunks/0/sizeBytes",
+          "value": 8388609
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "child-size-fraction",
+      "mutations": [
+        {
+          "op": "set",
+          "pointer": "/chunks/0/sizeBytes",
+          "value": 8388607.5
+        }
+      ],
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    },
+    {
+      "id": "repeated-digest-positive",
+      "mutations": [],
+      "stage1Accepted": true,
+      "stage2Accepted": true
+    },
+    {
+      "id": "asset-ref-branch-is-not-a-manifest",
+      "value": {
+        "objectAddress": "0000000000000000000000000000000000000000000000000000000000000000",
+        "storageKind": "blob",
+        "contentSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "mediaType": "image/png",
+        "sizeBytes": 0
+      },
+      "stage1Accepted": false,
+      "stage2Accepted": false
+    }
+  ],
+  "rawParserVectors": [
+    {
+      "id": "escaped-nested-duplicate-rejected-before-stage1",
+      "rawJson": "{\"schema\":\"vivi2d.assetChunkManifest.v1\",\"mediaType\":\"image/png\",\"contentSha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":16777217,\"chunkSizeBytes\":8388608,\"chunks\":[{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"\\u0073ha256\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"sizeBytes\":8388608},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":8388608},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":1}]}",
+      "parseAccepted": false
+    },
+    {
+      "id": "top-level-exact-duplicate-rejected-before-stage1",
+      "rawJson": "{\"schema\":\"vivi2d.assetChunkManifest.v1\",\"schema\":\"vivi2d.assetChunkManifest.v1\",\"mediaType\":\"image/png\",\"contentSha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":16777217,\"chunkSizeBytes\":8388608,\"chunks\":[{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":8388608},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":8388608},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":1}]}",
+      "parseAccepted": false
+    },
+    {
+      "id": "top-level-escaped-equivalent-duplicate-rejected-before-stage1",
+      "rawJson": "{\"schema\":\"vivi2d.assetChunkManifest.v1\",\"\\u0073chema\":\"vivi2d.assetChunkManifest.v1\",\"mediaType\":\"image/png\",\"contentSha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":16777217,\"chunkSizeBytes\":8388608,\"chunks\":[{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":8388608},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":8388608},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":1}]}",
+      "parseAccepted": false
+    },
+    {
+      "id": "nested-exact-duplicate-rejected-before-stage1",
+      "rawJson": "{\"schema\":\"vivi2d.assetChunkManifest.v1\",\"mediaType\":\"image/png\",\"contentSha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":16777217,\"chunkSizeBytes\":8388608,\"chunks\":[{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":8388608},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":8388608},{\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"sizeBytes\":1}]}",
+      "parseAccepted": false
+    }
+  ],
+  "baseValue": {
+    "schema": "vivi2d.assetChunkManifest.v1",
+    "mediaType": "image/png",
+    "contentSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "sizeBytes": 16777217,
+    "chunkSizeBytes": 8388608,
+    "chunks": [
+      {
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 8388608
+      },
+      {
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 8388608
+      },
+      {
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+        "sizeBytes": 1
+      }
+    ]
+  }
+}

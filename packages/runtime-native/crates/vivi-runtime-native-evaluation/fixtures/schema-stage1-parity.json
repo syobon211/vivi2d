@@ -1,0 +1,465 @@
+{
+  "schema": "vivi2d.nativeEvaluationStage1Parity.v1",
+  "base": "evaluation-payload-v1.json#/valid/expectedPayload",
+  "rawVectors": [
+    {
+      "id": "raw-integer-dot-zero-accept",
+      "path": "/atlases/0/entries/0/x",
+      "rawNumber": "1.0",
+      "expectedStage1": true,
+      "expectedNormalized": 1
+    },
+    {
+      "id": "raw-unconstrained-safe-boundary-rounding-accept",
+      "path": "/layers/0/opacity",
+      "rawNumber": "9007199254740993",
+      "expectedStage1": true,
+      "expectedNormalized": 9007199254740992
+    },
+    {
+      "id": "raw-safe-integer-boundary-rounding-reject",
+      "path": "/canvas/width",
+      "rawNumber": "9007199254740993",
+      "expectedStage1": false,
+      "expectedNormalized": 9007199254740992
+    },
+    {
+      "id": "raw-safe-integer-maximum-accept",
+      "path": "/canvas/width",
+      "rawNumber": "9007199254740991",
+      "expectedStage1": true,
+      "expectedNormalized": 9007199254740991
+    }
+  ],
+  "vectors": [
+    { "id": "baseline-valid", "patches": [], "expectedStage1": true },
+    {
+      "id": "required-root-reject",
+      "patches": [{ "op": "remove", "path": "/canvas" }],
+      "expectedStage1": false
+    },
+    {
+      "id": "required-nested-reject",
+      "patches": [{ "op": "remove", "path": "/layers/0/name" }],
+      "expectedStage1": false
+    },
+    {
+      "id": "closed-root-reject",
+      "patches": [{ "op": "add", "path": "/solver", "value": true }],
+      "expectedStage1": false
+    },
+    {
+      "id": "closed-nested-reject",
+      "patches": [{ "op": "add", "path": "/layers/0/solver", "value": true }],
+      "expectedStage1": false
+    },
+    {
+      "id": "type-reject",
+      "patches": [{ "op": "replace", "path": "/canvas/width", "value": "32" }],
+      "expectedStage1": false
+    },
+    {
+      "id": "type-union-null-accept",
+      "patches": [{
+        "op": "replace",
+        "path": "/clips",
+        "value": [{
+          "id": "clip",
+          "name": "Clip",
+          "duration": 0,
+          "fps": 1,
+          "tracks": [],
+          "audioTracks": [{
+            "id": "audio",
+            "name": "Audio",
+            "sourcePath": "",
+            "startFrame": 0,
+            "sourceDurationSeconds": null,
+            "gain": 1,
+            "muted": false
+          }]
+        }]
+      }],
+      "expectedStage1": true
+    },
+    {
+      "id": "any-of-null-accept",
+      "mutation": "any-of-null-accept",
+      "patches": [],
+      "expectedStage1": true
+    },
+    {
+      "id": "any-of-neither-reject",
+      "mutation": "any-of-neither-reject",
+      "patches": [],
+      "expectedStage1": false
+    },
+    {
+      "id": "const-reject",
+      "patches": [{ "op": "replace", "path": "/schema", "value": "wrong" }],
+      "expectedStage1": false
+    },
+    {
+      "id": "enum-reject",
+      "patches": [{ "op": "replace", "path": "/layers/0/blendMode", "value": "wrong" }],
+      "expectedStage1": false
+    },
+    {
+      "id": "pattern-simple-accept",
+      "patches": [{ "op": "replace", "path": "/layers/0/id", "value": "a" }],
+      "expectedStage1": true
+    },
+    {
+      "id": "pattern-simple-reject",
+      "patches": [{ "op": "replace", "path": "/layers/0/id", "value": "bad.id" }],
+      "expectedStage1": false
+    },
+    {
+      "id": "pattern-simple-empty-reject",
+      "patches": [{ "op": "replace", "path": "/layers/0/id", "value": "" }],
+      "expectedStage1": false
+    },
+    {
+      "id": "pattern-source-120-accept",
+      "patches": [{
+        "op": "replace",
+        "path": "/atlases/0/id",
+        "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }],
+      "expectedStage1": true
+    },
+    {
+      "id": "pattern-source-121-reject",
+      "patches": [{
+        "op": "replace",
+        "path": "/atlases/0/id",
+        "value": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+      }],
+      "expectedStage1": false
+    },
+    {
+      "id": "pattern-parameter-dot-accept",
+      "patches": [{ "op": "replace", "path": "/parameters/0/id", "value": "vivi.head.yaw" }],
+      "expectedStage1": true
+    },
+    {
+      "id": "pattern-parameter-reject",
+      "patches": [{ "op": "replace", "path": "/parameters/0/id", "value": "vivi/head" }],
+      "expectedStage1": false
+    },
+    {
+      "id": "pattern-simple-128-accept",
+      "mutation": "pattern-simple-128-accept",
+      "patches": [],
+      "expectedStage1": true
+    },
+    {
+      "id": "pattern-simple-129-reject",
+      "mutation": "pattern-simple-129-reject",
+      "patches": [],
+      "expectedStage1": false
+    },
+    {
+      "id": "pattern-parameter-128-accept",
+      "mutation": "pattern-parameter-128-accept",
+      "patches": [],
+      "expectedStage1": true
+    },
+    {
+      "id": "pattern-parameter-129-reject",
+      "mutation": "pattern-parameter-129-reject",
+      "patches": [],
+      "expectedStage1": false
+    },
+    {
+      "id": "minimum-boundary-accept",
+      "patches": [{ "op": "replace", "path": "/canvas/width", "value": 1 }],
+      "expectedStage1": true
+    },
+    {
+      "id": "minimum-reject",
+      "patches": [{ "op": "replace", "path": "/canvas/width", "value": 0 }],
+      "expectedStage1": false
+    },
+    {
+      "id": "maximum-boundary-accept",
+      "patches": [{ "op": "replace", "path": "/atlases/0/width", "value": 8192 }],
+      "expectedStage1": true
+    },
+    {
+      "id": "maximum-reject",
+      "patches": [{ "op": "replace", "path": "/atlases/0/width", "value": 8193 }],
+      "expectedStage1": false
+    },
+    {
+      "id": "exclusive-minimum-accept",
+      "patches": [{
+        "op": "replace",
+        "path": "/clips",
+        "value": [{ "id": "clip", "name": "Clip", "duration": 0, "fps": 5e-324, "tracks": [] }]
+      }],
+      "expectedStage1": true
+    },
+    {
+      "id": "exclusive-minimum-reject",
+      "patches": [{
+        "op": "replace",
+        "path": "/clips",
+        "value": [{ "id": "clip", "name": "Clip", "duration": 0, "fps": 0, "tracks": [] }]
+      }],
+      "expectedStage1": false
+    },
+    {
+      "id": "integer-dot-zero-accept",
+      "patches": [{ "op": "replace", "path": "/atlases/0/entries/0/x", "value": 1.0 }],
+      "expectedStage1": true
+    },
+    {
+      "id": "integer-fraction-reject",
+      "patches": [{ "op": "replace", "path": "/atlases/0/entries/0/x", "value": 0.5 }],
+      "expectedStage1": false
+    },
+    {
+      "id": "min-items-reject",
+      "patches": [{ "op": "replace", "path": "/layers/0/mesh/vertices", "value": [0] }],
+      "expectedStage1": false
+    },
+    {
+      "id": "items-type-reject",
+      "patches": [{ "op": "replace", "path": "/layers/0/mesh/indices", "value": [0, "1", 2] }],
+      "expectedStage1": false
+    },
+    {
+      "id": "prefix-items-accept",
+      "patches": [{
+        "op": "add",
+        "path": "/skins/mesh-body",
+        "value": { "weights": [], "bindPoseInverse": { "bone": [1, 0, 0, 1, 0, 0] } }
+      }],
+      "expectedStage1": true
+    },
+    {
+      "id": "prefix-items-type-reject",
+      "patches": [{
+        "op": "add",
+        "path": "/skins/mesh-body",
+        "value": { "weights": [], "bindPoseInverse": { "bone": [1, 0, "0", 1, 0, 0] } }
+      }],
+      "expectedStage1": false
+    },
+    {
+      "id": "max-items-items-false-reject",
+      "patches": [{
+        "op": "add",
+        "path": "/skins/mesh-body",
+        "value": { "weights": [], "bindPoseInverse": { "bone": [1, 0, 0, 1, 0, 0, 0] } }
+      }],
+      "expectedStage1": false
+    },
+    {
+      "id": "max-items-atlases-33-reject",
+      "mutation": "max-items-atlases-33-reject",
+      "patches": [],
+      "expectedStage1": false
+    },
+    {
+      "id": "one-of-not-any-of-reject",
+      "patches": [{
+        "op": "add",
+        "path": "/layers/0/bone",
+        "value": { "angle": 0, "length": 1, "scaleX": 1, "scaleY": 1 }
+      }],
+      "expectedStage1": false
+    },
+    {
+      "id": "not-mask-exclusive-reject",
+      "patches": [
+        { "op": "add", "path": "/layers/0/clipMaskIds", "value": ["mesh-body"] },
+        { "op": "add", "path": "/layers/0/clipMasks", "value": [{ "layerId": "mesh-body", "invert": true }] }
+      ],
+      "expectedStage1": false
+    },
+    {
+      "id": "unique-items-reject",
+      "patches": [{ "op": "add", "path": "/layers/0/clipMaskIds", "value": ["mesh-body", "mesh-body"] }],
+      "expectedStage1": false
+    },
+    {
+      "id": "contains-min-accept",
+      "patches": [{
+        "op": "add",
+        "path": "/layers/0/clipMasks",
+        "value": [{ "layerId": "mesh-body", "invert": true }]
+      }],
+      "expectedStage1": true
+    },
+    {
+      "id": "contains-min-reject",
+      "patches": [{
+        "op": "add",
+        "path": "/layers/0/clipMasks",
+        "value": [{ "layerId": "mesh-body", "invert": false }]
+      }],
+      "expectedStage1": false
+    },
+    {
+      "id": "pattern-properties-accept",
+      "patches": [{
+        "op": "add",
+        "path": "/skins/mesh-body",
+        "value": { "weights": [], "bindPoseInverse": {} }
+      }],
+      "expectedStage1": true
+    },
+    {
+      "id": "pattern-properties-additional-reject",
+      "patches": [{
+        "op": "add",
+        "path": "/skins/bad.key",
+        "value": { "weights": [], "bindPoseInverse": {} }
+      }],
+      "expectedStage1": false
+    },
+    {
+      "id": "recursive-ref-accept",
+      "patches": [{
+        "op": "replace",
+        "path": "/layers/0/children",
+        "value": [{
+          "id": "child",
+          "name": "Child",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 1,
+          "height": 1,
+          "blendMode": "normal",
+          "expanded": true,
+          "children": [],
+          "kind": "group"
+        }]
+      }],
+      "expectedStage1": true
+    },
+    {
+      "id": "recursive-ref-reject",
+      "patches": [{
+        "op": "replace",
+        "path": "/layers/0/children",
+        "value": [{
+          "id": "child",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 1,
+          "height": 1,
+          "blendMode": "normal",
+          "expanded": true,
+          "children": [],
+          "kind": "group"
+        }]
+      }],
+      "expectedStage1": false
+    },
+    {
+      "id": "duplicate-layer-id",
+      "mutation": "duplicate-layer-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-parameter-id",
+      "mutation": "duplicate-parameter-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-binding-id",
+      "mutation": "duplicate-binding-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-ik-controller-id",
+      "mutation": "duplicate-ik-controller-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-physics-group-id",
+      "mutation": "duplicate-physics-group-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-collider-id",
+      "mutation": "duplicate-collider-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-expression-preset-id",
+      "mutation": "duplicate-expression-preset-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-clip-id",
+      "mutation": "duplicate-clip-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-state-machine-id",
+      "mutation": "duplicate-state-machine-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-clip-mask-layer-id",
+      "mutation": "duplicate-clip-mask-layer-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-state-id",
+      "mutation": "duplicate-state-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-transition-id",
+      "mutation": "duplicate-transition-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-atlas-id",
+      "mutation": "duplicate-atlas-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    },
+    {
+      "id": "duplicate-atlas-entry-layer-id",
+      "mutation": "duplicate-atlas-entry-layer-id",
+      "patches": [],
+      "expectedStage1": true,
+      "expectedStage2": "evaluation-payload"
+    }
+  ]
+}

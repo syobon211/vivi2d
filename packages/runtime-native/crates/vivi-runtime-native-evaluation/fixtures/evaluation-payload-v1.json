@@ -1,0 +1,350 @@
+{
+  "schema": "vivi2d.contractFreeze.evaluationPayloadV1Fixtures.v1",
+  "limits": {
+    "maxTotalTextureBytes": 268435456
+  },
+  "valid": {
+    "resolvedInput": {
+      "compatibility": "full",
+      "project": {
+        "name": "evaluation-fixture",
+        "width": 32,
+        "height": 32,
+        "layers": [
+          {
+            "id": "mesh-body",
+            "name": "Body",
+            "kind": "viviMesh",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "mesh": {
+              "vertices": [0, 0, 1, 0, 0, 1],
+              "uvs": [0, 0, 1, 0, 0, 1],
+              "indices": [0, 1, 2],
+              "divisionsX": 1,
+              "divisionsY": 1
+            },
+            "semanticRole": "body",
+            "semanticRoleSource": "manual",
+            "managedTag": "must-not-cross-boundary",
+            "importMetadata": {
+              "source": "manualPng",
+              "manualPng": {
+                "sourceFileName": "fixture.png",
+                "originalWidth": 1,
+                "originalHeight": 1,
+                "trimmedBounds": [0, 0, 1, 1],
+                "finalOrigin": [0, 0],
+                "placementMode": "centerOnCanvas",
+                "autoGenerateMeshApplied": true
+              }
+            }
+          }
+        ],
+        "parameters": [
+          {
+            "id": "vivi.head.yaw",
+            "name": "Yaw",
+            "minValue": -1,
+            "maxValue": 1,
+            "defaultValue": 0
+          }
+        ],
+        "clips": [],
+        "scenes": [],
+        "physicsGroups": [],
+        "lipsyncConfig": {
+          "enabled": false,
+          "gain": 2,
+          "smoothing": 0.7,
+          "source": "microphone",
+          "targetParameterId": null,
+          "threshold": 0.02
+        },
+        "skins": {},
+        "parameterBindings": [],
+        "sceneBlends": [],
+        "ikControllers": [],
+        "offscreenTargets": [],
+        "expressionPresets": [],
+        "colliders": [],
+        "stateMachines": []
+      },
+      "atlases": [
+        {
+          "id": "body_atlas",
+          "image": {
+            "objectAddress": "76f430c66cac7eb823fa3a8ca44209c9584693dfbcc15d9b1d5ea30daa4dd3d2",
+            "storageKind": "blob",
+            "contentSha256": "76f430c66cac7eb823fa3a8ca44209c9584693dfbcc15d9b1d5ea30daa4dd3d2",
+            "mediaType": "image/png",
+            "sizeBytes": 70
+          },
+          "width": 1,
+          "height": 1,
+          "entries": [
+            {
+              "layerId": "mesh-body",
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            }
+          ]
+        }
+      ]
+    },
+    "expectedPayload": {
+      "schema": "vivi2d.evaluationPayload.v1",
+      "canvas": {
+        "width": 32,
+        "height": 32
+      },
+      "layers": [
+        {
+          "id": "mesh-body",
+          "name": "Body",
+          "kind": "viviMesh",
+          "visible": true,
+          "opacity": 1,
+          "x": 0,
+          "y": 0,
+          "width": 1,
+          "height": 1,
+          "blendMode": "normal",
+          "expanded": true,
+          "children": [],
+          "mesh": {
+            "vertices": [0, 0, 1, 0, 0, 1],
+            "uvs": [0, 0, 1, 0, 0, 1],
+            "indices": [0, 1, 2],
+            "divisionsX": 1,
+            "divisionsY": 1
+          }
+        }
+      ],
+      "parameters": [
+        {
+          "id": "vivi.head.yaw",
+          "name": "Yaw",
+          "minValue": -1,
+          "maxValue": 1,
+          "defaultValue": 0
+        }
+      ],
+      "parameterBindings": [],
+      "skins": {},
+      "ikControllers": [],
+      "physicsGroups": [],
+      "colliders": [],
+      "expressionPresets": [],
+      "clips": [],
+      "stateMachines": [],
+      "atlases": [
+        {
+          "id": "body_atlas",
+          "width": 1,
+          "height": 1,
+          "entries": [
+            {
+              "layerId": "mesh-body",
+              "x": 0,
+              "y": 0,
+              "width": 1,
+              "height": 1
+            }
+          ]
+        }
+      ]
+    },
+    "expectedTexturePlan": {
+      "schema": "vivi2d.evaluationTexturePlan.v1",
+      "textures": [
+        {
+          "id": "atlas:body_atlas",
+          "asset": {
+            "objectAddress": "76f430c66cac7eb823fa3a8ca44209c9584693dfbcc15d9b1d5ea30daa4dd3d2",
+            "storageKind": "blob",
+            "contentSha256": "76f430c66cac7eb823fa3a8ca44209c9584693dfbcc15d9b1d5ea30daa4dd3d2",
+            "mediaType": "image/png",
+            "sizeBytes": 70
+          },
+          "width": 1,
+          "height": 1,
+          "mediaType": "image/png",
+          "colorSpace": "srgb",
+          "alphaMode": "straight"
+        }
+      ]
+    },
+    "expectedExcludedKeys": [
+      "importMetadata",
+      "managedTag",
+      "semanticRole",
+      "semanticRoleSource"
+    ]
+  },
+  "dottedParameterPositive": {
+    "parameterId": "vivi.head.yaw",
+    "fixturePath": "valid.expectedPayload.parameters[0].id",
+    "expectedValid": true
+  },
+  "clipMaskProducer": {
+    "legacyInput": {
+      "clipMaskIds": ["mask"]
+    },
+    "allFalseEdgeInput": {
+      "clipMasks": [{ "layerId": "mask", "invert": false }]
+    },
+    "expectedNonInvertedCanonical": {
+      "clipMaskIds": ["mask"]
+    },
+    "invertEdgeInput": {
+      "clipMasks": [{ "layerId": "mask", "invert": true }]
+    },
+    "expectedInvertCanonical": {
+      "clipMasks": [{ "layerId": "mask", "invert": true }]
+    },
+    "expectedCapability": {
+      "id": "vivi.cap.maskInvert",
+      "minVersion": 1,
+      "requiredFor": ["render"]
+    },
+    "expectedBeginMask": {
+      "commandType": 2,
+      "flags": 1
+    },
+    "mutuallyExclusiveInput": {
+      "clipMaskIds": ["mask"],
+      "clipMasks": [{ "layerId": "mask", "invert": true }]
+    },
+    "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+  },
+  "incomplete": [
+    {
+      "id": "zero-vertex-mesh",
+      "patch": [
+        { "op": "replace", "path": "/layers/0/mesh/vertices", "value": [] },
+        { "op": "replace", "path": "/layers/0/mesh/uvs", "value": [] }
+      ],
+      "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+    },
+    {
+      "id": "odd-vertex-coordinate-count",
+      "patch": [
+        { "op": "replace", "path": "/layers/0/mesh/vertices", "value": [0, 0, 1] },
+        { "op": "replace", "path": "/layers/0/mesh/uvs", "value": [0, 0, 1] }
+      ],
+      "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+    },
+    {
+      "id": "uv-count-mismatch",
+      "patch": [
+        { "op": "replace", "path": "/layers/0/mesh/uvs", "value": [0, 0, 1, 0] }
+      ],
+      "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+    },
+    {
+      "id": "index-count-not-triangles",
+      "patch": [
+        { "op": "replace", "path": "/layers/0/mesh/indices", "value": [0, 1] }
+      ],
+      "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+    },
+    {
+      "id": "index-out-of-range",
+      "patch": [
+        { "op": "replace", "path": "/layers/0/mesh/indices", "value": [0, 1, 3] }
+      ],
+      "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+    },
+    {
+      "id": "skin-weights-missing",
+      "patch": [
+        {
+          "op": "add",
+          "path": "/skins/mesh-body",
+          "value": {
+            "weights": [],
+            "bindPoseInverse": {}
+          }
+        }
+      ],
+      "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+    },
+    {
+      "id": "skin-dangling-bone-id",
+      "patch": [
+        {
+          "op": "add",
+          "path": "/skins/mesh-body",
+          "value": {
+            "weights": [
+              [{ "boneId": "missing-bone", "weight": 1 }],
+              [{ "boneId": "missing-bone", "weight": 1 }],
+              [{ "boneId": "missing-bone", "weight": 1 }]
+            ],
+            "bindPoseInverse": {
+              "missing-bone": [1, 0, 0, 1, 0, 0]
+            }
+          }
+        }
+      ],
+      "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+    },
+    {
+      "id": "mesh-without-atlas-entry",
+      "patch": [
+        { "op": "replace", "path": "/atlases/0/entries", "value": [] }
+      ],
+      "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+    }
+  ],
+  "forbiddenMarker": {
+    "patch": [
+      { "op": "add", "path": "/layers/0/solver", "value": "editor-only" }
+    ],
+    "expectedStage1": "rejected",
+    "expectedError": "VIVI_ERR_EVALUATION_PAYLOAD"
+  },
+  "forbiddenAuthoringInput": {
+    "patch": [
+      {
+        "op": "add",
+        "path": "/project/layers/0/solver",
+        "value": "editor-only"
+      }
+    ],
+    "expectedPhase": "generation-before-whitelist-copy",
+    "expectedError": "VIVI_ERR_EVALUATION_FORBIDDEN"
+  },
+  "opaqueForbiddenSpellingParameterId": {
+    "parameterId": "blendShapes",
+    "presetId": "opaque-id-positive",
+    "expected": "accepted"
+  },
+  "runtime10RejectsNonEmptyClip": {
+    "runtimeSpecVersion": "1.0",
+    "patch": [
+      {
+        "op": "add",
+        "path": "/clips/0",
+        "value": {
+          "id": "clip-a",
+          "name": "Clip A",
+          "duration": 1,
+          "fps": 30,
+          "tracks": []
+        }
+      }
+    ],
+    "expectedError": "VIVI_ERR_UNSUPPORTED_OPERATION"
+  }
+}

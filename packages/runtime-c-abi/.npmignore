@@ -1,0 +1,7 @@
+# Reviewed Amendment 1 contract artifacts remain excluded from npm pack until
+# an explicit public API decision, including tracked internal-only artifacts.
+include/vivi_runtime_v02.h
+include/vivi_runtime_editor.h
+include/vivi_png.h
+tests/header-layout-v02.c
+tests/png-header-layout.c

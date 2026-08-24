@@ -19,6 +19,7 @@ export function makeAliases(
     "@vivi2d/core": resolve(rootDir, "packages/core/src"),
     "@vivi2d/model": resolve(rootDir, "packages/model/src"),
     "@vivi2d/editor-core": resolve(rootDir, "packages/editor-core/src"),
+    "@vivi2d/editor-host": resolve(rootDir, "packages/editor-host/src"),
     "@vivi2d/loader": resolve(rootDir, "packages/loader/src"),
     "@vivi2d/runtime": resolve(rootDir, "packages/runtime/src"),
     "@vivi2d/runtime-wasm": resolve(rootDir, "packages/runtime-wasm/src"),

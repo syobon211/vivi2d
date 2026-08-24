@@ -33,10 +33,47 @@ Runtime v1 rejects private-profile deformation features such as parameter-indexe
 mesh vertex deltas, lattice/cage/mesh-link data, morph targets, corrective
 deformation data, and animation tracks that directly mutate mesh vertices.
 
+### Runtime ABI 0.2 feature build: clip masks
+
+The Runtime ABI 0.2 feature build gives the public version 10 wire field
+`clipMaskIds` rendering meaning without changing that wire format. A non-empty
+ordered `clipMaskIds` array on a `viviMesh` layer names the mask-source mesh
+layers for that target. Each ID is lowered to a non-inverted mask edge in array
+order, and the runtime emits nested `BEGIN_MASK` commands, the target
+`DRAW_MESH`, and matching `END_MASK` commands. The active depth after a begin
+must not exceed the canonical `VIVI_RUNTIME_LIMITS.maxMaskDepth` value of `8`.
+This fixed ceiling is not added to the ABI 0.1 `ViviRuntimeLimits` structure and
+is not caller-configurable through that structure or the TypeScript
+`RuntimeLimitOverrides` options.
+
+A successfully loaded model with a non-empty mask dependency advertises the
+ABI 0.2 draw-command required-render-feature bit. On that ABI 0.2 runtime, the
+three inherited ABI 0.1 mesh APIs (`vivi_model_mesh_count`,
+`vivi_model_mesh_snapshot`, and `vivi_model_mesh_snapshot_by_id`) fail closed
+with `VIVI_ERR_RENDER_FEATURE_REQUIRED`; an unaware legacy host cannot silently
+render the model without its masks. Models that do not require draw commands
+continue to produce the same legacy mesh results.
+
+The default ABI 0.1 build and the WASM runtime remain isolated from this ABI 0.2
+feature. They do not expose the new symbols or activate draw-command lowering;
+the legacy constructor continues to ignore `clipMaskIds` as it did before this
+feature. The ABI 0.2 loader accepts the public version 10 profile's
+`clipMaskIds` but does not accept the editor-only `clipMasks`/INVERT wire
+representation.
+
+The ABI 0.2 loader also fails closed on malformed render topology that had no
+defined ABI 0.1 behavior. This includes duplicate mesh IDs, mask fields on
+non-mesh layers, and a `clipMaskIds` value that is not an array of unique,
+non-empty string IDs. Such inputs return `VIVI_ERR_DRAW_COMMANDS_INVALID`;
+missing references and cyclic mask dependencies use the same status, while an
+active mask depth greater than `8` returns `VIVI_ERR_LIMIT_EXCEEDED`. This
+strictness does not change the result for valid unmasked models.
+
 ## Canonical Constants
 
-The machine-readable constants live in
-`packages/core/src/runtime-spec.ts`:
+The machine-readable constants are exposed from
+`packages/core/src/runtime-spec.ts` and have their single definition in
+`packages/model/src/runtime-spec.ts`:
 
 - `VIVI_RUNTIME_SPEC_V1_VERSION`
 - `VIVI_RUNTIME_SPEC_VERSION`
@@ -64,13 +101,14 @@ facade for:
 - update stepping with validated delta time
 
 The facade intentionally hides editor project mutation from host code. WASM and
-future C ABI implementations must match the facade through the conformance
-suite before any public native, WASM, or C ABI release.
+C ABI implementations must match the facade through the conformance suite
+before any public native, WASM, or C ABI release.
 
-The current C ABI artifact lives under `packages/runtime-c-abi/` as a private
-header-only design boundary. It mirrors Runtime Spec v1 names and error codes
-for review, but it is not a native runtime implementation and carries no public
-ABI support promise.
+The current C ABI surface remains private. Its default 0.1 header lives under
+`packages/runtime-c-abi/`, and feature-gated native implementation slices exist
+under `packages/runtime-native/`. Neither the tracked header nor those internal
+implementation slices create a public ABI support promise; a selected version
+must match this specification through the conformance suite before promotion.
 
 Current implementation note: `RuntimeModel.update()` snapshots the
 `PublicViviModel` runtime state before evaluation and restores that snapshot if
