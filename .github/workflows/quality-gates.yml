@@ -5,6 +5,7 @@ on:
     paths:
       - "apps/**"
       - ".github/**"
+      - ".gitleaks.toml"
       - "CODE_OF_CONDUCT.md"
       - "CONTRIBUTING.md"
       - "README.md"
