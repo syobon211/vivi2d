@@ -10,10 +10,8 @@ export function selectCCompiler({
   }
 
   if (platform === "win32") {
-    for (const command of ["cl", "clang-cl"]) {
-      if (commandExists(command)) {
-        return { command, kind: "msvc" };
-      }
+    if (commandExists("cl")) {
+      return { command: "cl", kind: "msvc" };
     }
     const vcvars = findVcvars64();
     return vcvars ? { command: "cl", kind: "msvc", vcvars } : null;
@@ -32,4 +30,26 @@ export function compilerKind(command) {
   return baseName === "cl" || baseName === "cl.exe" || baseName.startsWith("clang-cl")
     ? "msvc"
     : "unix";
+}
+
+export function msvcCompileAndLinkArgs({
+  includeDir,
+  sourcePath,
+  executablePath,
+  objectPath,
+  importLibraryPath,
+}) {
+  return [
+    "/nologo",
+    "/std:c11",
+    "/W4",
+    "/WX",
+    "/utf-8",
+    `/I${includeDir}`,
+    sourcePath,
+    `/Fe:${executablePath}`,
+    `/Fo:${objectPath}`,
+    "/link",
+    importLibraryPath,
+  ];
 }

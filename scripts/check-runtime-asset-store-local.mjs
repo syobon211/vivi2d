@@ -30,8 +30,8 @@ const pinnedStoreFiles = [
   ],
   [
     "src/filesystem.rs",
-    12_719,
-    "9206c660c76f92f93e4ee14e5c9368e283a7067614e5fd29c156680e47662a05",
+    15_353,
+    "3e75a1b97840d8a23de643f1ee2620b30195c93cc35ebc4178c4a96540122add",
   ],
   ["src/lib.rs", 469, "ca85a461e3d70f703f7e1d382e1f8122e0d1577a0a5f26254fbcab3d26832489"],
   [
@@ -362,6 +362,8 @@ const requiredTestNames = [
   "errors_are_fully_redacted",
   "bundled_sqlite_version_is_exactly_pinned",
   "sqlite_failures_are_classified_without_native_text",
+  "unlinked_private_rollback_journal_metadata_is_disappeared",
+  "linked_private_rollback_journal_metadata_is_rejected",
 ];
 
 try {
@@ -411,7 +413,13 @@ function assertSourceInventory() {
     }
   }
 
-  const tests = readText(`${storeRoot}/src/tests.rs`);
+  const tests = pinnedStoreFiles
+    .map(([relativePath]) => relativePath)
+    .filter(
+      (relativePath) => relativePath.startsWith("src/") && relativePath.endsWith(".rs"),
+    )
+    .map((relativePath) => readText(`${storeRoot}/${relativePath}`))
+    .join("\n");
   const actualTestNames = [...tests.matchAll(/#\[test\]\s*fn\s+([A-Za-z0-9_]+)\s*\(/g)]
     .map((match) => match[1])
     .sort();

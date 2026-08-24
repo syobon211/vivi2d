@@ -100,7 +100,9 @@ pub(crate) fn validate_hot_journal(path: &Path) -> Result<bool, LocalStoreError>
     let journal = PathBuf::from(journal_name);
     match metadata_or_missing(&journal, true)? {
         Some(metadata) => {
-            validate_regular_private_metadata(&metadata)?;
+            if !validate_rollback_journal_metadata(&metadata)? {
+                return Ok(false);
+            }
             #[cfg(windows)]
             if windows_file_identity(&journal, true)?.is_none() {
                 return Ok(false);
@@ -284,6 +286,33 @@ fn validate_regular_private_metadata(metadata: &fs::Metadata) -> Result<(), Loca
     Ok(())
 }
 
+fn validate_rollback_journal_metadata(metadata: &fs::Metadata) -> Result<bool, LocalStoreError> {
+    if !metadata.file_type().is_file() || metadata.file_type().is_symlink() {
+        return Err(path_rejected());
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt as _;
+        if metadata.mode() & 0o077 != 0 {
+            return Err(path_rejected());
+        }
+        match metadata.nlink() {
+            0 => return Ok(false),
+            1 => {}
+            _ => return Err(path_rejected()),
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::MetadataExt as _;
+        const FILE_ATTRIBUTE_REPARSE_POINT: u32 = 0x400;
+        if metadata.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
+            return Err(path_rejected());
+        }
+    }
+    Ok(true)
+}
+
 fn create_private_file(path: &Path) -> std::io::Result<File> {
     let mut options = OpenOptions::new();
     options.read(true).write(true).create_new(true);
@@ -293,6 +322,51 @@ fn create_private_file(path: &Path) -> std::io::Result<File> {
         options.mode(0o600);
     }
     options.open(path)
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::validate_rollback_journal_metadata;
+    use std::fs::{self, OpenOptions};
+    use std::os::unix::fs::{MetadataExt as _, OpenOptionsExt as _};
+
+    #[test]
+    fn unlinked_private_rollback_journal_metadata_is_disappeared() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let journal = directory.path().join("assets.sqlite3-journal");
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(&journal)
+            .expect("private rollback journal");
+        fs::remove_file(&journal).expect("unlink rollback journal");
+        let metadata = file.metadata().expect("unlinked journal metadata");
+
+        assert_eq!(metadata.nlink(), 0);
+        assert!(!validate_rollback_journal_metadata(&metadata).expect("journal classification"));
+    }
+
+    #[test]
+    fn linked_private_rollback_journal_metadata_is_rejected() {
+        let directory = tempfile::tempdir().expect("temporary directory");
+        let journal = directory.path().join("assets.sqlite3-journal");
+        let alias = directory.path().join("assets.sqlite3-journal-hardlink");
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(&journal)
+            .expect("private rollback journal");
+        drop(file);
+        fs::hard_link(&journal, &alias).expect("rollback journal hard link");
+        let metadata = fs::symlink_metadata(&journal).expect("linked journal metadata");
+
+        assert_eq!(metadata.nlink(), 2);
+        assert!(validate_rollback_journal_metadata(&metadata).is_err());
+    }
 }
 
 #[cfg(unix)]

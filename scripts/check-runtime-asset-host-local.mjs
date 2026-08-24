@@ -56,8 +56,8 @@ const pinnedHostFiles = [
   ],
   [
     "src/tests.rs",
-    47_919,
-    "ef29c7e8436dc07fbd1e8c6924aa02160bb0c1665334fd52c7bacf9481731ba4",
+    48_233,
+    "34caed4e52b8f2ade0e1ee5d1e618b1c41a8f34cff516b2a480bdd9b42363c89",
   ],
 ];
 

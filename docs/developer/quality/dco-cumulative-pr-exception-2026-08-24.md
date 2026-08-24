@@ -10,9 +10,13 @@
 - Head disposition: freeze the final signed CI-remediation commit containing
   this record update; its exact SHA is preserved by the PR head ref and the
   final archive tag
-- Superseded freeze candidate:
-  `40c3923fe0be96c55fa5d5dd6f7f479d925f6357`; cross-platform CI rejected it,
-  and it was neither tagged nor merged
+- Superseded freeze candidates:
+  - `40c3923fe0be96c55fa5d5dd6f7f479d925f6357`; the first cross-platform CI
+    pass rejected it, and it was neither tagged nor merged
+  - `6856716496ca005301f25fb08de5b809114e8df0`; the second cross-platform CI
+    pass exposed a narrowed macOS rollback-journal race, Unix Asset-host test
+    permissions, and uninitialized Windows `clang-cl` selection; it was neither
+    tagged nor merged
 - Integration base: `da60e5bac2c52bbcb02d4f1ac8066d95d895fedb`
 - Historical range base: `ee41eacf85166f28f2efe96d368ac4ec964a4cd8`
 - Historical range head: `8e3dab509f6d2a85adc5bff1a41fc97347bf9a9c`
@@ -54,6 +58,8 @@ limited to these exact paths:
 - `docs/developer/quality/dco-cumulative-pr-exception-2026-08-24.md`;
 - `packages/runtime-native/crates/vivi-asset-store-local/src/filesystem.rs`;
 - `packages/runtime-native/crates/vivi-asset-store-local/src/tests.rs`;
+- `packages/runtime-native/crates/vivi-asset-host-local/src/tests.rs`;
+- `scripts/check-runtime-asset-host-local.mjs`;
 - `scripts/check-runtime-asset-store-local.mjs`;
 - `scripts/check-runtime-c-abi-link.mjs`;
 - `scripts/lib/runtime-c-abi-compiler.mjs`; and

@@ -36,6 +36,22 @@ fn principal() -> PrincipalId {
     PrincipalId::new(b"host-local-test-principal".to_vec())
 }
 
+fn private_tempdir() -> TempDir {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        tempfile::Builder::new()
+            .permissions(std::fs::Permissions::from_mode(0o700))
+            .tempdir()
+            .expect("private temporary directory")
+    }
+    #[cfg(not(unix))]
+    {
+        TempDir::new().expect("temporary directory")
+    }
+}
+
 fn open_host(temp: &TempDir) -> LocalAssetHost {
     LocalAssetHost::open(temp.path().join("assets.sqlite3"), principal()).expect("host opens")
 }
@@ -76,7 +92,7 @@ fn plan(textures: Vec<EvaluationTextureBindingV1>) -> EvaluationTexturePlanV1 {
 
 #[test]
 fn embedded_materialization_returns_exact_attestation_and_reopens_as_reference() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let mut host = open_host(&temp);
     let bytes = png_bytes();
 
@@ -97,7 +113,7 @@ fn embedded_materialization_returns_exact_attestation_and_reopens_as_reference()
 
 #[test]
 fn referenced_missing_is_a_state_distinct_from_hard_errors() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let host = open_host(&temp);
     let reference = blob_reference(7);
 
@@ -127,7 +143,7 @@ fn referenced_missing_is_a_state_distinct_from_hard_errors() {
 
 #[test]
 fn activation_ready_set_is_ordered_owned_complete_and_generation_bound() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let mut host = open_host(&temp);
     let bytes = png_bytes();
     let verified = host
@@ -925,7 +941,7 @@ fn referenced_manifest_ingestion_succeeds_reopens_and_is_idempotent() {
             .map(|(object, wire)| ReferencedPngClosureObjectV1::new(wire, object.payload))
             .collect(),
     );
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let mut host = open_host(&temp);
     let verified = host
         .ingest_referenced_png_manifest_closure(

@@ -8,7 +8,10 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
-import { selectCCompiler } from "./lib/runtime-c-abi-compiler.mjs";
+import {
+  msvcCompileAndLinkArgs,
+  selectCCompiler,
+} from "./lib/runtime-c-abi-compiler.mjs";
 
 const root = process.cwd();
 const nativeManifest = path.join(root, "packages/runtime-native/Cargo.toml");
@@ -103,18 +106,16 @@ function runOptionalCHost() {
 
   const exePath = path.join(tmpDir, executableName("minimal-host"));
   if (compiler.kind === "msvc") {
-    runMsvc(compiler, [
-      "/nologo",
-      "/std:c11",
-      "/W4",
-      "/WX",
-      "/utf-8",
-      `/I${includeDir}`,
-      samplePath,
-      `/Fe:${exePath}`,
-      `/Fo:${path.join(tmpDir, "minimal-host.obj")}`,
-      path.join(tmpDir, "vivi_runtime_native_c_abi.lib"),
-    ]);
+    runMsvc(
+      compiler,
+      msvcCompileAndLinkArgs({
+        includeDir,
+        sourcePath: samplePath,
+        executablePath: exePath,
+        objectPath: path.join(tmpDir, "minimal-host.obj"),
+        importLibraryPath: path.join(tmpDir, "vivi_runtime_native_c_abi.lib"),
+      }),
+    );
   } else {
     run(compiler.command, [
       "-std=c11",

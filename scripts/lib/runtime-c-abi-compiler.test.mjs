@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { compilerKind, selectCCompiler } from "./runtime-c-abi-compiler.mjs";
+import {
+  compilerKind,
+  msvcCompileAndLinkArgs,
+  selectCCompiler,
+} from "./runtime-c-abi-compiler.mjs";
 
 function selector({ platform, available = [], requested, vcvars = null }) {
   const commands = new Set(available);
@@ -48,6 +52,24 @@ describe("runtime C ABI compiler selection", () => {
     });
   });
 
+  it("uses vcvars-backed cl instead of an uninitialized standalone clang-cl", () => {
+    const { result, findVcvars64 } = selector({
+      platform: "win32",
+      available: ["clang-cl"],
+      vcvars: "C:/vcvars64.bat",
+    });
+    expect(result).toEqual({
+      command: "cl",
+      kind: "msvc",
+      vcvars: "C:/vcvars64.bat",
+    });
+    expect(findVcvars64).toHaveBeenCalledOnce();
+  });
+
+  it("does not auto-select standalone clang-cl without an initialized SDK environment", () => {
+    expect(selector({ platform: "win32", available: ["clang-cl"] }).result).toBeNull();
+  });
+
   it("skips the optional C host when Windows has no MSVC-compatible compiler", () => {
     expect(selector({ platform: "win32", available: ["cc", "gcc"] }).result).toBeNull();
   });
@@ -66,5 +88,19 @@ describe("runtime C ABI compiler selection", () => {
     expect(compilerKind("C:\\Build Tools\\cl.exe")).toBe("msvc");
     expect(compilerKind("C:\\LLVM\\clang-cl.exe")).toBe("msvc");
     expect(compilerKind("C:\\msys64\\usr\\bin\\gcc.exe")).toBe("unix");
+  });
+
+  it("passes the import library to the linker rather than the compiler", () => {
+    const args = msvcCompileAndLinkArgs({
+      includeDir: "C:/include",
+      sourcePath: "C:/src/minimal-host.c",
+      executablePath: "C:/out/minimal-host.exe",
+      objectPath: "C:/out/minimal-host.obj",
+      importLibraryPath: "C:/out/vivi-runtime.lib",
+    });
+
+    expect(args.slice(-2)).toEqual(["/link", "C:/out/vivi-runtime.lib"]);
+    expect(args).toContain("C:/src/minimal-host.c");
+    expect(args).toContain("/Fo:C:/out/minimal-host.obj");
   });
 });
