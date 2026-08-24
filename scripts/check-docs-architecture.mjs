@@ -13,6 +13,10 @@ const PLANNING_DOC_PATTERNS = [
   /review-prompt/i,
 ];
 
+const OWNER_APPROVED_TRACKED_ROADMAPS = new Set([
+  "docs/developer/architecture/multiplatform-roadmap.md",
+]);
+
 const UNVERSIONED_API_DOCS = [
   "docs/developer/api/web-sdk.md",
   "docs/developer/api/viewer-api.md",
@@ -197,7 +201,10 @@ if (trackedBacklog) {
 for (const file of repoFiles) {
   if (!file.startsWith("docs/") || file.startsWith("docs/backlog/")) continue;
   const base = path.basename(file);
-  if (PLANNING_DOC_PATTERNS.some((pattern) => pattern.test(base))) {
+  if (
+    PLANNING_DOC_PATTERNS.some((pattern) => pattern.test(base)) &&
+    !OWNER_APPROVED_TRACKED_ROADMAPS.has(file)
+  ) {
     fail(
       `Tracked planning/backlog-style doc is not allowed outside docs/backlog/: ${file}`,
     );

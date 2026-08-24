@@ -64,10 +64,21 @@ minimum threat model for the OSS alpha.
 - Async or isolated parsing for expensive inputs; prefer subprocess or Electron
   `utilityProcess` for parser isolation where practical.
 - ComfyUI I/O constrained to selected buffers or allowlisted files.
-- ComfyUI JSON responses are shape-checked before they affect renderer state.
-- Downloaded ComfyUI artifacts are size-limited before being returned across
-  IPC.
-- Magic-byte/header/structure checks for downloaded artifacts.
+- A ComfyUI manifest is byte-bounded, schema-validated, and checked for layer
+  and artifact-count limits before any referenced layer is downloaded. Producer
+  validation is not accepted as a substitute for consumer validation.
+- ComfyUI downloads enforce cumulative byte and file-count budgets while
+  streaming, before buffers are returned across IPC or retained together.
+- Magic-byte, dimensions, and structural checks are applied to downloaded
+  artifacts before preview or import. Before remote or cloud promotion, the
+  protocol must additionally carry an authenticated or integrity-covered size
+  and digest for each artifact, and the consumer must verify them before
+  retention, preview, or import; the current local manifest does not supply
+  that per-layer digest.
+- ComfyUI/provider transport, including loopback/local and remote/cloud-backed
+  WebSocket and downloads, must be main-process-owned. The renderer receives
+  only validated, bounded events and results; unrestricted renderer transport
+  authority is not an accepted production boundary.
 - Explicit timeout and cancellation for long-running workflows.
 - No telemetry, crash reporting, or remote upload by default.
 - Viewer automation APIs are disabled by default, loopback-only by default,

@@ -1,0 +1,7 @@
+# Internal source tests and freeze fixtures are never runtime package inputs.
+src/__tests__/
+
+# Keep the reviewed local Spec Freeze pack checker explicit and self-documenting.
+src/__tests__/evaluation-payload-v1.test.ts
+src/__tests__/evaluation-vertical-spike.test.ts
+src/__tests__/project-format-v10-freeze.test.ts

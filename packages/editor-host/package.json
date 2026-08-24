@@ -1,0 +1,19 @@
+{
+  "name": "@vivi2d/editor-host",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "vivi2d": {
+    "publication": "internal"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.portability.json",
+    "test": "vitest run packages/editor-host/src/__tests__ --root ../.. --config packages/editor-host/vitest.config.ts --no-coverage"
+  },
+  "dependencies": {
+    "@vivi2d/model": "^0.1.0"
+  }
+}

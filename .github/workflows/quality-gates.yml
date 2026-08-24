@@ -114,6 +114,8 @@ jobs:
           scripts/record-web-npm-alpha-artifacts.mjs
           scripts/verify-web-npm-alpha-release-record.mjs
           scripts/verify-web-npm-alpha-publish.mjs
+          scripts/generate-schema-validators.mjs
+          scripts/check-model-jsc-portability.mjs
           scripts/check-pack-contents.mjs
           scripts/check-package-boundaries.mjs
           scripts/check-web-sdk-unlock.mjs
@@ -126,6 +128,7 @@ jobs:
           scripts/check-release-gates.test.mjs
           scripts/check-runtime-c-abi-link.mjs
           scripts/check-runtime-c-abi.mjs
+          scripts/check-runtime-png.mjs
           scripts/check-runtime-wasm-browser.mjs
           scripts/check-secrets.mjs
           scripts/check-security-patterns.mjs
@@ -140,8 +143,10 @@ jobs:
           scripts/lib/repo.test.mjs
           scripts/lib/repo.mjs
           scripts/run-quality-gates.mjs
+      - run: npm run check:model-schema-validators
       - run: npx tsc --noEmit
       - run: npm run check:packages-types
+      - run: npm run check:model-jsc-portability
       - run: npm run check:workspace-layout
       - run: npm run check:docs-architecture
       - run: npm run check:task-guide-paths

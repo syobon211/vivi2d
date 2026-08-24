@@ -106,6 +106,8 @@ jobs:
           scripts/prepare-windows-installer-assets.mjs
           scripts/verify-windows-installer-assets.mjs
           scripts/lib/windows-installer-alpha.mjs
+          scripts/generate-schema-validators.mjs
+          scripts/check-model-jsc-portability.mjs
           scripts/check-pack-contents.mjs
           scripts/check-package-boundaries.mjs
           scripts/check-web-sdk-unlock.mjs
@@ -117,6 +119,7 @@ jobs:
           scripts/check-release-gates.test.mjs
           scripts/check-runtime-c-abi-link.mjs
           scripts/check-runtime-c-abi.mjs
+          scripts/check-runtime-png.mjs
           scripts/check-runtime-wasm-browser.mjs
           scripts/check-ui-module-budget.mjs
           scripts/check-user-docs.mjs

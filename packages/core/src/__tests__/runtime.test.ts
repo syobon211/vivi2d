@@ -11,6 +11,8 @@ import {
   type ViviMeshNode,
 } from "../index";
 
+type RuntimeOptions = NonNullable<Parameters<typeof ViviRuntime.load>[1]>;
+
 function createMesh(id = "mesh-body", drawOrder = 10): ViviMeshNode {
   return {
     id,
@@ -403,6 +405,7 @@ describe("ViviRuntime facade", () => {
       }),
     ).toThrow(ViviRuntimeError);
     expect(VIVI_RUNTIME_LIMITS.maxPayloadBytes).toBeGreaterThan(1);
+    expect(VIVI_RUNTIME_LIMITS.maxMaskDepth).toBe(8);
   });
 
   it("enforces host-overridden structural runtime limits", () => {
@@ -451,6 +454,19 @@ describe("ViviRuntime facade", () => {
         maxPayloadBytes: VIVI_RUNTIME_LIMITS.maxPayloadBytes + 1,
       }).getRenderList(),
     ).toHaveLength(1);
+  });
+
+  it("rejects attempts to override the fixed mask-depth limit", () => {
+    for (const maxMaskDepth of [4, undefined]) {
+      const escapedOptions = {
+        limits: { maxMaskDepth },
+      } as unknown as RuntimeOptions;
+
+      expectRuntimeErrorCode(
+        () => ViviRuntime.load(createFileData(), escapedOptions),
+        VIVI_RUNTIME_ERROR_CODES.invalidArgument,
+      );
+    }
   });
 
   it("rejects duplicate runtime atlas entries for the same mesh", () => {

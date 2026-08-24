@@ -1,0 +1,20 @@
+[package]
+name = "vivi-runtime-native-evaluation-math"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+autobins = false
+autoexamples = false
+autobenches = false
+
+[lib]
+name = "vivi_runtime_native_evaluation_math"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
+[dependencies]
+fpmath = { version = "=0.1.1", default-features = false, features = ["soft-float"] }
+rustc_apfloat = { version = "=0.2.3", default-features = false }

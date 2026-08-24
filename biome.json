@@ -59,6 +59,29 @@
   },
   "overrides": [
     {
+      "includes": ["packages/model/src/internal/generated/**"],
+      "formatter": {
+        "enabled": false
+      },
+      "assist": {
+        "enabled": false
+      },
+      "linter": {
+        "enabled": false
+      }
+    },
+    {
+      "includes": [
+        "packages/model/src/project-format-v11/project-format-v11.schema.json",
+        "packages/model/src/__tests__/fixtures/project-format-v11-golden.json",
+        "packages/model/src/evaluation-payload-v1/evaluation-payload-v1.schema.json",
+        "packages/model/src/evaluation-payload-v1/evaluation-texture-plan-v1.schema.json"
+      ],
+      "formatter": {
+        "enabled": false
+      }
+    },
+    {
       "includes": [
         "**/__tests__/**",
         "**/*.test.ts",

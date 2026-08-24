@@ -46,23 +46,25 @@ afterEach(() => {
   cleanup();
 });
 
-Object.defineProperty(window, "electronAPI", {
-  value: {
-    openPsdFile: vi.fn(),
-    saveFile: vi.fn(),
-    openViviFile: vi.fn(),
-    saveVividFile: vi.fn(),
-    openVividFile: vi.fn(),
-    openImageFile: vi.fn(),
-    openPngFile: vi.fn(),
-    openPngFiles: vi.fn(),
-    openPngFolder: vi.fn(),
-    openAudioFile: vi.fn(),
-    readAudioFile: vi.fn(),
-    readImageFile: vi.fn(),
-  },
-  writable: true,
-});
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "electronAPI", {
+    value: {
+      openPsdFile: vi.fn(),
+      saveFile: vi.fn(),
+      openViviFile: vi.fn(),
+      saveVividFile: vi.fn(),
+      openVividFile: vi.fn(),
+      openImageFile: vi.fn(),
+      openPngFile: vi.fn(),
+      openPngFiles: vi.fn(),
+      openPngFolder: vi.fn(),
+      openAudioFile: vi.fn(),
+      readAudioFile: vi.fn(),
+      readImageFile: vi.fn(),
+    },
+    writable: true,
+  });
+}
 
 function createMockAnalyserNode() {
   return {
@@ -100,19 +102,21 @@ function createMockAudioContext() {
 
 (globalThis as any).AudioContext = vi.fn().mockImplementation(createMockAudioContext);
 
-if (!navigator.mediaDevices) {
-  Object.defineProperty(navigator, "mediaDevices", {
-    value: {},
+if (typeof navigator !== "undefined") {
+  if (!navigator.mediaDevices) {
+    Object.defineProperty(navigator, "mediaDevices", {
+      value: {},
+      writable: true,
+    });
+  }
+  Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
+    value: vi.fn().mockResolvedValue({
+      getTracks: () => [{ stop: vi.fn() }],
+    }),
     writable: true,
+    configurable: true,
   });
 }
-Object.defineProperty(navigator.mediaDevices, "getUserMedia", {
-  value: vi.fn().mockResolvedValue({
-    getTracks: () => [{ stop: vi.fn() }],
-  }),
-  writable: true,
-  configurable: true,
-});
 
 vi.mock("pixi.js", () => {
   function mockContainer() {

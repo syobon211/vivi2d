@@ -33,6 +33,7 @@ export const VIVI_RUNTIME_LIMITS = Object.freeze({
   maxStateMachines: 128,
   maxStatesPerStateMachine: 256,
   maxTransitionsPerStateMachine: 512,
+  maxMaskDepth: 8,
 });
 
 export const VIVI_RUNTIME_TIMING = Object.freeze({

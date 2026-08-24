@@ -113,8 +113,13 @@ export interface RuntimePlayClipOptions {
   readonly startTimeSeconds?: number;
 }
 
+type RuntimeConfigurableLimit = Exclude<
+  keyof typeof VIVI_RUNTIME_LIMITS,
+  "maxMaskDepth"
+>;
+
 export type RuntimeLimitOverrides = Partial<
-  Record<keyof typeof VIVI_RUNTIME_LIMITS, number>
+  Record<RuntimeConfigurableLimit, number>
 >;
 
 type RuntimeLimits = Record<keyof typeof VIVI_RUNTIME_LIMITS, number>;
@@ -194,7 +199,14 @@ function resolveRuntimeLimits(
   options?: RuntimeModelOptions,
 ): RuntimeLimits {
   const resolved: RuntimeLimits = { ...VIVI_RUNTIME_LIMITS };
-  for (const [key, value] of Object.entries(options?.limits ?? {})) {
+  const overrides = options?.limits ?? {};
+  if (Object.hasOwn(overrides, "maxMaskDepth")) {
+    throw runtimeError(
+      VIVI_RUNTIME_ERROR_CODES.invalidArgument,
+      "fixed runtime limit cannot be overridden: maxMaskDepth",
+    );
+  }
+  for (const [key, value] of Object.entries(overrides)) {
     if (value !== undefined) {
       (resolved as Record<string, number>)[key] = clampLimitOverride(
         key,

@@ -1,0 +1,21 @@
+[package]
+name = "vivi-asset-host-local"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "vivi_asset_host_local"
+path = "src/lib.rs"
+
+[dependencies]
+vivi-asset-resolver = { path = "../vivi-asset-resolver", default-features = false }
+vivi-asset-store-local = { path = "../vivi-asset-store-local", default-features = false }
+
+[dev-dependencies]
+base64 = "0.22"
+sha2 = { version = "0.10", default-features = false }
+tempfile = "3"

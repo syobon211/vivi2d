@@ -18,6 +18,13 @@ English-first content, localization, and website-scaffold sequence lives in
   `ko-KR`.
 - `docs/backlog/`: ignored local archive for historical plans and review notes.
 
+Planning and backlog documents normally remain under ignored `docs/backlog/`.
+A secret-free roadmap may be tracked only after the owner-approved public
+planning review required by
+[`package-boundaries.md`](package-boundaries.md), and its exact path must be
+added to the architecture checker's narrow allowlist. The allowlist does not
+authorize implementation or make other planning documents trackable.
+
 ## Developer Task Guides
 
 Task guides are practical navigation docs, not API references or roadmaps. Each

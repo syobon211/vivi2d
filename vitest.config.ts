@@ -32,6 +32,7 @@ export default defineConfig({
         "src/components/**",
         "packages/core/src/**",
         "packages/editor-core/src/**",
+        "packages/editor-host/src/**",
         "packages/loader/src/**",
         "packages/model/src/**",
         "packages/runtime/src/**",

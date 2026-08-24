@@ -7,6 +7,16 @@
     "publication": "internal"
   },
   "scripts": {
-    "check": "cargo fmt --manifest-path Cargo.toml --all -- --check && cargo clippy --manifest-path Cargo.toml --workspace --all-targets -- -D warnings && cargo test --manifest-path Cargo.toml --workspace --all-targets && node ../../scripts/check-runtime-native-wasm.mjs"
+    "check": "cargo fmt --manifest-path Cargo.toml --all -- --check && cargo clippy --manifest-path Cargo.toml --workspace --all-targets -- -D warnings && cargo test --manifest-path Cargo.toml --workspace --all-targets && node ../../scripts/check-runtime-native-wasm.mjs",
+    "check:asset-host-local": "cargo test --locked --manifest-path Cargo.toml -p vivi-asset-host-local --all-targets && cargo clippy --locked --manifest-path Cargo.toml -p vivi-asset-host-local --all-targets -- -D warnings",
+    "check:asset-resolver": "cargo test --locked --manifest-path Cargo.toml -p vivi-asset-resolver --all-targets && cargo clippy --locked --manifest-path Cargo.toml -p vivi-asset-resolver --all-targets -- -D warnings",
+    "check:asset-resolver:wasm32": "cargo test --locked --manifest-path Cargo.toml -p vivi-asset-resolver --target wasm32-unknown-unknown --all-targets --no-run && cargo clippy --locked --manifest-path Cargo.toml -p vivi-asset-resolver --target wasm32-unknown-unknown --all-targets -- -D warnings",
+    "check:asset-store-local": "cargo test --locked --manifest-path Cargo.toml -p vivi-asset-store-local --all-targets && cargo clippy --locked --manifest-path Cargo.toml -p vivi-asset-store-local --all-targets -- -D warnings",
+    "check:evaluation": "cargo test --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation --all-targets && cargo clippy --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation --all-targets -- -D warnings",
+    "check:evaluation:wasm32": "cargo test --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation --target wasm32-unknown-unknown --all-targets --no-run && cargo clippy --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation --target wasm32-unknown-unknown --all-targets -- -D warnings",
+    "check:evaluation-lowering": "cargo test --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-lowering --all-targets && cargo clippy --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-lowering --all-targets -- -D warnings",
+    "check:evaluation-math": "cargo +1.89.0 fmt --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-math -- --check && cargo +1.89.0 test --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-math --lib && cargo +1.89.0 test --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-math --test no_allocation -- --test-threads=1 && cargo +1.89.0 clippy --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-math --all-targets -- -D warnings",
+    "check:evaluation-math:wasm32": "cargo +1.89.0 test --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-math --target wasm32-unknown-unknown --all-targets --no-run && cargo +1.89.0 clippy --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-math --target wasm32-unknown-unknown --all-targets -- -D warnings",
+    "check:preactivation": "cargo test --locked --manifest-path Cargo.toml -p vivi-runtime-native-preactivation --all-targets && cargo clippy --locked --manifest-path Cargo.toml -p vivi-runtime-native-preactivation --all-targets -- -D warnings"
   }
 }

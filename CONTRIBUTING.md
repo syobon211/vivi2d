@@ -1,9 +1,9 @@
 # Contributing to Vivi2D
 
-Thanks for helping make Vivi2D better. This project is still pre-public and
+Thanks for helping make Vivi2D better. This project is public but still
 pre-1.0, so APIs, package boundaries, file formats, and release policy may
-change before the first OSS release. Contributions are welcome, but changes that
-touch public surfaces need extra care.
+change before the first stable OSS release. Contributions are welcome, but
+changes that touch public surfaces need extra care.
 
 ## Ground Rules
 

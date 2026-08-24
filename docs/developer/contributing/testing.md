@@ -67,6 +67,7 @@ npm run check:pack-contents
 npm run check:viewer-mediapipe-assets
 npm run check:publication-history
 npm run check:native-artifact-policy
+npm run check:runtime-png
 npm run check:security-patterns
 npm run check:source-review-archive
 ```

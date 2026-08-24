@@ -1,0 +1,1839 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vivi2d.com/spec/project-format-v11.schema.json",
+  "title": "Vivi2D Project Format through v11",
+  "$comment": "Machine-readable freeze artifact approved by Spec Freeze Amendment 1. It models the v1-10 wire shape and the two v11 asset modes as exclusive branches. I-3, I-4, I-6 through I-8, projected uniqueness, hash/size equality, reachable embedded-asset closure, canonical byte size, version minimization, clip-mask uniqueness, and mask-invert capability derivation require semantic validation.",
+  "x-vivi-status": "approved-amendment-1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "project", "atlases"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 11
+    },
+    "profile": { "const": "publicProfileV1" },
+    "project": {},
+    "atlases": { "type": "array" },
+    "assetMode": {
+      "type": "string",
+      "enum": ["embedded", "referenced"]
+    },
+    "documentId": { "$ref": "#/$defs/UuidV4V11" },
+    "requires": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ViviRequiredCapabilityV11" },
+      "x-vivi-uniqueBy": "id",
+      "$comment": "IDs must be unique. Entries must be sorted by UTF-8 byte order of id; requiredFor uses fixed render,edit order."
+    },
+    "extensions": {},
+    "embeddedAssets": {}
+  },
+  "oneOf": [
+    {
+      "title": "ViviFileDataWireV1To10",
+      "properties": {
+        "version": {
+          "type": "integer",
+          "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        },
+        "project": { "$ref": "#/$defs/ProjectDataLegacyV1To10" },
+        "atlases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AtlasDataV10" }
+        }
+      },
+      "required": ["version", "project", "atlases"],
+      "not": {
+        "anyOf": [
+          { "required": ["assetMode"] },
+          { "required": ["documentId"] },
+          { "required": ["requires"] },
+          { "required": ["extensions"] },
+          { "required": ["embeddedAssets"] }
+        ]
+      }
+    },
+    {
+      "title": "ViviFileDataWireV11Embedded",
+      "properties": {
+        "version": { "const": 11 },
+        "assetMode": { "const": "embedded" },
+        "project": { "$ref": "#/$defs/ProjectDataCanonicalV11" },
+        "atlases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ViviAtlasDataEmbeddedV11" },
+          "x-vivi-uniqueBy": "id"
+        },
+        "extensions": { "$ref": "#/$defs/EmbeddedExtensionMapV11" },
+        "embeddedAssets": { "$ref": "#/$defs/EmbeddedAssetMapV11" }
+      },
+      "required": ["version", "project", "atlases", "assetMode"],
+      "not": { "required": ["profile"] },
+      "$comment": "I-4/I-11: every extension blobRef must be a directly embeddable blob and its transitive closure must exactly equal embeddedAssets. Atlas bytes are carried directly in image and never create atlas-only embeddedAssets entries."
+    },
+    {
+      "title": "ViviFileDataWireV11Referenced",
+      "properties": {
+        "version": { "const": 11 },
+        "assetMode": { "const": "referenced" },
+        "project": { "$ref": "#/$defs/ProjectDataCanonicalV11" },
+        "atlases": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ViviAtlasDataReferencedV11" },
+          "x-vivi-uniqueBy": "id"
+        },
+        "extensions": { "$ref": "#/$defs/ReferencedExtensionMapV11" },
+        "embeddedAssets": {
+          "allOf": [
+            { "$ref": "#/$defs/EmbeddedAssetMapV11" },
+            { "maxProperties": 0 }
+          ]
+        }
+      },
+      "required": ["version", "project", "atlases", "assetMode"],
+      "not": { "required": ["profile"] }
+    }
+  ],
+  "$defs": {
+    "SafeIntegerV11": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "PositiveSafeIntegerV11": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "UuidV4V11": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    },
+    "Sha256HexV11": {
+      "type": "string",
+      "pattern": "^[A-Fa-f0-9]{64}$",
+      "$comment": "Wire input accepts either hex case. Producers emit lowercase; consumers normalize for equality and storage lookup under Spec Freeze Amendment 1."
+    },
+    "CapabilityIdV11": {
+      "type": "string",
+      "pattern": "^vivi\\.cap\\.[a-z][a-zA-Z0-9]*$"
+    },
+    "AtlasIdV11": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,120}$"
+    },
+    "RawBase64V11": {
+      "type": "string",
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+      "contentEncoding": "base64",
+      "$comment": "Raw base64 only; data URLs are rejected by the pattern. Decoded byte/hash checks are semantic."
+    },
+    "ViviAssetRefV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objectAddress",
+        "storageKind",
+        "contentSha256",
+        "mediaType",
+        "sizeBytes"
+      ],
+      "properties": {
+        "objectAddress": { "$ref": "#/$defs/Sha256HexV11" },
+        "storageKind": {
+          "type": "string",
+          "enum": ["blob", "chunk_manifest"]
+        },
+        "contentSha256": { "$ref": "#/$defs/Sha256HexV11" },
+        "mediaType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "$comment": "maxLength is a structural approximation; Stage 2 enforces 1..255 UTF-8 bytes."
+        },
+        "sizeBytes": { "$ref": "#/$defs/SafeIntegerV11" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "storageKind": { "const": "blob" } },
+            "required": ["storageKind"]
+          },
+          "then": {
+            "properties": {
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 16777216
+              }
+            },
+            "$comment": "For blob, objectAddress must equal contentSha256; equality is semantic."
+          },
+          "else": {
+            "properties": {
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 16777217,
+                "maximum": 68719476736
+              }
+            }
+          }
+        }
+      ]
+    },
+    "EmbeddableBlobAssetRefV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objectAddress",
+        "storageKind",
+        "contentSha256",
+        "mediaType",
+        "sizeBytes"
+      ],
+      "properties": {
+        "objectAddress": { "$ref": "#/$defs/Sha256HexV11" },
+        "storageKind": { "const": "blob" },
+        "contentSha256": { "$ref": "#/$defs/Sha256HexV11" },
+        "mediaType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255,
+          "$comment": "maxLength is a structural approximation; Stage 2 enforces 1..255 UTF-8 bytes."
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16777216
+        }
+      },
+      "$comment": "objectAddress must equal contentSha256."
+    },
+    "PngAssetRefV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "objectAddress",
+        "storageKind",
+        "contentSha256",
+        "mediaType",
+        "sizeBytes"
+      ],
+      "properties": {
+        "objectAddress": { "$ref": "#/$defs/Sha256HexV11" },
+        "storageKind": {
+          "type": "string",
+          "enum": ["blob", "chunk_manifest"]
+        },
+        "contentSha256": { "$ref": "#/$defs/Sha256HexV11" },
+        "mediaType": { "const": "image/png" },
+        "sizeBytes": { "$ref": "#/$defs/SafeIntegerV11" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "storageKind": { "const": "blob" } },
+            "required": ["storageKind"]
+          },
+          "then": {
+            "properties": {
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 16777216
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "sizeBytes": {
+                "type": "integer",
+                "minimum": 16777217,
+                "maximum": 68719476736
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ViviRequiredCapabilityV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "minVersion", "requiredFor"],
+      "properties": {
+        "id": { "$ref": "#/$defs/CapabilityIdV11" },
+        "minVersion": { "$ref": "#/$defs/PositiveSafeIntegerV11" },
+        "requiredFor": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": ["render", "edit"]
+          }
+        }
+      }
+    },
+    "ViviJsonValueV11": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "boolean" },
+        { "type": "number" },
+        { "type": "string" },
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ViviJsonValueV11" }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "not": {
+              "enum": ["__proto__", "constructor", "prototype"]
+            }
+          },
+          "additionalProperties": { "$ref": "#/$defs/ViviJsonValueV11" },
+          "$comment": "Extension data is intentionally an arbitrary recursive JSON object, so schema-object T-STRICT does not apply to its application-defined keys. Duplicate map keys and nesting/token/byte limits are codec-stage checks."
+        }
+      ]
+    },
+    "ReferencedExtensionEnvelopeV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "requiredCapabilityId", "data"],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/PositiveSafeIntegerV11" },
+        "requiredCapabilityId": { "$ref": "#/$defs/CapabilityIdV11" },
+        "data": { "$ref": "#/$defs/ViviJsonValueV11" },
+        "blobRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ViviAssetRefV11" }
+        }
+      }
+    },
+    "EmbeddedExtensionEnvelopeV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "requiredCapabilityId", "data"],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/PositiveSafeIntegerV11" },
+        "requiredCapabilityId": { "$ref": "#/$defs/CapabilityIdV11" },
+        "data": { "$ref": "#/$defs/ViviJsonValueV11" },
+        "blobRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/EmbeddableBlobAssetRefV11" }
+        }
+      }
+    },
+    "ReferencedExtensionMapV11": {
+      "type": "object",
+      "patternProperties": {
+        "^(?!(?:__proto__|constructor|prototype)$).+$": {
+          "$ref": "#/$defs/ReferencedExtensionEnvelopeV11"
+        }
+      },
+      "additionalProperties": false,
+      "$comment": "The JCS UTF-8 representation of the whole extensions map must not exceed 16777216 bytes. Every envelope's requiredCapabilityId must map to requires and registry classification is semantic."
+    },
+    "EmbeddedExtensionMapV11": {
+      "type": "object",
+      "patternProperties": {
+        "^(?!(?:__proto__|constructor|prototype)$).+$": {
+          "$ref": "#/$defs/EmbeddedExtensionEnvelopeV11"
+        }
+      },
+      "additionalProperties": false,
+      "$comment": "The JCS UTF-8 representation of the whole extensions map must not exceed 16777216 bytes."
+    },
+    "ViviEmbeddedAssetV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contentSha256", "sizeBytes", "encoding", "data"],
+      "properties": {
+        "contentSha256": { "$ref": "#/$defs/Sha256HexV11" },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16777216
+        },
+        "encoding": { "const": "base64" },
+        "data": {
+          "allOf": [
+            { "$ref": "#/$defs/RawBase64V11" },
+            { "maxLength": 22369624 }
+          ]
+        }
+      },
+      "$comment": "Decoded byte length and SHA-256 must equal sizeBytes/contentSha256."
+    },
+    "EmbeddedAssetMapV11": {
+      "type": "object",
+      "patternProperties": {
+        "^sha256:[A-Fa-f0-9]{64}$": {
+          "$ref": "#/$defs/ViviEmbeddedAssetV11"
+        }
+      },
+      "additionalProperties": false,
+      "$comment": "Each key suffix must equal the entry contentSha256. Reachability and per-ref size/hash equality are semantic invariants."
+    },
+    "AtlasEntryV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layerId", "x", "y", "width", "height"],
+      "properties": {
+        "layerId": { "type": "string" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      }
+    },
+    "AtlasDataV10": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["image", "width", "height", "entries"],
+      "properties": {
+        "image": {
+          "allOf": [
+            { "$ref": "#/$defs/RawBase64V11" },
+            { "minLength": 4 }
+          ]
+        },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AtlasEntryV11" }
+        }
+      }
+    },
+    "ViviAtlasDataEmbeddedV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "image", "width", "height", "entries"],
+      "properties": {
+        "id": { "$ref": "#/$defs/AtlasIdV11" },
+        "image": {
+          "allOf": [
+            { "$ref": "#/$defs/RawBase64V11" },
+            { "minLength": 4 }
+          ]
+        },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AtlasEntryV11" }
+        }
+      }
+    },
+    "ViviAtlasDataReferencedV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "image", "width", "height", "entries"],
+      "properties": {
+        "id": { "$ref": "#/$defs/AtlasIdV11" },
+        "image": { "$ref": "#/$defs/PngAssetRefV11" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AtlasEntryV11" }
+        }
+      }
+    },
+    "RGBColorV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["r", "g", "b"],
+      "properties": {
+        "r": { "type": "number" },
+        "g": { "type": "number" },
+        "b": { "type": "number" }
+      }
+    },
+    "BlendModeV11": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "add",
+        "multiply",
+        "screen",
+        "overlay",
+        "darken",
+        "lighten",
+        "color-dodge",
+        "color-burn",
+        "hard-light",
+        "soft-light",
+        "difference",
+        "exclusion"
+      ]
+    },
+    "MeshDataV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vertices", "uvs", "indices", "divisionsX", "divisionsY"],
+      "properties": {
+        "vertices": {
+          "type": "array",
+          "items": { "type": "number" }
+        },
+        "uvs": {
+          "type": "array",
+          "items": { "type": "number" }
+        },
+        "indices": {
+          "type": "array",
+          "items": { "type": "number" }
+        },
+        "divisionsX": { "type": "number" },
+        "divisionsY": { "type": "number" }
+      }
+    },
+    "BoneDataV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["angle", "length", "scaleX", "scaleY"],
+      "properties": {
+        "angle": { "type": "number" },
+        "length": { "type": "number" },
+        "scaleX": { "type": "number" },
+        "scaleY": { "type": "number" }
+      }
+    },
+    "ProviderProposalAuditV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["providerId", "capabilityId", "proposalId"],
+      "properties": {
+        "providerId": { "type": "string" },
+        "capabilityId": { "type": "string" },
+        "proposalId": { "type": "string" },
+        "confidence": { "type": "number" },
+        "convertedAt": { "type": "string" }
+      }
+    },
+    "LayerDepthStatsV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max", "mean"],
+      "properties": {
+        "min": { "type": "number" },
+        "max": { "type": "number" },
+        "mean": { "type": "number" }
+      }
+    },
+    "SeeThroughImportMetadataV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "order",
+        "confidence",
+        "leftRightSplit",
+        "frontBackSplit",
+        "bbox",
+        "depthStats"
+      ],
+      "properties": {
+        "label": { "type": "string" },
+        "order": { "type": "integer" },
+        "psdLeafToken": { "type": "string" },
+        "confidence": { "type": "number" },
+        "leftRightSplit": {
+          "type": "string",
+          "enum": ["left", "right", "center", "unknown"]
+        },
+        "frontBackSplit": {
+          "type": "string",
+          "enum": ["front", "back", "middle", "unknown"]
+        },
+        "bbox": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "integer" },
+            { "type": "integer" },
+            { "type": "integer" },
+            { "type": "integer" }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "depthStats": { "$ref": "#/$defs/LayerDepthStatsV11" }
+      }
+    },
+    "ManualPngImportMetadataV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceFileName",
+        "originalWidth",
+        "originalHeight",
+        "trimmedBounds",
+        "finalOrigin",
+        "placementMode",
+        "autoGenerateMeshApplied"
+      ],
+      "properties": {
+        "sourceFileName": { "type": "string" },
+        "sourcePath": { "type": "string" },
+        "originalWidth": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "originalHeight": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "trimmedBounds": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "integer" },
+            { "type": "integer" },
+            { "type": "integer", "minimum": 1 },
+            { "type": "integer", "minimum": 1 }
+          ],
+          "items": false,
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "finalOrigin": {
+          "type": "array",
+          "prefixItems": [
+            { "type": "integer" },
+            { "type": "integer" }
+          ],
+          "items": false,
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "placementMode": {
+          "type": "string",
+          "enum": ["preserveImageOffset", "centerOnCanvas"]
+        },
+        "trimTransparentBoundsApplied": { "type": "boolean" },
+        "autoGenerateMeshApplied": { "type": "boolean" }
+      }
+    },
+    "LayerImportMetadataV11": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "seeThrough"],
+          "properties": {
+            "source": { "const": "seeThrough" },
+            "seeThrough": { "$ref": "#/$defs/SeeThroughImportMetadataV11" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "manualPng"],
+          "properties": {
+            "source": { "const": "manualPng" },
+            "manualPng": { "$ref": "#/$defs/ManualPngImportMetadataV11" }
+          }
+        },
+        {
+          "$ref": "#/$defs/SeeThroughImportMetadataV11",
+          "$comment": "Legacy raw see-through metadata accepted by the current packages/model parser and normalized on read."
+        }
+      ]
+    },
+    "ManualSplitBoundsV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      }
+    },
+    "ManualSplitOutputMetadataV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "ownership",
+        "origin",
+        "manualSplitLayerId",
+        "manualSplitSourceLayerId",
+        "manualSplitSourceFingerprint"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["maskExtractedLayer", "generatedUnderpaintLayer"]
+        },
+        "ownership": { "const": "userAccepted" },
+        "origin": {
+          "type": "string",
+          "enum": [
+            "manualMask",
+            "providerProposal",
+            "localUnderpaint",
+            "providerUnderpaint"
+          ]
+        },
+        "manualSplitLayerId": { "type": "string" },
+        "manualSplitSourceLayerId": { "type": "string" },
+        "manualSplitSourceFingerprint": { "type": "string" },
+        "manualSplitMaskId": { "type": "string" },
+        "maskCoverage": { "type": "number" },
+        "edgeFeatherPx": { "type": "number" },
+        "customLabel": { "type": "string" },
+        "convertedFromProviderProposal": {
+          "allOf": [
+            { "$ref": "#/$defs/ProviderProposalAuditV11" },
+            { "required": ["convertedAt"] }
+          ]
+        },
+        "underpaintBufferId": { "type": "string" },
+        "bounds": { "$ref": "#/$defs/ManualSplitBoundsV11" },
+        "sourceMaskId": { "type": "string" },
+        "occludedByMaskId": { "type": "string" },
+        "acceptedAt": { "type": "string" },
+        "providerAudit": { "$ref": "#/$defs/ProviderProposalAuditV11" }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "kind": { "const": "maskExtractedLayer" },
+            "origin": { "const": "manualMask" }
+          },
+          "required": [
+            "manualSplitMaskId",
+            "maskCoverage",
+            "edgeFeatherPx"
+          ],
+          "not": {
+            "anyOf": [
+              { "required": ["convertedFromProviderProposal"] },
+              { "required": ["underpaintBufferId"] },
+              { "required": ["bounds"] },
+              { "required": ["sourceMaskId"] },
+              { "required": ["occludedByMaskId"] },
+              { "required": ["acceptedAt"] },
+              { "required": ["providerAudit"] }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "kind": { "const": "maskExtractedLayer" },
+            "origin": { "const": "providerProposal" }
+          },
+          "required": [
+            "manualSplitMaskId",
+            "maskCoverage",
+            "edgeFeatherPx",
+            "convertedFromProviderProposal"
+          ],
+          "not": {
+            "anyOf": [
+              { "required": ["underpaintBufferId"] },
+              { "required": ["bounds"] },
+              { "required": ["sourceMaskId"] },
+              { "required": ["occludedByMaskId"] },
+              { "required": ["acceptedAt"] },
+              { "required": ["providerAudit"] }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "kind": { "const": "generatedUnderpaintLayer" },
+            "origin": { "const": "localUnderpaint" }
+          },
+          "required": ["underpaintBufferId", "bounds", "acceptedAt"],
+          "not": {
+            "anyOf": [
+              { "required": ["manualSplitMaskId"] },
+              { "required": ["maskCoverage"] },
+              { "required": ["edgeFeatherPx"] },
+              { "required": ["customLabel"] },
+              { "required": ["convertedFromProviderProposal"] },
+              { "required": ["providerAudit"] }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "kind": { "const": "generatedUnderpaintLayer" },
+            "origin": { "const": "providerUnderpaint" }
+          },
+          "required": [
+            "underpaintBufferId",
+            "bounds",
+            "acceptedAt",
+            "providerAudit"
+          ],
+          "not": {
+            "anyOf": [
+              { "required": ["manualSplitMaskId"] },
+              { "required": ["maskCoverage"] },
+              { "required": ["edgeFeatherPx"] },
+              { "required": ["customLabel"] },
+              { "required": ["convertedFromProviderProposal"] }
+            ]
+          }
+        }
+      ]
+    },
+    "ArtPathControlPointV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "handleInX",
+        "handleInY",
+        "handleOutX",
+        "handleOutY",
+        "width",
+        "opacity"
+      ],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "handleInX": { "type": "number" },
+        "handleInY": { "type": "number" },
+        "handleOutX": { "type": "number" },
+        "handleOutY": { "type": "number" },
+        "width": { "type": "number" },
+        "opacity": { "type": "number" }
+      }
+    },
+    "ArtPathStyleV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["color", "baseWidth", "lineCap", "lineJoin"],
+      "properties": {
+        "color": { "type": "number" },
+        "baseWidth": { "type": "number" },
+        "lineCap": {
+          "type": "string",
+          "enum": ["butt", "round", "square"]
+        },
+        "lineJoin": {
+          "type": "string",
+          "enum": ["miter", "round", "bevel"]
+        }
+      }
+    },
+    "ViviClipMaskEdgeV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["layerId", "invert"],
+      "properties": {
+        "layerId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        },
+        "invert": { "type": "boolean" }
+      }
+    },
+    "LayerNodeV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "visible",
+        "opacity",
+        "x",
+        "y",
+        "width",
+        "height",
+        "blendMode",
+        "expanded",
+        "children",
+        "kind"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "visible": { "type": "boolean" },
+        "opacity": { "type": "number" },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "blendMode": { "$ref": "#/$defs/BlendModeV11" },
+        "expanded": { "type": "boolean" },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LayerNodeV11" }
+        },
+        "clipMaskIds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string" }
+        },
+        "clipMasks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ViviClipMaskEdgeV1" },
+          "x-vivi-uniqueBy": "layerId",
+          "$comment": "Stage 2 requires ordered unique layerId values and automatic vivi.cap.maskInvert@1/render derivation when any edge is inverted. Ordinary save canonicalizes an all-false edge array to clipMaskIds; opaque/local duplicate paths preserve the received representation."
+        },
+        "drawOrder": { "type": "number" },
+        "multiplyColor": { "$ref": "#/$defs/RGBColorV11" },
+        "screenColor": { "$ref": "#/$defs/RGBColorV11" },
+        "semanticRole": {
+          "type": "string",
+          "enum": [
+            "head",
+            "face",
+            "eyeLeft",
+            "eyeRight",
+            "eyebrowLeft",
+            "eyebrowRight",
+            "mouth",
+            "nose",
+            "hair",
+            "hairFront",
+            "hairBack",
+            "hairSide",
+            "body",
+            "armLeft",
+            "armRight",
+            "handLeft",
+            "handRight",
+            "legLeft",
+            "legRight",
+            "tail",
+            "ear",
+            "accessory",
+            "unknown"
+          ]
+        },
+        "semanticRoleSource": {
+          "type": "string",
+          "enum": ["seeThroughImport", "manual", "assistant"]
+        },
+        "riggingHint": {
+          "type": "string",
+          "enum": ["rigid", "localBones", "skinned", "physics"]
+        },
+        "manualSplitOutputMetadata": {
+          "$ref": "#/$defs/ManualSplitOutputMetadataV11"
+        },
+        "importMetadata": { "$ref": "#/$defs/LayerImportMetadataV11" },
+        "managedTag": { "type": "string" },
+        "managedSignature": { "type": "string" },
+        "managedSourceFingerprint": { "type": "string" },
+        "manualSplitSourceLayerId": { "type": "string" },
+        "manualSplitSourceFingerprint": { "type": "string" },
+        "manualSplitLayerId": { "type": "string" },
+        "kind": {
+          "type": "string",
+          "enum": ["viviMesh", "group", "bone", "artPath"]
+        },
+        "mesh": { "$ref": "#/$defs/MeshDataV11" },
+        "culling": { "type": "boolean" },
+        "bone": { "$ref": "#/$defs/BoneDataV11" },
+        "parentBoneId": { "type": "string" },
+        "controlPoints": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ArtPathControlPointV11" }
+        },
+        "closed": { "type": "boolean" },
+        "style": { "$ref": "#/$defs/ArtPathStyleV11" }
+      },
+      "not": { "required": ["clipMaskIds", "clipMasks"] },
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "viviMesh" } },
+          "required": ["kind", "mesh"],
+          "not": {
+            "anyOf": [
+              { "required": ["bone"] },
+              { "required": ["parentBoneId"] },
+              { "required": ["controlPoints"] },
+              { "required": ["closed"] },
+              { "required": ["style"] }
+            ]
+          }
+        },
+        {
+          "properties": { "kind": { "const": "group" } },
+          "required": ["kind"],
+          "not": {
+            "anyOf": [
+              { "required": ["mesh"] },
+              { "required": ["culling"] },
+              { "required": ["bone"] },
+              { "required": ["parentBoneId"] },
+              { "required": ["controlPoints"] },
+              { "required": ["closed"] },
+              { "required": ["style"] }
+            ]
+          }
+        },
+        {
+          "properties": { "kind": { "const": "bone" } },
+          "required": ["kind", "bone"],
+          "not": {
+            "anyOf": [
+              { "required": ["mesh"] },
+              { "required": ["culling"] },
+              { "required": ["controlPoints"] },
+              { "required": ["closed"] },
+              { "required": ["style"] }
+            ]
+          }
+        },
+        {
+          "properties": { "kind": { "const": "artPath" } },
+          "required": ["kind", "controlPoints", "closed", "style"],
+          "not": {
+            "anyOf": [
+              { "required": ["mesh"] },
+              { "required": ["culling"] },
+              { "required": ["bone"] },
+              { "required": ["parentBoneId"] }
+            ]
+          }
+        }
+      ]
+    },
+    "ParameterDefinitionV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "minValue", "maxValue", "defaultValue"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "minValue": { "type": "number" },
+        "maxValue": { "type": "number" },
+        "defaultValue": { "type": "number" },
+        "managedTag": { "type": "string" },
+        "managedSignature": { "type": "string" },
+        "managedSourceFingerprint": { "type": "string" },
+        "pairedParameterId": { "type": "string" },
+        "group": { "type": "string" }
+      }
+    },
+    "ParameterBindingPointV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paramValue", "targetValue"],
+      "properties": {
+        "paramValue": { "type": "number" },
+        "targetValue": { "type": "number" }
+      }
+    },
+    "BindingTargetV11": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "boneId", "property"],
+          "properties": {
+            "type": { "const": "bone" },
+            "boneId": { "type": "string" },
+            "property": {
+              "type": "string",
+              "enum": ["x", "y", "angle", "scaleX", "scaleY"]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "controllerId", "property"],
+          "properties": {
+            "type": { "const": "ikController" },
+            "controllerId": { "type": "string" },
+            "property": {
+              "type": "string",
+              "enum": [
+                "targetX",
+                "targetY",
+                "poleTargetX",
+                "poleTargetY",
+                "influence"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "ParameterBindingV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "parameterId", "target", "bindingPoints"],
+      "properties": {
+        "id": { "type": "string" },
+        "parameterId": { "type": "string" },
+        "target": { "$ref": "#/$defs/BindingTargetV11" },
+        "managedTag": { "type": "string" },
+        "managedSignature": { "type": "string" },
+        "managedSourceFingerprint": { "type": "string" },
+        "bindingPoints": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ParameterBindingPointV11" }
+        }
+      }
+    },
+    "SkinWeightV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boneId", "weight"],
+      "properties": {
+        "boneId": { "type": "string" },
+        "weight": { "type": "number" }
+      }
+    },
+    "AffineMatrixV11": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false,
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "SkinDataV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["weights", "bindPoseInverse"],
+      "properties": {
+        "managedTag": { "type": "string" },
+        "managedSignature": { "type": "string" },
+        "managedSourceFingerprint": { "type": "string" },
+        "manualSplitSourceLayerId": { "type": "string" },
+        "manualSplitSourceFingerprint": { "type": "string" },
+        "manualSplitLayerId": { "type": "string" },
+        "weights": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/SkinWeightV11" }
+          }
+        },
+        "bindPoseInverse": {
+          "type": "object",
+          "patternProperties": {
+            "^(?!(?:__proto__|constructor|prototype)$).*$": {
+              "$ref": "#/$defs/AffineMatrixV11"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "ExpressionPresetV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "values"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "values": {
+          "type": "object",
+          "patternProperties": {
+            "^(?!(?:__proto__|constructor|prototype)$).*$": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "color": { "type": "string" },
+        "hotkey": { "type": "number" }
+      }
+    },
+    "TimelineKeyframeV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frame", "value", "interpolation"],
+      "properties": {
+        "frame": { "type": "number" },
+        "value": { "type": "number" },
+        "interpolation": {
+          "type": "string",
+          "enum": ["linear", "step", "bezier", "ellipse", "sns"]
+        },
+        "cp1x": { "type": "number" },
+        "cp1y": { "type": "number" },
+        "cp2x": { "type": "number" },
+        "cp2y": { "type": "number" },
+        "ellipseRatio": { "type": "number" },
+        "ellipseDirection": {
+          "type": "string",
+          "enum": ["cw", "ccw"]
+        },
+        "snsOscillations": { "type": "number" },
+        "snsDamping": { "type": "number" }
+      }
+    },
+    "AnimationTrackV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameterId", "keyframes"],
+      "properties": {
+        "parameterId": { "type": "string" },
+        "keyframes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TimelineKeyframeV11" }
+        }
+      }
+    },
+    "BoneTrackV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boneId", "property", "keyframes"],
+      "properties": {
+        "boneId": { "type": "string" },
+        "property": {
+          "type": "string",
+          "enum": ["angle", "scaleX", "scaleY"]
+        },
+        "keyframes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TimelineKeyframeV11" }
+        }
+      }
+    },
+    "ImageSequenceEntryV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startFrame", "imageId"],
+      "properties": {
+        "startFrame": { "type": "number" },
+        "imageId": { "type": "string" }
+      }
+    },
+    "ImageSequenceTrackV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetMeshId", "entries"],
+      "properties": {
+        "targetMeshId": { "type": "string" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ImageSequenceEntryV11" }
+        }
+      }
+    },
+    "AudioTrackV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "sourcePath",
+        "startFrame",
+        "sourceDurationSeconds",
+        "gain",
+        "muted"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "sourcePath": { "type": "string" },
+        "startFrame": { "type": "number" },
+        "sourceDurationSeconds": { "type": ["number", "null"] },
+        "gain": { "type": "number" },
+        "muted": { "type": "boolean" }
+      }
+    },
+    "LipSyncTrackV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "sourceAudioTrackId",
+        "analysisType",
+        "analysisFps",
+        "samples",
+        "targetParameterId",
+        "sourcePathAtBake",
+        "sourceDurationSecondsAtBake",
+        "gain",
+        "muted"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "sourceAudioTrackId": { "type": "string" },
+        "analysisType": { "const": "rms" },
+        "analysisFps": { "type": "number" },
+        "samples": {
+          "type": "array",
+          "items": { "type": "number" }
+        },
+        "targetParameterId": { "type": ["string", "null"] },
+        "sourcePathAtBake": { "type": "string" },
+        "sourceDurationSecondsAtBake": { "type": ["number", "null"] },
+        "gain": { "type": "number" },
+        "muted": { "type": "boolean" }
+      }
+    },
+    "IKControllerTrackV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["controllerId", "targetXKeyframes", "targetYKeyframes"],
+      "properties": {
+        "controllerId": { "type": "string" },
+        "targetXKeyframes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TimelineKeyframeV11" }
+        },
+        "targetYKeyframes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TimelineKeyframeV11" }
+        }
+      }
+    },
+    "AnimationClipV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "duration", "fps", "tracks"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "duration": { "type": "number" },
+        "fps": { "type": "number" },
+        "tracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AnimationTrackV11" }
+        },
+        "boneTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/BoneTrackV11" }
+        },
+        "imageSequenceTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ImageSequenceTrackV11" }
+        },
+        "audioTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AudioTrackV11" }
+        },
+        "lipSyncTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LipSyncTrackV11" }
+        },
+        "ikControllerTracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/IKControllerTrackV11" }
+        }
+      }
+    },
+    "SceneV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "clips"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "clips": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AnimationClipV11" }
+        }
+      }
+    },
+    "SceneBlendV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "sourceSceneId",
+        "targetSceneId",
+        "mode",
+        "transitionFrames",
+        "easing"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "sourceSceneId": { "type": "string" },
+        "targetSceneId": { "type": "string" },
+        "mode": {
+          "type": "string",
+          "enum": ["crossfade", "additive", "override"]
+        },
+        "transitionFrames": { "type": "number" },
+        "easing": {
+          "type": "string",
+          "enum": ["linear", "step", "bezier", "ellipse", "sns"]
+        }
+      }
+    },
+    "PendulumConfigV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["length", "mass", "damping"],
+      "properties": {
+        "length": { "type": "number" },
+        "mass": { "type": "number" },
+        "damping": { "type": "number" }
+      }
+    },
+    "PhysicsInputV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameterId", "weight", "type"],
+      "properties": {
+        "parameterId": { "type": "string" },
+        "weight": { "type": "number" },
+        "type": {
+          "type": "string",
+          "enum": ["x", "y", "angle"]
+        }
+      }
+    },
+    "PhysicsOutputV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pendulumIndex", "weight", "type"],
+      "properties": {
+        "parameterId": { "type": "string" },
+        "boneId": { "type": "string" },
+        "pendulumIndex": { "type": "number" },
+        "weight": { "type": "number" },
+        "type": {
+          "type": "string",
+          "enum": ["angle", "boneAngle"]
+        }
+      }
+    },
+    "PhysicsGroupV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "enabled",
+        "pendulums",
+        "inputs",
+        "outputs",
+        "gravityDirection",
+        "gravityStrength",
+        "wind"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "managedTag": { "type": "string" },
+        "managedSignature": { "type": "string" },
+        "managedSourceFingerprint": { "type": "string" },
+        "manualSplitSourceLayerId": { "type": "string" },
+        "manualSplitSourceFingerprint": { "type": "string" },
+        "manualSplitLayerId": { "type": "string" },
+        "pendulums": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PendulumConfigV11" }
+        },
+        "inputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PhysicsInputV11" }
+        },
+        "outputs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PhysicsOutputV11" }
+        },
+        "gravityDirection": { "type": "number" },
+        "gravityStrength": { "type": "number" },
+        "wind": { "type": "number" }
+      }
+    },
+    "VisemeMappingV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["viseme", "target"],
+      "properties": {
+        "viseme": {
+          "type": "string",
+          "enum": ["sil", "aa", "ih", "ou", "eh", "oh", "ff", "ss", "pp", "nn", "kk"]
+        },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "parameterId", "value"],
+          "properties": {
+            "type": { "const": "parameter" },
+            "parameterId": { "type": "string" },
+            "value": { "type": "number" }
+          }
+        }
+      }
+    },
+    "LipSyncConfigV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "targetParameterId",
+        "source",
+        "threshold",
+        "smoothing",
+        "gain"
+      ],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "mode": {
+          "type": "string",
+          "enum": ["rms", "viseme"]
+        },
+        "targetParameterId": { "type": ["string", "null"] },
+        "source": {
+          "type": "string",
+          "enum": ["microphone", "file"]
+        },
+        "threshold": { "type": "number" },
+        "smoothing": { "type": "number" },
+        "gain": { "type": "number" },
+        "visemeMappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/VisemeMappingV11" }
+        },
+        "visemeSmoothing": { "type": "number" }
+      }
+    },
+    "ColliderShapeV11": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "x", "y", "width", "height"],
+          "properties": {
+            "type": { "const": "rectangle" },
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "width": { "type": "number" },
+            "height": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "x", "y", "radius"],
+          "properties": {
+            "type": { "const": "circle" },
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "radius": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "meshId"],
+          "properties": {
+            "type": { "const": "mesh" },
+            "meshId": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "ColliderDataV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "shape", "enabled"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "shape": { "$ref": "#/$defs/ColliderShapeV11" },
+        "tag": { "type": "string" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "TransitionConditionV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameterId", "operator", "threshold"],
+      "properties": {
+        "parameterId": { "type": "string" },
+        "operator": {
+          "type": "string",
+          "enum": [">", "<", ">=", "<=", "==", "!="]
+        },
+        "threshold": { "type": "number" }
+      }
+    },
+    "BlendTreeEntryV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["threshold", "clipId"],
+      "properties": {
+        "threshold": { "type": "number" },
+        "clipId": { "type": "string" }
+      }
+    },
+    "BlendTree1DV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameterId", "entries"],
+      "properties": {
+        "parameterId": { "type": "string" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/BlendTreeEntryV11" }
+        }
+      }
+    },
+    "AnimationStateV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "loop"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "clipId": { "type": "string" },
+        "blendTree": { "$ref": "#/$defs/BlendTree1DV11" },
+        "loop": { "type": "boolean" }
+      }
+    },
+    "StateTransitionV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "fromStateId",
+        "toStateId",
+        "conditions",
+        "transitionDuration",
+        "priority"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "fromStateId": { "type": "string" },
+        "toStateId": { "type": "string" },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TransitionConditionV11" }
+        },
+        "transitionDuration": { "type": "number" },
+        "priority": { "type": "number" }
+      }
+    },
+    "AnimationStateMachineV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "states",
+        "transitions",
+        "initialStateId",
+        "enabled"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "states": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AnimationStateV11" }
+        },
+        "transitions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/StateTransitionV11" }
+        },
+        "initialStateId": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "blendMode": {
+          "type": "string",
+          "enum": ["override", "additive"]
+        },
+        "weight": { "type": "number" }
+      }
+    },
+    "IKBoneConstraintV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boneId", "minAngle", "maxAngle"],
+      "properties": {
+        "boneId": { "type": "string" },
+        "minAngle": { "type": "number" },
+        "maxAngle": { "type": "number" }
+      }
+    },
+    "IKParameterMappingV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "boneId",
+        "parameterId",
+        "angleMin",
+        "angleMax",
+        "paramMin",
+        "paramMax"
+      ],
+      "properties": {
+        "boneId": { "type": "string" },
+        "parameterId": { "type": "string" },
+        "angleMin": { "type": "number" },
+        "angleMax": { "type": "number" },
+        "paramMin": { "type": "number" },
+        "paramMax": { "type": "number" }
+      }
+    },
+    "IKControllerV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "solverType",
+        "boneChain",
+        "targetX",
+        "targetY",
+        "influence",
+        "parameterMappings"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "managedTag": { "type": "string" },
+        "managedSignature": { "type": "string" },
+        "managedSourceFingerprint": { "type": "string" },
+        "manualSplitSourceLayerId": { "type": "string" },
+        "manualSplitSourceFingerprint": { "type": "string" },
+        "manualSplitLayerId": { "type": "string" },
+        "solverType": {
+          "type": "string",
+          "enum": ["twoBone", "ccd"]
+        },
+        "boneChain": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/IKBoneConstraintV11" }
+        },
+        "targetX": { "type": "number" },
+        "targetY": { "type": "number" },
+        "influence": { "type": "number" },
+        "poleTargetX": { "type": "number" },
+        "poleTargetY": { "type": "number" },
+        "maxIterations": { "type": "number" },
+        "parameterMappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/IKParameterMappingV11" }
+        }
+      }
+    },
+    "OffscreenTargetV11": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "width", "height", "sourceLayerIds"],
+      "properties": {
+        "id": { "type": "string" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "sourceLayerIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "ProjectDataLegacyV1To10": {
+      "$ref": "#/$defs/ProjectDataShapeV1To11",
+      "required": ["layers", "parameters"],
+      "$comment": "Legacy v1-10 requiredness follows the current packages/model ProjectDataSchema parser while the common shape remains closed."
+    },
+    "ProjectDataCanonicalV11": {
+      "$ref": "#/$defs/ProjectDataShapeV1To11",
+      "required": [
+        "name",
+        "width",
+        "height",
+        "layers",
+        "parameters",
+        "clips",
+        "scenes",
+        "physicsGroups",
+        "lipsyncConfig",
+        "skins",
+        "colliders",
+        "stateMachines"
+      ],
+      "$comment": "Canonical v11 requiredness follows packages/model's ProjectData TypeScript interface."
+    },
+    "ProjectDataShapeV1To11": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "sourceKind": {
+          "type": "string",
+          "enum": ["psd", "seeThrough", "manualPng", "vivi", "vivid"]
+        },
+        "layers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LayerNodeV11" }
+        },
+        "parameters": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ParameterDefinitionV11" }
+        },
+        "clips": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AnimationClipV11" }
+        },
+        "scenes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SceneV11" }
+        },
+        "physicsGroups": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PhysicsGroupV11" }
+        },
+        "lipsyncConfig": { "$ref": "#/$defs/LipSyncConfigV11" },
+        "skins": {
+          "type": "object",
+          "patternProperties": {
+            "^(?!(?:__proto__|constructor|prototype)$).*$": {
+              "$ref": "#/$defs/SkinDataV11"
+            }
+          },
+          "additionalProperties": false
+        },
+        "parameterBindings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ParameterBindingV11" }
+        },
+        "sceneBlends": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SceneBlendV11" }
+        },
+        "ikControllers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/IKControllerV11" }
+        },
+        "offscreenTargets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/OffscreenTargetV11" }
+        },
+        "expressionPresets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ExpressionPresetV11" }
+        },
+        "colliders": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ColliderDataV11" }
+        },
+        "stateMachines": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/AnimationStateMachineV11" }
+        }
+      },
+      "$comment": "Closed common 17-field ProjectData shape. Requiredness is selected by the containing wire-version branch because the legacy parser and canonical v11 TypeScript contract intentionally differ.",
+      "x-vivi-status": "approved-amendment-1"
+    }
+  }
+}
