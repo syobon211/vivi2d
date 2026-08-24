@@ -56,24 +56,29 @@ The proposed `document-round-trip` baseline uses one `.vivi` canonical UTF-8
 JSON document. `.vivb`, `.vivid`, referenced Assets, and network transfer are
 outside the first profile.
 
-The owning Project specification MUST freeze the exact wire rules before this
-profile can be adopted. The current candidate is:
+The owning
+[Project Format v11 public authoring profile](./project-format-v11.draft.md)
+MUST freeze the exact wire rules before this composition profile can be adopted.
+That document is itself a review draft and does not yet satisfy P1. The current
+candidate is:
 
 - Project version 11;
 - `assetMode` equal to `embedded`;
 - a stable UUIDv4 `documentId` that survives no-op and supported-edit round
   trips;
 - no public-profile marker that the Project v11 schema forbids;
-- no derived or explicit capability requirements in the initial editable
-  fixture set;
+- root `requires` absent in canonical producer output and no derived capability
+  requirements in the initial editable fixture set;
 - no referenced `AssetRef` values;
 - no extension data in the initial editable fixture set; and
 - stable, unique atlas identities with inline PNG data.
 
-The initial editable fixture set therefore excludes clips, state machines,
-extended blend modes, inverted masks, and any other content that derives a
-render requirement. Later profiles may add a capability only after its owning
-contract and cross-implementation fixtures are approved.
+The initial editable fixture set therefore requires `clips`, `stateMachines`,
+`scenes`, and `sceneBlends` to be empty and excludes extended blend modes,
+inverted masks, and any other content that derives a render requirement. The
+scene restriction also prevents nested scene clips from bypassing the current
+requirement derivation. Later profiles may add a capability only after its
+owning contract and cross-implementation fixtures are approved.
 
 The proposed mandatory core is intentionally small but nonempty. It covers
 document and canvas metadata; stable nested group, drawable-mesh, and bone

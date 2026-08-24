@@ -19,6 +19,10 @@ usable Windows-to-client contract.
 - [Runtime Spec v1](../api/spec/runtime-spec-v1.md) is an existing tracked
   runtime specification. It is distinct from the proposed Evaluation payload
   handoff and the unpublished native Runtime ABI discussed below.
+- The tracked
+  [Project Format v11 public authoring profile](../api/spec/project-format-v11.draft.md)
+  is a review draft that inventories candidate Project-owned rules and open
+  gates. It does not by itself promote the Project row to `public draft`.
 
 The [public API status ledger](../quality/public-api-status.md) remains
 authoritative for package publication status. The
@@ -30,8 +34,8 @@ authoritative for public/private placement.
 | Status | Meaning |
 | --- | --- |
 | `proposed` | The responsibility is identified, but no tracked contract package or specification exists. |
-| `internal foundation` | Tracked implementation or machine artifacts exist, but the surface is private/internal and incomplete. |
-| `public draft` | A tracked, reviewable contract draft exists but is not a stable compatibility promise. |
+| `internal foundation` | Tracked implementation, machine artifacts, or a pre-promotion review document exists, but the complete public-draft bundle is absent and the surface remains private/internal and incomplete. |
+| `public draft` | The owning tracked specification, machine schema or header, fixtures, error and limit rules, and conformance ownership are reviewable together, but the bundle is not a stable compatibility promise. |
 | `published` | The owning specification, implementation surface, fixtures, conformance evidence, and status ledger have been promoted together. |
 
 No contract in the matrix below is currently `published` for multiplatform
@@ -41,7 +45,7 @@ exchange.
 
 | Contract | Current status | Tracked foundation | Current product connection | Publication and exchange blockers |
 | --- | --- | --- | --- | --- |
-| Project | `internal foundation` | Project v1-v10 parser/types plus an internal Project Format v11 schema, codec, semantic validator, capability result, and read-only host seam | Ordinary Windows save emits Project v9; the normal parser/runtime accepts through v10; v11 is an internal friend API | Select and publish one authoring profile; connect normal Windows load/save; define migration, downgrade, identity, unsupported-feature, and round-trip rules; publish cross-language fixtures |
+| Project | `internal foundation` | Project v1-v10 parser/types plus an internal Project Format v11 schema, codec, semantic validator, capability result, read-only host seam, and a tracked public review draft | Ordinary Windows save emits Project v9; the normal parser/runtime accepts through v10; v11 is an internal friend API | Complete the review bundle for the narrow authoring profile, machine overlay, inline PNG rules, limits, error precedence, migration, identity, and portable fixtures; then connect normal Windows load/save and prove independent round trips |
 | Asset | `internal foundation` | Asset Model v1 schema plus native resolver, principal-bound local store, and local host foundations | Native/local only; no public bridge, network transfer, Sync client, capability advertisement, or product activation path | Assign one normative `AssetRef` owner; fix Project-schema parity; publish bounds/errors/closure rules; add portable resolver and transfer conformance |
 | Evaluation | `internal foundation` | Internal payload and texture-plan schemas/builder, native validation and preactivation, and lowering categories 1-9 | Read-only authoring projection only; no complete model-ready evaluator or product runtime connection | Complete categories 10-11, connect deterministic math, seal model-ready output, publish schemas/capabilities/errors/fixtures, and prove execution parity |
 | Runtime ABI | `internal foundation` | Tracked ABI 0.1 header and an opt-in native ABI 0.2 implementation slice | Internal packages only; ABI 0.2 public header and Evaluation load entry point are not tracked public surfaces | Publish one versioned header; complete Evaluation loading, ownership/lifetime/error/generation rules, exports, host tests, and supported-target execution evidence |
@@ -68,6 +72,15 @@ Unsupported render requirements are invalid; unsupported edit-only or opaque
 content is read-only; ordinary edited save requires full compatibility. Those
 are useful candidate semantics, but they are not yet a published exchange
 contract.
+
+The
+[Project Format v11 public authoring profile](../api/spec/project-format-v11.draft.md)
+now records the proposed Project-owned boundary and its unresolved promotion
+gates. It deliberately does not relabel the row: the current machine schema is
+broader than the first portable profile, inline PNG validation and aggregate
+limits are incomplete, `documentId` lifecycle and deterministic error
+precedence are not frozen, `AssetRef` ownership is duplicated, and no portable
+fixture manifest or independent consumer exists.
 
 Before publication, the Project owner must also resolve the current writer v9,
 reader ceiling v10, and authoring candidate v11 split. The normal Windows path

@@ -21,10 +21,10 @@ public acceptance gates without documenting the private product implementation.
 - If this roadmap and the package boundary policy appear inconsistent, stop and
   apply the stricter boundary until the project owner resolves the conflict.
 
-The **Current State** section records repository facts observed during the
-2026-08-23 planning review. The **Product Responsibilities**, **Proposed Shared
-OSS Contracts**, and **Coarse Phases** sections describe future candidates;
-they do not claim that those capabilities exist.
+The **Current State** section records repository facts reviewed through
+2026-08-24. The **Product Responsibilities**, **Proposed Shared OSS Contracts**,
+and **Coarse Phases** sections describe future candidates; they do not claim
+that those capabilities exist.
 
 ## Product Responsibilities
 
@@ -83,7 +83,7 @@ repository.
 | Area | Current public state | Open gap |
 | --- | --- | --- |
 | Windows application | Public alpha with an established desktop editor and local provider integration | No production multiplatform or sync workflow exists |
-| Project and Asset foundations | Internal Project Format v11 codec/schema seams and reviewed Asset foundations exist in partial slices | Normal Windows persistence, migration, shared contract publication, and sync integration are incomplete |
+| Project and Asset foundations | Internal Project Format v11 codec/schema seams, a tracked public Project review draft, and reviewed Asset foundations exist in partial slices | The Project promotion bundle, inline PNG contract, normal Windows persistence, migration, shared contract publication, portable fixtures, and sync integration are incomplete |
 | Evaluation and runtime | A shared native runtime, Evaluation foundations, conformance assets, and a feature-gated Windows C ABI slice exist | Publication, complete runtime coverage, portable-target evidence, and product-consumer integration remain open |
 | Authoring host | A read-only host foundation can parse authoring data and project an Evaluation payload | Mutable commands, history, and end-to-end portable host integration are not implemented |
 | Provider jobs | Provider transport, manifest, and import-related foundations exist | A provider-neutral job contract, runner, cloud adapter, and worker lifecycle are not implemented |
@@ -116,6 +116,12 @@ separate designs in the repository that owns the implementation.
 The first proposed composition of these contracts is the
 [Multiplatform Exchange Profile v1 draft](../api/spec/multiplatform-exchange-profile-v1.draft.md).
 It is a design candidate only and does not promote any contract in this table.
+The Project-owned candidate rules and known deltas are recorded separately in
+the
+[Project Format v11 public authoring profile](../api/spec/project-format-v11.draft.md).
+That tracked review draft also leaves the Project contract at `internal
+foundation` until its schema profile, limits, errors, migration, and portable
+fixtures are reviewable together.
 
 ## Public Security, Privacy, and Conformance Gates
 

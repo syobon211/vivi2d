@@ -9,6 +9,7 @@ This page is navigation only. Publication status lives in
 
 ## Draft Interoperability Profiles
 
+- [Project Format v11 public authoring profile (review draft)](spec/project-format-v11.draft.md)
 - [Multiplatform Exchange Profile v1 (draft)](spec/multiplatform-exchange-profile-v1.draft.md)
 
 Draft profiles are reviewable design candidates, not stable compatibility
