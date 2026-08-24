@@ -117,13 +117,17 @@ want to follow progress, watch GitHub Releases and the user documentation.
 
 Requirements:
 
-- Node.js 22 for local development and CI project commands
-- npm 10+ for local development
+- Node.js 22.13.0 or newer in the 22.x line, or Node.js 24.0.0 or newer, for
+  local development and CI project commands
+- npm 11.9.0 for reproducible dependency and lockfile work; npm 9 or newer is
+  the declared compatibility floor
 - Playwright browsers for browser/Electron checks
 
 GitHub Actions are pinned to Node 24-compatible action releases. Vivi2D project
 commands still run on Node.js 22, with release publication workflows pinning
-Node.js 22.14.0 and npm 11.5.1 or newer where npm provenance is required.
+Node.js 22.14.0 and npm 11.5.1 where npm provenance is required.
+The root `packageManager` field records the lockfile toolchain; CI workflows may
+use another npm release that remains within the declared `engines` range.
 
 Install dependencies:
 

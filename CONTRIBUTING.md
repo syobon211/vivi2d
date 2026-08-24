@@ -21,8 +21,9 @@ changes that touch public surfaces need extra care.
 
 Requirements:
 
-- Node.js 22
-- npm 10+
+- Node.js 22.13.0 or newer in the 22.x line, or Node.js 24.0.0 or newer
+- npm 11.9.0 for dependency and lockfile updates; npm 9 or newer is the
+  declared compatibility floor
 - Playwright browsers for browser and Electron E2E checks
 
 Optional for native runtime work:
