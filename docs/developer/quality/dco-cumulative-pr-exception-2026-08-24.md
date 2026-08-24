@@ -6,8 +6,9 @@
 - Decision date: 2026-08-24
 - Owner: `@syobon211`
 - Repository: `syobon211/vivi2d`
-- Pull request: assigned after the integration branch is pushed; this record must
-  be updated before the pull request head is frozen
+- Pull request: [#107](https://github.com/syobon211/vivi2d/pull/107)
+- Head disposition: freeze the signed commit containing this PR-number update;
+  its exact SHA is preserved by the PR head ref and the final archive tag
 - Integration base: `da60e5bac2c52bbcb02d4f1ac8066d95d895fedb`
 - Historical range base: `ee41eacf85166f28f2efe96d368ac4ec964a4cd8`
 - Historical range head: `8e3dab509f6d2a85adc5bff1a41fc97347bf9a9c`
