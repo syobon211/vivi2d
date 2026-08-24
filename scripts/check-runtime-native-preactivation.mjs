@@ -44,8 +44,8 @@ const pinnedPreactivationFiles = [
   ],
   [
     "src/tests.rs",
-    24_790,
-    "7f91054274f257e113899c50178dbd97f0f302ab0b0594247bbc9effa2095a35",
+    25_024,
+    "b31a276ebc2416ed5279a563657f27aa8914819229cdc55ff4d3688c69d09268",
   ],
 ];
 
@@ -1055,6 +1055,7 @@ function assertReferenceAllowlist() {
     "docs/developer/architecture/overview.md",
     "docs/developer/architecture/package-graph.md",
     "docs/developer/contributing/package-boundaries.md",
+    "docs/developer/quality/dco-cumulative-pr-exception-2026-08-24.md",
     "docs/developer/quality/public-api-status.md",
     "package.json",
     "packages/runtime-native/Cargo.lock",

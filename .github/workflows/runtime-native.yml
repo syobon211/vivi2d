@@ -118,9 +118,32 @@ jobs:
       - run: cargo test --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features abi-v02,png-v1 --all-targets
       - run: cargo clippy --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-c-abi --no-default-features --features abi-v02,png-v1 --all-targets -- -D warnings
       - run: cargo check --manifest-path packages/runtime-native/Cargo.toml -p vivi-png-ref --target wasm32-unknown-unknown
-      - run: npm run check:runtime-c-abi-link
+      - name: Verify C ABI link smoke (Unix)
+        if: runner.os != 'Windows'
+        run: npm run check:runtime-c-abi-link
+      - name: Verify C ABI linkage and ABI 0.1/0.2 host smoke (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          if (!(Test-Path $vswhere)) {
+            throw "vswhere.exe was not found"
+          }
+          $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$vsPath) {
+            throw "Visual Studio installation path was not found"
+          }
+          $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
+          if (!(Test-Path $vcvars)) {
+            throw "vcvars64.bat was not found"
+          }
+          cmd /c "`"$vcvars`" && npm run check:runtime-c-abi-link && npm run check:runtime-c-abi-v02-host-smoke"
+          if ($LASTEXITCODE -ne 0) {
+            throw "MSVC C ABI checks failed with exit code $LASTEXITCODE"
+          }
       - run: npx biome check scripts/check-runtime-asset-host-local.mjs scripts/check-runtime-asset-resolver.mjs scripts/check-runtime-asset-store-local.mjs scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs scripts/check-runtime-native-evaluation-lowering.mjs scripts/check-runtime-native-evaluation-math.mjs scripts/check-runtime-native-evaluation.mjs scripts/check-runtime-native-preactivation.mjs scripts/check-runtime-png.mjs
       - name: Verify ABI 0.1/0.2 exports and host-observation parity subset
+        if: runner.os != 'Windows'
         run: npm run check:runtime-c-abi-v02-host-smoke
       - name: Verify strict PNG reference decoder and feature-isolated C ABI
         run: npm run check:runtime-png

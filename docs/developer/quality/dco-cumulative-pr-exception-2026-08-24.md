@@ -17,6 +17,11 @@
     pass exposed a narrowed macOS rollback-journal race, Unix Asset-host test
     permissions, and uninitialized Windows `clang-cl` selection; it was neither
     tagged nor merged
+  - `f9652705a8ee5445c3a4d6152e707dc140cab758`; the third cross-platform CI
+    pass verified the earlier Asset-store and Asset-host remediations, then
+    exposed the same private-parent fixture gap in native preactivation tests on
+    macOS and Ubuntu and missing MSVC environment initialization for Windows C
+    ABI link, export, and host-smoke coverage; it was neither tagged nor merged
 - Integration base: `da60e5bac2c52bbcb02d4f1ac8066d95d895fedb`
 - Historical range base: `ee41eacf85166f28f2efe96d368ac4ec964a4cd8`
 - Historical range head: `8e3dab509f6d2a85adc5bff1a41fc97347bf9a9c`
@@ -55,13 +60,16 @@ The owner-directed execution of the approved integration sequence includes the
 scoped remediation of the rejected freeze candidate. That remediation is
 limited to these exact paths:
 
+- `.github/workflows/runtime-native.yml`;
 - `docs/developer/quality/dco-cumulative-pr-exception-2026-08-24.md`;
 - `packages/runtime-native/crates/vivi-asset-store-local/src/filesystem.rs`;
 - `packages/runtime-native/crates/vivi-asset-store-local/src/tests.rs`;
 - `packages/runtime-native/crates/vivi-asset-host-local/src/tests.rs`;
+- `packages/runtime-native/crates/vivi-runtime-native-preactivation/src/tests.rs`;
 - `scripts/check-runtime-asset-host-local.mjs`;
 - `scripts/check-runtime-asset-store-local.mjs`;
 - `scripts/check-runtime-c-abi-link.mjs`;
+- `scripts/check-runtime-native-preactivation.mjs`;
 - `scripts/lib/runtime-c-abi-compiler.mjs`; and
 - `scripts/lib/runtime-c-abi-compiler.test.mjs`.
 

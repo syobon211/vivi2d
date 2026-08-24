@@ -21,6 +21,22 @@ fn principal() -> PrincipalId {
     PrincipalId::new(b"preactivation-test-principal".to_vec())
 }
 
+fn private_tempdir() -> TempDir {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        tempfile::Builder::new()
+            .permissions(std::fs::Permissions::from_mode(0o700))
+            .tempdir()
+            .expect("private temporary directory")
+    }
+    #[cfg(not(unix))]
+    {
+        TempDir::new().expect("temporary directory")
+    }
+}
+
 fn open_host(temp: &TempDir) -> LocalAssetHost {
     LocalAssetHost::open(temp.path().join("assets.sqlite3"), principal()).expect("host opens")
 }
@@ -182,7 +198,7 @@ fn equal_generation_limit_precedes_plan_correlation_and_is_pre_read() {
 
 #[test]
 fn zero_one_and_max_safe_generation_reach_the_host_unchanged() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let host = open_host(&temp);
     for generation in [0, 1, MAX_SAFE_GENERATION] {
         let result = prepare_evaluation_activation_v1(
@@ -301,7 +317,7 @@ fn pure_correlation_token_is_redacted_and_moves_inputs_without_clone() {
 
 #[test]
 fn host_fixed_fields_and_asset_shape_errors_are_redacted_and_typed() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let host = open_host(&temp);
     let generation = 11;
     for wrong_profile in [
@@ -357,7 +373,7 @@ fn host_fixed_fields_and_asset_shape_errors_are_redacted_and_typed() {
 
 #[test]
 fn store_cause_mapping_is_typed_and_redacted() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let missing_parent = temp
         .path()
         .join("private-path-marker")
@@ -390,7 +406,7 @@ fn store_cause_mapping_is_typed_and_redacted() {
 
 #[test]
 fn host_store_hard_error_never_becomes_a_partial_missing_result() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let missing_parent = temp
         .path()
         .join("private-store-marker")
@@ -428,7 +444,7 @@ fn host_store_hard_error_never_becomes_a_partial_missing_result() {
 
 #[test]
 fn real_sqlite_ready_bundle_is_owned_correlated_and_postcondition_checked() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let mut host = open_host(&temp);
     let png = STANDARD.decode(PNG_BASE64).expect("fixture is base64");
     let verified = host
@@ -467,7 +483,7 @@ fn real_sqlite_ready_bundle_is_owned_correlated_and_postcondition_checked() {
 
 #[test]
 fn real_sqlite_missing_is_all_or_nothing_and_drops_partial_ready() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let mut host = open_host(&temp);
     let png = STANDARD.decode(PNG_BASE64).expect("fixture is base64");
     let verified = host
@@ -495,7 +511,7 @@ fn real_sqlite_missing_is_all_or_nothing_and_drops_partial_ready() {
 
 #[test]
 fn real_sqlite_later_hard_error_wins_over_earlier_missing() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let mut host = open_host(&temp);
     let png = STANDARD.decode(PNG_BASE64).expect("fixture is base64");
     let verified = host
@@ -616,7 +632,7 @@ fn missing_postcondition_defense_rejects_generation_unknown_order_and_duplicates
 
 #[test]
 fn owned_into_parts_moves_without_clone_and_wrapper_debug_is_redacted() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let mut host = open_host(&temp);
     let png = STANDARD.decode(PNG_BASE64).expect("fixture is base64");
     let verified = host
@@ -693,7 +709,7 @@ fn owned_into_parts_moves_without_clone_and_wrapper_debug_is_redacted() {
 
 #[test]
 fn missing_owned_into_parts_and_wrapper_debug_are_redacted() {
-    let temp = TempDir::new().expect("temp dir");
+    let temp = private_tempdir();
     let host = open_host(&temp);
     let generation = 31;
     let sensitive_id = "private_missing_marker_4c9e";
