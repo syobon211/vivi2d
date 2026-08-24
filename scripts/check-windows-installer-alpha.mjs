@@ -8,6 +8,7 @@ import {
 
 const failures = [];
 const workflowPath = ".github/workflows/windows-installer-alpha.yml";
+const gitleaksConfigPath = ".gitleaks.toml";
 const contractPath = "docs/developer/quality/windows-installer-alpha.md";
 const releasePolicyPath = "docs/developer/quality/release-policy.md";
 const checklistPath = "docs/developer/quality/public-release-checklist.md";
@@ -39,10 +40,27 @@ const manualReviewJsonEnvLine = [
   ["$", "{{ toJSON(fromJSON(inputs.manualReviewJson)) }}"].join(""),
   "'",
 ].join("");
+const expectedGitleaksConfig = `title = "Vivi2D Gitleaks configuration"
+minVersion = "8.30.1"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Ignore generic-api-key false positives only across generated 100-character WebAssembly base64 chunk boundaries."
+condition = "AND"
+regexTarget = "match"
+paths = ['''^packages/runtime-wasm/src/native-wasm-bytes\\.ts$''']
+regexes = ['''^[A-Za-z0-9+/]{15,73}",\\n  "[A-Za-z0-9+/]{100}"$''']
+`;
 const bashAlphaThresholdCheck = `${["$", "{BASH_REMATCH[4]}"].join("")}" -lt 2`;
 const packageJson = readJson("package.json");
 const toolManifest = readJson("scripts/release-tool-versions.json");
 const workflow = readRequired(workflowPath);
+const gitleaksConfig = readRequired(gitleaksConfigPath);
 const contract = readRequired(contractPath);
 const releasePolicy = readRequired(releasePolicyPath);
 const checklist = readRequired(checklistPath);
@@ -55,6 +73,7 @@ const installerLib = readRequired(installerLibPath);
 
 checkPackageScripts();
 checkRequiredFiles();
+checkGitleaksConfig();
 checkToolVersions();
 checkElectronBuilderConfig();
 checkWorkflow();
@@ -92,6 +111,7 @@ function checkPackageScripts() {
 function checkRequiredFiles() {
   for (const file of [
     workflowPath,
+    gitleaksConfigPath,
     contractPath,
     releasePolicyPath,
     checklistPath,
@@ -106,6 +126,14 @@ function checkRequiredFiles() {
   ]) {
     if (!fs.existsSync(file))
       failures.push(`Missing Windows installer alpha file: ${file}`);
+  }
+}
+
+function checkGitleaksConfig() {
+  if (gitleaksConfig !== expectedGitleaksConfig) {
+    failures.push(
+      `${gitleaksConfigPath} must preserve the exact reviewed default-extension and generated-WASM allowlist.`,
+    );
   }
 }
 
