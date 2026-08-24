@@ -136,10 +136,6 @@ const cAbiHeaderPins = [
     "dac8dfe8169d73553623eee6eac87cf47d43ec79fe4f0ff9eb2237b25ec737ac",
   ],
   [
-    "packages/runtime-c-abi/include/vivi_runtime_v02.h",
-    "226f3c7f8e73a3275998858854cc91cd0bd93460a9f5a1c88691b68665906961",
-  ],
-  [
     "packages/runtime-c-abi/include/vivi_png.h",
     "69f2e75c9386725223417f92c3987ee4a3c1af69ccb11b2e2e45cd98941ca958",
   ],

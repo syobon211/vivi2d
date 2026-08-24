@@ -197,3 +197,69 @@ status: "reviewed"
     );
   });
 });
+
+describe("check-docs-architecture planning document placement", () => {
+  const approvedCodeowners =
+    "/docs/user/ja/ @xltt\n/docs/user/zh-Hans/ @xltt\n/docs/user/ko-KR/ @xltt\n/docs/user/assets/ @xltt\n";
+
+  it("accepts the exact owner-approved tracked roadmap path", () => {
+    const root = makeTempRepo();
+    writeRequiredDocs(root, approvedCodeowners);
+    writeFile(
+      root,
+      "docs/developer/architecture/multiplatform-roadmap.md",
+      "# Multiplatform Roadmap\n",
+    );
+
+    const result = runChecker(root);
+
+    expect(result.status).toBe(0);
+  });
+
+  it("rejects another roadmap in the same directory", () => {
+    const root = makeTempRepo();
+    writeRequiredDocs(root, approvedCodeowners);
+    writeFile(
+      root,
+      "docs/developer/architecture/other-roadmap.md",
+      "# Other Roadmap\n",
+    );
+
+    const result = runChecker(root);
+
+    expect(result.status).not.toBe(0);
+    expect(outputOf(result)).toContain(
+      "Tracked planning/backlog-style doc is not allowed outside docs/backlog/: docs/developer/architecture/other-roadmap.md",
+    );
+  });
+
+  it("rejects the approved basename at a different path", () => {
+    const root = makeTempRepo();
+    writeRequiredDocs(root, approvedCodeowners);
+    writeFile(
+      root,
+      "docs/developer/quality/multiplatform-roadmap.md",
+      "# Misplaced Roadmap\n",
+    );
+
+    const result = runChecker(root);
+
+    expect(result.status).not.toBe(0);
+    expect(outputOf(result)).toContain(
+      "Tracked planning/backlog-style doc is not allowed outside docs/backlog/: docs/developer/quality/multiplatform-roadmap.md",
+    );
+  });
+
+  it("keeps other planning filename patterns blocked", () => {
+    const root = makeTempRepo();
+    writeRequiredDocs(root, approvedCodeowners);
+    writeFile(root, "docs/developer/architecture/new-plan.md", "# New Plan\n");
+
+    const result = runChecker(root);
+
+    expect(result.status).not.toBe(0);
+    expect(outputOf(result)).toContain(
+      "Tracked planning/backlog-style doc is not allowed outside docs/backlog/: docs/developer/architecture/new-plan.md",
+    );
+  });
+});

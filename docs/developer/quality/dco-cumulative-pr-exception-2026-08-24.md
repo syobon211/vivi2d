@@ -14,7 +14,9 @@
 - Historical commit count: 22
 - Source-history archive:
   `archive/runtime-abi-v02-windows-fb47f295`
-- Final pre-squash archive: assigned after required checks and independent review
+- Planned final pre-squash archive:
+  `archive/multiplatform-foundation-pre-squash-2026-08-24`; create it only at
+  the exact frozen head after required checks and independent review pass
 
 This record is documentation of a narrow process exception. It does not state
 that the historical commits contain DCO trailers, and it does not change the
@@ -100,9 +102,10 @@ No outside contributor or co-author is present in the scoped range.
 
 1. Integrate the historical range into a clean branch based on the exact
    integration base without rewriting the 22 commits.
-2. Review the integrated tree and complete all required checks.
-3. Record the pull-request number and final head disposition in this document
-   before freeze.
+2. Push the integration branch, create the pull request, and record its number
+   and planned final archive tag in a signed update to this document.
+3. Freeze that exact updated head, then complete all required checks and
+   independent review against it.
 4. Create and push an annotated, non-release archive tag at the final reviewed
    pre-squash head. Do not move that tag if the head later changes.
 5. Squash-merge only after the required checks, independent review, and all
