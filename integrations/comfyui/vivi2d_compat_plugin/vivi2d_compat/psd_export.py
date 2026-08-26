@@ -1,19 +1,25 @@
 from __future__ import annotations
 
 import re
+import uuid
 from pathlib import Path
 from typing import Any
 
 import numpy
 from PIL import Image
 
-from .manifest import read_manifest
+from .manifest import (
+    MAX_LAYER_IMAGE_BYTES,
+    MAX_TOTAL_LAYER_IMAGE_BYTES,
+    read_manifest,
+)
 
 _SAFE_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
 MAX_IMAGE_SIDE = 8192
 MAX_LAYER_PIXELS = 4096 * 4096
 MAX_CANVAS_PIXELS = 4096 * 4096
 MAX_TOTAL_LAYER_PIXELS = 64 * 1024 * 1024
+MAX_PSD_BYTES = 200 * 1024 * 1024
 
 
 def _safe_filename_prefix(filename_prefix: str) -> str:
@@ -103,15 +109,22 @@ def _layer_name(name: str, psd_leaf_token: str) -> str:
     return f"v2d[{psd_leaf_token}] {name}"
 
 
-def _inspect_layer_image(layer_path: Path) -> tuple[int, int, int]:
-    with Image.open(layer_path) as image:
-        pixel_count = _assert_image_bounds(
-            int(image.width),
-            int(image.height),
-            "Layer image",
-            MAX_LAYER_PIXELS,
-        )
-        return int(image.width), int(image.height), pixel_count
+def _inspect_layer_image(layer_path: Path) -> tuple[int, int, int, int]:
+    with layer_path.open("rb") as handle:
+        encoded_bytes = handle.seek(0, 2)
+        handle.seek(0)
+        if encoded_bytes > MAX_LAYER_IMAGE_BYTES:
+            raise RuntimeError("Layer image exceeds the maximum encoded size.")
+        with Image.open(handle) as image:
+            if image.format != "PNG":
+                raise RuntimeError("Layer image must be a PNG file.")
+            pixel_count = _assert_image_bounds(
+                int(image.width),
+                int(image.height),
+                "Layer image",
+                MAX_LAYER_PIXELS,
+            )
+            return int(image.width), int(image.height), pixel_count, encoded_bytes
 
 
 def _normalize_rgba_image(
@@ -120,28 +133,41 @@ def _normalize_rgba_image(
     expected_width: int,
     expected_height: int,
 ) -> numpy.ndarray:
-    with Image.open(layer_path) as image:
-        _assert_image_bounds(
-            int(image.width),
-            int(image.height),
-            "Layer image",
-            MAX_LAYER_PIXELS,
-        )
-        if image.width != expected_width or image.height != expected_height:
-            raise RuntimeError("Layer image dimensions changed during PSD export.")
-        rgba_image = image.convert("RGBA")
-        rgba = numpy.asarray(rgba_image, dtype=numpy.uint8)
+    with layer_path.open("rb") as handle:
+        encoded_bytes = handle.seek(0, 2)
+        handle.seek(0)
+        if encoded_bytes > MAX_LAYER_IMAGE_BYTES:
+            raise RuntimeError("Layer image exceeds the maximum encoded size.")
+        with Image.open(handle) as image:
+            if image.format != "PNG":
+                raise RuntimeError("Layer image must be a PNG file.")
+            _assert_image_bounds(
+                int(image.width),
+                int(image.height),
+                "Layer image",
+                MAX_LAYER_PIXELS,
+            )
+            if image.width != expected_width or image.height != expected_height:
+                raise RuntimeError("Layer image dimensions changed during PSD export.")
+            rgba_image = image.convert("RGBA")
+            rgba = numpy.asarray(rgba_image, dtype=numpy.uint8)
     if rgba.ndim != 3 or rgba.shape[2] != 4:
         raise RuntimeError("Expected an RGBA layer image.")
     return rgba
 
 
-def _resolve_layer_image_for_export(manifest_dir: Path, layer: dict[str, Any]) -> tuple[Path, int, int, int]:
+def _resolve_layer_image_for_export(
+    manifest_dir: Path,
+    layer: dict[str, Any],
+) -> tuple[Path, int, int, int, int]:
     image_path = _resolve_layer_path(manifest_dir, str(layer["image_path"]))
     if not image_path.exists():
         raise RuntimeError("Layer image referenced by manifest is missing.")
-    width, height, pixel_count = _inspect_layer_image(image_path)
-    return image_path, width, height, pixel_count
+    width, height, pixel_count, encoded_bytes = _inspect_layer_image(image_path)
+    left, top, right, bottom = layer["bbox"]
+    if width != right - left or height != bottom - top:
+        raise RuntimeError("Layer image dimensions do not match the manifest bbox.")
+    return image_path, width, height, pixel_count, encoded_bytes
 
 
 def _to_pytoshop_layer(
@@ -160,14 +186,8 @@ def _to_pytoshop_layer(
     )
 
     left, top, right, bottom = layer["bbox"]
-    if right <= left:
-        right = left + width
-    if bottom <= top:
-        bottom = top + height
-
     if (right - left) != width or (bottom - top) != height:
-        right = left + width
-        bottom = top + height
+        raise RuntimeError("Layer image dimensions do not match the manifest bbox.")
 
     channels = {
         0: numpy.ascontiguousarray(rgba[:, :, 0]),
@@ -209,11 +229,15 @@ def export_psd_from_manifest(
     sorted_layers = sorted(manifest["layers"], key=lambda layer: int(layer["order"]))
     psd_layers = []
     total_layer_pixels = 0
+    total_layer_image_bytes = 0
     for layer in sorted_layers:
-        image_path, width, height, pixel_count = _resolve_layer_image_for_export(
+        resolved_layer = _resolve_layer_image_for_export(
             manifest_dir,
             layer,
         )
+        image_path, width, height, pixel_count, encoded_bytes = resolved_layer
+        if total_layer_image_bytes + encoded_bytes > MAX_TOTAL_LAYER_IMAGE_BYTES:
+            raise RuntimeError("Layer images exceed the maximum total encoded size.")
         if total_layer_pixels + pixel_count > MAX_TOTAL_LAYER_PIXELS:
             raise RuntimeError("Layer images exceed the maximum total pixel count.")
         psd_layer = _to_pytoshop_layer(
@@ -225,6 +249,7 @@ def export_psd_from_manifest(
             height=height,
         )
         total_layer_pixels += pixel_count
+        total_layer_image_bytes += encoded_bytes
         psd_layers.append(psd_layer)
 
     resolved_output_dir = _resolve_output_dir(output_dir, output_root)
@@ -240,7 +265,14 @@ def export_psd_from_manifest(
         ),
     )
 
-    with psd_path.open("wb") as handle:
-        psd.write(handle)
+    temporary_path = psd_path.with_name(f".{psd_path.name}.{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary_path.open("xb") as handle:
+            psd.write(handle)
+        if temporary_path.stat().st_size > MAX_PSD_BYTES:
+            raise RuntimeError("PSD output exceeds the provider output byte limit.")
+        temporary_path.replace(psd_path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
 
     return psd_path

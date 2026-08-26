@@ -11,6 +11,17 @@ import {
   parseSeeThroughNativeImportBundleAsync,
 } from "../seeThroughNativeImport";
 
+function makePng(width: number, height: number): ArrayBuffer {
+  const bytes = new Uint8Array(33);
+  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const dataView = new DataView(bytes.buffer);
+  dataView.setUint32(8, 13);
+  bytes.set([0x49, 0x48, 0x44, 0x52], 12);
+  dataView.setUint32(16, width);
+  dataView.setUint32(20, height);
+  return bytes.buffer;
+}
+
 function createBundle(
   overrides: Partial<ViviCompatNativeImportBundle> = {},
 ): ViviCompatNativeImportBundle {
@@ -44,7 +55,7 @@ function createBundle(
     layerAssets: [
       {
         image_path: "layers/layer_000.png",
-        imageData: new ArrayBuffer(8),
+        imageData: makePng(100, 80),
       },
     ],
     ...overrides,
@@ -157,8 +168,8 @@ describe("see-through native import", () => {
           ],
         },
         layerAssets: [
-          { image_path: "layers/layer_back.png", imageData: new ArrayBuffer(8) },
-          { image_path: "layers/layer_face.png", imageData: new ArrayBuffer(8) },
+          { image_path: "layers/layer_back.png", imageData: makePng(100, 80) },
+          { image_path: "layers/layer_face.png", imageData: makePng(100, 80) },
         ],
       }),
       "see-through.psd",
@@ -203,13 +214,25 @@ describe("see-through native import", () => {
         ],
       },
       layerAssets: [
-        { image_path: "layers/layer_000.png", imageData: new ArrayBuffer(4) },
-        { image_path: "layers/layer_001.png", imageData: new ArrayBuffer(4) },
+        { image_path: "layers/layer_000.png", imageData: makePng(100, 80) },
+        { image_path: "layers/layer_001.png", imageData: makePng(100, 80) },
       ],
     });
 
     await expect(
       parseSeeThroughNativeImportBundleAsync(bundle, "see-through.psd"),
     ).rejects.toThrow(/duplicate see-through psd_leaf_token/i);
+  });
+
+  it("rejects oversized PNG IHDR dimensions before browser decoding", async () => {
+    const createImageBitmap = vi.fn();
+    vi.stubGlobal("createImageBitmap", createImageBitmap);
+    const bundle = createBundle();
+    bundle.layerAssets[0]!.imageData = makePng(4097, 4096);
+
+    await expect(
+      parseSeeThroughNativeImportBundleAsync(bundle, "see-through.psd"),
+    ).rejects.toThrow(/maximum supported area/i);
+    expect(createImageBitmap).not.toHaveBeenCalled();
   });
 });

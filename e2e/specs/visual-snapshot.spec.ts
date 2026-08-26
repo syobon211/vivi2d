@@ -87,17 +87,10 @@ async function openDialogFromMenu(
   await expectVisualSnapshot(dialog, snapshotName);
 }
 
-async function openIntegrationSettingsAt(
-  window: Page,
-  index: 0 | 1 | 2,
-  snapshotName: string,
-) {
+async function openComfyUISettings(window: Page, snapshotName: string) {
   await window.route(/^https?:\/\//, (route) => route.abort());
   await openIntegrationsMenu(window);
-  await window
-    .locator(".menu-dropdown-panel .menu-dropdown-item")
-    .nth(index + 1)
-    .click();
+  await window.locator(".menu-dropdown-panel .menu-dropdown-item").nth(1).click();
   const dialog = window.locator('[role="dialog"]');
   await dialog.waitFor({ state: "visible" });
   await waitForStableFrame(window);
@@ -172,7 +165,7 @@ test.describe("visual snapshots", () => {
   });
 
   test("ComfyUI settings dialog", async ({ window }) => {
-    await openIntegrationSettingsAt(window, 0, "dialog-comfyui-settings-open.png");
+    await openComfyUISettings(window, "dialog-comfyui-settings-open.png");
   });
 
   test("validation dialog", async ({ window, loadCharacterPsd }) => {
@@ -252,13 +245,5 @@ test.describe("visual snapshots", () => {
       /Generate Model|モデル生成/,
       "dialog-ai-generate-open.png",
     );
-  });
-
-  test("OBS settings dialog", async ({ window }) => {
-    await openIntegrationSettingsAt(window, 1, "dialog-obs-settings-open.png");
-  });
-
-  test("VTS settings dialog", async ({ window }) => {
-    await openIntegrationSettingsAt(window, 2, "dialog-vts-settings-open.png");
   });
 });

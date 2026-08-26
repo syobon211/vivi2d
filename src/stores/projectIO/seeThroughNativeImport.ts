@@ -1,8 +1,4 @@
 import {
-  VIVI2D_MANIFEST_SCHEMA_VERSION,
-  type ViviCompatNativeImportBundle,
-} from "@vivi2d/provider-comfyui";
-import {
   DRAW_ORDER,
   LIPSYNC_DEFAULTS,
   MESH_DEFAULTS,
@@ -10,11 +6,17 @@ import {
 } from "@vivi2d/core/constants";
 import { flattenLayers } from "@vivi2d/core/layer-utils";
 import { generateGridMesh } from "@vivi2d/core/mesh-utils";
-import type { ViviMeshNode, LayerNode, ProjectData } from "@vivi2d/core/types";
+import type { LayerNode, ProjectData, ViviMeshNode } from "@vivi2d/core/types";
 import { mapSeeThroughLabelToRole } from "@vivi2d/editor-core/see-through-role-map";
+import { buildSeeThroughTechnicalName } from "@vivi2d/editor-core/see-through-technical-name";
+import {
+  VIVI2D_MANIFEST_SCHEMA_VERSION,
+  type ViviCompatNativeImportBundle,
+  type ViviSeeThroughLayerResourceBudget,
+  validateViviSeeThroughLayerPng,
+} from "@vivi2d/provider-comfyui";
 import { applyProjectLayerOcclusionCleanupToTextures } from "@/lib/layer-occlusion-cleanup";
 import { suggestSeeThroughMeshDensityPreset } from "@/lib/see-through-mesh-density";
-import { buildSeeThroughTechnicalName } from "@vivi2d/editor-core/see-through-technical-name";
 import {
   clearTextures,
   getAllTextures,
@@ -133,7 +135,13 @@ function validateManifestBundle(bundle: ViviCompatNativeImportBundle): void {
   }
 
   const tokenSet = new Set<string>();
-  const assetPaths = new Set(layerAssets.map((asset) => asset.image_path));
+  const assetByPath = new Map(
+    layerAssets.map((asset) => [asset.image_path, asset.imageData] as const),
+  );
+  let resourceBudget: ViviSeeThroughLayerResourceBudget = {
+    encodedBytes: 0,
+    decodedPixels: 0,
+  };
 
   for (const layer of manifest.layers) {
     if (!layer.psd_leaf_token || layer.psd_leaf_token.trim().length === 0) {
@@ -152,9 +160,11 @@ function validateManifestBundle(bundle: ViviCompatNativeImportBundle): void {
       throw new Error(`Invalid bbox for See-through layer ${layer.name}`);
     }
 
-    if (!assetPaths.has(layer.image_path)) {
+    const assetBuffer = assetByPath.get(layer.image_path);
+    if (!assetBuffer) {
       throw new Error(`Missing See-through layer asset: ${layer.image_path}`);
     }
+    resourceBudget = validateViviSeeThroughLayerPng(assetBuffer, layer, resourceBudget);
   }
 }
 

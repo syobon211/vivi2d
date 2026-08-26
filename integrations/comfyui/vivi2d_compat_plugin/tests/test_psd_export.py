@@ -46,6 +46,9 @@ class PsdExportTests(unittest.TestCase):
             "MAX_LAYER_PIXELS": psd_export.MAX_LAYER_PIXELS,
             "MAX_CANVAS_PIXELS": psd_export.MAX_CANVAS_PIXELS,
             "MAX_TOTAL_LAYER_PIXELS": psd_export.MAX_TOTAL_LAYER_PIXELS,
+            "MAX_LAYER_IMAGE_BYTES": psd_export.MAX_LAYER_IMAGE_BYTES,
+            "MAX_TOTAL_LAYER_IMAGE_BYTES": psd_export.MAX_TOTAL_LAYER_IMAGE_BYTES,
+            "MAX_PSD_BYTES": psd_export.MAX_PSD_BYTES,
         }
         self._normalize_rgba_image = psd_export._normalize_rgba_image
 
@@ -98,6 +101,47 @@ class PsdExportTests(unittest.TestCase):
         path.mkdir(parents=True, exist_ok=False)
         self.addCleanup(lambda: shutil.rmtree(path, ignore_errors=True))
         return path
+
+    def _create_export_fixture(self, layer_count: int = 1):
+        temp_root = self._create_temp_dir()
+        output_root = temp_root / "output"
+        manifest_dir = output_root / "vivi2d" / "decompose" / "job"
+        layers_dir = manifest_dir / "layers"
+        layers_dir.mkdir(parents=True, exist_ok=True)
+        layers = []
+        for index in range(layer_count):
+            filename = f"layer_{index:03d}.png"
+            Image.new("RGBA", (1, 1), (index, 0, 0, 255)).save(layers_dir / filename)
+            layers.append(
+                {
+                    "id": f"layer_{index:03d}",
+                    "name": f"Layer {index}",
+                    "label": "hair_front",
+                    "order": index,
+                    "psd_leaf_token": f"layer_{index:03d}",
+                    "image_path": f"layers/{filename}",
+                    "bbox": [0, 0, 1, 1],
+                    "confidence": 1.0,
+                    "left_right_split": "center",
+                    "front_back_split": "front",
+                    "depth_stats": {"min": 0.1, "mean": 0.2, "max": 0.3},
+                }
+            )
+        manifest = {
+            "schema_version": "1.0.0",
+            "generator": {
+                "plugin": "vivi2d-compat-comfyui",
+                "plugin_version": "0.1.0",
+                "model": "test",
+                "model_version": "test",
+            },
+            "canvas": {"width": 1, "height": 1},
+            "layers": layers,
+        }
+        manifest_path = manifest_dir / "manifest.json"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        output_dir = output_root / "vivi2d" / "psd" / "job"
+        return output_root, manifest_path, output_dir
 
     def test_export_psd_from_manifest_writes_positioned_layers(self) -> None:
         calls = self._install_fake_pytoshop()
@@ -307,7 +351,7 @@ class PsdExportTests(unittest.TestCase):
         manifest_path = manifest_dir / "manifest.json"
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
-        with self.assertRaisesRegex(RuntimeError, "Layer image path must be relative"):
+        with self.assertRaisesRegex(RuntimeError, "must be a relative path"):
             psd_export.export_psd_from_manifest(
                 manifest_path=Path("vivi2d/decompose/job/manifest.json"),
                 output_dir=output_root / "vivi2d" / "psd" / "job",
@@ -352,7 +396,7 @@ class PsdExportTests(unittest.TestCase):
         manifest_path = manifest_dir / "manifest.json"
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
-        with self.assertRaisesRegex(RuntimeError, "Layer image path escapes") as ctx:
+        with self.assertRaisesRegex(RuntimeError, "invalid traversal") as ctx:
             psd_export.export_psd_from_manifest(
                 manifest_path=Path("vivi2d/decompose/job/manifest.json"),
                 output_dir=output_root / "vivi2d" / "psd" / "job",
@@ -655,6 +699,104 @@ class PsdExportTests(unittest.TestCase):
                 filename_prefix="assembled",
                 output_root=output_root,
             )
+
+    def test_export_rejects_per_file_and_total_encoded_layer_limits(self) -> None:
+        self._install_fake_pytoshop()
+        output_root, manifest_path, output_dir = self._create_export_fixture(2)
+
+        psd_export.MAX_LAYER_IMAGE_BYTES = 1
+        with self.assertRaisesRegex(RuntimeError, "maximum encoded size"):
+            psd_export.export_psd_from_manifest(
+                manifest_path=manifest_path,
+                output_dir=output_dir,
+                filename_prefix="assembled",
+                output_root=output_root,
+            )
+
+        psd_export.MAX_LAYER_IMAGE_BYTES = 1024
+        psd_export.MAX_TOTAL_LAYER_IMAGE_BYTES = 100
+        with self.assertRaisesRegex(RuntimeError, "maximum total encoded size"):
+            psd_export.export_psd_from_manifest(
+                manifest_path=manifest_path,
+                output_dir=output_dir,
+                filename_prefix="assembled",
+                output_root=output_root,
+            )
+
+    def test_export_rejects_non_png_layer_even_with_png_extension(self) -> None:
+        self._install_fake_pytoshop()
+        output_root, manifest_path, output_dir = self._create_export_fixture()
+        layer_path = manifest_path.parent / "layers" / "layer_000.png"
+        Image.new("RGB", (1, 1), (255, 0, 0)).save(layer_path, format="JPEG")
+
+        with self.assertRaisesRegex(RuntimeError, "must be a PNG file"):
+            psd_export.export_psd_from_manifest(
+                manifest_path=manifest_path,
+                output_dir=output_dir,
+                filename_prefix="assembled",
+                output_root=output_root,
+            )
+        self.assertFalse((output_dir / "assembled.psd").exists())
+
+    def test_export_rejects_layer_dimensions_that_do_not_match_bbox(self) -> None:
+        self._install_fake_pytoshop()
+        output_root, manifest_path, output_dir = self._create_export_fixture()
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["canvas"]["width"] = 2
+        manifest["layers"][0]["bbox"] = [0, 0, 2, 1]
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        with self.assertRaisesRegex(RuntimeError, "do not match the manifest bbox"):
+            psd_export.export_psd_from_manifest(
+                manifest_path=manifest_path,
+                output_dir=output_dir,
+                filename_prefix="assembled",
+                output_root=output_root,
+            )
+        self.assertFalse((output_dir / "assembled.psd").exists())
+
+    def test_export_atomic_write_preserves_existing_psd_on_writer_failure(self) -> None:
+        self._install_fake_pytoshop()
+        output_root, manifest_path, output_dir = self._create_export_fixture()
+        output_dir.mkdir(parents=True, exist_ok=True)
+        psd_path = output_dir / "assembled.psd"
+        psd_path.write_bytes(b"known-good")
+
+        class FailingPsdFile:
+            def write(self, handle) -> None:
+                handle.write(b"partial")
+                raise RuntimeError("writer failed")
+
+        nested_layers = sys.modules["pytoshop"].user.nested_layers
+        nested_layers.nested_layers_to_psd = lambda *args, **kwargs: FailingPsdFile()
+
+        with self.assertRaisesRegex(RuntimeError, "writer failed"):
+            psd_export.export_psd_from_manifest(
+                manifest_path=manifest_path,
+                output_dir=output_dir,
+                filename_prefix="assembled",
+                output_root=output_root,
+            )
+        self.assertEqual(psd_path.read_bytes(), b"known-good")
+        self.assertEqual(list(output_dir.glob(".assembled.psd.*.tmp")), [])
+
+    def test_export_preserves_existing_psd_when_new_output_exceeds_limit(self) -> None:
+        self._install_fake_pytoshop()
+        output_root, manifest_path, output_dir = self._create_export_fixture()
+        output_dir.mkdir(parents=True, exist_ok=True)
+        psd_path = output_dir / "assembled.psd"
+        psd_path.write_bytes(b"known-good")
+        psd_export.MAX_PSD_BYTES = len(b"FAKEPSD") - 1
+
+        with self.assertRaisesRegex(RuntimeError, "provider output byte limit"):
+            psd_export.export_psd_from_manifest(
+                manifest_path=manifest_path,
+                output_dir=output_dir,
+                filename_prefix="assembled",
+                output_root=output_root,
+            )
+        self.assertEqual(psd_path.read_bytes(), b"known-good")
+        self.assertEqual(list(output_dir.glob(".assembled.psd.*.tmp")), [])
 
 
 if __name__ == "__main__":

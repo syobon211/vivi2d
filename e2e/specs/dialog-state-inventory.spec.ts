@@ -292,27 +292,6 @@ test("capture all reachable dialog states", async ({ app, window }) => {
   await captureDialogState(window, "comfyui-settings", "connection-result");
   await closeTopDialog(window);
 
-  await captureDialogState(
-    window,
-    "obs-settings",
-    "default",
-    await openIntegrationDialogByIndex(window, 2),
-  );
-  await window.locator(".ai-gen-input").first().fill("ws://127.0.0.1:4455");
-  await window.locator(".ai-gen-input").nth(1).fill("password");
-  await captureDialogState(window, "obs-settings", "filled");
-  await closeTopDialog(window);
-
-  await captureDialogState(
-    window,
-    "vts-settings",
-    "default",
-    await openIntegrationDialogByIndex(window, 3),
-  );
-  await window.locator(".ai-gen-input").first().fill("ws://127.0.0.1:8001");
-  await captureDialogState(window, "vts-settings", "filled");
-  await closeTopDialog(window);
-
   await importPsd(app, window, TEST_PSD);
 
   await clickFileMenuItem(window, "Import Image As Layer...");

@@ -20,19 +20,28 @@ const schemas = Object.freeze({
   projectFormatV11: Object.freeze({
     id: "https://vivi2d.com/spec/project-format-v11.schema.json",
     relativePath: "packages/model/src/project-format-v11/project-format-v11.schema.json",
+    requiredStatus: APPROVED_STATUS,
     sha256: "a6aa7d36ca39505e69fa8ae5a1283cd949104703db92e671c435bbfa03e203bc",
   }),
   evaluationPayloadV1: Object.freeze({
     id: "https://vivi2d.com/spec/evaluation-payload-v1.schema.json",
     relativePath:
       "packages/model/src/evaluation-payload-v1/evaluation-payload-v1.schema.json",
+    requiredStatus: APPROVED_STATUS,
     sha256: "8d65b5ddea137a71894e57ba6e14c94576aad63b2b7586728fa2bcca5bb125a3",
   }),
   evaluationTexturePlanV1: Object.freeze({
     id: "https://vivi2d.com/spec/evaluation-texture-plan-v1.schema.json",
     relativePath:
       "packages/model/src/evaluation-payload-v1/evaluation-texture-plan-v1.schema.json",
+    requiredStatus: APPROVED_STATUS,
     sha256: "90e36afd066cc6f58eb134796779013caf13e9de184b1031b7d834b89fadf055",
+  }),
+  vivi2dManifestV1: Object.freeze({
+    id: "https://vivi2d.dev/schemas/vivi2d_manifest_v1.json",
+    relativePath:
+      "integrations/comfyui/vivi2d_compat_plugin/vivi2d_compat/schema/vivi2d_manifest_v1.json",
+    sha256: "317fb2f9513f41fe61aa109062bd881faa64590aa7efa250df8b41bcf08559bf",
   }),
 });
 
@@ -65,6 +74,19 @@ const outputs = [
       evaluationTexturePlanV1SchemaIdentity: schemas.evaluationTexturePlanV1,
     },
     expectedHelpers: { equal: 1, ucs2length: 0 },
+    expectedRawBase64Patterns: 0,
+  },
+  {
+    declarationPath:
+      "packages/provider-comfyui/src/internal/generated/vivi2d-manifest-v1-validator.d.mts",
+    modulePath:
+      "packages/provider-comfyui/src/internal/generated/vivi2d-manifest-v1-validator.mjs",
+    schemaEntries: [schemas.vivi2dManifestV1],
+    validatorExports: {
+      validateVivi2dManifestV1: schemas.vivi2dManifestV1.id,
+    },
+    identityExports: {},
+    expectedHelpers: { equal: 0, ucs2length: 1 },
     expectedRawBase64Patterns: 0,
   },
 ];
@@ -143,9 +165,12 @@ function loadApprovedSchema(identity) {
       `${identity.relativePath} schema ID mismatch: expected ${identity.id}, got ${String(schema.$id)}`,
     );
   }
-  if (schema["x-vivi-status"] !== APPROVED_STATUS) {
+  if (
+    identity.requiredStatus !== undefined &&
+    schema["x-vivi-status"] !== identity.requiredStatus
+  ) {
     throw new Error(
-      `${identity.relativePath} schema status mismatch: expected ${APPROVED_STATUS}, got ${String(schema["x-vivi-status"])}`,
+      `${identity.relativePath} schema status mismatch: expected ${identity.requiredStatus}, got ${String(schema["x-vivi-status"])}`,
     );
   }
   return { identity, schema };

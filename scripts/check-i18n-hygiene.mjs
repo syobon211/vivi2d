@@ -133,9 +133,7 @@ function scanLocaleSource(relativePath, text) {
     }
   }
   for (const rule of FORBIDDEN_PUBLIC_COPY_TERMS) {
-    const findings = findPatternFindings(text, rule.pattern).filter(
-      (finding) => !isAllowedPublicCopyFinding(relativePath, finding),
-    );
+    const findings = findPatternFindings(text, rule.pattern);
     if (findings.length > 0) {
       failures.push(
         `${relativePath} contains forbidden public-copy term ${rule.id} at line ${findings[0].lineNumber}`,
@@ -158,12 +156,4 @@ function findPatternFindings(text, pattern) {
     }
   }
   return findings;
-}
-
-function isAllowedPublicCopyFinding(relativePath, finding) {
-  if (!relativePath.endsWith("/dialog.ts")) return false;
-  return (
-    finding.line.includes('"integration.vts') ||
-    finding.previousLine.includes('"integration.vts')
-  );
 }

@@ -33,12 +33,6 @@ export interface MenuDialogsController {
   showComfyUISettings: boolean;
   openComfyUISettings: () => void;
   closeComfyUISettings: () => void;
-  showOBSSettings: boolean;
-  openOBSSettings: () => void;
-  closeOBSSettings: () => void;
-  showVTSSettings: boolean;
-  openVTSSettings: () => void;
-  closeVTSSettings: () => void;
   showVividExport: boolean;
   openVividExport: () => void;
   closeVividExport: () => void;
@@ -64,8 +58,6 @@ export function useMenuDialogs(): MenuDialogsController {
   const [showAutoSetup, setShowAutoSetup] = useState(false);
   const [showAIGenerate, setShowAIGenerate] = useState(false);
   const [showComfyUISettings, setShowComfyUISettings] = useState(false);
-  const [showOBSSettings, setShowOBSSettings] = useState(false);
-  const [showVTSSettings, setShowVTSSettings] = useState(false);
   const [showVividExport, setShowVividExport] = useState(false);
   const [showVividImport, setShowVividImport] = useState(false);
   const [showImageImportOptions, setShowImageImportOptions] = useState(false);
@@ -139,12 +131,6 @@ export function useMenuDialogs(): MenuDialogsController {
       showComfyUISettings,
       openComfyUISettings: () => setShowComfyUISettings(true),
       closeComfyUISettings: () => setShowComfyUISettings(false),
-      showOBSSettings,
-      openOBSSettings: () => setShowOBSSettings(true),
-      closeOBSSettings: () => setShowOBSSettings(false),
-      showVTSSettings,
-      openVTSSettings: () => setShowVTSSettings(true),
-      closeVTSSettings: () => setShowVTSSettings(false),
       showVividExport,
       openVividExport: () => setShowVividExport(true),
       closeVividExport: () => setShowVividExport(false),
@@ -176,10 +162,8 @@ export function useMenuDialogs(): MenuDialogsController {
       showExportDialog,
       showImageImportOptions,
       showMediaExport,
-      showOBSSettings,
       showReimportDialog,
       showShortcuts,
-      showVTSSettings,
       showVividExport,
       showVividImport,
     ],

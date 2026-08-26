@@ -64,6 +64,15 @@ function shouldScan(relativePath) {
   );
 }
 
+function isExistingFile(relativePath) {
+  try {
+    return fs.statSync(resolveRepoPath(relativePath)).isFile();
+  } catch (error) {
+    if (error?.code === "ENOENT") return false;
+    throw error;
+  }
+}
+
 function lineOf(sourceFile, node) {
   return sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
 }
@@ -139,6 +148,7 @@ function collectMutations(relativePath) {
 
 const files = gitLsFilesIncludingUntracked()
   .filter(shouldScan)
+  .filter(isExistingFile)
   .sort((a, b) => a.localeCompare(b));
 const entries = files
   .flatMap(collectMutations)

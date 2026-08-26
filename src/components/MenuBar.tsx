@@ -395,8 +395,6 @@ export function MenuBar() {
         <IntegrationsMenuSection
           onOpenAIGenerate={dialogs.openAIGenerate}
           onOpenComfyUISettings={dialogs.openComfyUISettings}
-          onOpenOBSSettings={dialogs.openOBSSettings}
-          onOpenVTSSettings={dialogs.openVTSSettings}
         />
       </div>
 

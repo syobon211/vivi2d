@@ -2,14 +2,11 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { makeAliases } from "./vite.aliases";
 
-const publicProfileStubs =
-  process.env.VIVI2D_PRIVATE_DEFORMATION_AUTHORING !== "1";
-
 export default defineConfig({
   base: "./",
   plugins: [react()],
   resolve: {
-    alias: makeAliases(__dirname, { publicProfileStubs }),
+    alias: makeAliases(__dirname),
   },
   server: {
     port: 1420,

@@ -1,20 +1,8 @@
 import { resolve } from "path";
 
-export interface AliasOptions {
-  publicProfileStubs?: boolean;
-}
-
 // Shared aliases for Vite, Vitest, and package boundary checks.
-export function makeAliases(
-  rootDir: string,
-  options: AliasOptions = {},
-): Record<string, string> {
-  const publicProfileAliases: Record<string, string> = options.publicProfileStubs
-    ? {}
-    : {};
-
+export function makeAliases(rootDir: string): Record<string, string> {
   return {
-    ...publicProfileAliases,
     "@": resolve(rootDir, "src"),
     "@vivi2d/core": resolve(rootDir, "packages/core/src"),
     "@vivi2d/model": resolve(rootDir, "packages/model/src"),

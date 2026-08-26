@@ -384,8 +384,12 @@ describe("electron/security.cjs", () => {
       expect(hasIpcContract("open-psd-file")).toBe(true);
       expect(hasIpcContract("save-file")).toBe(true);
       expect(hasIpcContract("comfyui-download")).toBe(true);
+      expect(hasIpcContract("comfyui-upload-image")).toBe(false);
+      expect(hasIpcContract("comfyui-upload-image-buffer")).toBe(true);
       expect(hasIpcContract("test-channel")).toBe(false);
       expect(listIpcChannels()).toContain("comfyui-download");
+      expect(listIpcChannels()).not.toContain("comfyui-upload-image");
+      expect(listIpcChannels()).toContain("comfyui-upload-image-buffer");
       expect(listIpcChannels()).toContain("open-psd-file");
     });
 
@@ -408,6 +412,35 @@ describe("electron/security.cjs", () => {
           },
         ]),
       ).not.toThrow();
+
+      expect(() =>
+        validateIpcArgs("comfyui-download", [
+          {
+            baseUrl: "http://127.0.0.1:8188",
+            filename: "manifest.json",
+            subfolder: "job",
+            type: "output",
+            maxBytes: 2 * 1024 * 1024,
+          },
+        ]),
+      ).not.toThrow();
+    });
+
+    it("rejects invalid ComfyUI download limits", () => {
+      const makePayload = (maxBytes: number) => [
+        {
+          baseUrl: "http://127.0.0.1:8188",
+          filename: "manifest.json",
+          maxBytes,
+        },
+      ];
+
+      expect(() => validateIpcArgs("comfyui-download", makePayload(0))).toThrow(
+        /maxBytes exceeds byte limit/i,
+      );
+      expect(() =>
+        validateIpcArgs("comfyui-download", makePayload(256 * 1024 * 1024 + 1)),
+      ).toThrow(/maxBytes exceeds byte limit/i);
     });
 
     it("rejects no-arg channels with unexpected payloads", () => {

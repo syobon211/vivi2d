@@ -327,8 +327,6 @@ export function SettingsMenuSection(props: {
 export function IntegrationsMenuSection(props: {
   onOpenAIGenerate: () => void;
   onOpenComfyUISettings: () => void;
-  onOpenOBSSettings: () => void;
-  onOpenVTSSettings: () => void;
 }) {
   const t = useT();
   return (
@@ -342,20 +340,6 @@ export function IntegrationsMenuSection(props: {
         title={t("ai.comfyuiSettingsTitle")}
       >
         {t("ai.comfyuiSettings")}
-      </MenuDropdownItem>
-      <div className="menu-dropdown-section">OBS Studio</div>
-      <MenuDropdownItem
-        onClick={props.onOpenOBSSettings}
-        title={t("integration.obsTitle")}
-      >
-        {t("integration.settings")}
-      </MenuDropdownItem>
-      <div className="menu-dropdown-section">VTube Studio</div>
-      <MenuDropdownItem
-        onClick={props.onOpenVTSSettings}
-        title={t("integration.vtsTitle")}
-      >
-        {t("integration.settings")}
       </MenuDropdownItem>
     </MenuDropdown>
   );

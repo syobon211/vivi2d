@@ -4,6 +4,7 @@ import {
   decomposeImageToPsd,
   generateFromPromptToPsd,
   inspectViviCompatSupport,
+  parseViviSeeThroughManifest,
   type ViviCompatNativeImportBundle,
   type ViviSeeThroughLayerAsset,
   type ViviSeeThroughManifest,
@@ -215,11 +216,9 @@ function readNativeImportBundle(
 
 function parseProviderManifest(manifestData: ArrayBuffer): ViviSeeThroughManifest {
   try {
-    return JSON.parse(
-      new TextDecoder().decode(new Uint8Array(manifestData)),
-    ) as ViviSeeThroughManifest;
+    return parseViviSeeThroughManifest(manifestData);
   } catch (error) {
-    throw new Error("Provider returned invalid see-through manifest JSON.", {
+    throw new Error("Provider returned an invalid see-through manifest.", {
       cause: error,
     });
   }

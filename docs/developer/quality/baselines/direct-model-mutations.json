@@ -13,28 +13,28 @@
   "entries": [
     {
       "kind": "assignment",
-      "line": 353,
+      "line": 352,
       "path": "src/components/AIGenerateDialog.tsx",
       "signature": "src/components/AIGenerateDialog.tsx:assignment:abortControllerRef.current = abortController",
       "text": "abortControllerRef.current = abortController"
     },
     {
       "kind": "assignment",
-      "line": 414,
+      "line": 413,
       "path": "src/components/AIGenerateDialog.tsx",
       "signature": "src/components/AIGenerateDialog.tsx:assignment:abortControllerRef.current = null",
       "text": "abortControllerRef.current = null"
     },
     {
       "kind": "update",
-      "line": 245,
+      "line": 244,
       "path": "src/components/AIGenerateDialog.tsx",
       "signature": "src/components/AIGenerateDialog.tsx:update:!artifact?.data",
       "text": "!artifact?.data"
     },
     {
       "kind": "update",
-      "line": 360,
+      "line": 359,
       "path": "src/components/AIGenerateDialog.tsx",
       "signature": "src/components/AIGenerateDialog.tsx:update:!current.generating",
       "text": "!current.generating"
@@ -3261,66 +3261,73 @@
     },
     {
       "kind": "assignment",
-      "line": 87,
+      "line": 105,
       "path": "src/lib/e2e-perf-probe.ts",
       "signature": "src/lib/e2e-perf-probe.ts:assignment:state.events = []",
       "text": "state.events = []"
     },
     {
       "kind": "assignment",
-      "line": 95,
+      "line": 113,
       "path": "src/lib/e2e-perf-probe.ts",
       "signature": "src/lib/e2e-perf-probe.ts:assignment:state.events = []",
       "text": "state.events = []"
     },
     {
       "kind": "assignment",
-      "line": 23,
+      "line": 30,
       "path": "src/lib/e2e-perf-probe.ts",
       "signature": "src/lib/e2e-perf-probe.ts:assignment:window.__vivi2dPerfProbeState__ ??= { marks: new Map<string, number>(), events: [], }",
       "text": "window.__vivi2dPerfProbeState__ ??= { marks: new Map<string, number>(), events: [], }"
     },
     {
       "kind": "mutating-call",
-      "line": 51,
+      "line": 41,
       "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.events.push({ name, durationMs: Math.max(0, performance.now() - startedAt), meta, recordedAt: Date.now(), })",
-      "text": "state.events.push({ name, durationMs: Math.max(0, performance.now() - startedAt), meta, recordedAt: Date.now(), })"
+      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.events.push(event)",
+      "text": "state.events.push(event)"
     },
     {
       "kind": "mutating-call",
-      "line": 74,
+      "line": 39,
       "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.events.push({ name, durationMs: Math.max(0, performance.now() - startedAt), meta, recordedAt: Date.now(), })",
-      "text": "state.events.push({ name, durationMs: Math.max(0, performance.now() - startedAt), meta, recordedAt: Date.now(), })"
+      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.events.splice(0, state.events.length - MAX_E2E_PERF_PROBE_EVENTS + 1)",
+      "text": "state.events.splice(0, state.events.length - MAX_E2E_PERF_PROBE_EVENTS + 1)"
     },
     {
       "kind": "mutating-call",
-      "line": 88,
+      "line": 106,
       "path": "src/lib/e2e-perf-probe.ts",
       "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.clear()",
       "text": "state.marks.clear()"
     },
     {
       "kind": "mutating-call",
-      "line": 62,
+      "line": 81,
       "path": "src/lib/e2e-perf-probe.ts",
       "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.delete(buildKey(name, key))",
       "text": "state.marks.delete(buildKey(name, key))"
     },
     {
       "kind": "mutating-call",
-      "line": 50,
+      "line": 54,
+      "path": "src/lib/e2e-perf-probe.ts",
+      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.delete(oldestKey)",
+      "text": "state.marks.delete(oldestKey)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 69,
       "path": "src/lib/e2e-perf-probe.ts",
       "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.delete(probeKey)",
       "text": "state.marks.delete(probeKey)"
     },
     {
       "kind": "mutating-call",
-      "line": 37,
+      "line": 56,
       "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.set(buildKey(name, key), performance.now())",
-      "text": "state.marks.set(buildKey(name, key), performance.now())"
+      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.set(probeKey, performance.now())",
+      "text": "state.marks.set(probeKey, performance.now())"
     },
     {
       "kind": "assignment",
@@ -6803,91 +6810,91 @@
     },
     {
       "kind": "assignment",
-      "line": 45,
+      "line": 47,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:assignment:canvas.height = height",
       "text": "canvas.height = height"
     },
     {
       "kind": "assignment",
-      "line": 44,
+      "line": 46,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:assignment:canvas.width = width",
       "text": "canvas.width = width"
     },
     {
       "kind": "assignment",
-      "line": 102,
+      "line": 104,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:assignment:flat[i]!.drawOrder = Math.round((i / Math.max(1, count - 1)) * DRAW_ORDER.MAX)",
       "text": "flat[i]!.drawOrder = Math.round((i / Math.max(1, count - 1)) * DRAW_ORDER.MAX)"
     },
     {
       "kind": "assignment",
-      "line": 81,
+      "line": 83,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:assignment:img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error(\"Failed to decode imported See-through layer image\")); }",
       "text": "img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error(\"Failed to decode imported See-through layer image\")); }"
     },
     {
       "kind": "assignment",
-      "line": 70,
+      "line": 72,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:assignment:img.onload = () => { try { const ctx = createCanvasContext(img.width, img.height); ctx.drawImage(img, 0, 0); resolve(ctx.getImageData(0, 0, img.width, img.height)); } catch (error)",
       "text": "img.onload = () => { try { const ctx = createCanvasContext(img.width, img.height); ctx.drawImage(img, 0, 0); resolve(ctx.getImageData(0, 0, img.width, img.height)); } catch (error)"
     },
     {
       "kind": "assignment",
-      "line": 85,
+      "line": 87,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:assignment:img.src = objectUrl",
       "text": "img.src = objectUrl"
     },
     {
       "kind": "mutating-call",
-      "line": 232,
+      "line": 242,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:mutating-call:layers.push({ id, kind: \"viviMesh\", name: buildSeeThroughTechnicalName(layer.psd_leaf_token, layer.name), visible: true, opacity: 1, x: left, y: top, width, height, blendMode: \"nor",
       "text": "layers.push({ id, kind: \"viviMesh\", name: buildSeeThroughTechnicalName(layer.psd_leaf_token, layer.name), visible: true, opacity: 1, x: left, y: top, width, height, blendMode: \"nor"
     },
     {
       "kind": "mutating-call",
-      "line": 92,
+      "line": 94,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:mutating-call:manifest.layers .map((layer, index) => ({ layer, index })) .sort((a, b) => a.layer.order - b.layer.order || a.index - b.index)",
       "text": "manifest.layers .map((layer, index) => ({ layer, index })) .sort((a, b) => a.layer.order - b.layer.order || a.index - b.index)"
     },
     {
       "kind": "mutating-call",
-      "line": 248,
+      "line": 258,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:mutating-call:textures.push({ layerId: id, imageData, })",
       "text": "textures.push({ layerId: id, imageData, })"
     },
     {
       "kind": "mutating-call",
-      "line": 145,
+      "line": 153,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:mutating-call:tokenSet.add(layer.psd_leaf_token)",
       "text": "tokenSet.add(layer.psd_leaf_token)"
     },
     {
       "kind": "update",
-      "line": 263,
+      "line": 273,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:update:!annotated.applied",
       "text": "!annotated.applied"
     },
     {
       "kind": "update",
-      "line": 147,
+      "line": 155,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:update:!layer.image_path",
       "text": "!layer.image_path"
     },
     {
       "kind": "update",
-      "line": 139,
+      "line": 147,
       "path": "src/stores/projectIO/seeThroughNativeImport.ts",
       "signature": "src/stores/projectIO/seeThroughNativeImport.ts:update:!layer.psd_leaf_token",
       "text": "!layer.psd_leaf_token"

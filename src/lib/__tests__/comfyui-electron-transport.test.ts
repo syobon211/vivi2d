@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ElectronComfyUITransport } from "@/lib/comfyui-electron-transport";
 
-
 interface FakeAPI {
   comfyuiPing: ReturnType<typeof vi.fn>;
   comfyuiUploadImageBuffer: ReturnType<typeof vi.fn>;
@@ -145,6 +144,21 @@ describe("ElectronComfyUITransport", () => {
         filename: "x.png",
         subfolder: "sub",
         type: "temp",
+      });
+    });
+
+    it("forwards a caller-supplied streaming byte limit to main", async () => {
+      api.comfyuiDownload.mockResolvedValue(new ArrayBuffer(4));
+      const t = new ElectronComfyUITransport(BASE);
+
+      await t.downloadOutput("manifest.json", "job", "output", 2 * 1024 * 1024);
+
+      expect(api.comfyuiDownload).toHaveBeenCalledWith({
+        baseUrl: BASE,
+        filename: "manifest.json",
+        subfolder: "job",
+        type: "output",
+        maxBytes: 2 * 1024 * 1024,
       });
     });
   });

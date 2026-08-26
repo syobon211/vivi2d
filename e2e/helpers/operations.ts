@@ -179,8 +179,6 @@ export async function clickIntegrationsMenuItem(window: Page, itemText: string) 
       /Generate Model|Automatic Model Generation|自動モデル生成|モデル生成/,
     ],
     "ComfyUI Settings": [/ComfyUI Settings|ComfyUI 設定/],
-    "OBS Settings": [/Settings\.\.\.|設定\.\.\./],
-    "VTS Settings": [/Settings\.\.\.|設定\.\.\./],
   };
   const aliases = aliasesByLabel[itemText];
   if (aliases && (await clickDropdownItemByAliases(panel, aliases))) {

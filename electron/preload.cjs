@@ -16,7 +16,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   readAudioFile: (args) => ipcRenderer.invoke("read-audio-file", args),
   readImageFile: (args) => ipcRenderer.invoke("read-image-file", args),
   comfyuiPing: (args) => ipcRenderer.invoke("comfyui-ping", args),
-  comfyuiUploadImage: (args) => ipcRenderer.invoke("comfyui-upload-image", args),
   comfyuiUploadImageBuffer: (args) =>
     ipcRenderer.invoke("comfyui-upload-image-buffer", args),
   comfyuiEnqueue: (args) => ipcRenderer.invoke("comfyui-enqueue", args),

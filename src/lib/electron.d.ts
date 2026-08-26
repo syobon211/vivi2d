@@ -36,10 +36,6 @@ interface ElectronAPI {
     imagePath: string;
   }) => Promise<{ buffer: ArrayBuffer; filename: string }>;
   comfyuiPing: (args: { baseUrl: string }) => Promise<{ ok: boolean }>;
-  comfyuiUploadImage: (args: {
-    baseUrl: string;
-    imagePath: string;
-  }) => Promise<{ name: string }>;
   comfyuiUploadImageBuffer: (args: {
     baseUrl: string;
     data: ArrayBuffer;
@@ -62,6 +58,7 @@ interface ElectronAPI {
     filename: string;
     subfolder?: string;
     type?: string;
+    maxBytes?: number;
   }) => Promise<ArrayBuffer>;
 }
 

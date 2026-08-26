@@ -14,19 +14,16 @@ async function openGenerateModelDialog(window: Page) {
   await window.locator(".menu-dropdown-panel .menu-dropdown-item").first().click();
 }
 
-async function openSettingsDialog(window: Page, index: number) {
+async function openComfyUISettingsDialog(window: Page) {
   await openIntegrationsMenu(window);
-  await window
-    .locator(".menu-dropdown-panel .menu-dropdown-item")
-    .nth(index + 1)
-    .click();
+  await window.locator(".menu-dropdown-panel .menu-dropdown-item").nth(1).click();
 }
 
 test("integrations menu trigger is visible", async ({ window }) => {
   await expect(window.locator(".menu-dropdown-trigger").nth(3)).toBeVisible();
 });
 
-test("integrations menu shows ComfyUI, OBS Studio, and VTube Studio sections", async ({
+test("integrations menu shows only implemented ComfyUI integrations", async ({
   window,
 }) => {
   await openIntegrationsMenu(window);
@@ -36,10 +33,10 @@ test("integrations menu shows ComfyUI, OBS Studio, and VTube Studio sections", a
   ).toBeVisible();
   await expect(
     window.locator(".menu-dropdown-section", { hasText: "OBS Studio" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     window.locator(".menu-dropdown-section", { hasText: "VTube Studio" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     window.locator(".menu-dropdown-panel .menu-dropdown-item").first(),
   ).toBeVisible();
@@ -59,7 +56,7 @@ test("AI generate dialog opens from the integrations menu", async ({ window }) =
 });
 
 test("ComfyUI settings dialog opens", async ({ window }) => {
-  await openSettingsDialog(window, 0);
+  await openComfyUISettingsDialog(window);
 
   await expect(window.locator(".modal-title", { hasText: /ComfyUI/ })).toBeVisible();
   await expect(window.locator('input[value="http://127.0.0.1:8188"]')).toBeVisible();
@@ -71,7 +68,7 @@ test("ComfyUI settings dialog opens", async ({ window }) => {
 test("ComfyUI settings test connection shows the Vivi2D compat report", async ({
   window,
 }) => {
-  await openSettingsDialog(window, 0);
+  await openComfyUISettingsDialog(window);
 
   await expect(window.locator(".modal-title", { hasText: /ComfyUI/ })).toBeVisible();
 
@@ -89,26 +86,6 @@ test("ComfyUI settings test connection shows the Vivi2D compat report", async ({
         /Compat.*(decompose|\u5206\u89e3)\s*(OK|\u3042\u308a).*(export|\u66f8\u304d\u51fa\u3057)\s*(OK|\u3042\u308a)/i,
     }),
   ).toBeVisible();
-
-  await window.locator(".prop-btn").last().click();
-  await expect(window.locator(".modal-title")).not.toBeVisible();
-});
-
-test("OBS Studio settings dialog opens", async ({ window }) => {
-  await openSettingsDialog(window, 1);
-
-  await expect(window.locator(".modal-title", { hasText: /OBS Studio/ })).toBeVisible();
-  await expect(window.locator('input[value="ws://127.0.0.1:4455"]')).toBeVisible();
-
-  await window.locator(".prop-btn").last().click();
-  await expect(window.locator(".modal-title")).not.toBeVisible();
-});
-
-test("VTube Studio settings dialog opens", async ({ window }) => {
-  await openSettingsDialog(window, 2);
-
-  await expect(window.locator(".modal-title", { hasText: /VTube Studio/ })).toBeVisible();
-  await expect(window.locator('input[value="ws://127.0.0.1:8001"]')).toBeVisible();
 
   await window.locator(".prop-btn").last().click();
   await expect(window.locator(".modal-title")).not.toBeVisible();

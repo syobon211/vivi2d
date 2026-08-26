@@ -2,6 +2,9 @@ import { requireDefined } from "@vivi2d/core/type-guards";
 import { writePsd } from "ag-psd";
 import type { PositionedSeethroughLayer, SeethroughLayer } from "./types";
 
+const MAX_PNG_SIDE = 8192;
+const MAX_PNG_PIXELS = 4096 * 4096;
+
 const SEETHROUGH_CATEGORY_MAP: Record<string, string> = {
   face: "face",
   iris_left: "eyeLeft",
@@ -137,14 +140,26 @@ async function decodePngRgbaInNode(
   if (width <= 0 || height <= 0 || bitDepth !== 8) {
     throw new Error("Unsupported PNG dimensions or bit depth");
   }
+  if (width > MAX_PNG_SIDE || height > MAX_PNG_SIDE || width * height > MAX_PNG_PIXELS) {
+    throw new Error("PNG dimensions exceed the supported resource limit");
+  }
   if (compressionMethod !== 0 || filterMethod !== 0 || interlaceMethod !== 0) {
     throw new Error("Unsupported PNG encoding");
   }
 
   const channels = pngChannelCount(colorType);
   const scanlineBytes = width * channels;
-  const inflated = inflateSync(concatUint8Arrays(idatChunks));
   const expectedInflatedBytes = height * (scanlineBytes + 1);
+  let inflated: Uint8Array;
+  try {
+    inflated = inflateSync(concatUint8Arrays(idatChunks), {
+      maxOutputLength: expectedInflatedBytes,
+    });
+  } catch (error) {
+    throw new Error("PNG decompressed data exceeds the expected scanline length", {
+      cause: error,
+    });
+  }
   if (inflated.byteLength !== expectedInflatedBytes) {
     throw new Error("Unexpected PNG scanline length");
   }

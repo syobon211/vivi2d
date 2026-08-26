@@ -428,31 +428,6 @@ test("capture dialog inventory", async ({ app, window }) => {
     "05-comfyui-settings.png",
   );
   await closeTopDialog(window);
-  await captureDialog(
-    await openIntegrationDialogByIndex(window, 2),
-    "dialogs",
-    "06-obs-settings.png",
-  );
-  await captureDialogWindow(
-    window,
-    window.getByRole("dialog").last(),
-    "dialogs-window",
-    "06-obs-settings.png",
-  );
-  await closeTopDialog(window);
-  await captureDialog(
-    await openIntegrationDialogByIndex(window, 3),
-    "dialogs",
-    "07-vts-settings.png",
-  );
-  await captureDialogWindow(
-    window,
-    window.getByRole("dialog").last(),
-    "dialogs-window",
-    "07-vts-settings.png",
-  );
-  await closeTopDialog(window);
-
   await importPsd(app, window, TEST_PSD);
 
   await clickFileMenuItem(window, "Import Image As Layer...");
