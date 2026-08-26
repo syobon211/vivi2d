@@ -1,17 +1,34 @@
 # Playwright matrix for manual and CI-driven Electron checks.
 #
-# This workflow is intentionally `workflow_dispatch` only. Push and pull request
-# automation live in other workflows so ownership and runtime cost stay clear.
+# Pull requests run the Ubuntu smoke, dialog, integration, and visual-capture projects
+# when editor/E2E inputs change. Manual dispatch retains the wider matrix.
 #
 # Expected usage:
 #   - smoke: quick regression pass
 #   - full / visual: wider editor and screenshot coverage
 #   - perf: scheduled or manual performance monitoring
 #
-# Electron 41 requires xvfb on Linux. Windows and macOS run without it.
+# Electron runs under xvfb on Linux. Windows and macOS run without it.
 name: Test Matrix
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/test-matrix.yml"
+      - "e2e/**"
+      - "electron/**"
+      - "integrations/comfyui/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - "scripts/check-e2e-project-coverage.mjs"
+      - "scripts/run-e2e-projects.mjs"
+      - "src/**"
+      - "tsconfig.json"
+      - "tsconfig.packages.json"
+      - "vite.aliases.ts"
+      - "vite.config.ts"
   workflow_dispatch:
     inputs:
       project:
@@ -37,9 +54,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: test-matrix-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit:
     name: Unit + Coverage
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -162,12 +184,16 @@ jobs:
   e2e:
     name: E2E (${{ matrix.project }} / ${{ matrix.os }})
     needs: unit
+    if: >-
+      always() &&
+      (needs.unit.result == 'success' || needs.unit.result == 'skipped')
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ github.event.inputs.project == 'all' && fromJSON('["smoke","full","perf","visual"]') || fromJSON(format('["{0}"]', github.event.inputs.project)) }}
-        os: ${{ github.event.inputs.os == 'triple' && fromJSON('["ubuntu-latest","windows-latest","macos-latest"]') || fromJSON('["ubuntu-latest"]') }}
+        project: ${{ github.event_name == 'pull_request' && fromJSON('["smoke","full-dialogs","full-integrations","visual"]') || (github.event.inputs.project == 'all' && fromJSON('["smoke","full-a11y","full-rig","full-editor","full-io","full-animation","full-dialogs","full-integrations","full-misc","perf","visual"]') || (github.event.inputs.project == 'full' && fromJSON('["full-a11y","full-rig","full-editor","full-io","full-animation","full-dialogs","full-integrations","full-misc"]') || fromJSON(format('["{0}"]', github.event.inputs.project)))) }}
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || (github.event.inputs.os == 'triple' && fromJSON('["ubuntu-latest","windows-latest","macos-latest"]') || fromJSON('["ubuntu-latest"]')) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -175,17 +201,22 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run check:e2e-project-coverage
       - run: npx playwright install --with-deps chromium
       - name: Build for E2E
         run: npm run build:e2e
       - run: npm run check:release-surface
       - name: Run Playwright (${{ matrix.project }})
         # Linux Electron runs under xvfb so Chromium has a display server.
+        env:
+          # PR visual runs collect review artifacts. Pixel baselines remain an
+          # explicit, separately reviewed opt-in.
+          VIVI2D_COMPARE_VISUAL_BASELINES: "0"
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run --auto-servernum -- npx playwright test --config=e2e/playwright.config.ts --project=${{ matrix.project }}
+            xvfb-run --auto-servernum -- node scripts/run-e2e-projects.mjs --no-build --project=${{ matrix.project }}
           else
-            npx playwright test --config=e2e/playwright.config.ts --project=${{ matrix.project }}
+            node scripts/run-e2e-projects.mjs --no-build --project=${{ matrix.project }}
           fi
         shell: bash
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

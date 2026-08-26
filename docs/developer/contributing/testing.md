@@ -39,6 +39,25 @@ npm run test:e2e:full
 Use `check:quality:e2e-workflow-record` for pre-release workflow-sensitive
 changes because it records the Auto Setup workflow project.
 
+Pull requests that change editor or E2E inputs run the selected Ubuntu tier:
+`smoke`, `full-dialogs`, `full-integrations`, and `visual`. This closes the
+startup, dialog-inventory, integration, and rendered-state gaps without claiming
+that every `full-*` project runs on every pull request. The visual project is
+capture-only in pull-request CI: screenshots are uploaded for human review, and
+CI never creates or refreshes a pixel baseline automatically.
+
+Enable `VIVI2D_COMPARE_VISUAL_BASELINES=1` only when reviewing an intentional,
+platform-pinned baseline change. Generate baseline PNGs with Playwright's
+explicit `--update-snapshots` option, review the rendered artifact diff, and
+commit that binary refresh separately from product changes. Until canonical
+Linux baselines are reviewed and tracked, a successful visual job means that
+the states rendered and were captured; it is not a pixel-equivalence claim.
+
+The repository E2E suite must not require a developer's live ComfyUI service.
+Use an in-process loopback mock for deterministic protocol/UI coverage. Run
+`npm run smoke:comfyui:compat` separately when intentionally validating an
+installed real ComfyUI instance and plugin.
+
 ## Documentation Gates
 
 ```bash

@@ -2,6 +2,7 @@ import { Buffer } from "node:buffer";
 import type { Page } from "playwright";
 import { expect, test } from "../fixtures";
 import { waitForAppReady } from "../helpers/app";
+import { expectVisualBufferSnapshot } from "../helpers/visual-capture";
 
 const E2E_CANVAS_READBACK_STORAGE_KEY = "vivi2d-e2e-canvas-readback";
 
@@ -83,13 +84,13 @@ test.describe("canvas readback snapshots", () => {
 
   test("initial launch canvas readback", async ({ window }) => {
     const png = await readCanvasPng(window);
-    expect(png).toMatchSnapshot("canvas-readback-initial-dark.png");
+    await expectVisualBufferSnapshot(png, "canvas-readback-initial-dark.png");
   });
 
   test("initial launch canvas readback in light theme", async ({ window }) => {
     await setTheme(window, "light");
     const png = await readCanvasPng(window);
-    expect(png).toMatchSnapshot("canvas-readback-initial-light.png");
+    await expectVisualBufferSnapshot(png, "canvas-readback-initial-light.png");
   });
 
   test("canvas readback after character PSD load", async ({
@@ -100,6 +101,6 @@ test.describe("canvas readback snapshots", () => {
     await waitForStableFrame(window);
     await waitForStableFrame(window);
     const png = await readCanvasPng(window);
-    expect(png).toMatchSnapshot("canvas-readback-after-psd-load-dark.png");
+    await expectVisualBufferSnapshot(png, "canvas-readback-after-psd-load-dark.png");
   });
 });
