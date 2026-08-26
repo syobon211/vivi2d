@@ -10,7 +10,6 @@ import {
 } from "@/test/mocks/useMswServer";
 import { ComfyUIClient } from "../client";
 
-
 useMswServer();
 
 describe("ComfyUIClient", () => {
@@ -236,6 +235,51 @@ describe("ComfyUIClient", () => {
       await expect(client.downloadOutput("missing.png")).rejects.toThrow(
         /Image download failed/,
       );
+    });
+
+    it("rejects an oversized Content-Length before buffering the body", async () => {
+      server.use(
+        http.get(
+          "http://127.0.0.1:8188/view",
+          () =>
+            new HttpResponse(new Uint8Array(5), {
+              status: 200,
+              headers: { "Content-Length": "5" },
+            }),
+        ),
+      );
+      const client = new ComfyUIClient();
+
+      await expect(
+        client.downloadOutput("manifest.json", "", "output", 4),
+      ).rejects.toThrow(/too large/i);
+    });
+
+    it("rejects a chunked body when its cumulative bytes exceed the limit", async () => {
+      server.use(
+        http.get("http://127.0.0.1:8188/view", () => {
+          const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+              controller.enqueue(new Uint8Array([1, 2, 3]));
+              controller.enqueue(new Uint8Array([4, 5, 6]));
+              controller.close();
+            },
+          });
+          return new HttpResponse(body, { status: 200 });
+        }),
+      );
+      const client = new ComfyUIClient();
+
+      await expect(
+        client.downloadOutput("manifest.json", "", "output", 4),
+      ).rejects.toThrow(/too large/i);
+    });
+
+    it("rejects byte limits above the transport-wide 256 MiB ceiling", async () => {
+      const client = new ComfyUIClient();
+      await expect(
+        client.downloadOutput("output.psd", "", "output", 256 * 1024 * 1024 + 1),
+      ).rejects.toThrow(/byte limit is invalid/i);
     });
   });
 

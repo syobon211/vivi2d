@@ -1,5 +1,5 @@
 // All dialogs (external JSON export / Media output / Validation / PSD reimport /
-// Integrations (OBS/VTS) / ComfyUI / Error boundary / Notification toast / Generic dialog)
+// ComfyUI / Error boundary / Notification toast / Generic dialog)
 export const dialog = {
   "export.spineTitle": "External JSON Export",
   "export.noViviMesh": "No ViviMeshes",
@@ -64,20 +64,6 @@ export const dialog = {
   "reimport.updated": "Updated",
   "reimport.added": "Added",
   "reimport.removedFromPsd": "Missing from PSD",
-
-  "integration.settings": "Settings...",
-  "integration.obsTitle": "OBS Studio WebSocket connection",
-  "integration.obsDialogTitle": "OBS Studio Connection Settings",
-  "integration.obsUrl": "OBS WebSocket URL",
-  "integration.obsPassword": "Password",
-  "integration.obsPasswordPlaceholder": "Leave empty if not configured",
-  "integration.obsNotice":
-    "Enable the WebSocket server in OBS Studio (Tools → WebSocket Server Settings).",
-  "integration.vtsTitle": "VTube Studio local API connection",
-  "integration.vtsDialogTitle": "VTube Studio Connection Settings",
-  "integration.vtsUrl": "VTube Studio local API URL",
-  "integration.vtsNotice":
-    "Make sure VTube Studio is running. Plugin authorization is required on first connection.",
 
   "ai.menuLabel": "ComfyUI",
   "ai.generate": "Generate Model...",

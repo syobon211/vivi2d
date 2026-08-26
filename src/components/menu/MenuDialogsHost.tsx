@@ -18,9 +18,6 @@ const ExportDialog = lazy(() =>
 const MediaExportDialog = lazy(() =>
   import("../MediaExportDialog").then((m) => ({ default: m.MediaExportDialog })),
 );
-const OBSSettingsDialog = lazy(() =>
-  import("../OBSSettingsDialog").then((m) => ({ default: m.OBSSettingsDialog })),
-);
 const ReimportDialog = lazy(() =>
   import("../ReimportDialog").then((m) => ({ default: m.ReimportDialog })),
 );
@@ -32,10 +29,6 @@ const ShortcutSettingsDialog = lazy(() =>
 const VividDialog = lazy(() =>
   import("../VividDialog").then((m) => ({ default: m.VividDialog })),
 );
-const VTSSettingsDialog = lazy(() =>
-  import("../VTSSettingsDialog").then((m) => ({ default: m.VTSSettingsDialog })),
-);
-
 export function MenuDialogsHost({ dialogs }: { dialogs: MenuDialogsController }) {
   return (
     <>
@@ -62,12 +55,6 @@ export function MenuDialogsHost({ dialogs }: { dialogs: MenuDialogsController })
         {dialogs.showAIGenerate && <AIGenerateDialog onClose={dialogs.closeAIGenerate} />}
         {dialogs.showComfyUISettings && (
           <ComfyUISettingsDialog onClose={dialogs.closeComfyUISettings} />
-        )}
-        {dialogs.showOBSSettings && (
-          <OBSSettingsDialog onClose={dialogs.closeOBSSettings} />
-        )}
-        {dialogs.showVTSSettings && (
-          <VTSSettingsDialog onClose={dialogs.closeVTSSettings} />
         )}
         {dialogs.showVividExport && (
           <VividDialog mode="export" onClose={dialogs.closeVividExport} />

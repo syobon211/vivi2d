@@ -10,6 +10,9 @@ interface E2EPerfProbeState {
   events: E2EPerfProbeEvent[];
 }
 
+const MAX_E2E_PERF_PROBE_EVENTS = 512;
+const MAX_E2E_PERF_PROBE_MARKS = 128;
+
 declare global {
   interface Window {
     __vivi2dPerfProbeState__?: E2EPerfProbeState;
@@ -17,7 +20,11 @@ declare global {
 }
 
 function getProbeState(): E2EPerfProbeState | null {
-  if (typeof window === "undefined" || typeof performance === "undefined") {
+  if (
+    import.meta.env.VITE_EXPOSE_E2E !== "true" ||
+    typeof window === "undefined" ||
+    typeof performance === "undefined"
+  ) {
     return null;
   }
   window.__vivi2dPerfProbeState__ ??= {
@@ -27,6 +34,13 @@ function getProbeState(): E2EPerfProbeState | null {
   return window.__vivi2dPerfProbeState__;
 }
 
+function recordEvent(state: E2EPerfProbeState, event: E2EPerfProbeEvent): void {
+  if (state.events.length >= MAX_E2E_PERF_PROBE_EVENTS) {
+    state.events.splice(0, state.events.length - MAX_E2E_PERF_PROBE_EVENTS + 1);
+  }
+  state.events.push(event);
+}
+
 function buildKey(name: string, key?: string): string {
   return key ? `${name}:${key}` : name;
 }
@@ -34,7 +48,12 @@ function buildKey(name: string, key?: string): string {
 export function startE2EPerfProbe(name: string, key?: string): void {
   const state = getProbeState();
   if (!state) return;
-  state.marks.set(buildKey(name, key), performance.now());
+  const probeKey = buildKey(name, key);
+  if (!state.marks.has(probeKey) && state.marks.size >= MAX_E2E_PERF_PROBE_MARKS) {
+    const oldestKey = state.marks.keys().next().value;
+    if (oldestKey !== undefined) state.marks.delete(oldestKey);
+  }
+  state.marks.set(probeKey, performance.now());
 }
 
 export function endE2EPerfProbe(
@@ -48,7 +67,7 @@ export function endE2EPerfProbe(
   const startedAt = state.marks.get(probeKey);
   if (startedAt === undefined) return;
   state.marks.delete(probeKey);
-  state.events.push({
+  recordEvent(state, {
     name,
     durationMs: Math.max(0, performance.now() - startedAt),
     meta,
@@ -67,17 +86,16 @@ export function measureE2EPerfProbe<T>(
   fn: () => T,
   meta?: Record<string, unknown>,
 ): T {
-  const startedAt = typeof performance !== "undefined" ? performance.now() : 0;
-  const result = fn();
   const state = getProbeState();
-  if (state) {
-    state.events.push({
-      name,
-      durationMs: Math.max(0, performance.now() - startedAt),
-      meta,
-      recordedAt: Date.now(),
-    });
-  }
+  if (!state) return fn();
+  const startedAt = performance.now();
+  const result = fn();
+  recordEvent(state, {
+    name,
+    durationMs: Math.max(0, performance.now() - startedAt),
+    meta,
+    recordedAt: Date.now(),
+  });
   return result;
 }
 

@@ -26,18 +26,24 @@ const comfyUiMocks = vi.hoisted(() => ({
   }),
 }));
 
-vi.mock("@vivi2d/provider-comfyui", () => ({
-  ComfyUIClient: comfyUiMocks.ComfyUIClient,
-  createComfyUIProvider: comfyUiMocks.createComfyUIProvider,
-  decomposeImageToPsd: comfyUiMocks.decomposeImageToPsd,
-  decomposeImageToNativeImportBundleCompat:
-    comfyUiMocks.decomposeImageToNativeImportBundleCompat,
-  exportCompatManifestToPsd: comfyUiMocks.exportCompatManifestToPsd,
-  generateFromPromptToPsd: comfyUiMocks.generateFromPromptToPsd,
-  generateFromPromptToNativeImportBundleCompat:
-    comfyUiMocks.generateFromPromptToNativeImportBundleCompat,
-  inspectViviCompatSupport: comfyUiMocks.inspectViviCompatSupport,
-}));
+vi.mock("@vivi2d/provider-comfyui", async () => {
+  const actual = await vi.importActual<
+    typeof import("@vivi2d/provider-comfyui/manifest-parser")
+  >("@vivi2d/provider-comfyui/manifest-parser");
+  return {
+    ComfyUIClient: comfyUiMocks.ComfyUIClient,
+    createComfyUIProvider: comfyUiMocks.createComfyUIProvider,
+    decomposeImageToPsd: comfyUiMocks.decomposeImageToPsd,
+    decomposeImageToNativeImportBundleCompat:
+      comfyUiMocks.decomposeImageToNativeImportBundleCompat,
+    exportCompatManifestToPsd: comfyUiMocks.exportCompatManifestToPsd,
+    generateFromPromptToPsd: comfyUiMocks.generateFromPromptToPsd,
+    generateFromPromptToNativeImportBundleCompat:
+      comfyUiMocks.generateFromPromptToNativeImportBundleCompat,
+    inspectViviCompatSupport: comfyUiMocks.inspectViviCompatSupport,
+    parseViviSeeThroughManifest: actual.parseViviSeeThroughManifest,
+  };
+});
 
 vi.mock("@vivi2d/provider-sdk", () => ({
   VIVI_PROVIDER_CAPABILITIES: {
@@ -234,6 +240,44 @@ describe("AIGenerateDialog async flows", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(useComfyUIStore.getState().generating).toBe(false);
     expect(useComfyUIStore.getState().progressPercent).toBe(100);
+  });
+
+  it("rejects an invalid provider manifest before native import", async () => {
+    const user = userEvent.setup();
+    const nativeBundle = {
+      manifestPath: "vivi2d/decompose/job/manifest.json",
+      manifest: makeManifest(),
+      layerAssets: [],
+    };
+    const result = providerResultFromBundle(nativeBundle);
+    const invalidData = encodeJsonBuffer({
+      ...nativeBundle.manifest,
+      unexpected: "private client prompt",
+    });
+    result.artifacts[0]!.data = invalidData;
+    result.artifacts[0]!.byteLength = invalidData.byteLength;
+
+    (
+      window as typeof window & { electronAPI: any }
+    ).electronAPI.openImageFile.mockResolvedValue("C:/tmp/input.png");
+    (
+      window as typeof window & { electronAPI: any }
+    ).electronAPI.readImageFile.mockResolvedValue({
+      buffer: new Uint8Array([1, 2, 3]).buffer,
+    });
+    comfyUiMocks.invokeProvider.mockResolvedValue(result);
+
+    render(<AIGenerateDialog onClose={onClose} />);
+    await user.click(getPrimaryAction());
+
+    await waitFor(() => {
+      expect(screen.getByText(/Error:/i)).toHaveTextContent(
+        /invalid see-through manifest/i,
+      );
+    });
+    expect(comfyUiMocks.loadSeeThroughNativeImportBundleAsync).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(useComfyUIStore.getState().error).not.toContain("private client prompt");
   });
 
   it("does not start the image workflow when the picker is cancelled", async () => {

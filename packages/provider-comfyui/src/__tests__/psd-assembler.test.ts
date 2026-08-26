@@ -1,3 +1,4 @@
+import { deflateSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   assemblePsd,
@@ -376,5 +377,31 @@ describe("assemblePsd (Node PNG fallback)", () => {
     };
     expect(arg.children[0]!.imageData.width).toBe(1);
     expect(arg.children[0]!.imageData.height).toBe(1);
+  });
+
+  it("bounds zlib output to the IHDR-derived scanline length", async () => {
+    const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+    const ihdr = Buffer.alloc(13);
+    ihdr.writeUInt32BE(1, 0);
+    ihdr.writeUInt32BE(1, 4);
+    ihdr[8] = 8;
+    ihdr[9] = 0;
+    const chunk = (type: string, data: Buffer) => {
+      const length = Buffer.alloc(4);
+      length.writeUInt32BE(data.byteLength);
+      return Buffer.concat([length, Buffer.from(type, "ascii"), data, Buffer.alloc(4)]);
+    };
+    const png = Buffer.concat([
+      signature,
+      chunk("IHDR", ihdr),
+      chunk("IDAT", deflateSync(Buffer.alloc(1024))),
+      chunk("IEND", Buffer.alloc(0)),
+    ]);
+    const imageData = png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength);
+
+    await expect(
+      assemblePsd([{ name: "bomb", order: 0, imageData }], 1, 1),
+    ).rejects.toThrow(/decompressed data exceeds/i);
+    expect(writePsd).not.toHaveBeenCalled();
   });
 });

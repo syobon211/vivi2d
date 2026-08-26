@@ -37,6 +37,19 @@ async function listen(handler: http.RequestListener): Promise<string> {
 }
 
 describe("electron/ipc/comfyui.cjs response validation", () => {
+  it("registers the buffer upload channel without the removed path upload channel", () => {
+    const handlers = new Map<string, (...args: unknown[]) => unknown>();
+    comfyui.register({
+      allowlists: {},
+      handle(channel: string, handler: (...args: unknown[]) => unknown) {
+        handlers.set(channel, handler);
+      },
+    });
+
+    expect(handlers.has("comfyui-upload-image")).toBe(false);
+    expect(handlers.has("comfyui-upload-image-buffer")).toBe(true);
+  });
+
   it("validates upload image responses", () => {
     expect(validateUploadImageResponse(jsonBuffer({ name: "input.png" }))).toEqual({
       name: "input.png",
@@ -104,5 +117,33 @@ describe("electron/ipc/comfyui.cjs response validation", () => {
     await expect(handler?.({}, { baseUrl, workflow: { nodes: [] } })).rejects.not.toThrow(
       /private\.png|prompt text|token=secret/,
     );
+  });
+
+  it("applies the renderer-supplied byte cap while streaming downloads", async () => {
+    const baseUrl = await listen((_req, res) => {
+      res.write(Buffer.from([1, 2, 3]));
+      res.end(Buffer.from([4, 5]));
+    });
+    const handlers = new Map<string, (...args: unknown[]) => unknown>();
+    comfyui.register({
+      allowlists: {},
+      handle(channel: string, handler: (...args: unknown[]) => unknown) {
+        handlers.set(channel, handler);
+      },
+    });
+
+    const handler = handlers.get("comfyui-download");
+    await expect(
+      handler?.(
+        {},
+        {
+          baseUrl,
+          filename: "manifest.json",
+          subfolder: "job",
+          type: "output",
+          maxBytes: 4,
+        },
+      ),
+    ).rejects.toThrow(/too large/i);
   });
 });

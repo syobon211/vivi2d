@@ -46,15 +46,9 @@ async function openGenerateModelDialog(window: import("playwright").Page) {
   await expect(window.locator(".modal-title")).toBeVisible();
 }
 
-async function openIntegrationSettingsDialog(
-  window: import("playwright").Page,
-  index: 0 | 1 | 2,
-) {
+async function openComfyUISettingsDialog(window: import("playwright").Page) {
   await openIntegrationsMenu(window);
-  await window
-    .locator(".menu-dropdown-panel .menu-dropdown-item")
-    .nth(index + 1)
-    .click();
+  await window.locator(".menu-dropdown-panel .menu-dropdown-item").nth(1).click();
   await expect(window.locator(".modal-title")).toBeVisible();
 }
 
@@ -81,10 +75,10 @@ test("日本語: 統合メニュー", async ({ window }) => {
   ).toBeVisible();
   await expect(
     window.locator(".menu-dropdown-section", { hasText: "OBS Studio" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     window.locator(".menu-dropdown-section", { hasText: "VTube Studio" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await window.keyboard.press("Escape");
 });
 
@@ -118,33 +112,13 @@ test("日本語: 自動モデル生成ダイアログ（プロンプトタブ）
 
 test("日本語: ComfyUI接続設定ダイアログ", async ({ window }) => {
   await window.setViewportSize({ width: 1920, height: 1080 });
-  await openIntegrationSettingsDialog(window, 0);
+  await openComfyUISettingsDialog(window);
   await window.waitForTimeout(200);
   await window.screenshot({
     path: path.join(SCREENSHOT_DIR, "05-comfyui-settings-ja.png"),
   });
 
   await expect(window.locator(".modal-title", { hasText: /ComfyUI/ })).toBeVisible();
-  await closeModal(window);
-});
-
-test("日本語: OBS Studio接続設定ダイアログ", async ({ window }) => {
-  await window.setViewportSize({ width: 1920, height: 1080 });
-  await openIntegrationSettingsDialog(window, 1);
-  await window.waitForTimeout(200);
-  await window.screenshot({ path: path.join(SCREENSHOT_DIR, "06-obs-settings-ja.png") });
-
-  await expect(window.locator(".modal-title", { hasText: /OBS Studio/ })).toBeVisible();
-  await closeModal(window);
-});
-
-test("日本語: VTube Studio接続設定ダイアログ", async ({ window }) => {
-  await window.setViewportSize({ width: 1920, height: 1080 });
-  await openIntegrationSettingsDialog(window, 2);
-  await window.waitForTimeout(200);
-  await window.screenshot({ path: path.join(SCREENSHOT_DIR, "07-vts-settings-ja.png") });
-
-  await expect(window.locator(".modal-title", { hasText: /VTube Studio/ })).toBeVisible();
   await closeModal(window);
 });
 

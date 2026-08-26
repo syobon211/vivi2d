@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 import tempfile
 import uuid
 from pathlib import Path
@@ -16,7 +17,13 @@ from .capabilities import (
     VIVI2D_MANIFEST_SCHEMA,
     VIVI2D_PLUGIN_VERSION,
 )
-from .manifest import build_manifest, write_manifest
+from .manifest import (
+    MAX_LAYER_IMAGE_BYTES,
+    MAX_MANIFEST_LAYERS,
+    MAX_TOTAL_LAYER_IMAGE_BYTES,
+    build_manifest,
+    write_manifest,
+)
 from .psd_export import export_psd_from_manifest
 
 _SAFE_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
@@ -120,6 +127,63 @@ def _to_comfy_image(image: Image.Image) -> Any:
     return torch.from_numpy(arr).unsqueeze(0)
 
 
+def _is_safe_integer(value: Any) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    if isinstance(value, float) and (not numpy.isfinite(value) or not value.is_integer()):
+        return False
+    return -(1 << 53) + 1 <= value <= (1 << 53) - 1
+
+
+def _validate_layer_bbox(
+    layer: Any,
+    *,
+    image_width: int,
+    image_height: int,
+    canvas_width: int,
+    canvas_height: int,
+    label: str,
+) -> None:
+    bbox = getattr(layer, "bbox", None)
+    if not isinstance(bbox, (tuple, list)) or len(bbox) != 4:
+        raise RuntimeError(f"{label} bbox is invalid.")
+    left, top, right, bottom = bbox
+    if not all(_is_safe_integer(value) for value in bbox):
+        raise RuntimeError(f"{label} bbox must contain safe integers.")
+    if (
+        left < 0
+        or top < 0
+        or right <= left
+        or bottom <= top
+        or right > canvas_width
+        or bottom > canvas_height
+    ):
+        raise RuntimeError(f"{label} bbox is outside the preview canvas.")
+    if right - left != image_width or bottom - top != image_height:
+        raise RuntimeError(f"{label} dimensions do not match its bbox.")
+
+
+def _validate_saved_layer_png(
+    path: Path,
+    *,
+    expected_width: int,
+    expected_height: int,
+    label: str,
+) -> None:
+    with path.open("rb") as handle:
+        with Image.open(handle) as image:
+            if image.format != "PNG":
+                raise RuntimeError(f"{label} must be saved as PNG.")
+            _assert_image_bounds(
+                int(image.width),
+                int(image.height),
+                label,
+                MAX_LAYER_PIXELS,
+            )
+            if image.width != expected_width or image.height != expected_height:
+                raise RuntimeError(f"{label} saved dimensions do not match its bbox.")
+
+
 class ViviSeeThroughDecompose:
     CATEGORY = "Vivi2D/See-through"
     FUNCTION = "decompose"
@@ -188,69 +252,109 @@ class ViviSeeThroughDecompose:
 
         backend = load_backend()
         output_dir = _job_dir("decompose", filename_prefix)
-        layers_dir = output_dir / "layers"
-        layers_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            layers_dir = output_dir / "layers"
+            layers_dir.mkdir(parents=True, exist_ok=True)
 
-        result = backend.decompose(
-            image=image,
-            seed=seed,
-            resolution=resolution,
-            num_inference_steps=num_inference_steps,
-            tblr_split=tblr_split,
-            use_lama=use_lama,
-            quant_mode=quant_mode,
-            group_offload=group_offload,
-            output_dir=output_dir,
-        )
-
-        preview_image = _to_pil_image(
-            result.preview,
-            label="Preview image",
-            max_pixels=MAX_PREVIEW_PIXELS,
-        )
-        preview_path = output_dir / "preview.png"
-        preview_image.save(preview_path)
-
-        layer_paths: list[str] = []
-        total_layer_pixels = 0
-        for index, layer in enumerate(result.layers):
-            layer_label = f"Layer image {index}"
-            planned_pixels = _image_shape_pixels(
-                layer.image,
-                label=layer_label,
-                max_pixels=MAX_LAYER_PIXELS,
+            result = backend.decompose(
+                image=image,
+                seed=seed,
+                resolution=resolution,
+                num_inference_steps=num_inference_steps,
+                tblr_split=tblr_split,
+                use_lama=use_lama,
+                quant_mode=quant_mode,
+                group_offload=group_offload,
+                output_dir=output_dir,
             )
-            if (
-                planned_pixels is not None
-                and total_layer_pixels + planned_pixels > MAX_TOTAL_LAYER_PIXELS
-            ):
-                raise RuntimeError("Layer images exceed the maximum total pixel count.")
-            layer_image = _to_pil_image(
-                layer.image,
-                label=layer_label,
-                max_pixels=MAX_LAYER_PIXELS,
-            )
-            total_layer_pixels += planned_pixels or (layer_image.width * layer_image.height)
-            if total_layer_pixels > MAX_TOTAL_LAYER_PIXELS:
-                raise RuntimeError("Layer images exceed the maximum total pixel count.")
-            filename = f"layer_{index:03d}.png"
-            layer_path = layers_dir / filename
-            layer_image.save(layer_path)
-            layer_paths.append(str(Path("layers") / filename))
+            if len(result.layers) > MAX_MANIFEST_LAYERS:
+                raise RuntimeError("Vivi2D manifest contains too many layers.")
 
-        manifest = build_manifest(
-            result=result,
-            canvas_width=preview_image.width,
-            canvas_height=preview_image.height,
-            layer_image_paths=layer_paths,
-        )
-        manifest_path = output_dir / "manifest.json"
-        write_manifest(manifest_path, manifest)
-        manifest_ref = _output_ref(manifest_path)
-        return {
-            "ui": {"text": [manifest_ref]},
-            "result": (_to_comfy_image(preview_image), manifest_ref),
-        }
+            preview_image = _to_pil_image(
+                result.preview,
+                label="Preview image",
+                max_pixels=MAX_PREVIEW_PIXELS,
+            )
+            layer_paths = [
+                (Path("layers") / f"layer_{index:03d}.png").as_posix()
+                for index in range(len(result.layers))
+            ]
+            manifest = build_manifest(
+                result=result,
+                canvas_width=preview_image.width,
+                canvas_height=preview_image.height,
+                layer_image_paths=layer_paths,
+            )
+
+            preview_path = output_dir / "preview.png"
+            preview_image.save(preview_path)
+
+            total_layer_pixels = 0
+            total_layer_image_bytes = 0
+            for index, layer in enumerate(result.layers):
+                layer_label = f"Layer image {index}"
+                planned_pixels = _image_shape_pixels(
+                    layer.image,
+                    label=layer_label,
+                    max_pixels=MAX_LAYER_PIXELS,
+                )
+                if (
+                    planned_pixels is not None
+                    and total_layer_pixels + planned_pixels > MAX_TOTAL_LAYER_PIXELS
+                ):
+                    raise RuntimeError(
+                        "Layer images exceed the maximum total pixel count."
+                    )
+                layer_image = _to_pil_image(
+                    layer.image,
+                    label=layer_label,
+                    max_pixels=MAX_LAYER_PIXELS,
+                )
+                _validate_layer_bbox(
+                    layer,
+                    image_width=layer_image.width,
+                    image_height=layer_image.height,
+                    canvas_width=preview_image.width,
+                    canvas_height=preview_image.height,
+                    label=layer_label,
+                )
+                total_layer_pixels += planned_pixels or (
+                    layer_image.width * layer_image.height
+                )
+                if total_layer_pixels > MAX_TOTAL_LAYER_PIXELS:
+                    raise RuntimeError(
+                        "Layer images exceed the maximum total pixel count."
+                    )
+                layer_path = output_dir / layer_paths[index]
+                layer_image.save(layer_path)
+                _validate_saved_layer_png(
+                    layer_path,
+                    expected_width=layer_image.width,
+                    expected_height=layer_image.height,
+                    label=layer_label,
+                )
+                layer_image_bytes = layer_path.stat().st_size
+                if layer_image_bytes > MAX_LAYER_IMAGE_BYTES:
+                    raise RuntimeError("Layer image exceeds the maximum encoded size.")
+                if (
+                    total_layer_image_bytes + layer_image_bytes
+                    > MAX_TOTAL_LAYER_IMAGE_BYTES
+                ):
+                    raise RuntimeError(
+                        "Layer images exceed the maximum total encoded size."
+                    )
+                total_layer_image_bytes += layer_image_bytes
+
+            manifest_path = output_dir / "manifest.json"
+            write_manifest(manifest_path, manifest)
+            manifest_ref = _output_ref(manifest_path)
+            return {
+                "ui": {"text": [manifest_ref]},
+                "result": (_to_comfy_image(preview_image), manifest_ref),
+            }
+        except Exception:
+            shutil.rmtree(output_dir, ignore_errors=True)
+            raise
 
 
 class ViviSeeThroughExportPSD:
@@ -272,17 +376,21 @@ class ViviSeeThroughExportPSD:
 
     def export_psd(self, manifest_path: str, filename_prefix: str) -> tuple[str]:
         output_dir = _job_dir("psd", filename_prefix)
-        psd_path = export_psd_from_manifest(
-            manifest_path=Path(manifest_path),
-            output_dir=output_dir,
-            filename_prefix=filename_prefix,
-            output_root=_resolve_output_root().parent,
-        )
-        psd_ref = _output_ref(psd_path)
-        return {
-            "ui": {"text": [psd_ref]},
-            "result": (psd_ref,),
-        }
+        try:
+            psd_path = export_psd_from_manifest(
+                manifest_path=Path(manifest_path),
+                output_dir=output_dir,
+                filename_prefix=filename_prefix,
+                output_root=_resolve_output_root().parent,
+            )
+            psd_ref = _output_ref(psd_path)
+            return {
+                "ui": {"text": [psd_ref]},
+                "result": (psd_ref,),
+            }
+        except Exception:
+            shutil.rmtree(output_dir, ignore_errors=True)
+            raise
 
 
 NODE_CLASS_MAPPINGS = {

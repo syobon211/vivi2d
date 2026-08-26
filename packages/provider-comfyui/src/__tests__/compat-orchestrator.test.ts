@@ -1,11 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ComfyUIClient } from "../client";
 import {
+  MAX_VIVI2D_LAYER_IMAGE_BYTES,
+  MAX_VIVI2D_MANIFEST_BYTES,
+} from "../manifest-parser";
+import {
   decomposeImageToImportBundleCompat,
   decomposeImageToManifest,
   decomposeImageToNativeImportBundleCompat,
   decomposeImageToPsdCompat,
   ensureViviCompatSupport,
+  exportCompatManifestToPsd,
   generateFromPromptToNativeImportBundleCompat,
 } from "../orchestrator";
 import { assemblePositionedPsd } from "../psd-assembler";
@@ -22,6 +27,17 @@ vi.mock("../psd-assembler", () => ({
 
 function encodeJson(value: unknown): ArrayBuffer {
   return new TextEncoder().encode(JSON.stringify(value)).buffer;
+}
+
+function makePng(width: number, height: number): ArrayBuffer {
+  const bytes = new Uint8Array(33);
+  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const dataView = new DataView(bytes.buffer);
+  dataView.setUint32(8, 13);
+  bytes.set([0x49, 0x48, 0x44, 0x52], 12);
+  dataView.setUint32(16, width);
+  dataView.setUint32(20, height);
+  return bytes.buffer;
 }
 
 function makeCompatNodeInfo() {
@@ -59,6 +75,34 @@ function makeCompatClientStub(overrides: Partial<ComfyUIClient> = {}): ComfyUICl
   };
 
   return { ...base, ...overrides } as unknown as ComfyUIClient;
+}
+
+function makeSingleLayerManifest(width = 100, height = 100) {
+  return {
+    schema_version: VIVI2D_MANIFEST_SCHEMA_VERSION,
+    generator: {
+      plugin: "vivi2d-compat-comfyui",
+      plugin_version: VIVI2D_COMPAT_PLUGIN_VERSION,
+      model: "see-through",
+      model_version: "test",
+    },
+    canvas: { width, height },
+    layers: [
+      {
+        id: "layer_000",
+        name: "hair_front",
+        label: "hair_front",
+        order: 0,
+        psd_leaf_token: "layer_000",
+        image_path: "layers/layer_000.png",
+        bbox: [0, 0, width, height],
+        confidence: 0.9,
+        left_right_split: "center",
+        front_back_split: "front",
+        depth_stats: { min: 0.1, mean: 0.2, max: 0.4 },
+      },
+    ],
+  };
 }
 
 describe("compat orchestrator", () => {
@@ -110,7 +154,151 @@ describe("compat orchestrator", () => {
       "manifest.json",
       "vivi2d/decompose/job-1",
       "output",
+      MAX_VIVI2D_MANIFEST_BYTES,
     );
+  });
+
+  it("rejects an invalid downloaded manifest before requesting layer assets", async () => {
+    const downloadOutput = vi.fn(async () =>
+      encodeJson({
+        schema_version: VIVI2D_MANIFEST_SCHEMA_VERSION,
+        generator: {
+          plugin: "vivi2d-compat-comfyui",
+          plugin_version: "0.1.0",
+          model: "see-through",
+          model_version: "test",
+        },
+        canvas: { width: 128, height: 128 },
+        layers: [
+          {
+            id: "layer_000",
+            name: "hair",
+            label: "hair_front",
+            order: 0,
+            psd_leaf_token: "layer_000",
+            image_path: "../outside.png",
+            bbox: [0, 0, 64, 64],
+            confidence: 0.9,
+            left_right_split: "center",
+            front_back_split: "front",
+            depth_stats: { min: 0.1, mean: 0.2, max: 0.4 },
+          },
+        ],
+      }),
+    );
+    const client = makeCompatClientStub({
+      waitForCompletion: vi.fn(async () => ({
+        outputs: { n1: { text: ["vivi2d/decompose/job-invalid/manifest.json"] } },
+        status: { completed: true },
+      })) as unknown as ComfyUIClient["waitForCompletion"],
+      downloadOutput: downloadOutput as unknown as ComfyUIClient["downloadOutput"],
+    });
+
+    await expect(
+      decomposeImageToNativeImportBundleCompat(client, new ArrayBuffer(8)),
+    ).rejects.toThrow(/invalid traversal/i);
+    expect(downloadOutput).toHaveBeenCalledOnce();
+  });
+
+  it("rejects an invalid fallback manifest before local PSD assembly", async () => {
+    const client = makeCompatClientStub({
+      getNodeInfo: vi.fn(async (nodeType: string) => {
+        if (nodeType === "ViviSeeThroughDecompose") return makeCompatNodeInfo();
+        return null;
+      }) as unknown as ComfyUIClient["getNodeInfo"],
+      downloadOutput: vi.fn(async () =>
+        encodeJson({
+          schema_version: VIVI2D_MANIFEST_SCHEMA_VERSION,
+          generator: {
+            plugin: "vivi2d-compat-comfyui",
+            plugin_version: "0.1.0",
+            model: "see-through",
+            model_version: "test",
+          },
+          canvas: { width: 128, height: 128 },
+          layers: [],
+          unexpected: true,
+        }),
+      ) as unknown as ComfyUIClient["downloadOutput"],
+    });
+
+    await expect(
+      exportCompatManifestToPsd(client, "vivi2d/decompose/job-invalid/manifest.json"),
+    ).rejects.toThrow(/expected schema/i);
+    expect(assemblePositionedPsd).not.toHaveBeenCalled();
+  });
+
+  it("keeps nested output path segments inside the manifest directory", async () => {
+    const manifest = makeSingleLayerManifest();
+    manifest.layers[0]!.image_path = "layers/output/other-job/secret.png";
+    const downloadOutput = vi
+      .fn<ComfyUIClient["downloadOutput"]>()
+      .mockResolvedValueOnce(encodeJson(manifest))
+      .mockResolvedValueOnce(makePng(100, 100));
+    const client = makeCompatClientStub({
+      getNodeInfo: vi.fn(async (nodeType: string) => {
+        if (nodeType === "ViviSeeThroughDecompose") return makeCompatNodeInfo();
+        return null;
+      }) as unknown as ComfyUIClient["getNodeInfo"],
+      downloadOutput: downloadOutput as unknown as ComfyUIClient["downloadOutput"],
+    });
+
+    await exportCompatManifestToPsd(
+      client,
+      "vivi2d/decompose/job-contained/manifest.json",
+    );
+
+    expect(downloadOutput).toHaveBeenNthCalledWith(
+      2,
+      "secret.png",
+      "vivi2d/decompose/job-contained/layers/output/other-job",
+      "output",
+      MAX_VIVI2D_LAYER_IMAGE_BYTES,
+    );
+  });
+
+  it("rejects an oversized server PSD even if a test transport ignores its cap", async () => {
+    const oversized = { byteLength: 200 * 1024 * 1024 + 1 } as ArrayBuffer;
+    const downloadOutput = vi.fn(async () => oversized);
+    const client = makeCompatClientStub({
+      waitForCompletion: vi.fn(async () => ({
+        outputs: { n1: { text: ["vivi2d/psd/job/output.psd"] } },
+        status: { completed: true },
+      })) as unknown as ComfyUIClient["waitForCompletion"],
+      downloadOutput: downloadOutput as unknown as ComfyUIClient["downloadOutput"],
+    });
+
+    await expect(
+      exportCompatManifestToPsd(client, "vivi2d/decompose/job/manifest.json"),
+    ).rejects.toThrow(/provider output byte limit/i);
+    expect(downloadOutput).toHaveBeenCalledWith(
+      "output.psd",
+      "vivi2d/psd/job",
+      "output",
+      200 * 1024 * 1024,
+    );
+  });
+
+  it("rejects an oversized locally assembled fallback PSD", async () => {
+    const manifest = makeSingleLayerManifest();
+    const downloadOutput = vi
+      .fn<ComfyUIClient["downloadOutput"]>()
+      .mockResolvedValueOnce(encodeJson(manifest))
+      .mockResolvedValueOnce(makePng(100, 100));
+    const client = makeCompatClientStub({
+      getNodeInfo: vi.fn(async (nodeType: string) => {
+        if (nodeType === "ViviSeeThroughDecompose") return makeCompatNodeInfo();
+        return null;
+      }) as unknown as ComfyUIClient["getNodeInfo"],
+      downloadOutput: downloadOutput as unknown as ComfyUIClient["downloadOutput"],
+    });
+    vi.mocked(assemblePositionedPsd).mockResolvedValueOnce({
+      byteLength: 200 * 1024 * 1024 + 1,
+    } as ArrayBuffer);
+
+    await expect(
+      exportCompatManifestToPsd(client, "vivi2d/decompose/job/manifest.json"),
+    ).rejects.toThrow(/provider output byte limit/i);
   });
 
   it("decomposeImageToPsdCompat runs the manifest workflow and the PSD export workflow", async () => {
@@ -163,12 +351,14 @@ describe("compat orchestrator", () => {
       "manifest.json",
       "vivi2d/decompose/job-2",
       "output",
+      MAX_VIVI2D_MANIFEST_BYTES,
     );
     expect(downloadOutput).toHaveBeenNthCalledWith(
       2,
       "output.psd",
       "vivi2d/psd/job-2",
       "output",
+      200 * 1024 * 1024,
     );
     expect(result).toBe(psdBuffer);
   });
@@ -203,7 +393,7 @@ describe("compat orchestrator", () => {
     const downloadOutput = vi
       .fn<ComfyUIClient["downloadOutput"]>()
       .mockResolvedValueOnce(encodeJson(manifest))
-      .mockResolvedValueOnce(new ArrayBuffer(12));
+      .mockResolvedValueOnce(makePng(100, 200));
 
     const client = makeCompatClientStub({
       getNodeInfo: vi.fn(async (nodeType: string) => {
@@ -227,12 +417,14 @@ describe("compat orchestrator", () => {
       "manifest.json",
       "vivi2d/decompose/job-3",
       "output",
+      MAX_VIVI2D_MANIFEST_BYTES,
     );
     expect(downloadOutput).toHaveBeenNthCalledWith(
       2,
       "layer_000.png",
       "vivi2d/decompose/job-3/layers",
       "output",
+      MAX_VIVI2D_LAYER_IMAGE_BYTES,
     );
     expect(assemblePositionedPsd).toHaveBeenCalledTimes(1);
     expect(result.byteLength).toBe(24);
@@ -312,7 +504,7 @@ describe("compat orchestrator", () => {
       ],
     };
 
-    const pngBuffer = new ArrayBuffer(18);
+    const pngBuffer = makePng(128, 256);
     const downloadOutput = vi
       .fn<ComfyUIClient["downloadOutput"]>()
       .mockResolvedValueOnce(encodeJson(manifest))
@@ -346,6 +538,7 @@ describe("compat orchestrator", () => {
       "layer_000.png",
       "vivi2d/decompose/job-native/layers",
       "output",
+      MAX_VIVI2D_LAYER_IMAGE_BYTES,
     );
   });
 
@@ -387,7 +580,7 @@ describe("compat orchestrator", () => {
         .fn<ComfyUIClient["downloadOutput"]>()
         .mockResolvedValueOnce(encodeJson(manifest))
         .mockResolvedValueOnce(
-          new ArrayBuffer(7),
+          makePng(100, 100),
         ) as unknown as ComfyUIClient["downloadOutput"],
     });
 

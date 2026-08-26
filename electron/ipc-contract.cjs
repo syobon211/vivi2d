@@ -16,6 +16,7 @@ const NO_ARG_CHANNELS = new Set([
 
 const MAX_IMAGE_FILE_BYTES = 128 * 1024 * 1024;
 const MAX_COMFYUI_UPLOAD_BYTES = 64 * 1024 * 1024;
+const MAX_COMFYUI_DOWNLOAD_BYTES = 256 * 1024 * 1024;
 const MAX_SAVE_BINARY_BYTES = 512 * 1024 * 1024;
 const MAX_SAVE_TEXT_BYTES = 128 * 1024 * 1024;
 const MAX_EXPORT_FILES = 512;
@@ -205,12 +206,6 @@ function validateComfyPing(channel, args) {
   assertOnlyKeys(payload, channel, new Set(["baseUrl"]));
 }
 
-function validateComfyUploadImage(channel, args) {
-  const payload = validateComfyBase(channel, args);
-  assertOnlyKeys(payload, channel, new Set(["baseUrl", "imagePath"]));
-  assertString(payload.imagePath, channel, "imagePath");
-}
-
 function validateComfyUploadImageBuffer(channel, args) {
   const payload = validateComfyBase(channel, args);
   assertOnlyKeys(payload, channel, new Set(["baseUrl", "data", "filename"]));
@@ -252,13 +247,25 @@ function validateComfyNodeInfo(channel, args) {
 
 function validateComfyDownload(channel, args) {
   const payload = validateComfyBase(channel, args);
-  assertOnlyKeys(payload, channel, new Set(["baseUrl", "filename", "subfolder", "type"]));
+  assertOnlyKeys(
+    payload,
+    channel,
+    new Set(["baseUrl", "filename", "subfolder", "type", "maxBytes"]),
+  );
   assertString(payload.filename, channel, "filename");
   assertString(payload.subfolder, channel, "subfolder", {
     optional: true,
     allowEmpty: true,
   });
   assertString(payload.type, channel, "type", { optional: true });
+  if (
+    payload.maxBytes !== undefined &&
+    (!Number.isSafeInteger(payload.maxBytes) ||
+      payload.maxBytes <= 0 ||
+      payload.maxBytes > MAX_COMFYUI_DOWNLOAD_BYTES)
+  ) {
+    throw new Error(`Invalid IPC payload for ${channel}: maxBytes exceeds byte limit.`);
+  }
 }
 
 const OBJECT_ARG_CONTRACTS = new Map([
@@ -268,7 +275,6 @@ const OBJECT_ARG_CONTRACTS = new Map([
   ["read-audio-file", validateReadAudioFile],
   ["read-image-file", validateReadImageFile],
   ["comfyui-ping", validateComfyPing],
-  ["comfyui-upload-image", validateComfyUploadImage],
   ["comfyui-upload-image-buffer", validateComfyUploadImageBuffer],
   ["comfyui-enqueue", validateComfyEnqueue],
   ["comfyui-history", validateComfyHistory],
@@ -297,6 +303,7 @@ function validateIpcArgs(channel, args) {
 }
 
 module.exports = {
+  MAX_COMFYUI_DOWNLOAD_BYTES,
   MAX_COMFYUI_UPLOAD_BYTES,
   MAX_EXPORT_FILES,
   MAX_EXPORT_TOTAL_BYTES,

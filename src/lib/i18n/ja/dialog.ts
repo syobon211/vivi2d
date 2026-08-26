@@ -63,20 +63,6 @@ export const dialog = {
   "reimport.added": "新規追加",
   "reimport.removedFromPsd": "PSDから消失",
 
-  "integration.settings": "設定...",
-  "integration.obsTitle": "OBS Studio WebSocket 接続",
-  "integration.obsDialogTitle": "OBS Studio 接続設定",
-  "integration.obsUrl": "OBS WebSocket 接続先",
-  "integration.obsPassword": "パスワード",
-  "integration.obsPasswordPlaceholder": "未設定なら空欄のままにします",
-  "integration.obsNotice":
-    "OBS Studio で WebSocket サーバーを有効にしてください（ツール > WebSocket Server Settings）。",
-  "integration.vtsTitle": "VTube Studio ローカル API 接続",
-  "integration.vtsDialogTitle": "VTube Studio 接続設定",
-  "integration.vtsUrl": "VTube Studio ローカル API 接続先",
-  "integration.vtsNotice":
-    "VTube Studio が起動していることを確認してください。初回接続時はプラグイン認可が必要です。",
-
   "ai.menuLabel": "ComfyUI",
   "ai.generate": "モデル生成...",
   "ai.generateTitle": "画像またはプロンプトからモデルを自動生成",

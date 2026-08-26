@@ -2,6 +2,7 @@ import { VIVI_PROVIDER_CAPABILITIES } from "@vivi2d/provider-sdk";
 import { invokeProvider } from "@vivi2d/provider-sdk/invocation";
 import { describe, expect, it, vi } from "vitest";
 import type { ComfyUIClient } from "../client";
+import { MAX_VIVI2D_MANIFEST_LAYERS } from "../manifest-parser";
 import {
   COMFYUI_PROVIDER_ID,
   COMFYUI_PROVIDER_MANIFEST,
@@ -15,6 +16,17 @@ import {
 
 function encodeJson(value: unknown): ArrayBuffer {
   return new TextEncoder().encode(JSON.stringify(value)).buffer;
+}
+
+function makePng(width: number, height: number): ArrayBuffer {
+  const bytes = new Uint8Array(33);
+  bytes.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const dataView = new DataView(bytes.buffer);
+  dataView.setUint32(8, 13);
+  bytes.set([0x49, 0x48, 0x44, 0x52], 12);
+  dataView.setUint32(16, width);
+  dataView.setUint32(20, height);
+  return bytes.buffer;
 }
 
 function makeCompatNodeInfo() {
@@ -81,7 +93,7 @@ function makeCompatClientStub(overrides: Partial<ComfyUIClient> = {}): ComfyUICl
     downloadOutput: vi
       .fn<ComfyUIClient["downloadOutput"]>()
       .mockResolvedValueOnce(encodeJson(manifest))
-      .mockResolvedValueOnce(new ArrayBuffer(18)),
+      .mockResolvedValueOnce(makePng(128, 256)),
   };
 
   return { ...base, ...overrides } as unknown as ComfyUIClient;
@@ -137,13 +149,52 @@ describe("ComfyUI provider adapter", () => {
     expect(progressMessages).toContain("processing");
   });
 
+  it("accepts 127 layers as exactly 128 provider artifacts", async () => {
+    const manifest = makeManifest();
+    manifest.layers = Array.from({ length: MAX_VIVI2D_MANIFEST_LAYERS }, (_, index) => ({
+      ...manifest.layers[0]!,
+      id: `layer_${index}`,
+      name: `Layer ${index}`,
+      order: index,
+      psd_leaf_token: `layer_${index}`,
+      image_path: `layers/layer_${index}.png`,
+    }));
+    const downloadOutput = vi.fn<ComfyUIClient["downloadOutput"]>();
+    downloadOutput.mockResolvedValue(makePng(128, 256));
+    downloadOutput.mockResolvedValueOnce(encodeJson(manifest));
+    const provider = createComfyUIProvider(
+      makeCompatClientStub({
+        downloadOutput: downloadOutput as ComfyUIClient["downloadOutput"],
+      }),
+    );
+
+    const result = await invokeProvider(provider, {
+      requestId: "request-127-layers",
+      capabilityId: VIVI_PROVIDER_CAPABILITIES.layerDecompose,
+      inputArtifacts: [
+        {
+          id: "input",
+          kind: "inputImage",
+          mediaType: "image/png",
+          byteLength: 4,
+          data: new Uint8Array([1, 2, 3, 4]).buffer,
+        },
+      ],
+    });
+
+    expect(result.artifacts).toHaveLength(128);
+    expect(
+      result.artifacts.filter((artifact) => artifact.kind === "layerImage"),
+    ).toHaveLength(MAX_VIVI2D_MANIFEST_LAYERS);
+  });
+
   it("rejects unsafe layer paths returned by ComfyUI", async () => {
     const manifest = makeManifest("../secret.png");
     const client = makeCompatClientStub({
       downloadOutput: vi
         .fn<ComfyUIClient["downloadOutput"]>()
         .mockResolvedValueOnce(encodeJson(manifest))
-        .mockResolvedValueOnce(new ArrayBuffer(18)),
+        .mockResolvedValueOnce(makePng(128, 256)),
     });
     const provider = createComfyUIProvider(client);
 

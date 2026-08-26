@@ -56,8 +56,9 @@ export class ComfyUIClient {
     filename: string,
     subfolder = "",
     type = "output",
+    maxBytes?: number,
   ): Promise<ArrayBuffer> {
-    return this.transport.downloadOutput(filename, subfolder, type);
+    return this.transport.downloadOutput(filename, subfolder, type, maxBytes);
   }
 
   async getNodeInfo(nodeType: string): Promise<Record<string, unknown> | null> {
@@ -156,6 +157,6 @@ export class ComfyUIClient {
 
       await new Promise((r) => setTimeout(r, POLLING_INTERVAL_MS));
     }
-      throw new Error("Timeout: workflow did not complete");
+    throw new Error("Timeout: workflow did not complete");
   }
 }

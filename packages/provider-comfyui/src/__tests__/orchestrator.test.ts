@@ -12,6 +12,7 @@ vi.mock("../psd-assembler", () => ({
 
 const { decomposeImageToPsd, generateFromPromptToPsd } = await import("../orchestrator");
 const { assemblePositionedPsd, assemblePsd } = await import("../psd-assembler");
+const MAX_PROVIDER_OUTPUT_BYTES = 200 * 1024 * 1024;
 
 function buildFakePng(width = 64, height = 48): ArrayBuffer {
   const buf = new Uint8Array(24);
@@ -79,7 +80,12 @@ describe("orchestrator", () => {
         "p-123",
         expect.any(Function),
       );
-      expect(client.downloadOutput).toHaveBeenCalledWith("result_0001.psd", "", "output");
+      expect(client.downloadOutput).toHaveBeenCalledWith(
+        "result_0001.psd",
+        "",
+        "output",
+        MAX_PROVIDER_OUTPUT_BYTES,
+      );
       expect(result).toBe(psdBuffer);
     });
 
@@ -146,7 +152,12 @@ describe("orchestrator", () => {
 
       const result = await decomposeImageToPsd(client, new ArrayBuffer(8));
 
-      expect(client.downloadOutput).toHaveBeenCalledWith("result.psd", "sub", "output");
+      expect(client.downloadOutput).toHaveBeenCalledWith(
+        "result.psd",
+        "sub",
+        "output",
+        MAX_PROVIDER_OUTPUT_BYTES,
+      );
       expect(result).toBe(psdBuffer);
     });
 
@@ -240,7 +251,12 @@ describe("orchestrator", () => {
 
       expect(client.uploadImage).not.toHaveBeenCalled();
       expect(client.enqueue).toHaveBeenCalledTimes(1);
-      expect(client.downloadOutput).toHaveBeenCalledWith("prompt.psd", "", "output");
+      expect(client.downloadOutput).toHaveBeenCalledWith(
+        "prompt.psd",
+        "",
+        "output",
+        MAX_PROVIDER_OUTPUT_BYTES,
+      );
       expect(result).toBe(psd);
     });
 

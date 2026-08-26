@@ -69,12 +69,14 @@ export class ElectronComfyUITransport implements ComfyUITransport {
     filename: string,
     subfolder = "",
     type = "output",
+    maxBytes?: number,
   ): Promise<ArrayBuffer> {
     return window.electronAPI.comfyuiDownload({
       baseUrl: this.baseUrl,
       filename,
       subfolder,
       type,
+      ...(maxBytes === undefined ? {} : { maxBytes }),
     });
   }
 

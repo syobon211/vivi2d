@@ -211,16 +211,6 @@ test.describe("all dialog focused screenshots", () => {
     await openDialogScreenshot(window, "dialog-comfyui-settings-ja.png", dialog);
   });
 
-  test("OBS settings dialog", async ({ window }) => {
-    const dialog = await openIntegrationDialogByIndex(window, 2);
-    await openDialogScreenshot(window, "dialog-obs-settings-ja.png", dialog);
-  });
-
-  test("VTS settings dialog", async ({ window }) => {
-    const dialog = await openIntegrationDialogByIndex(window, 3);
-    await openDialogScreenshot(window, "dialog-vts-settings-ja.png", dialog);
-  });
-
   test("shortcut settings dialog", async ({ window }) => {
     await clickSettingsMenuItem(window, "Shortcuts");
     await openDialogScreenshot(window, "dialog-shortcuts-ja.png", undefined, {

@@ -1,5 +1,7 @@
 import type { ComfyUIWorkflow, HistoryEntry, QueueResponse } from "./types";
 
+const MAX_COMFYUI_DOWNLOAD_BYTES = 256 * 1024 * 1024;
+
 export interface ComfyUITransport {
   ping(): Promise<boolean>;
   uploadImage(imageBuffer: ArrayBuffer, filename: string): Promise<string>;
@@ -9,6 +11,7 @@ export interface ComfyUITransport {
     filename: string,
     subfolder?: string,
     type?: string,
+    maxBytes?: number,
   ): Promise<ArrayBuffer>;
   getSystemStats?(): Promise<Record<string, unknown>>;
   getNodeInfo?(nodeType: string): Promise<Record<string, unknown> | null>;
@@ -102,11 +105,20 @@ export class HttpTransport implements ComfyUITransport {
     filename: string,
     subfolder = "",
     type = "output",
+    maxBytes?: number,
   ): Promise<ArrayBuffer> {
+    const effectiveMaxBytes = maxBytes ?? MAX_COMFYUI_DOWNLOAD_BYTES;
+    if (
+      !Number.isSafeInteger(effectiveMaxBytes) ||
+      effectiveMaxBytes <= 0 ||
+      effectiveMaxBytes > MAX_COMFYUI_DOWNLOAD_BYTES
+    ) {
+      throw new Error("ComfyUI download byte limit is invalid.");
+    }
     const params = new URLSearchParams({ filename, subfolder, type });
     const res = await this.fetch(`/view?${params.toString()}`);
     if (!res.ok) throw new Error(`Image download failed: ${res.status} ${filename}`);
-    return res.arrayBuffer();
+    return readBoundedResponse(res, effectiveMaxBytes);
   }
 
   async getNodeInfo(nodeType: string): Promise<Record<string, unknown> | null> {
@@ -137,4 +149,61 @@ export class HttpTransport implements ComfyUITransport {
       clearTimeout(timer);
     }
   }
+}
+
+async function readBoundedResponse(
+  res: Response,
+  maxBytes: number,
+): Promise<ArrayBuffer> {
+  if (
+    !Number.isSafeInteger(maxBytes) ||
+    maxBytes <= 0 ||
+    maxBytes > MAX_COMFYUI_DOWNLOAD_BYTES
+  ) {
+    throw new Error("ComfyUI download byte limit is invalid.");
+  }
+
+  const contentLengthHeader = res.headers.get("content-length");
+  if (contentLengthHeader !== null) {
+    const contentLength = Number(contentLengthHeader);
+    if (
+      !Number.isSafeInteger(contentLength) ||
+      contentLength < 0 ||
+      contentLength > maxBytes
+    ) {
+      void res.body?.cancel().catch(() => {});
+      throw new Error("ComfyUI download is too large.");
+    }
+  }
+
+  if (!res.body) return new ArrayBuffer(0);
+
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throw new Error("ComfyUI download is too large.");
+      }
+      chunks.push(value);
+    }
+  } catch (error) {
+    try {
+      await reader.cancel();
+    } catch {}
+    throw error;
+  }
+
+  const result = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return result.buffer;
 }

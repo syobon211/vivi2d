@@ -172,7 +172,6 @@ describe("MenuBar", () => {
     spy.mockRestore();
   });
 
-
   it("選択ツールボタンに active クラスが付く", () => {
     render(<MenuBar />);
     const selectBtn = screen.getByTitle("選択ツール (V)");
@@ -225,7 +224,6 @@ describe("MenuBar", () => {
     await user.click(screen.getByTitle("選択ツール (V)"));
     expect(useViewportStore.getState().activeTool).toBe("select");
   });
-
 
   it("表示メニューからデフォルトフォームロックを切り替えられる", async () => {
     const user = userEvent.setup();
@@ -367,7 +365,6 @@ describe("MenuBar", () => {
     expect(useViewportStore.getState().zoom).toBe(1);
   });
 
-
   it("プロジェクト読み込み後にPSD再読込が表示される", async () => {
     const user = userEvent.setup();
     projectIO.loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
@@ -413,7 +410,6 @@ describe("MenuBar", () => {
     expect(screen.getByText(/検証|Validate/i)).toBeInTheDocument();
   });
 
-
   it("外部連携メニューに自動モデル生成が表示される", async () => {
     const user = userEvent.setup();
     render(<MenuBar />);
@@ -434,21 +430,13 @@ describe("MenuBar", () => {
     ).toBeInTheDocument();
   });
 
-  it("外部連携メニューにOBS設定が表示される", async () => {
+  it("外部連携メニューに未実装のOBS・VTube Studio設定を表示しない", async () => {
     const user = userEvent.setup();
     render(<MenuBar />);
 
     const integrations = screen.getByText(/外部連携|Integrations/i);
     await user.click(integrations);
-    expect(screen.getByText(/OBS/i)).toBeInTheDocument();
-  });
-
-  it("外部連携メニューにVTube Studio設定が表示される", async () => {
-    const user = userEvent.setup();
-    render(<MenuBar />);
-
-    const integrations = screen.getByText(/外部連携|Integrations/i);
-    await user.click(integrations);
-    expect(screen.getByText(/VTube Studio/i)).toBeInTheDocument();
+    expect(screen.queryByText(/OBS Studio/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/VTube Studio/i)).not.toBeInTheDocument();
   });
 });

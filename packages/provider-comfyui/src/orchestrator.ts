@@ -1,4 +1,13 @@
 import type { ComfyUIClient } from "./client";
+import {
+  MAX_VIVI2D_LAYER_IMAGE_BYTES,
+  MAX_VIVI2D_MANIFEST_BYTES,
+  MAX_VIVI2D_TOTAL_LAYER_IMAGE_BYTES,
+  parseViviSeeThroughManifest,
+  type ViviSeeThroughLayerResourceBudget,
+  ViviSeeThroughManifestError,
+  validateViviSeeThroughLayerPng,
+} from "./manifest-parser";
 import { assemblePositionedPsd, assemblePsd } from "./psd-assembler";
 import type {
   DecomposeOptions,
@@ -29,6 +38,8 @@ import { buildImageToManifestWorkflow } from "./workflows/image-to-manifest";
 import { buildManifestToPsdWorkflow } from "./workflows/manifest-to-psd";
 import { buildPromptToLayersWorkflow } from "./workflows/prompt-to-layers";
 import { buildPromptToManifestWorkflow } from "./workflows/prompt-to-manifest";
+
+const MAX_VIVI2D_PSD_BYTES = 200 * 1024 * 1024;
 
 export async function decomposeImageToPsd(
   client: ComfyUIClient,
@@ -444,7 +455,9 @@ async function assembleManifestPsdFallback(
     phaseLabel: "Assembling PSD locally...",
   });
 
-  return assemblePositionedPsd(layers, manifest.canvas.width, manifest.canvas.height);
+  return assertPsdOutputWithinLimit(
+    await assemblePositionedPsd(layers, manifest.canvas.width, manifest.canvas.height),
+  );
 }
 
 async function downloadManifestLayerAssets(
@@ -456,18 +469,30 @@ async function downloadManifestLayerAssets(
   const manifestLocation = parseViviCompatOutputRef(manifestPath);
   const totalLayers = Math.max(1, manifest.layers.length);
   const assets: ViviSeeThroughLayerAsset[] = [];
+  let resourceBudget: ViviSeeThroughLayerResourceBudget = {
+    encodedBytes: 0,
+    decodedPixels: 0,
+  };
 
   for (const [index, layer] of manifest.layers.entries()) {
-    const layerPath = joinCompatRelativePath(
+    const location = resolveCompatRelativeOutput(
       manifestLocation.subfolder,
       layer.image_path,
     );
-    const location = parseViviCompatOutputRef(layerPath);
+    const remainingEncodedBytes =
+      MAX_VIVI2D_TOTAL_LAYER_IMAGE_BYTES - resourceBudget.encodedBytes;
+    if (remainingEncodedBytes <= 0) {
+      throw new ViviSeeThroughManifestError(
+        "Vivi2D manifest layer images exceed the download budget.",
+      );
+    }
     const imageData = await client.downloadOutput(
       location.filename,
       location.subfolder,
       location.type,
+      Math.min(MAX_VIVI2D_LAYER_IMAGE_BYTES, remainingEncodedBytes),
     );
+    resourceBudget = validateViviSeeThroughLayerPng(imageData, layer, resourceBudget);
     assets.push({
       image_path: layer.image_path,
       imageData,
@@ -499,10 +524,9 @@ async function downloadManifestFromHistory(
     location.filename,
     location.subfolder,
     location.type,
+    MAX_VIVI2D_MANIFEST_BYTES,
   );
-  const manifest = JSON.parse(
-    new TextDecoder().decode(new Uint8Array(manifestBuffer)),
-  ) as ViviSeeThroughManifest;
+  const manifest = parseViviSeeThroughManifest(manifestBuffer);
 
   return {
     manifestPath,
@@ -522,7 +546,14 @@ async function downloadCompatPsdFromHistory(
   }
 
   const location = parseViviCompatOutputRef(psdPath);
-  return client.downloadOutput(location.filename, location.subfolder, location.type);
+  return assertPsdOutputWithinLimit(
+    await client.downloadOutput(
+      location.filename,
+      location.subfolder,
+      location.type,
+      MAX_VIVI2D_PSD_BYTES,
+    ),
+  );
 }
 
 async function downloadManifestPsdFallback(
@@ -535,22 +566,27 @@ async function downloadManifestPsdFallback(
     manifestLocation.filename,
     manifestLocation.subfolder,
     manifestLocation.type,
+    MAX_VIVI2D_MANIFEST_BYTES,
   );
-  const manifest = JSON.parse(
-    new TextDecoder().decode(new Uint8Array(manifestBuffer)),
-  ) as ViviSeeThroughManifest;
+  const manifest = parseViviSeeThroughManifest(manifestBuffer);
   return assembleManifestPsdFallback(client, manifestPath, manifest, onProgress);
 }
 
-function joinCompatRelativePath(baseSubfolder: string, relativePath: string): string {
+function resolveCompatRelativeOutput(
+  baseSubfolder: string,
+  relativePath: string,
+): { filename: string; subfolder: string; type: "output" } {
   assertCompatRelativePath(relativePath);
   const normalizedRelative = relativePath.replace(/\\/g, "/");
-  if (normalizedRelative.startsWith("output/") || normalizedRelative.startsWith("/")) {
-    return normalizedRelative.replace(/^\/+/, "");
-  }
   const cleanedBase = baseSubfolder.replace(/\\/g, "/").replace(/\/+$/, "");
-  if (!cleanedBase) return normalizedRelative;
-  return `${cleanedBase}/${normalizedRelative}`;
+  const parts = normalizedRelative.split("/").filter(Boolean);
+  const filename = parts.pop();
+  if (!filename) {
+    throw new Error("Compat layer asset path is empty");
+  }
+  const relativeSubfolder = parts.join("/");
+  const subfolder = [cleanedBase, relativeSubfolder].filter(Boolean).join("/");
+  return { filename, subfolder, type: "output" };
 }
 
 function assertCompatRelativePath(relativePath: string): void {
@@ -578,14 +614,23 @@ async function downloadPsdFromHistory(
       for (const text of output.text) {
         if (text.endsWith(".psd")) {
           const psdFilename = text.split("/").pop() ?? text;
-          return client.downloadOutput(psdFilename, "", "output");
+          return assertPsdOutputWithinLimit(
+            await client.downloadOutput(psdFilename, "", "output", MAX_VIVI2D_PSD_BYTES),
+          );
         }
       }
     }
     if (output.images?.length) {
       for (const img of output.images) {
         if (img.filename.endsWith(".psd")) {
-          return client.downloadOutput(img.filename, img.subfolder, img.type);
+          return assertPsdOutputWithinLimit(
+            await client.downloadOutput(
+              img.filename,
+              img.subfolder,
+              img.type,
+              MAX_VIVI2D_PSD_BYTES,
+            ),
+          );
         }
       }
     }
@@ -603,7 +648,9 @@ async function downloadPsdFromHistory(
 
   const firstDecoded = await decodeImageSize(layers[0]!.imageData);
 
-  return assemblePsd(layers, firstDecoded.width, firstDecoded.height);
+  return assertPsdOutputWithinLimit(
+    await assemblePsd(layers, firstDecoded.width, firstDecoded.height),
+  );
 }
 
 async function tryDownloadLegacySeeThroughLayerInfoPsd(
@@ -648,7 +695,18 @@ async function tryDownloadLegacySeeThroughLayerInfoPsd(
     throw new Error(`Legacy See-through layer info has no layers: ${infoFilename}`);
   }
 
-  return assemblePositionedPsd(layers, info.width, info.height);
+  return assertPsdOutputWithinLimit(
+    await assemblePositionedPsd(layers, info.width, info.height),
+  );
+}
+
+function assertPsdOutputWithinLimit(buffer: ArrayBuffer): ArrayBuffer {
+  if (buffer.byteLength > MAX_VIVI2D_PSD_BYTES) {
+    throw new ViviSeeThroughManifestError(
+      "Vivi2D PSD output exceeds the provider output byte limit.",
+    );
+  }
+  return buffer;
 }
 
 function findLegacySeeThroughSavePrefix(history: HistoryEntry): string | null {

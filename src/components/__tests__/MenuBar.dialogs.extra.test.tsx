@@ -72,43 +72,6 @@ describe("MenuBar dialog coverage", () => {
     expect(document.querySelector(".auto-setup-dialog")).not.toBeNull();
   });
 
-  it("opens OBS and VTS settings dialogs from integrations", async () => {
-    const user = userEvent.setup();
-    render(
-      <>
-        <MenuBar />
-        <ProjectDialogsHost />
-      </>,
-    );
-
-    await openMenu(user, /Integrations/i);
-    const panel = document.querySelector(".menu-dropdown-panel");
-    if (!(panel instanceof HTMLElement)) {
-      throw new Error("Expected integrations menu panel");
-    }
-    const settingsItems = within(panel).getAllByText(/^Settings\.\.\.$/);
-
-    await user.click(settingsItems[0]!);
-    expect(await screen.findByDisplayValue("ws://127.0.0.1:4455")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /cancel/i }));
-    await waitFor(() => {
-      expect(screen.queryByDisplayValue("ws://127.0.0.1:4455")).not.toBeInTheDocument();
-    });
-
-    await openMenu(user, /Integrations/i);
-    const nextPanel = document.querySelector(".menu-dropdown-panel");
-    if (!(nextPanel instanceof HTMLElement)) {
-      throw new Error("Expected integrations menu panel");
-    }
-    const nextSettingsItems = within(nextPanel).getAllByText(/^Settings\.\.\.$/);
-    await user.click(nextSettingsItems[1]!);
-    expect(await screen.findByDisplayValue("ws://127.0.0.1:8001")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /cancel/i }));
-    await waitFor(() => {
-      expect(screen.queryByDisplayValue("ws://127.0.0.1:8001")).not.toBeInTheDocument();
-    });
-  });
-
   it("opens vivid import and export dialogs from the file menu", async () => {
     const user = userEvent.setup();
     const firstRender = render(

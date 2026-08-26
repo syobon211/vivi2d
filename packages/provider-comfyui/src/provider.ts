@@ -14,6 +14,7 @@ import {
   type ViviProviderRequest,
 } from "@vivi2d/provider-sdk";
 import type { ComfyUIClient } from "./client";
+import { ViviSeeThroughManifestError } from "./manifest-parser";
 import {
   decomposeImageToNativeImportBundleCompat,
   exportCompatManifestToPsd,
@@ -403,6 +404,9 @@ async function runComfyUIOperation<T>(operation: () => Promise<T>): Promise<T> {
   } catch (error) {
     if (isViviProviderError(error)) {
       throw error;
+    }
+    if (error instanceof ViviSeeThroughManifestError) {
+      throw new ViviProviderError("VIVI_PROVIDER_BAD_ARTIFACT", error.message);
     }
     const message = getErrorMessage(error);
     if (

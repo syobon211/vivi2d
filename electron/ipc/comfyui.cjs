@@ -13,10 +13,13 @@ const {
   validateComfyPathPart,
   validateComfyType,
 } = require("../security.cjs");
-const { MAX_COMFYUI_UPLOAD_BYTES, MAX_IMAGE_FILE_BYTES } = require("../ipc-contract.cjs");
+const {
+  MAX_COMFYUI_DOWNLOAD_BYTES,
+  MAX_COMFYUI_UPLOAD_BYTES,
+  MAX_IMAGE_FILE_BYTES,
+} = require("../ipc-contract.cjs");
 
 const COMFYUI_ALLOW_REMOTE = process.env.VIVI2D_COMFYUI_ALLOW_REMOTE === "1";
-const MAX_COMFYUI_DOWNLOAD_BYTES = 256 * 1024 * 1024;
 const MAX_COMFYUI_SYSTEM_STATS_BYTES = 256 * 1024;
 const MAX_COMFYUI_UPLOAD_RESPONSE_BYTES = 256 * 1024;
 const MAX_COMFYUI_ENQUEUE_RESPONSE_BYTES = 256 * 1024;
@@ -75,8 +78,8 @@ function validateNodeInfoResponse(body, nodeType) {
   return entry;
 }
 
-function assertDownloadWithinLimit(body) {
-  if (body.byteLength > MAX_COMFYUI_DOWNLOAD_BYTES) {
+function assertDownloadWithinLimit(body, maxBytes = MAX_COMFYUI_DOWNLOAD_BYTES) {
+  if (body.byteLength > maxBytes) {
     throw new Error("ComfyUI download is too large.");
   }
 }
@@ -125,22 +128,6 @@ function register({ handle, allowlists }) {
     } catch {
       return { ok: false };
     }
-  });
-
-  handle("comfyui-upload-image", async (_event, { baseUrl, imagePath }) => {
-    validateBaseUrl(baseUrl, { allowRemote: COMFYUI_ALLOW_REMOTE });
-    const resolved = assertAllowedPath(
-      imagePath,
-      allowlists.opened,
-      "opened by the image selection dialog",
-    );
-    const stats = fs.statSync(resolved);
-    if (stats.size > MAX_IMAGE_FILE_BYTES) {
-      throw new Error("Selected image file is too large for ComfyUI upload.");
-    }
-    const imageData = fs.readFileSync(resolved);
-    const filename = path.basename(resolved);
-    return uploadImageBufferToComfy(baseUrl, imageData, filename);
   });
 
   handle("comfyui-upload-image-buffer", async (_event, { baseUrl, data, filename }) => {
@@ -217,31 +204,42 @@ function register({ handle, allowlists }) {
     return validateNodeInfoResponse(res.body, safeNodeType);
   });
 
-  handle("comfyui-download", async (_event, { baseUrl, filename, subfolder, type }) => {
-    validateBaseUrl(baseUrl, { allowRemote: COMFYUI_ALLOW_REMOTE });
-    const safeFilename = validateComfyPathPart(filename, "ComfyUI filename");
-    const safeSubfolder = validateComfyPathPart(subfolder, "ComfyUI subfolder", {
-      allowEmpty: true,
-    });
-    const safeType = validateComfyType(type);
-    const params = new URLSearchParams({
-      filename: safeFilename,
-      subfolder: safeSubfolder,
-      type: safeType,
-    });
-    const res = await httpGet(`${baseUrl}/view?${params.toString()}`, {
-      timeout: 60000,
-      maxBytes: MAX_COMFYUI_DOWNLOAD_BYTES,
-    });
-    if (res.status !== 200) {
-      throw new Error(`ComfyUI download failed with status ${res.status}.`);
-    }
-    assertDownloadWithinLimit(res.body);
-    return res.body.buffer.slice(
-      res.body.byteOffset,
-      res.body.byteOffset + res.body.byteLength,
-    );
-  });
+  handle(
+    "comfyui-download",
+    async (_event, { baseUrl, filename, subfolder, type, maxBytes }) => {
+      validateBaseUrl(baseUrl, { allowRemote: COMFYUI_ALLOW_REMOTE });
+      const safeFilename = validateComfyPathPart(filename, "ComfyUI filename");
+      const safeSubfolder = validateComfyPathPart(subfolder, "ComfyUI subfolder", {
+        allowEmpty: true,
+      });
+      const safeType = validateComfyType(type);
+      const params = new URLSearchParams({
+        filename: safeFilename,
+        subfolder: safeSubfolder,
+        type: safeType,
+      });
+      const effectiveMaxBytes = maxBytes ?? MAX_COMFYUI_DOWNLOAD_BYTES;
+      if (
+        !Number.isSafeInteger(effectiveMaxBytes) ||
+        effectiveMaxBytes <= 0 ||
+        effectiveMaxBytes > MAX_COMFYUI_DOWNLOAD_BYTES
+      ) {
+        throw new Error("Invalid ComfyUI download byte limit.");
+      }
+      const res = await httpGet(`${baseUrl}/view?${params.toString()}`, {
+        timeout: 60000,
+        maxBytes: effectiveMaxBytes,
+      });
+      if (res.status !== 200) {
+        throw new Error(`ComfyUI download failed with status ${res.status}.`);
+      }
+      assertDownloadWithinLimit(res.body, effectiveMaxBytes);
+      return res.body.buffer.slice(
+        res.body.byteOffset,
+        res.body.byteOffset + res.body.byteLength,
+      );
+    },
+  );
 }
 
 module.exports = {

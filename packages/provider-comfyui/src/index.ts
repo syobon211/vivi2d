@@ -1,4 +1,16 @@
 export { ComfyUIClient } from "./client";
+export type { ViviSeeThroughLayerResourceBudget } from "./manifest-parser";
+export {
+  MAX_VIVI2D_LAYER_IMAGE_BYTES,
+  MAX_VIVI2D_LAYER_PIXELS,
+  MAX_VIVI2D_MANIFEST_BYTES,
+  MAX_VIVI2D_MANIFEST_LAYERS,
+  MAX_VIVI2D_TOTAL_LAYER_IMAGE_BYTES,
+  MAX_VIVI2D_TOTAL_LAYER_PIXELS,
+  parseViviSeeThroughManifest,
+  ViviSeeThroughManifestError,
+  validateViviSeeThroughLayerPng,
+} from "./manifest-parser";
 export {
   decomposeImageToImportBundleCompat,
   decomposeImageToManifest,
@@ -14,16 +26,16 @@ export {
   generateFromPromptToPsdCompat,
 } from "./orchestrator";
 export {
-  assemblePsd,
-  mapSeethroughCategory,
-  toLayerName,
-} from "./psd-assembler";
-export {
   COMFYUI_PROVIDER_ID,
   COMFYUI_PROVIDER_MANIFEST,
   COMFYUI_PROVIDER_VERSION,
   createComfyUIProvider,
 } from "./provider";
+export {
+  assemblePsd,
+  mapSeethroughCategory,
+  toLayerName,
+} from "./psd-assembler";
 export type { ComfyUITransport, HttpTransportOptions } from "./transport";
 export { HttpTransport } from "./transport";
 export type {
