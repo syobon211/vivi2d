@@ -176,7 +176,9 @@ async function readBoundedResponse(
     }
   }
 
-  if (!res.body) return new ArrayBuffer(0);
+  if (!res.body) {
+    throw new Error("ComfyUI download response body is unavailable.");
+  }
 
   const reader = res.body.getReader();
   const chunks: Uint8Array[] = [];

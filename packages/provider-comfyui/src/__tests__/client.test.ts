@@ -255,6 +255,20 @@ describe("ComfyUIClient", () => {
       ).rejects.toThrow(/too large/i);
     });
 
+    it("rejects a successful response without a readable body", async () => {
+      server.use(
+        http.get(
+          "http://127.0.0.1:8188/view",
+          () => new HttpResponse(null, { status: 200 }),
+        ),
+      );
+      const client = new ComfyUIClient();
+
+      await expect(client.downloadOutput("empty.png")).rejects.toThrow(
+        /response body is unavailable/i,
+      );
+    });
+
     it("rejects a chunked body when its cumulative bytes exceed the limit", async () => {
       server.use(
         http.get("http://127.0.0.1:8188/view", () => {
