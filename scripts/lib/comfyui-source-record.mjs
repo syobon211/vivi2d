@@ -1,5 +1,5 @@
-import fs from "node:fs";
 import crypto from "node:crypto";
+import fs from "node:fs";
 import path from "node:path";
 
 export const COMFYUI_ROUTE_SLUG = "integrations/comfyui";
@@ -264,6 +264,11 @@ function validateSeeThroughRecord(failures, seeThrough, { releaseReady }) {
 function validateRepoSourceHash(root, failures, record) {
   if (record.compatPlugin?.sourceLocation !== `repo:${COMFYUI_COMPAT_PLUGIN_SOURCE_DIR}`) {
     return;
+  }
+  if (Object.hasOwn(record.compatPlugin, "sourceRevision")) {
+    failures.push(
+      `${COMFYUI_SOURCE_RECORD_FILE}: compatPlugin.sourceRevision must not be set for repository-tracked source; compatPlugin.sha256 is the canonical identity.`,
+    );
   }
   const actualHash = hashComfyUiCompatPluginSourceTree(root, failures);
   if (!actualHash) {

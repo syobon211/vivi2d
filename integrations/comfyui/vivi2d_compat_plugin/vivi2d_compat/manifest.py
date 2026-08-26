@@ -22,6 +22,7 @@ from .capabilities import (
     VIVI2D_PLUGIN_VERSION,
 )
 from .backend import DecomposeResult
+from .numeric import MAX_SAFE_INTEGER, is_safe_integer
 
 MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 MAX_MANIFEST_LAYERS = 127
@@ -36,8 +37,6 @@ MAX_TOTAL_LAYER_PIXELS = 64 * 1024 * 1024
 MAX_IDENTIFIER_UTF8_BYTES = 256
 MAX_DISPLAY_TEXT_UTF8_BYTES = 1024
 MAX_IMAGE_PATH_UTF8_BYTES = 4096
-MAX_SAFE_INTEGER = (1 << 53) - 1
-
 _DRIVE_PATH = re.compile(r"^[A-Za-z]:/")
 _URI_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 _ECMASCRIPT_TRIM_CHARS = (
@@ -68,14 +67,6 @@ def _is_finite_number(value: Any) -> bool:
         return math.isfinite(value)
     except OverflowError:
         return False
-
-
-def _is_safe_integer(value: Any) -> bool:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return False
-    if isinstance(value, float) and (not math.isfinite(value) or not value.is_integer()):
-        return False
-    return -MAX_SAFE_INTEGER <= value <= MAX_SAFE_INTEGER
 
 
 def _assert_bounded_string(value: str, field: str, max_bytes: int) -> None:
@@ -112,7 +103,7 @@ def _validate_manifest_semantics(manifest: dict[str, Any]) -> None:
     canvas = manifest["canvas"]
     width = canvas["width"]
     height = canvas["height"]
-    if not _is_safe_integer(width) or not _is_safe_integer(height):
+    if not is_safe_integer(width) or not is_safe_integer(height):
         raise RuntimeError("Vivi2D manifest canvas dimensions must be safe integers.")
     if width > MAX_IMAGE_SIDE or height > MAX_IMAGE_SIDE:
         raise RuntimeError("Vivi2D manifest canvas exceeds the maximum supported side.")
@@ -171,12 +162,12 @@ def _validate_manifest_semantics(manifest: dict[str, Any]) -> None:
             )
         leaf_tokens.add(layer["psd_leaf_token"])
 
-        if not _is_safe_integer(layer["order"]):
+        if not is_safe_integer(layer["order"]):
             raise RuntimeError(f"Vivi2D manifest {field}.order must be a safe integer.")
         _assert_relative_image_path(layer["image_path"], f"{field}.image_path")
 
         left, top, right, bottom = layer["bbox"]
-        if not all(_is_safe_integer(value) for value in (left, top, right, bottom)):
+        if not all(is_safe_integer(value) for value in (left, top, right, bottom)):
             raise RuntimeError(
                 f"Vivi2D manifest {field}.bbox must contain safe integers."
             )

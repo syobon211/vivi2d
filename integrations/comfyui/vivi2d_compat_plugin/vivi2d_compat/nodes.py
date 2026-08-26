@@ -24,6 +24,7 @@ from .manifest import (
     build_manifest,
     write_manifest,
 )
+from .numeric import is_safe_integer
 from .psd_export import export_psd_from_manifest
 
 _SAFE_FILENAME_CHARS = re.compile(r"[^A-Za-z0-9._-]+")
@@ -127,14 +128,6 @@ def _to_comfy_image(image: Image.Image) -> Any:
     return torch.from_numpy(arr).unsqueeze(0)
 
 
-def _is_safe_integer(value: Any) -> bool:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return False
-    if isinstance(value, float) and (not numpy.isfinite(value) or not value.is_integer()):
-        return False
-    return -(1 << 53) + 1 <= value <= (1 << 53) - 1
-
-
 def _validate_layer_bbox(
     layer: Any,
     *,
@@ -148,7 +141,7 @@ def _validate_layer_bbox(
     if not isinstance(bbox, (tuple, list)) or len(bbox) != 4:
         raise RuntimeError(f"{label} bbox is invalid.")
     left, top, right, bottom = bbox
-    if not all(_is_safe_integer(value) for value in bbox):
+    if not all(is_safe_integer(value) for value in bbox):
         raise RuntimeError(f"{label} bbox must contain safe integers.")
     if (
         left < 0

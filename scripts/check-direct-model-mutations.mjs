@@ -1,6 +1,10 @@
 import fs from "node:fs";
-import path from "node:path";
 import ts from "typescript";
+import {
+  DIRECT_MODEL_MUTATION_EXCLUDED_PATHS,
+  DIRECT_MODEL_MUTATION_SCAN_PREFIXES,
+  shouldScanDirectModelMutationPath,
+} from "./lib/direct-model-mutation-scan.mjs";
 import { gitLsFilesIncludingUntracked, readJson, resolveRepoPath } from "./lib/repo.mjs";
 
 const baselinePath = "docs/developer/quality/baselines/direct-model-mutations.json";
@@ -36,34 +40,6 @@ const ASSIGNMENT_OPERATORS = new Set([
   ts.SyntaxKind.AmpersandAmpersandEqualsToken,
   ts.SyntaxKind.BarBarEqualsToken,
 ]);
-const SCAN_PREFIXES = [
-  "src/components/",
-  "src/hooks/",
-  "src/stores/",
-  "src/lib/",
-  "src/workers/",
-  "packages/editor-ui/",
-];
-const SCAN_PATTERNS = [/^apps\/[^/]+\/src\//];
-const SOURCE_EXTENSIONS = new Set([".ts", ".tsx"]);
-
-function shouldScan(relativePath) {
-  const normalized = relativePath.replaceAll("\\", "/");
-  if (!SOURCE_EXTENSIONS.has(path.extname(normalized))) return false;
-  if (
-    normalized.includes("/__tests__/") ||
-    normalized.endsWith(".test.ts") ||
-    normalized.endsWith(".test.tsx") ||
-    normalized.endsWith(".d.ts")
-  ) {
-    return false;
-  }
-  return (
-    SCAN_PREFIXES.some((prefix) => normalized.startsWith(prefix)) ||
-    SCAN_PATTERNS.some((pattern) => pattern.test(normalized))
-  );
-}
-
 function isExistingFile(relativePath) {
   try {
     return fs.statSync(resolveRepoPath(relativePath)).isFile();
@@ -147,7 +123,7 @@ function collectMutations(relativePath) {
 }
 
 const files = gitLsFilesIncludingUntracked()
-  .filter(shouldScan)
+  .filter(shouldScanDirectModelMutationPath)
   .filter(isExistingFile)
   .sort((a, b) => a.localeCompare(b));
 const entries = files
@@ -158,7 +134,8 @@ if (writeBaseline) {
   const baseline = {
     generatedBy: "npm run check:direct-model-mutations -- --write",
     note: "Baseline of current app-layer direct mutation hotspots. Q3 refactors should reduce this list.",
-    scannedPrefixes: SCAN_PREFIXES,
+    excludedPaths: DIRECT_MODEL_MUTATION_EXCLUDED_PATHS,
+    scannedPrefixes: DIRECT_MODEL_MUTATION_SCAN_PREFIXES,
     version: 1,
     entries,
   };
@@ -180,6 +157,24 @@ if (!fs.existsSync(resolveRepoPath(baselinePath))) {
 }
 
 const baseline = readJson(baselinePath);
+if (
+  JSON.stringify(baseline.excludedPaths ?? []) !==
+  JSON.stringify(DIRECT_MODEL_MUTATION_EXCLUDED_PATHS)
+) {
+  console.error(
+    "[direct-model-mutations] baseline excludedPaths must match the reviewed instrumentation exclusions.",
+  );
+  process.exit(1);
+}
+const excludedBaselineEntries = baseline.entries.filter((entry) =>
+  DIRECT_MODEL_MUTATION_EXCLUDED_PATHS.includes(entry.path),
+);
+if (excludedBaselineEntries.length > 0) {
+  console.error(
+    "[direct-model-mutations] excluded instrumentation must not be recorded as baseline mutation debt.",
+  );
+  process.exit(1);
+}
 const expected = new Set(baseline.entries.map((entry) => entry.signature));
 const actual = new Set(entries.map((entry) => entry.signature));
 const unexpected = entries.filter((entry) => !expected.has(entry.signature));

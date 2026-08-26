@@ -66,6 +66,7 @@ jobs:
           scripts/check-architecture-boundaries.mjs
           scripts/check-core-model-current-fixtures.mjs
           scripts/check-direct-model-mutations.mjs
+          scripts/check-direct-model-mutations.test.mjs
           scripts/check-docs-architecture.mjs
           scripts/check-docs-public-surface.mjs
           scripts/check-security-supported-versions.mjs
@@ -143,6 +144,7 @@ jobs:
           scripts/lib/content-safety-patterns.mjs
           scripts/lib/repo.test.mjs
           scripts/lib/repo.mjs
+          scripts/lib/direct-model-mutation-scan.mjs
           scripts/run-quality-gates.mjs
       - run: npm run check:model-schema-validators
       - run: npx tsc --noEmit

@@ -1,5 +1,5 @@
 import { findLayerById, flattenLayers } from "@vivi2d/core/layer-utils";
-import { isViviMesh, isBone } from "@vivi2d/core/types";
+import { isBone, isViviMesh } from "@vivi2d/core/types";
 import { useCallback, useEffect, useMemo } from "react";
 import { buildDepthInspectorReferenceOverlaySettings } from "@/lib/depth-inspector-reference-overlay";
 import type { I18nKey } from "@/lib/i18n";
