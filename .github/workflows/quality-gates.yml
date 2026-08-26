@@ -13,6 +13,7 @@ on:
       - "docs/**"
       - "electron/**"
       - "examples/**"
+      - "integrations/**"
       - "package.json"
       - "package-lock.json"
       - "packages/**"

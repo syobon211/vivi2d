@@ -11,6 +11,10 @@
       "reason": "Performance monitoring is report-only or scheduled and is not part of the blocking quality-gate set."
     },
     {
+      "path": ".github/workflows/comfyui-python.yml",
+      "reason": "Path-scoped Python compatibility tests are independent of the Node quality-gate mirror."
+    },
+    {
       "path": ".github/workflows/publish-web-alpha.yml",
       "reason": "Manual protected npm publication workflow; checked by npm run check:web-npm-alpha-release rather than mirrored as a normal quality gate."
     },

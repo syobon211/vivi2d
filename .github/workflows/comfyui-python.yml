@@ -1,0 +1,38 @@
+name: ComfyUI Python
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/comfyui-python.yml"
+      - "integrations/comfyui/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: comfyui-python-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: integrations/comfyui/vivi2d_compat_plugin/pyproject.toml
+      - run: >
+          python -m pip install --disable-pip-version-check
+          pytest==8.4.2
+          ./integrations/comfyui/vivi2d_compat_plugin
+      - run: python -m pip check
+      - run: python -m pytest integrations/comfyui/vivi2d_compat_plugin/tests -q
