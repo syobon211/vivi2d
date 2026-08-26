@@ -317,11 +317,7 @@ function runPreparerFixtures() {
         }
         const record = JSON.parse(
           fs.readFileSync(
-            path.join(
-              dir,
-              "assets",
-              windowsInstallerAssetNames(version).installerRecord,
-            ),
+            path.join(dir, "assets", windowsInstallerAssetNames(version).installerRecord),
             "utf8",
           ),
         );
