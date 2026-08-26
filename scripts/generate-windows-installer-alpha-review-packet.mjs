@@ -5,6 +5,8 @@ import path from "node:path";
 import { repoRoot, resolveRepoPath } from "./lib/repo.mjs";
 import {
   expectedWindowsInstallerDownloadableAssetNames,
+  WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS,
+  WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY,
   windowsInstallerAssetNames,
 } from "./lib/windows-installer-alpha.mjs";
 
@@ -212,6 +214,55 @@ function runVerifierFixtures() {
         }),
     },
     {
+      name: "old protected environment approval summary",
+      expected: "fail",
+      mutate: (dir) =>
+        updateRecord(dir, (record) => {
+          record.codeSigning.verificationSummary =
+            "unsigned alpha approved by protected environment";
+        }),
+    },
+    {
+      name: "missing required gate transcript",
+      expected: "fail",
+      mutate: (dir) =>
+        updateRecord(dir, (record) => {
+          record.requiredGateTranscripts = record.requiredGateTranscripts.slice(0, -1);
+        }),
+    },
+    {
+      name: "extra required gate transcript",
+      expected: "fail",
+      mutate: (dir) =>
+        updateRecord(dir, (record) => {
+          record.requiredGateTranscripts.push("unexpected-gate");
+        }),
+    },
+    {
+      name: "duplicate required gate transcript",
+      expected: "fail",
+      mutate: (dir) =>
+        updateRecord(dir, (record) => {
+          record.requiredGateTranscripts.push(record.requiredGateTranscripts[0]);
+        }),
+    },
+    {
+      name: "required gate transcripts not array",
+      expected: "fail",
+      mutate: (dir) =>
+        updateRecord(dir, (record) => {
+          record.requiredGateTranscripts = {};
+        }),
+    },
+    {
+      name: "required gate transcript not string",
+      expected: "fail",
+      mutate: (dir) =>
+        updateRecord(dir, (record) => {
+          record.requiredGateTranscripts[0] = 42;
+        }),
+    },
+    {
       name: "manual review remnants not array",
       expected: "fail",
       mutate: (dir) =>
@@ -263,6 +314,28 @@ function runPreparerFixtures() {
         );
         if (copied !== "fixture staged notices\n") {
           throw new Error("--third-party-notices input was not copied.");
+        }
+        const record = JSON.parse(
+          fs.readFileSync(
+            path.join(
+              dir,
+              "assets",
+              windowsInstallerAssetNames(version).installerRecord,
+            ),
+            "utf8",
+          ),
+        );
+        if (
+          record.codeSigning?.verificationSummary !==
+          WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY
+        ) {
+          throw new Error("preparer wrote an incorrect unsigned verification summary.");
+        }
+        if (
+          JSON.stringify(record.requiredGateTranscripts) !==
+          JSON.stringify(WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS)
+        ) {
+          throw new Error("preparer wrote an incorrect required transcript allowlist.");
         }
       },
     },
@@ -411,7 +484,7 @@ function createValidFixture(dir) {
       publisherName: null,
       certificateSha256: null,
       timestampAuthorityUrl: null,
-      verificationSummary: "unsigned alpha approved by protected environment",
+      verificationSummary: WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY,
     },
     protectedEnvironment: { name: "desktop-installer-alpha" },
     buildProvenance: { status: "exception" },
@@ -440,6 +513,7 @@ function createValidFixture(dir) {
       standaloneNativeRuntime: true,
       standaloneWasmRuntime: true,
     },
+    requiredGateTranscripts: [...WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS],
   };
   fs.writeFileSync(
     path.join(dir, names.installerRecord),
