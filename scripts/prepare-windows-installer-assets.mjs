@@ -14,6 +14,8 @@ import {
   WINDOWS_APP_FORBIDDEN_PATH_PATTERNS,
   WINDOWS_APP_FORBIDDEN_TEXT_PATTERNS,
   WINDOWS_INSTALLER_ENVIRONMENT,
+  WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS,
+  WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY,
   walkFiles,
   windowsInstallerAssetNames,
   windowsInstallerIncludesViewer,
@@ -229,7 +231,7 @@ const releaseRecord = {
     publisherName: null,
     certificateSha256: null,
     timestampAuthorityUrl: null,
-    verificationSummary: "unsigned alpha approved by protected environment",
+    verificationSummary: WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY,
   },
   protectedEnvironment: {
     name: WINDOWS_INSTALLER_ENVIRONMENT,
@@ -261,20 +263,7 @@ const releaseRecord = {
     standaloneNativeRuntime: true,
     standaloneWasmRuntime: true,
   },
-  requiredGateTranscripts: [
-    "check-quality",
-    "check-quality-e2e-workflow-record",
-    "check-oss-readiness",
-    "check-oss-publication",
-    "check-release-surface",
-    "check-license-policy",
-    "check-sbom",
-    "check-source-review-archive",
-    "check-viewer-mediapipe-assets",
-    "check-history-secrets",
-    "windows-installer-build",
-    "verify-windows-installer-assets",
-  ],
+  requiredGateTranscripts: [...WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS],
 };
 fs.writeFileSync(installerRecordPath, `${JSON.stringify(releaseRecord, null, 2)}\n`);
 

@@ -9,6 +9,26 @@ export const WINDOWS_INSTALLER_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)-alpha\.(\
 export const MAX_INSTALLER_BYTES = 300 * 1024 * 1024;
 export const MAX_INSTALLED_FOOTPRINT_BYTES = 700 * 1024 * 1024;
 
+export const WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY =
+  "unsigned alpha; no Authenticode signature; protected environment approval not yet recorded";
+
+export const WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS = Object.freeze([
+  "check-quality",
+  "check-quality-e2e-workflow-record",
+  "check-oss-readiness",
+  "check-oss-publication",
+  "check-release-surface",
+  "check-license-policy",
+  "check-sbom",
+  "check-source-review-archive",
+  "check-viewer-mediapipe-assets",
+  "check-history-secrets",
+  "gitleaks-worktree",
+  "gitleaks-history",
+  "windows-installer-build",
+  "verify-windows-installer-assets",
+]);
+
 export const WINDOWS_INSTALLER_FORBIDDEN_GLOBS = [
   "*.msi",
   "*.msix",

@@ -165,13 +165,16 @@ The installer release record must use this signing shape:
     "publisherName": null,
     "certificateSha256": null,
     "timestampAuthorityUrl": null,
-    "verificationSummary": "unsigned alpha approved by protected environment"
+    "verificationSummary": "unsigned alpha; no Authenticode signature; protected environment approval not yet recorded"
   }
 }
 ```
 
 Signed builds must replace the nullable certificate and timestamp fields with
 verified values. Unsigned builds must keep them `null`.
+Before the protected environment has recorded its publication approval, an
+unsigned build must use the exact `verificationSummary` shown above. The record
+must not imply that protected-environment approval has already occurred.
 
 ## Alpha.3 Installer Improvement Track
 
@@ -257,6 +260,27 @@ The protected release environment name is:
 
 ```text
 desktop-installer-alpha
+```
+
+`requiredGateTranscripts` is a fail-closed allowlist. It must be an array that
+contains each of the following string values exactly once, with no missing,
+additional, duplicate, or non-string entries:
+
+```text
+check-quality
+check-quality-e2e-workflow-record
+check-oss-readiness
+check-oss-publication
+check-release-surface
+check-license-policy
+check-sbom
+check-source-review-archive
+check-viewer-mediapipe-assets
+check-history-secrets
+gitleaks-worktree
+gitleaks-history
+windows-installer-build
+verify-windows-installer-assets
 ```
 
 `check:environment-protection` or a successor hosted-settings check must verify

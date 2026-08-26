@@ -11,6 +11,8 @@ import {
   resolveInsideRepo,
   WINDOWS_INSTALLER_ENVIRONMENT,
   WINDOWS_INSTALLER_FORBIDDEN_GLOBS,
+  WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS,
+  WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY,
   windowsInstallerAssetNames,
 } from "./lib/windows-installer-alpha.mjs";
 
@@ -102,6 +104,7 @@ function assertRecord(record) {
   if ((record.downloadableAssetNames ?? []).includes(assetNames.releaseNotes)) {
     throw new Error("release-notes.md must not be listed as downloadable.");
   }
+  assertRequiredGateTranscripts(record.requiredGateTranscripts);
   if (record.protectedEnvironment?.name !== WINDOWS_INSTALLER_ENVIRONMENT) {
     throw new Error("installer record protected environment mismatch.");
   }
@@ -119,8 +122,13 @@ function assertRecord(record) {
   if (record.codeSigning?.timestampAuthorityUrl !== null) {
     throw new Error("unsigned installer must not record a timestamp authority.");
   }
-  if (!record.codeSigning?.verificationSummary?.includes("unsigned")) {
-    throw new Error("unsigned installer record must summarize unsigned approval.");
+  if (
+    record.codeSigning?.verificationSummary !==
+    WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY
+  ) {
+    throw new Error(
+      `unsigned installer verificationSummary must equal ${JSON.stringify(WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY)}.`,
+    );
   }
   if (!record.buildProvenance?.status) {
     throw new Error("installer record must include buildProvenance status.");
@@ -289,6 +297,38 @@ function assertSameSet(actualValue, expectedValue, label) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) {
     throw new Error(
       `${label} must equal ${JSON.stringify(expected)}, found ${JSON.stringify(actual)}.`,
+    );
+  }
+}
+
+function assertRequiredGateTranscripts(value) {
+  if (!Array.isArray(value)) {
+    throw new Error("installer record requiredGateTranscripts must be an array.");
+  }
+
+  const seen = new Set();
+  for (const [index, transcript] of value.entries()) {
+    if (typeof transcript !== "string") {
+      throw new Error(
+        `installer record requiredGateTranscripts[${index}] must be a string.`,
+      );
+    }
+    if (seen.has(transcript)) {
+      throw new Error(
+        `installer record requiredGateTranscripts must not contain duplicate ${JSON.stringify(transcript)}.`,
+      );
+    }
+    seen.add(transcript);
+  }
+
+  const expected = new Set(WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS);
+  const missing = WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS.filter(
+    (transcript) => !seen.has(transcript),
+  );
+  const extra = value.filter((transcript) => !expected.has(transcript));
+  if (missing.length > 0 || extra.length > 0) {
+    throw new Error(
+      `installer record requiredGateTranscripts mismatch; missing=${JSON.stringify(missing)} extra=${JSON.stringify(extra)}.`,
     );
   }
 }
