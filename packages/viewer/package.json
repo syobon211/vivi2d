@@ -20,18 +20,18 @@
     "start": "electron ."
   },
   "dependencies": {
-    "@mediapipe/tasks-vision": "^0.10.34",
+    "@mediapipe/tasks-vision": "^1.0.1",
     "@vivi2d/core": "^0.1.0",
     "@vivi2d/renderer-pixi": "^0.1.0",
-    "pixi.js": "^8.18.1",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "ws": "^8.21.0",
+    "pixi.js": "^8.20.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "ws": "^8.21.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "^6.0.2",
     "concurrently": "^10.0.5",
     "cross-env": "^10.1.0",
