@@ -11,6 +11,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
+import {
+  commandExists,
+  npmInvocation,
+  readMsvcEnvironment,
+} from "./lib/runtime-png-tools.mjs";
 
 const root = process.cwd();
 const nativeManifest = path.join(root, "packages/runtime-native/Cargo.toml");
@@ -822,12 +827,9 @@ function readDynamicExports(dynamicLibrary) {
     }
     const vcvars = findVcvars64();
     if (!vcvars) throw new Error("dumpbin is required for Windows export checks");
-    const commandPath = path.join(tmpDir, "inspect-exports.cmd");
-    writeFileSync(
-      commandPath,
-      `@echo off\r\ncall "${vcvars}" >nul\r\ndumpbin /nologo /exports "${dynamicLibrary}"\r\n`,
-    );
-    return runCapture("cmd.exe", ["/d", "/c", commandPath]);
+    return runCapture("dumpbin", ["/nologo", "/exports", dynamicLibrary], {
+      env: readMsvcEnvironment(vcvars),
+    });
   }
   const nm = requiredCommand(["nm"]);
   return process.platform === "darwin"
@@ -1170,9 +1172,9 @@ function cBytes(bytes) {
 }
 
 function findMsvcCompiler() {
-  if (commandExists("cl")) return { command: "cl", vcvars: null };
+  if (commandExists("cl")) return { command: "cl" };
   const vcvars = findVcvars64();
-  return vcvars ? { command: "cl", vcvars } : null;
+  return vcvars ? { command: "cl", env: readMsvcEnvironment(vcvars) } : null;
 }
 
 function findVcvars64() {
@@ -1216,25 +1218,8 @@ function requiredCommand(candidates) {
   throw new Error(`required command not found: ${candidates.filter(Boolean).join(", ")}`);
 }
 
-function commandExists(command) {
-  const result =
-    process.platform === "win32"
-      ? spawnSync("where.exe", [command], { stdio: "ignore" })
-      : spawnSync("command", ["-v", command], { shell: true, stdio: "ignore" });
-  return result.status === 0;
-}
-
 function runMsvc(compiler, args) {
-  if (!compiler.vcvars) {
-    run(compiler.command, args);
-    return;
-  }
-  const commandPath = path.join(tmpDir, `msvc-${Date.now()}.cmd`);
-  writeFileSync(
-    commandPath,
-    `@echo off\r\ncall "${compiler.vcvars}" >nul\r\n${compiler.command} ${args.map(quoteCmdArg).join(" ")}\r\n`,
-  );
-  run("cmd.exe", ["/d", "/c", commandPath]);
+  run(compiler.command, args, { env: compiler.env });
 }
 
 function runHost(exePath, libraryDirectory = null) {
@@ -1257,21 +1242,21 @@ function run(command, args, options = {}) {
     stdio: "inherit",
     windowsHide: true,
     ...options,
+    shell: false,
   });
   if (result.status !== 0) {
     throw new Error(`${command} failed with exit code ${result.status ?? "unknown"}`);
   }
 }
 
-function runCapture(command, args) {
-  const npmCli = command === "npm" ? process.env.npm_execpath?.trim() : null;
-  const executable = npmCli ? process.execPath : command;
-  const commandArgs = npmCli ? [npmCli, ...args] : args;
-  const result = spawnSync(executable, commandArgs, {
+function runCapture(command, args, options = {}) {
+  const invocation = command === "npm" ? npmInvocation(args) : { command, args };
+  const result = spawnSync(invocation.command, invocation.args, {
     cwd: root,
     encoding: "utf8",
     windowsHide: true,
-    shell: process.platform === "win32" && command === "npm" && !npmCli,
+    ...options,
+    shell: false,
   });
   if (result.status !== 0) {
     throw new Error(
@@ -1283,8 +1268,4 @@ function runCapture(command, args) {
 
 function executableName(baseName) {
   return process.platform === "win32" ? `${baseName}.exe` : baseName;
-}
-
-function quoteCmdArg(value) {
-  return `"${String(value).replaceAll('"', '""')}"`;
 }
