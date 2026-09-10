@@ -98,15 +98,14 @@ describe("generated WASM Gitleaks exception boundaries", () => {
     expect(matchExpressions).toHaveLength(8);
   });
 
-  it.each(regeneratedPrefixes)(
-    "accepts the reviewed regenerated $name shape",
-    ({ lengths }) => {
-      const prefix = lengths.map((length) => "A".repeat(length)).join("_");
-      expect(
-        allowed(generatedPath, "generic-api-key", `${prefix}${separator}${chunk}"`),
-      ).toBe(true);
-    },
-  );
+  it.each(regeneratedPrefixes)("accepts the reviewed regenerated $name shape", ({
+    lengths,
+  }) => {
+    const prefix = lengths.map((length) => "A".repeat(length)).join("_");
+    expect(
+      allowed(generatedPath, "generic-api-key", `${prefix}${separator}${chunk}"`),
+    ).toBe(true);
+  });
 
   it("accepts only the reviewed generated chunk match shapes", () => {
     for (const shape of [...shapes, ...regeneratedShapes]) {
@@ -127,9 +126,7 @@ describe("generated WASM Gitleaks exception boundaries", () => {
         for (const delta of [-1, 1]) {
           const nearLengths = [...lengths];
           nearLengths[index] += delta;
-          const nearPrefix = nearLengths
-            .map((length) => "A".repeat(length))
-            .join("_");
+          const nearPrefix = nearLengths.map((length) => "A".repeat(length)).join("_");
           const nearShape = `${nearPrefix}${separator}${chunk}"`;
           // a10_a17 is intentionally retained by the older reviewed shape.
           if (shapes.includes(nearShape)) continue;
