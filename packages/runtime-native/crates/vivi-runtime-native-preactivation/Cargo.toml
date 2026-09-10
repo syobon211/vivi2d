@@ -16,6 +16,6 @@ vivi-asset-host-local = { path = "../vivi-asset-host-local", default-features = 
 vivi-runtime-native-evaluation = { path = "../vivi-runtime-native-evaluation", default-features = false }
 
 [dev-dependencies]
-base64 = "0.22"
+base64 = "0.23"
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
 tempfile = "3"

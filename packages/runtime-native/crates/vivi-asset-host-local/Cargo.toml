@@ -16,6 +16,6 @@ vivi-asset-resolver = { path = "../vivi-asset-resolver", default-features = fals
 vivi-asset-store-local = { path = "../vivi-asset-store-local", default-features = false }
 
 [dev-dependencies]
-base64 = "0.22"
+base64 = "0.23"
 sha2 = { version = "0.10", default-features = false }
 tempfile = "3"

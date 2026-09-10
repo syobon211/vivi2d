@@ -18,4 +18,4 @@ sha2 = { version = "0.10", default-features = false }
 vivi-png-ref = { path = "../vivi-png-ref" }
 
 [dev-dependencies]
-base64 = "0.22"
+base64 = "0.23"
