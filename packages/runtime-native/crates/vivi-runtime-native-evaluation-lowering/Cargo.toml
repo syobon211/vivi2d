@@ -18,4 +18,4 @@ serde_json = { version = "1.0", default-features = false, features = ["std"] }
 vivi-runtime-native-preactivation = { path = "../vivi-runtime-native-preactivation", default-features = false }
 
 [dev-dependencies]
-sha2 = { version = "0.10", default-features = false }
+sha2 = { version = "0.11", default-features = false }

@@ -17,5 +17,5 @@ vivi-asset-store-local = { path = "../vivi-asset-store-local", default-features 
 
 [dev-dependencies]
 base64 = "0.22"
-sha2 = { version = "0.10", default-features = false }
+sha2 = { version = "0.11", default-features = false }
 tempfile = "3"
