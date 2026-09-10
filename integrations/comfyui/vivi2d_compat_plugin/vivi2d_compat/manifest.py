@@ -22,6 +22,7 @@ from .capabilities import (
     VIVI2D_PLUGIN_VERSION,
 )
 from .backend import DecomposeResult
+from .numeric import MAX_SAFE_INTEGER, is_safe_integer
 
 MAX_MANIFEST_BYTES = 2 * 1024 * 1024
 MAX_MANIFEST_LAYERS = 127
@@ -36,8 +37,6 @@ MAX_TOTAL_LAYER_PIXELS = 64 * 1024 * 1024
 MAX_IDENTIFIER_UTF8_BYTES = 256
 MAX_DISPLAY_TEXT_UTF8_BYTES = 1024
 MAX_IMAGE_PATH_UTF8_BYTES = 4096
-MAX_SAFE_INTEGER = (1 << 53) - 1
-
 _DRIVE_PATH = re.compile(r"^[A-Za-z]:/")
 _URI_SCHEME = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 _ECMASCRIPT_TRIM_CHARS = (
@@ -70,21 +69,13 @@ def _is_finite_number(value: Any) -> bool:
         return False
 
 
-def _is_safe_integer(value: Any) -> bool:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        return False
-    if isinstance(value, float) and (not math.isfinite(value) or not value.is_integer()):
-        return False
-    return -MAX_SAFE_INTEGER <= value <= MAX_SAFE_INTEGER
-
-
 def _assert_bounded_string(value: str, field: str, max_bytes: int) -> None:
     if not value.strip(_ECMASCRIPT_TRIM_CHARS) or "\0" in value:
         raise RuntimeError(f"Vivi2D manifest {field} is invalid.")
     try:
         byte_length = len(value.encode("utf-8"))
-    except UnicodeEncodeError as exc:
-        raise RuntimeError(f"Vivi2D manifest {field} is invalid UTF-8.") from exc
+    except UnicodeEncodeError:
+        raise RuntimeError(f"Vivi2D manifest {field} is invalid UTF-8.") from None
     if byte_length > max_bytes:
         raise RuntimeError(
             f"Vivi2D manifest {field} exceeds the maximum supported length."
@@ -112,7 +103,7 @@ def _validate_manifest_semantics(manifest: dict[str, Any]) -> None:
     canvas = manifest["canvas"]
     width = canvas["width"]
     height = canvas["height"]
-    if not _is_safe_integer(width) or not _is_safe_integer(height):
+    if not is_safe_integer(width) or not is_safe_integer(height):
         raise RuntimeError("Vivi2D manifest canvas dimensions must be safe integers.")
     if width > MAX_IMAGE_SIDE or height > MAX_IMAGE_SIDE:
         raise RuntimeError("Vivi2D manifest canvas exceeds the maximum supported side.")
@@ -171,12 +162,12 @@ def _validate_manifest_semantics(manifest: dict[str, Any]) -> None:
             )
         leaf_tokens.add(layer["psd_leaf_token"])
 
-        if not _is_safe_integer(layer["order"]):
+        if not is_safe_integer(layer["order"]):
             raise RuntimeError(f"Vivi2D manifest {field}.order must be a safe integer.")
         _assert_relative_image_path(layer["image_path"], f"{field}.image_path")
 
         left, top, right, bottom = layer["bbox"]
-        if not all(_is_safe_integer(value) for value in (left, top, right, bottom)):
+        if not all(is_safe_integer(value) for value in (left, top, right, bottom)):
             raise RuntimeError(
                 f"Vivi2D manifest {field}.bbox must contain safe integers."
             )
@@ -212,8 +203,10 @@ def _validate_manifest(manifest: dict[str, Any]) -> None:
         raise RuntimeError("Vivi2D manifest contains too many layers.")
     try:
         validate(instance=manifest, schema=load_schema())
-    except ValidationError as exc:
-        raise RuntimeError("Vivi2D manifest does not match the expected schema.") from exc
+    except ValidationError:
+        # ComfyUI records formatted tracebacks; jsonschema exceptions include
+        # untrusted manifest values, so suppress the original exception chain.
+        raise RuntimeError("Vivi2D manifest does not match the expected schema.") from None
     _validate_manifest_semantics(manifest)
 
 
@@ -270,8 +263,8 @@ def write_manifest(path: Path, manifest: dict[str, Any]) -> None:
             indent=2,
             allow_nan=False,
         )
-    except (TypeError, ValueError) as exc:
-        raise RuntimeError("Vivi2D manifest is not valid finite JSON.") from exc
+    except (TypeError, ValueError):
+        raise RuntimeError("Vivi2D manifest is not valid finite JSON.") from None
     _validate_manifest(manifest)
     encoded = serialized.encode("utf-8")
     if len(encoded) > MAX_MANIFEST_BYTES:
@@ -306,16 +299,16 @@ def read_manifest(path: Path) -> dict[str, Any]:
         raise RuntimeError("Vivi2D manifest exceeds the maximum supported size.")
     try:
         text = encoded.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise RuntimeError("Vivi2D manifest is not valid UTF-8.") from exc
+    except UnicodeDecodeError:
+        raise RuntimeError("Vivi2D manifest is not valid UTF-8.") from None
     try:
         data = json.loads(
             text,
             parse_float=_parse_finite_float,
             parse_constant=_reject_nonfinite_constant,
         )
-    except (json.JSONDecodeError, ValueError) as exc:
-        raise RuntimeError("Vivi2D manifest is not valid JSON.") from exc
+    except (json.JSONDecodeError, ValueError):
+        raise RuntimeError("Vivi2D manifest is not valid JSON.") from None
     if not isinstance(data, dict):
         raise RuntimeError("Vivi2D manifest must be a JSON object.")
     _validate_manifest(data)

@@ -1,6 +1,9 @@
 {
   "generatedBy": "npm run check:direct-model-mutations -- --write",
   "note": "Baseline of current app-layer direct mutation hotspots. Q3 refactors should reduce this list.",
+  "excludedPaths": [
+    "src/lib/e2e-perf-probe.ts"
+  ],
   "scannedPrefixes": [
     "src/components/",
     "src/hooks/",
@@ -2801,8 +2804,8 @@
       "kind": "assignment",
       "line": 280,
       "path": "src/lib/atlas-packer.ts",
-      "signature": "src/lib/atlas-packer.ts:assignment:result[i + 1] = (v * atlasHeight - entry.y) / entry.height",
-      "text": "result[i + 1] = (v * atlasHeight - entry.y) / entry.height"
+      "signature": "src/lib/atlas-packer.ts:assignment:result[i + 1] = entry.height === 0 ? 0 : (v * atlasHeight - entry.y) / entry.height",
+      "text": "result[i + 1] = entry.height === 0 ? 0 : (v * atlasHeight - entry.y) / entry.height"
     },
     {
       "kind": "assignment",
@@ -2815,8 +2818,8 @@
       "kind": "assignment",
       "line": 279,
       "path": "src/lib/atlas-packer.ts",
-      "signature": "src/lib/atlas-packer.ts:assignment:result[i] = (u * atlasWidth - entry.x) / entry.width",
-      "text": "result[i] = (u * atlasWidth - entry.x) / entry.width"
+      "signature": "src/lib/atlas-packer.ts:assignment:result[i] = entry.width === 0 ? 0 : (u * atlasWidth - entry.x) / entry.width",
+      "text": "result[i] = entry.width === 0 ? 0 : (u * atlasWidth - entry.x) / entry.width"
     },
     {
       "kind": "mutating-call",
@@ -3258,76 +3261,6 @@
       "path": "src/lib/auto-setup.ts",
       "signature": "src/lib/auto-setup.ts:update:!options?.allowBbwSolver",
       "text": "!options?.allowBbwSolver"
-    },
-    {
-      "kind": "assignment",
-      "line": 105,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:assignment:state.events = []",
-      "text": "state.events = []"
-    },
-    {
-      "kind": "assignment",
-      "line": 113,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:assignment:state.events = []",
-      "text": "state.events = []"
-    },
-    {
-      "kind": "assignment",
-      "line": 30,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:assignment:window.__vivi2dPerfProbeState__ ??= { marks: new Map<string, number>(), events: [], }",
-      "text": "window.__vivi2dPerfProbeState__ ??= { marks: new Map<string, number>(), events: [], }"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 41,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.events.push(event)",
-      "text": "state.events.push(event)"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 39,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.events.splice(0, state.events.length - MAX_E2E_PERF_PROBE_EVENTS + 1)",
-      "text": "state.events.splice(0, state.events.length - MAX_E2E_PERF_PROBE_EVENTS + 1)"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 106,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.clear()",
-      "text": "state.marks.clear()"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 81,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.delete(buildKey(name, key))",
-      "text": "state.marks.delete(buildKey(name, key))"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 54,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.delete(oldestKey)",
-      "text": "state.marks.delete(oldestKey)"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 69,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.delete(probeKey)",
-      "text": "state.marks.delete(probeKey)"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 56,
-      "path": "src/lib/e2e-perf-probe.ts",
-      "signature": "src/lib/e2e-perf-probe.ts:mutating-call:state.marks.set(probeKey, performance.now())",
-      "text": "state.marks.set(probeKey, performance.now())"
     },
     {
       "kind": "assignment",
@@ -4987,6 +4920,13 @@
       "path": "src/lib/project-serializer.ts",
       "signature": "src/lib/project-serializer.ts:mutating-call:entryMap.set(entry.layerId, { entry, atlasWidth: atlas.width, atlasHeight: atlas.height, })",
       "text": "entryMap.set(entry.layerId, { entry, atlasWidth: atlas.width, atlasHeight: atlas.height, })"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 114,
+      "path": "src/lib/project-serializer.ts",
+      "signature": "src/lib/project-serializer.ts:mutating-call:nextTextures.set(entry.layerId, texCanvas)",
+      "text": "nextTextures.set(entry.layerId, texCanvas)"
     },
     {
       "kind": "assignment",

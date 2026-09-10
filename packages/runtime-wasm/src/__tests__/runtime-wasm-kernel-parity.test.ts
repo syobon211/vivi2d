@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   computeInputForces,
   computeOutputValues,
@@ -503,6 +503,26 @@ function normalizeIKSolution(solution: {
 }
 
 describe("@vivi2d/runtime-wasm primitive kernel parity", () => {
+  it("caps unreachable CCD work in both legacy solvers", () => {
+    for (const solve of [solveCCDIK, solveRuntimeCCDIK]) {
+      const atan2 = vi.spyOn(Math, "atan2");
+      try {
+        const result = solve([{
+          id: "bone",
+          worldX: 0,
+          worldY: 0,
+          angle: 0,
+          length: 1,
+          constraint: { boneId: "bone", minAngle: 0, maxAngle: 0 },
+        }], 100, 100, 2000);
+        expect(result.reached).toBe(false);
+        expect(atan2).toHaveBeenCalledTimes(2 * 1024);
+      } finally {
+        atan2.mockRestore();
+      }
+    }
+  });
+
   it("matches core draw-order and color helpers", () => {
     expect(getRuntimeDrawOrder(undefined)).toBe(getDrawOrder(undefined));
     expect(getRuntimeDrawOrder(12)).toBe(getDrawOrder(12));

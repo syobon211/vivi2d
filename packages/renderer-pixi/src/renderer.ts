@@ -1,6 +1,13 @@
 import "pixi.js/unsafe-eval";
 import type { RuntimeMeshSnapshot } from "@vivi2d/runtime";
 import { Application, Container, type Filter, MeshSimple, Texture } from "pixi.js";
+import {
+  disposePixiApplication,
+  preparePixiCanvas,
+  registerPixiApplication,
+  rememberPixiEventOwner,
+  waitForPixiCanvas,
+} from "./app-lifecycle";
 import { toPixiBlendMode } from "./blend-modes";
 import { createScreenColorFilter, updateScreenColorFilter } from "./screen-color-filter";
 
@@ -50,7 +57,10 @@ export class ViviPixiRenderer {
   private model: ViviPixiRenderableModel | null = null;
   private initialized = false;
 
-  private constructor(app: Application) {
+  private constructor(
+    app: Application,
+    private readonly canvas: HTMLCanvasElement,
+  ) {
     this.app = app;
     this.world = new Container();
     this.world.sortableChildren = true;
@@ -61,18 +71,25 @@ export class ViviPixiRenderer {
     canvas: HTMLCanvasElement,
     options?: ViviRendererOptions,
   ): Promise<ViviPixiRenderer> {
-    const app = new Application();
-    await app.init({
+    await waitForPixiCanvas(canvas);
+    const appOptions = {
       canvas,
       backgroundAlpha: options?.transparent ? 0 : 1,
       backgroundColor: options?.backgroundColor ?? 0xffffff,
       antialias: options?.antialias ?? true,
       autoDensity: true,
+      // The runtime host owns frame scheduling and calls render explicitly.
+      autoStart: false,
       resolution: window.devicePixelRatio || 1,
       width: canvas.width,
       height: canvas.height,
-    });
-    const renderer = new ViviPixiRenderer(app);
+    };
+    preparePixiCanvas(canvas, appOptions);
+    rememberPixiEventOwner();
+    const app = new Application();
+    await app.init(appOptions);
+    registerPixiApplication(app);
+    const renderer = new ViviPixiRenderer(app, canvas);
     renderer.initialized = true;
     return renderer;
   }
@@ -103,12 +120,16 @@ export class ViviPixiRenderer {
   }
 
   destroy(): void {
-    this.destroyMeshes();
-    this.destroyTextures();
-    this.model = null;
-    // Keep the host-owned canvas immediately reusable for a replacement player.
-    this.app.stage.removeChild(this.world);
+    if (!this.initialized) return;
     this.initialized = false;
+    this.app.stop();
+    this.model = null;
+    try {
+      this.destroyMeshes();
+      this.destroyTextures();
+    } finally {
+      disposePixiApplication(this.app, this.canvas);
+    }
   }
 
   screenToWorld(screenX: number, screenY: number): { x: number; y: number } {

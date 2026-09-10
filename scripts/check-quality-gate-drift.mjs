@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { exists, readText, repoRoot } from "./lib/repo.mjs";
@@ -6,7 +7,7 @@ const root = repoRoot;
 const failures = [];
 const manifest = readRequiredJson("scripts/quality-gate-manifest.json");
 const packageJson = readRequiredJson("package.json");
-const runQualityGates = readRequiredText("scripts/run-quality-gates.mjs");
+const localCommands = readLocalCommands();
 
 const packageScripts = packageJson.scripts ?? {};
 const workflowCache = new Map();
@@ -14,6 +15,7 @@ const workflowCache = new Map();
 for (const gate of manifest.gates ?? []) {
   validateGate(gate);
 }
+validateLocalCoverage();
 
 validateLintCoverage(manifest.lintCoverage);
 validateExcludedWorkflows(manifest.excludedWorkflows ?? []);
@@ -38,14 +40,14 @@ function validateGate(gate) {
   }
 
   if (gate.npmScript === null) {
-    if (!commandAppearsInRunQualityGates(gate.command)) {
+    if (!localCommands.has(gate.command)) {
       failures.push(`${gate.command}: missing from scripts/run-quality-gates.mjs`);
     }
   } else if (typeof gate.npmScript === "string") {
     if (!packageScripts[gate.npmScript]) {
       failures.push(`${gate.npmScript}: missing from package.json scripts`);
     }
-    if (!runQualityGates.includes(`"${gate.npmScript}"`)) {
+    if (!localCommands.has(`npm run ${gate.npmScript}`)) {
       failures.push(`${gate.npmScript}: missing from scripts/run-quality-gates.mjs`);
     }
   } else {
@@ -55,6 +57,13 @@ function validateGate(gate) {
   const primaryWorkflow = ".github/workflows/quality-gates.yml";
   const requiredWorkflows = gate.requiredWorkflows ?? [];
   const coveredByPrimaryWorkflow = requiredWorkflows.includes(primaryWorkflow);
+  if (
+    gate.intentionallySplit === true &&
+    requiredWorkflows.length === 0 &&
+    (typeof gate.splitReason !== "string" || gate.splitReason.trim().length === 0)
+  ) {
+    failures.push(`${gate.command}: a split without CI coverage requires splitReason.`);
+  }
   if (gate.intentionallySplit === true && coveredByPrimaryWorkflow) {
     failures.push(
       `${gate.command}: intentionallySplit gates must not require ${primaryWorkflow}`,
@@ -66,7 +75,8 @@ function validateGate(gate) {
 
   for (const workflowPath of requiredWorkflows) {
     const workflow = readWorkflow(workflowPath);
-    if (!workflow.includes(gate.command)) {
+    const commandPattern = gate.command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (!new RegExp(`(^|\\s)${commandPattern}(\\s|$)`, "m").test(workflow)) {
       failures.push(`${gate.command}: missing from ${workflowPath}`);
     }
   }
@@ -123,15 +133,52 @@ function validateExcludedWorkflows(excludedWorkflows) {
   }
 }
 
-function commandAppearsInRunQualityGates(command) {
-  if (command === "npx tsc --noEmit") {
-    return (
-      runQualityGates.includes('"npx"') &&
-      runQualityGates.includes('"tsc"') &&
-      runQualityGates.includes('"--noEmit"')
+function readLocalCommands() {
+  const commands = new Set();
+  // Include default, coverage and every opt-in E2E variant. Inventory mode
+  // evaluates the runner's actual command list without executing any gates.
+  for (const flags of [
+    [],
+    ["--coverage", "--e2e-smoke", "--e2e-workflows"],
+    ["--e2e-workflow-record"],
+  ]) {
+    const result = spawnSync(
+      process.execPath,
+      [path.join(root, "scripts/run-quality-gates.mjs"), "--list", ...flags],
+      { cwd: root, encoding: "utf8", env: { ...process.env, CI: "false" } },
     );
+    if (result.status !== 0) {
+      failures.push("Unable to enumerate local quality gates.");
+      continue;
+    }
+    try {
+      for (const [command, args] of JSON.parse(result.stdout)) {
+        commands.add(
+          command === "npm" && args[0] === "run"
+            ? `npm run ${args[1]}`
+            : [command, ...args].join(" "),
+        );
+      }
+    } catch {
+      failures.push("Local quality-gate inventory is invalid.");
+    }
   }
-  return runQualityGates.includes(command);
+  return commands;
+}
+
+function validateLocalCoverage() {
+  const declared = new Set();
+  for (const gate of manifest.gates ?? []) {
+    const command =
+      typeof gate.npmScript === "string" ? `npm run ${gate.npmScript}` : gate.command;
+    if (declared.has(command)) failures.push(`${command}: duplicate manifest gate.`);
+    declared.add(command);
+  }
+  for (const command of localCommands) {
+    if (!declared.has(command)) {
+      failures.push(`${command}: local gate is missing from quality-gate-manifest.json`);
+    }
+  }
 }
 
 function scriptPathForGate(gate) {

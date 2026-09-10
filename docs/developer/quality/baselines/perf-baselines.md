@@ -64,7 +64,8 @@ Recommended usage:
 
 When CI perf monitoring reports a regression:
 
-1. inspect the uploaded `playwright-report/` and `test-results/` artifacts first
+1. reproduce locally with synthetic public fixtures and inspect the local
+   `playwright-report/` and `test-results/`; CI does not upload these artifacts
 2. compare the failing metric against the most recent local baseline snapshot
 3. decide whether the change is
    - an accidental regression that should be fixed

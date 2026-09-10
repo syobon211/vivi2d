@@ -1,7 +1,7 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   comfyUiSourceRecordRequiredReasons,
@@ -203,6 +203,25 @@ describe("comfyui-source-record", () => {
         comfyUiTrackedSourceRecordReasons(root),
       ).join("\n"),
     ).toContain("compatPlugin.sha256 does not match");
+  });
+
+  it("rejects sourceRevision for repository-tracked source", () => {
+    const root = makeTempRoot();
+    writeFile(
+      root,
+      "integrations/comfyui/vivi2d_compat_plugin/__init__.py",
+      "# placeholder\n",
+    );
+    writeTrackedSourceRecord(root, {
+      compatPlugin: { sourceRevision: "a".repeat(40) },
+    });
+
+    expect(
+      validateComfyUiTrackedSourceRecord(
+        root,
+        comfyUiTrackedSourceRecordReasons(root),
+      ).join("\n"),
+    ).toContain("compatPlugin.sourceRevision must not be set");
   });
 
   it("ignores transient Python build metadata when hashing tracked source", () => {

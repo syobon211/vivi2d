@@ -2,18 +2,20 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useRecorder } from "../hooks/useRecorder";
 import type { UseViewerStateResult } from "../hooks/useViewerState";
-import type { ViewerRecorder } from "../recorder";
-
+import type { RecordingFormat, ViewerRecorder } from "../recorder";
 
 const downloadBlobMock = vi.fn();
-const getExtMock = vi.fn((fmt: string) => (fmt === "mp4" ? "mp4" : "webm"));
+const getExtMock = vi.fn();
 
 vi.mock("../recorder", async () => {
   const actual = await vi.importActual<typeof import("../recorder")>("../recorder");
   return {
     ...actual,
     downloadBlob: (...args: unknown[]) => downloadBlobMock(...args),
-    getRecordingExtension: (fmt: string) => getExtMock(fmt),
+    getRecordingExtension: (fmt: RecordingFormat) => {
+      getExtMock(fmt);
+      return actual.getRecordingExtension(fmt);
+    },
   };
 });
 
@@ -33,7 +35,10 @@ interface FakeRecorder {
 
 function makeRecorder(): FakeRecorder {
   return {
-    start: vi.fn(),
+    start: vi.fn((options, onStateChange) => {
+      onStateChange?.("recording", 0);
+      return options.format;
+    }),
     stop: vi.fn().mockResolvedValue(new Blob(["x"])),
     cancel: vi.fn(),
   };
@@ -122,16 +127,24 @@ function renderUseRecorder(
   stateOverrides: Partial<UseViewerStateResult> = {},
 ) {
   const state = createMockState(stateOverrides);
+  const initiallyRecording = state.recordingState === "recording";
+  if (initiallyRecording) state.recordingState = "idle";
   const recorderRef = {
     current: (recorder as unknown as ViewerRecorder) ?? null,
   };
-  return {
-    ...renderHook(() => {
-      const t = (k: string) => `t:${k}`;
-      return { ...useRecorder({ recorderRef, state, t }), state };
-    }),
-    recorderRef,
-  };
+  const hook = renderHook(() => {
+    const t = (k: string) => `t:${k}`;
+    return { ...useRecorder({ recorderRef, state, t }), state };
+  });
+  if (initiallyRecording) {
+    // Establish a real hook-owned session instead of merely faking its UI state.
+    act(() => {
+      void hook.result.current.toggleRecording();
+    });
+    state.recordingState = "recording";
+    hook.rerender();
+  }
+  return { ...hook, recorderRef };
 }
 
 describe("useRecorder", () => {
@@ -163,6 +176,8 @@ describe("useRecorder", () => {
       });
       expect(rec.start).toHaveBeenCalledWith(
         { format: "webm", maxDuration: 60 },
+        expect.any(Function),
+        expect.any(Function),
         expect.any(Function),
       );
       expect(result.current.state.setRecordingState).toHaveBeenCalledWith("recording");
@@ -239,6 +254,36 @@ describe("useRecorder", () => {
       );
     });
 
+    it.each([
+      "manual",
+      "automatic",
+    ])("uses the actual WebM fallback for requested MP4 on %s completion", async (completion) => {
+      const rec = makeRecorder();
+      rec.start.mockImplementationOnce((_options, onStateChange) => {
+        onStateChange?.("recording", 0);
+        return "webm";
+      });
+      const { result } = renderUseRecorder(rec, {
+        recordingState: "recording",
+        recordingFormat: "mp4",
+      });
+      expect(rec.start.mock.calls[0]![0].format).toBe("mp4");
+      if (completion === "manual") {
+        await act(async () => {
+          await result.current.toggleRecording();
+        });
+      } else {
+        const complete = rec.start.mock.calls[0]![2] as (blob: Blob) => void;
+        act(() => complete(new Blob(["fallback"], { type: "video/webm" })));
+      }
+      expect(getExtMock).toHaveBeenCalledExactlyOnceWith("webm");
+      expect(downloadBlobMock).toHaveBeenCalledExactlyOnceWith(
+        expect.any(Blob),
+        expect.stringMatching(/^ViviModel-\d+\.webm$/),
+      );
+      expect(result.current.state.setError).not.toHaveBeenCalled();
+    });
+
     it("stop reject で setError + setRecordingState('idle')", async () => {
       const rec = makeRecorder();
       rec.stop.mockRejectedValueOnce(new Error("stop failed"));
@@ -263,6 +308,121 @@ describe("useRecorder", () => {
     it("recorderRef が null でも throw しない", () => {
       const { unmount } = renderUseRecorder(null);
       expect(() => unmount()).not.toThrow();
+    });
+  });
+
+  describe("recording completion ownership", () => {
+    it("uses the same completion path for automatic stop exactly once", async () => {
+      const rec = makeRecorder();
+      const { result } = renderUseRecorder(rec);
+      await act(async () => {
+        await result.current.toggleRecording();
+      });
+      const complete = rec.start.mock.calls[0]![2] as (blob: Blob) => void;
+      act(() => {
+        complete(new Blob(["recorded"]));
+        complete(new Blob(["duplicate"]));
+      });
+      expect(downloadBlobMock).toHaveBeenCalledOnce();
+      expect(result.current.state.setError).not.toHaveBeenCalled();
+    });
+
+    it("does not save an empty completion", async () => {
+      const rec = makeRecorder();
+      const { result } = renderUseRecorder(rec);
+      await act(async () => {
+        await result.current.toggleRecording();
+      });
+      const complete = rec.start.mock.calls[0]![2] as (blob: Blob) => void;
+      act(() => complete(new Blob()));
+      expect(downloadBlobMock).not.toHaveBeenCalled();
+      expect(result.current.state.setError).toHaveBeenCalledWith("t:errRecording");
+    });
+
+    it("ignores all late callbacks after unmount", async () => {
+      const rec = makeRecorder();
+      const { result, unmount } = renderUseRecorder(rec);
+      await act(async () => {
+        await result.current.toggleRecording();
+      });
+      const [, stateChanged, completed, failed] = rec.start.mock.calls[0]!;
+      const state = result.current.state;
+      vi.mocked(state.setRecordingState).mockClear();
+      unmount();
+      (stateChanged as (s: string, n: number) => void)("idle", 0);
+      (completed as (b: Blob) => void)(new Blob(["obsolete"]));
+      (failed as (e: Error) => void)(new Error("synthetic detail"));
+      expect(downloadBlobMock).not.toHaveBeenCalled();
+      expect(state.setRecordingState).not.toHaveBeenCalled();
+      expect(state.setError).not.toHaveBeenCalled();
+    });
+
+    it("does not download a pending manual stop after unmount", async () => {
+      const rec = makeRecorder();
+      let resolve!: (blob: Blob) => void;
+      rec.stop.mockReturnValue(
+        new Promise<Blob>((done) => {
+          resolve = done;
+        }),
+      );
+      const { result, unmount } = renderUseRecorder(rec, { recordingState: "recording" });
+      const stopped = result.current.toggleRecording();
+      unmount();
+      resolve(new Blob(["obsolete"]));
+      await stopped;
+      expect(downloadBlobMock).not.toHaveBeenCalled();
+    });
+
+    it("clears external cancellation and ignores old completion after restart", async () => {
+      const rec = makeRecorder();
+      const { result } = renderUseRecorder(rec);
+      await act(async () => {
+        await result.current.toggleRecording();
+      });
+      const completed = rec.start.mock.calls[0]![2] as (b: Blob) => void;
+      const failed = rec.start.mock.calls[0]![3] as (e: Error) => void;
+      act(() => failed(new DOMException("Recording cancelled.", "AbortError")));
+      await act(async () => {
+        await result.current.toggleRecording();
+      });
+      completed(new Blob(["obsolete"]));
+      expect(rec.start).toHaveBeenCalledTimes(2);
+      expect(downloadBlobMock).not.toHaveBeenCalled();
+      expect(result.current.state.setError).not.toHaveBeenCalled();
+    });
+
+    it("releases a replaced recorder and starts the new one", async () => {
+      const old = makeRecorder();
+      const next = makeRecorder();
+      const { result, recorderRef } = renderUseRecorder(old);
+      await act(async () => {
+        await result.current.toggleRecording();
+      });
+      recorderRef.current = next as unknown as ViewerRecorder;
+      await act(async () => {
+        await result.current.toggleRecording();
+      });
+      expect(old.cancel).toHaveBeenCalledOnce();
+      expect(next.start).toHaveBeenCalledOnce();
+    });
+
+    it("does not stop twice when manual and automatic completion overlap", async () => {
+      const rec = makeRecorder();
+      let resolve!: (blob: Blob) => void;
+      rec.stop.mockReturnValue(
+        new Promise<Blob>((done) => {
+          resolve = done;
+        }),
+      );
+      const { result } = renderUseRecorder(rec, { recordingState: "recording" });
+      const first = result.current.toggleRecording();
+      await result.current.toggleRecording();
+      const complete = rec.start.mock.calls[0]![2] as (b: Blob) => void;
+      complete(new Blob(["automatic"]));
+      resolve(new Blob(["manual"]));
+      await first;
+      expect(rec.stop).toHaveBeenCalledOnce();
+      expect(downloadBlobMock).toHaveBeenCalledOnce();
     });
   });
 });

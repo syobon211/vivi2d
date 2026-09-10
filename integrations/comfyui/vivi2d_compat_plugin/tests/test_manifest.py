@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import shutil
 import sys
+import traceback
 import unittest
 import uuid
 from pathlib import Path
@@ -60,6 +61,23 @@ class ManifestValidationTests(unittest.TestCase):
         path.mkdir(parents=True, exist_ok=False)
         self.addCleanup(lambda: shutil.rmtree(path, ignore_errors=True))
         return path
+
+    def test_schema_error_traceback_omits_manifest_values(self) -> None:
+        temp_dir = self._create_temp_dir()
+        marker = "synthetic-private-manifest-value"
+        manifest = _minimal_manifest()
+        manifest["unexpected"] = marker
+        manifest_path = temp_dir / "manifest.json"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        try:
+            vivi_manifest.read_manifest(manifest_path)
+        except RuntimeError as error:
+            rendered = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+            self.assertNotIn(marker, rendered)
+            self.assertNotIn("ValidationError", rendered)
+            self.assertIsNone(error.__cause__)
+        else:
+            self.fail("Invalid manifest was accepted")
 
     def test_read_manifest_rejects_unknown_top_level_fields(self) -> None:
         temp_dir = self._create_temp_dir()

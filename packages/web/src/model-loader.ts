@@ -180,6 +180,7 @@ async function loadSourceText(
       });
     }
     if (!response.ok) {
+      void response.body?.cancel().catch(() => {});
       throw new ViviWebError("VIVI_WEB_FETCH_FAILED", "Failed to fetch model.", {
         details: { status: response.status },
       });
@@ -188,12 +189,13 @@ async function loadSourceText(
   }
   if (isResponse(source)) {
     throwIfAborted(options.signal);
-    const response = source.clone();
-    if (!response.ok) {
+    // Do not create an unused tee branch for a rejected caller-owned response.
+    if (!source.ok) {
       throw new ViviWebError("VIVI_WEB_FETCH_FAILED", "Failed to read model response.", {
-        details: { status: response.status },
+        details: { status: source.status },
       });
     }
+    const response = source.clone();
     return readResponseTextWithLimit(response, "Response .vivi model", options.signal);
   }
   if (isBlob(source)) {
@@ -233,38 +235,52 @@ async function readResponseTextWithLimit(
   label: string,
   signal: AbortSignal | undefined,
 ): Promise<string> {
-  throwIfAborted(signal);
-  const contentLengthHeader = response.headers.get("content-length");
-  if (contentLengthHeader) {
-    const contentLength = Number(contentLengthHeader);
-    if (Number.isFinite(contentLength) && contentLength > 0) {
-      assertByteLengthWithinLimit(contentLength, MAX_VIVI_TEXT_FILE_BYTES, label);
-    }
-  }
-
   const reader = response.body?.getReader();
-  if (!reader) {
-    const text = await response.text();
+  const cancelRead = () => {
+    // A caller-owned Response is cloned. Awaiting cancellation of its tee
+    // branch can wait forever for the untouched caller branch to finish.
+    void reader?.cancel().catch(() => {});
+  };
+  signal?.addEventListener("abort", cancelRead, { once: true });
+  try {
+    throwIfAborted(signal);
+    const contentLengthHeader = response.headers.get("content-length");
+    if (contentLengthHeader) {
+      const contentLength = Number(contentLengthHeader);
+      if (Number.isFinite(contentLength) && contentLength > 0) {
+        assertByteLengthWithinLimit(contentLength, MAX_VIVI_TEXT_FILE_BYTES, label);
+      }
+    }
+
+    if (!reader) {
+      const text = await response.text();
+      throwIfAborted(signal);
+      assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, label);
+      return text;
+    }
+
+    const decoder = new TextDecoder();
+    let totalBytes = 0;
+    let text = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      throwIfAborted(signal);
+      if (done) break;
+      totalBytes += value.byteLength;
+      assertByteLengthWithinLimit(totalBytes, MAX_VIVI_TEXT_FILE_BYTES, label);
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
     throwIfAborted(signal);
     assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, label);
     return text;
+  } catch (error) {
+    cancelRead();
+    throw error;
+  } finally {
+    signal?.removeEventListener("abort", cancelRead);
+    reader?.releaseLock();
   }
-
-  const decoder = new TextDecoder();
-  let totalBytes = 0;
-  let text = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    throwIfAborted(signal);
-    if (done) break;
-    totalBytes += value.byteLength;
-    assertByteLengthWithinLimit(totalBytes, MAX_VIVI_TEXT_FILE_BYTES, label);
-    text += decoder.decode(value, { stream: true });
-  }
-  text += decoder.decode();
-  throwIfAborted(signal);
-  assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, label);
-  return text;
 }
 
 function throwIfAborted(signal: AbortSignal | undefined): void {

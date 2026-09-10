@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ViviModelElement } from "../vivi-model-element";
 
-
 vi.mock("@vivi2d/renderer-pixi/loader", () => ({
   extractTextures: vi.fn().mockResolvedValue(new Map()),
 }));
@@ -167,7 +166,7 @@ describe("ViviModelElement", () => {
 
     await el.load("missing.vivi");
     const msg = await errorPromise;
-    expect(msg).toContain("404");
+    expect(msg).toBe("Could not load a Vivi2D model.");
 
     document.body.removeChild(el);
   });
@@ -270,7 +269,6 @@ describe("ViviModelElement", () => {
     expect(el.screenToWorld(100, 100)).toBeNull();
   });
 });
-
 
 describe("ViviModelElement 追加テスト", () => {
   beforeEach(() => {
@@ -379,7 +377,6 @@ describe("ViviModelElement 追加テスト", () => {
     document.body.removeChild(el);
   });
 });
-
 
 describe("ViviModelElement startLoop", () => {
   afterEach(() => {

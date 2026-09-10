@@ -19,6 +19,29 @@ npm run check:ipc-contract-sync
 npm run check:security-patterns
 ```
 
+### Saving And Exporting Files
+
+Project saves and exports write a temporary sibling, flush it, and rename it
+over the selected regular file. A failed write or rename preserves the previous
+file; this is per-file replacement, not a transaction across an export bundle or
+a power-loss durability guarantee. Existing linked export paths are rejected.
+Saving directly through a file symlink is also unsupported: select the regular
+target or use Save As with a new regular file.
+
+New files request POSIX mode `0600` to avoid making artwork readable by other
+local accounts by default. Existing regular-file permission bits are used for
+temporary-file creation, still subject to the process umask. Windows uses the
+destination directory's inherited ACLs; `0600` is not a Windows privacy guarantee.
+Sharing exports with another account or a local web server requires an explicit
+permissions decision by the user.
+
+Replacement requires write permission on the containing directory and creates a
+new file identity. It does not preserve the old inode, ownership, custom ACLs, or
+extended attributes. Temporary-file cleanup is best effort if the filesystem
+refuses deletion. Export checks reject existing link traps; they do not claim
+race-proof protection against a same-user process concurrently replacing parent
+directories.
+
 ## Local Viewer API
 
 - Disabled by default.

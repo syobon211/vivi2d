@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { checkReleaseNodeCachePolicy } from "./lib/release-node-cache-policy.mjs";
 import { readJson, readText } from "./lib/repo.mjs";
 import {
   expectedWindowsInstallerDownloadableAssetNames,
@@ -35,11 +36,6 @@ const electronBuilderViewerArtifactNameLine = [
   ["$", "{ext}"].join(""),
   '"',
 ].join("");
-const manualReviewJsonEnvLine = [
-  "MANUAL_REVIEW_JSON: '",
-  ["$", "{{ toJSON(fromJSON(inputs.manualReviewJson)) }}"].join(""),
-  "'",
-].join("");
 const expectedGitleaksConfig = `title = "Vivi2D Gitleaks configuration"
 minVersion = "8.30.1"
 
@@ -50,11 +46,20 @@ useDefault = true
 id = "generic-api-key"
 
 [[rules.allowlists]]
-description = "Ignore generic-api-key false positives only across generated 100-character WebAssembly base64 chunk boundaries."
+description = "Ignore reviewed generic-api-key match shapes only at generated 100-character WebAssembly base64 chunk boundaries, including fragment truncation and reviewed decoded-symbol shapes."
 condition = "AND"
 regexTarget = "match"
 paths = ['''^packages/runtime-wasm/src/native-wasm-bytes\\.ts$''']
-regexes = ['''^[A-Za-z0-9+/]{15,73}",\\n  "[A-Za-z0-9+/]{100}"$''']
+regexes = [
+  '''^[A-Za-z0-9+/]{15,73}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{61}",\\n  "[A-Za-z0-9+/]{10,100}$''',
+  '''^[A-Za-z0-9]{10}_[A-Za-z0-9]{17}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{11}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{10}_[A-Za-z0-9]{18}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{9}_[A-Za-z0-9]{4}_[A-Za-z0-9]{14}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{16}",\\n  "[A-Za-z0-9+/]{100}"$''',
+]
 `;
 const bashAlphaThresholdCheck = `${["$", "{BASH_REMATCH[4]}"].join("")}" -lt 2`;
 const packageJson = readJson("package.json");
@@ -220,12 +225,11 @@ function checkElectronBuilderConfig() {
 }
 
 function checkWorkflow() {
+  failures.push(...checkReleaseNodeCachePolicy(workflow, workflowPath));
   for (const text of [
     "workflow_dispatch:",
     "chromiumMajorVersion:",
     "electronEmbeddedNodeVersion:",
-    "manualReviewJson:",
-    manualReviewJsonEnvLine,
     "permissions:\n  contents: read",
     "linux-validation:",
     "windows-packaging:",
@@ -242,6 +246,11 @@ function checkWorkflow() {
     "--prerelease",
   ]) {
     requireWorkflowText(text);
+  }
+  if (/manualReviewJson|MANUAL_REVIEW_JSON|--manual-review-json/.test(workflow)) {
+    failures.push(
+      "Hosted installer builds must use the default pending review, without free-form manual review inputs.",
+    );
   }
 
   const linuxJob = sectionBetween("  linux-validation:", "  windows-packaging:");
@@ -308,8 +317,8 @@ function checkWorkflow() {
     "npm run check:source-review-archive",
     "npm run check:viewer-mediapipe-assets",
     "npm run check:history-secrets",
-    "gitleaks detect --source . --no-git",
-    'gitleaks git --log-opts="--all" .',
+    "gitleaks detect --source . --no-git --redact=100",
+    'gitleaks git --log-opts="--all" . --redact=100',
     "npm run sbom:generate",
     "npm run archive:source-review",
     "npm run check:windows-installer-alpha",

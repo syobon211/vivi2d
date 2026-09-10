@@ -360,6 +360,25 @@ describe("runScript", () => {
 });
 
 describe("cancelScript", () => {
+  it("allows a queued cancellation to interrupt a loop without wait commands", async () => {
+    const api = createMockAPI();
+    const state: ScriptRunnerState = { running: false, cancelled: false };
+    let iterations = 0;
+    vi.mocked(api.resetParameters).mockImplementation(() => {
+      iterations += 1;
+      // Bound the regression even when the event loop is starved.
+      if (iterations === 100) cancelScript(state);
+    });
+    const cancellation = setTimeout(() => cancelScript(state), 0);
+    try {
+      await runScript(parseScript("loop(0) { reset }"), api, state);
+      expect(iterations).toBeLessThan(100);
+      expect(state.running).toBe(false);
+    } finally {
+      clearTimeout(cancellation);
+    }
+  });
+
   it("実行中のスクリプトをキャンセルして途中停止させる", async () => {
     vi.useFakeTimers();
 

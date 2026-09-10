@@ -208,6 +208,23 @@ describe("unremapUvs", () => {
   it("空配列に対して空配列を返す", () => {
     expect(unremapUvs([], entry, atlasW, atlasH)).toEqual([]);
   });
+
+  it.each([
+    { width: 0, height: 2, expected: [0, 0, 0, 0, 0, 0.5, 0, 0.5] },
+    { width: 2, height: 0, expected: [0, 0, 0.5, 0, 0, 0, 0.5, 0] },
+    { width: 0, height: 0, expected: [0, 0, 0, 0, 0, 0, 0, 0] },
+  ])(
+    "canonicalizes zero axes for a $width x $height entry",
+    ({ width, height, expected }) => {
+      const zeroEntry = { layerId: "zero-entry", x: 2, y: 2, width, height };
+      const atlasUvs = [0.25, 0.25, 0.375, 0.25, 0.25, 0.375, 0.375, 0.375];
+
+      const restored = unremapUvs(atlasUvs, zeroEntry, 8, 8);
+
+      expect(restored).toEqual(expected);
+      expect(restored.every(Number.isFinite)).toBe(true);
+    },
+  );
 });
 
 // ============================================================

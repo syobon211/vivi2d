@@ -155,7 +155,7 @@
     "i18n:check:all": "npm run i18n:check && npm run i18n:check:viewer && npm run i18n:check:hygiene && npm run i18n:check:english-surface && npm run i18n:check:layout && npm run i18n:check:review"
   },
   "overrides": {
-    "@xmldom/xmldom": "0.8.13",
+    "@xmldom/xmldom": "0.8.15",
     "axios": "1.18.1",
     "ws": "8.21.0"
   },
@@ -182,7 +182,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-v8": "^4.1.11",
     "ajv": "8.20.0",
     "axe-core": "^4.11.3",
     "concurrently": "^10.0.5",
@@ -194,7 +194,7 @@
     "three": "^0.184.0",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
-    "vitest": "^4.1.2",
+    "vitest": "^4.1.11",
     "wait-on": "^9.1.0"
   }
 }

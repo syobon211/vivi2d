@@ -7,6 +7,15 @@ import { TEST_FORBIDDEN_FILE_URL } from "../../../../src/test/path-fixtures";
 import { useModelSession } from "../hooks/useModelSession";
 import type { UseViewerStateResult } from "../hooks/useViewerState";
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
+}
 
 const mockParseViviFile = vi.fn();
 const mockExtractTextures = vi.fn();
@@ -54,7 +63,10 @@ vi.mock("../tracking/auto-mapper", () => ({
 }));
 
 vi.mock("../tracking/platform-face-channels", () => ({
-  autoDetectPlatformFaceMapping: vi.fn(() => ({ eyeBlinkLeft: "p1", eyeBlinkRight: "p1" })),
+  autoDetectPlatformFaceMapping: vi.fn(() => ({
+    eyeBlinkLeft: "p1",
+    eyeBlinkRight: "p1",
+  })),
 }));
 
 function createMockState(): UseViewerStateResult {
@@ -139,9 +151,9 @@ function renderUseModelSession(opts?: {
 }) {
   const state = opts?.state ?? createMockState();
   const recorderFactory = vi.fn(
-    () =>
+    (_canvas: HTMLCanvasElement, _beforeCapture: () => void) =>
       ({
-        /* mock recorder */
+        cancel: vi.fn(),
       }) as never,
   );
   return renderHook(() => {
@@ -172,6 +184,7 @@ describe("useModelSession", () => {
     mockRendererCreate.mockReset().mockResolvedValue({
       setModel: mockSetModel,
       render: mockRender,
+      resize: vi.fn(),
       destroy: mockRendererDestroy,
       pixiApp: { stage: {} },
     });
@@ -229,10 +242,28 @@ describe("useModelSession", () => {
       });
       expect(result.current.recorderFactory).toHaveBeenCalledWith(
         result.current.canvasRef.current,
+        expect.any(Function),
       );
     });
 
-    it("再ロード時は前回 renderer を destroy してから生成", async () => {
+    it("fresh recording capture uses the current renderer and rejects its absence", async () => {
+      const { result } = renderUseModelSession();
+      await act(async () => {
+        await result.current.loadModel(new File(["{}"], "Hero.vivi"));
+      });
+      const beforeCapture = result.current.recorderFactory.mock.calls[0]![1];
+      mockRender.mockClear();
+      beforeCapture();
+      expect(mockRender).toHaveBeenCalledOnce();
+      const replacementRender = vi.fn();
+      result.current.rendererRef.current = { render: replacementRender } as never;
+      beforeCapture();
+      expect(replacementRender).toHaveBeenCalledOnce();
+      result.current.rendererRef.current = null;
+      expect(beforeCapture).toThrow("Recording failed.");
+    });
+
+    it("reuses the renderer and recorder owned by the mounted canvas on reload", async () => {
       const { result } = renderUseModelSession();
       const file = new File(["{}"], "A.vivi");
       await act(async () => {
@@ -241,7 +272,9 @@ describe("useModelSession", () => {
       await act(async () => {
         await result.current.loadModel(new File(["{}"], "B.vivi"));
       });
-      expect(mockRendererDestroy).toHaveBeenCalled();
+      expect(mockRendererDestroy).not.toHaveBeenCalled();
+      expect(mockRendererCreate).toHaveBeenCalledOnce();
+      expect(result.current.recorderFactory).toHaveBeenCalledOnce();
     });
 
     it("canvas 未マウント時は早期リターン (setLoaded されない)", async () => {
@@ -266,9 +299,7 @@ describe("useModelSession", () => {
       });
 
       expect(text).not.toHaveBeenCalled();
-      expect(result.current.state.setError).toHaveBeenCalledWith(
-        expect.stringContaining(".vivi file is too large"),
-      );
+      expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
     });
   });
 
@@ -284,7 +315,10 @@ describe("useModelSession", () => {
       await act(async () => {
         await result.current.loadModel("https://example.com/model.vivi");
       });
-      expect(fetchSpy).toHaveBeenCalledWith("https://example.com/model.vivi");
+      expect(fetchSpy).toHaveBeenCalledWith("https://example.com/model.vivi", {
+        signal: expect.any(AbortSignal),
+        credentials: "omit",
+      });
       expect(result.current.state.setModelName).toHaveBeenCalledWith("model");
     });
 
@@ -297,7 +331,7 @@ describe("useModelSession", () => {
       await act(async () => {
         await result.current.loadModel("https://example.com/model.vivi");
       });
-      expect(result.current.state.setError).toHaveBeenCalledWith("HTTP 404");
+      expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
     });
 
     it("rejects oversized remote models from content-length", async () => {
@@ -316,14 +350,73 @@ describe("useModelSession", () => {
       });
 
       expect(fetchSpy).toHaveBeenCalled();
-      expect(result.current.state.setError).toHaveBeenCalledWith(
-        expect.stringContaining("Remote .vivi model is too large"),
-      );
+      expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
     });
   });
 
   describe("loadModel: エラーハンドリング", () => {
-    it("parseViviFile が throw すると setError(message)", async () => {
+    it("does not publish a model whose first render fails and permits retry", async () => {
+      mockRender.mockImplementationOnce(() => {
+        throw new Error("render failed");
+      });
+      const { result } = renderUseModelSession();
+      await act(async () => {
+        await result.current.loadModel(new File(["{}"], "bad.vivi"));
+      });
+      expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
+      expect(result.current.modelRef.current).toBeNull();
+      expect(result.current.rendererRef.current).toBeNull();
+      expect(result.current.particlesRef.current).toBeNull();
+      expect(result.current.state.setLoaded).not.toHaveBeenCalledWith(true);
+      expect(mockRendererDestroy).toHaveBeenCalledOnce();
+      expect(mockParticlesDestroy).toHaveBeenCalledOnce();
+      await act(async () => {
+        await result.current.loadModel(new File(["{}"], "retry.vivi"));
+      });
+      expect(mockRendererCreate).toHaveBeenCalledTimes(2);
+      expect(result.current.state.setLoaded).toHaveBeenLastCalledWith(true);
+    });
+
+    it("clears the old host model if renderer replacement throws", async () => {
+      const { result } = renderUseModelSession();
+      await act(async () => {
+        await result.current.loadModel(new File(["{}"], "old.vivi"));
+      });
+      mockSetModel.mockImplementationOnce(() => {
+        throw new Error("setModel failed after replacement");
+      });
+      await act(async () => {
+        await result.current.loadModel(new File(["{}"], "bad.vivi"));
+      });
+      expect(result.current.modelRef.current).toBeNull();
+      expect(result.current.rendererRef.current).toBeNull();
+      expect(result.current.particlesRef.current).toBeNull();
+      expect(result.current.state.setLoaded).toHaveBeenLastCalledWith(false);
+      expect(mockRendererDestroy).toHaveBeenCalledOnce();
+      expect(mockParticlesDestroy).toHaveBeenCalledOnce();
+    });
+
+    it("preserves the loaded model when parsing fails before renderer replacement", async () => {
+      const { result } = renderUseModelSession();
+      await act(async () => {
+        await result.current.loadModel(new File(["{}"], "old.vivi"));
+      });
+      const previousModel = result.current.modelRef.current;
+      const previousRenderer = result.current.rendererRef.current;
+      mockParseViviFile.mockImplementationOnce(() => {
+        throw new Error("invalid json");
+      });
+      await act(async () => {
+        await result.current.loadModel(new File(["x"], "bad.vivi"));
+      });
+      expect(result.current.modelRef.current).toBe(previousModel);
+      expect(result.current.rendererRef.current).toBe(previousRenderer);
+      expect(result.current.state.setLoaded).toHaveBeenLastCalledWith(true);
+      expect(mockRendererDestroy).not.toHaveBeenCalled();
+      expect(mockParticlesDestroy).not.toHaveBeenCalled();
+    });
+
+    it("parseViviFile が throw すると秘匿化したエラーを設定する", async () => {
       mockParseViviFile.mockImplementation(() => {
         throw new Error("invalid json");
       });
@@ -331,7 +424,7 @@ describe("useModelSession", () => {
       await act(async () => {
         await result.current.loadModel(new File(["x"], "bad.vivi"));
       });
-      expect(result.current.state.setError).toHaveBeenCalledWith("invalid json");
+      expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
     });
 
     it("非 Error 例外は t('errFileLoad') にフォールバック", async () => {
@@ -389,9 +482,7 @@ describe("useModelSession", () => {
       await act(async () => {
         await result.current.handleUrlLoad();
       });
-      expect(result.current.state.setError).toHaveBeenCalledWith(
-        "t:errUrlProtocol",
-      );
+      expect(result.current.state.setError).toHaveBeenCalledWith("t:errUrlProtocol");
     });
 
     it("handleUrlLoad: https URL なら fetch が走る", async () => {
@@ -477,6 +568,102 @@ describe("useModelSession", () => {
       unmount();
       expect(mockRendererDestroy).toHaveBeenCalled();
       expect(mockParticlesDestroy).toHaveBeenCalled();
+    });
+  });
+
+  describe("overlapping model loads", () => {
+    it("keeps the newer model when an older texture decode finishes last", async () => {
+      const textures = deferred<Map<string, HTMLCanvasElement>>();
+      mockExtractTextures.mockReturnValueOnce(textures.promise);
+      mockParseViviFile.mockImplementation(JSON.parse);
+      const { result } = renderUseModelSession();
+      await act(async () => {
+        const older = result.current.loadModel(new File(['{"name":"old"}'], "old.vivi"));
+        await vi.waitFor(() => expect(mockExtractTextures).toHaveBeenCalledOnce());
+        await result.current.loadModel(new File(['{"name":"new"}'], "new.vivi"));
+        textures.resolve(new Map());
+        await older;
+      });
+      expect(result.current.modelRef.current?.project.name).toBe("new");
+      expect(mockSetModel).toHaveBeenCalledOnce();
+    });
+
+    it("initializes the shared canvas once when loads overlap during renderer creation", async () => {
+      const initialization = deferred<Awaited<ReturnType<typeof mockRendererCreate>>>();
+      const renderer = {
+        setModel: mockSetModel,
+        render: mockRender,
+        resize: vi.fn(),
+        destroy: mockRendererDestroy,
+        pixiApp: { stage: {} },
+      };
+      mockRendererCreate.mockReturnValueOnce(initialization.promise);
+      mockParseViviFile.mockImplementation(JSON.parse);
+      const { result } = renderUseModelSession();
+      await act(async () => {
+        const older = result.current.loadModel(new File(['{"name":"old"}'], "old.vivi"));
+        await vi.waitFor(() => expect(mockRendererCreate).toHaveBeenCalledOnce());
+        const newer = result.current.loadModel(new File(['{"name":"new"}'], "new.vivi"));
+        await vi.waitFor(() => expect(mockExtractTextures).toHaveBeenCalledTimes(2));
+        initialization.resolve(renderer);
+        await Promise.all([older, newer]);
+      });
+      expect(mockRendererCreate).toHaveBeenCalledOnce();
+      expect(mockSetModel).toHaveBeenCalledOnce();
+      expect(result.current.modelRef.current?.project.name).toBe("new");
+    });
+
+    it("destroys a late renderer without publishing state after unmount", async () => {
+      const initialization = deferred<Awaited<ReturnType<typeof mockRendererCreate>>>();
+      const renderer = {
+        setModel: mockSetModel,
+        render: mockRender,
+        resize: vi.fn(),
+        destroy: mockRendererDestroy,
+        pixiApp: { stage: {} },
+      };
+      mockRendererCreate.mockReturnValueOnce(initialization.promise);
+      const { result, unmount } = renderUseModelSession();
+      const session = result.current;
+      let pending!: Promise<void>;
+      await act(async () => {
+        pending = session.loadModel(new File(["{}"], "late.vivi"));
+        await vi.waitFor(() => expect(mockRendererCreate).toHaveBeenCalledOnce());
+      });
+      unmount();
+      initialization.resolve(renderer);
+      await pending;
+      expect(mockRendererDestroy).toHaveBeenCalledOnce();
+      expect(mockSetModel).not.toHaveBeenCalled();
+      expect(session.state.setLoaded).not.toHaveBeenCalled();
+      expect(session.modelRef.current).toBeNull();
+    });
+
+    it("does not let a stale fetch error clear the current loading state", async () => {
+      const olderFetch = deferred<Response>();
+      const newerFetch = deferred<Response>();
+      vi.spyOn(globalThis, "fetch")
+        .mockReturnValueOnce(olderFetch.promise)
+        .mockReturnValueOnce(newerFetch.promise);
+      const { result } = renderUseModelSession();
+      let newer!: Promise<void>;
+      await act(async () => {
+        const older = result.current.loadModel("https://example.com/old.vivi");
+        newer = result.current.loadModel("https://example.com/new.vivi");
+        olderFetch.reject(new Error("old aborted"));
+        await older;
+      });
+      expect(result.current.loading).toBe(true);
+      expect(
+        vi
+          .mocked(result.current.state.setError)
+          .mock.calls.filter(([message]) => message !== null),
+      ).toHaveLength(0);
+      await act(async () => {
+        newerFetch.resolve(new Response("{}"));
+        await newer;
+      });
+      expect(result.current.loading).toBe(false);
     });
   });
 });

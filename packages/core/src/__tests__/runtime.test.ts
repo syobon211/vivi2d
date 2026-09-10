@@ -122,6 +122,35 @@ function createFileDataWithMeshCount(count: number): ViviFileData {
   return fileData;
 }
 
+function createSkinnedFileData(scaleX = 1): ViviFileData {
+  const fileData = createFileData();
+  const mesh = fileData.project.layers[0] as ViviMeshNode;
+  fileData.project.layers.push({
+    id: "runtime-bone",
+    name: "Bone",
+    kind: "bone",
+    children: [],
+    visible: true,
+    opacity: 1,
+    x: 0,
+    y: 0,
+    width: 10,
+    height: 10,
+    blendMode: "normal",
+    expanded: true,
+    bone: { angle: 0, length: 10, scaleX, scaleY: 1 },
+  });
+  fileData.project.skins = {
+    [mesh.id]: {
+      weights: Array.from({ length: mesh.mesh.vertices.length / 2 }, () => [
+        { boneId: "runtime-bone", weight: 1 },
+      ]),
+      bindPoseInverse: { "runtime-bone": [1, 0, 0, 1, 0, 0] },
+    },
+  };
+  return fileData;
+}
+
 function expectRuntimeErrorCode(
   callback: () => unknown,
   expectedCode: ViviRuntimeError["code"],
@@ -137,6 +166,82 @@ function expectRuntimeErrorCode(
 }
 
 describe("ViviRuntime facade", () => {
+  it("rejects derived binary32 overflow during load and parse", () => {
+    for (const scaleX of [1e100, 3e38]) {
+      expectRuntimeErrorCode(
+        () => ViviRuntime.load(createSkinnedFileData(scaleX)),
+        VIVI_RUNTIME_ERROR_CODES.validation,
+      );
+      expectRuntimeErrorCode(
+        () => ViviRuntime.parse(JSON.stringify(createSkinnedFileData(scaleX))),
+        VIVI_RUNTIME_ERROR_CODES.validation,
+      );
+    }
+  });
+
+  it("preserves ordinary skinned geometry", () => {
+    const runtime = ViviRuntime.parse(JSON.stringify(createSkinnedFileData()));
+    try {
+      expect(Array.from(runtime.getRenderList()[0]!.vertices)).toEqual([
+        0, 0, 10, 0, 0, 10,
+      ]);
+    } finally {
+      runtime.dispose();
+    }
+  });
+
+  it("rolls back derived overflow on update and can recover", () => {
+    const data = createSkinnedFileData();
+    data.project.parameterBindings = [
+      {
+        id: "scale-binding",
+        parameterId: "vivi.head.yaw",
+        target: { type: "bone", boneId: "runtime-bone", property: "scaleX" },
+        bindingPoints: [
+          { paramValue: 0, targetValue: 1 },
+          { paramValue: 1, targetValue: 1e100 },
+        ],
+      },
+    ];
+    const runtime = ViviRuntime.load(data);
+    try {
+      const before = runtime.getRenderList();
+      expect(
+        before.every((mesh) => Array.from(mesh.vertices).every(Number.isFinite)),
+      ).toBe(true);
+      runtime.setInput("vivi.head.yaw", 1);
+      expectRuntimeErrorCode(
+        () => runtime.update(0),
+        VIVI_RUNTIME_ERROR_CODES.evaluation,
+      );
+      expect(runtime.getRenderList()).toEqual(before);
+      runtime.setInput("vivi.head.yaw", 0);
+      runtime.update(0);
+      expect(runtime.getRenderList()).toEqual(before);
+    } finally {
+      runtime.dispose();
+    }
+  });
+
+  it("rejects geometry that cannot be represented by runtime mesh buffers", () => {
+    for (const geometry of [
+      { vertices: [0, 0, 1] },
+      { uvs: [0, 0] },
+      { vertices: [1e100, 0, 10, 0, 0, 10] },
+      { uvs: [1e100, 0, 1, 0, 0, 1] },
+      { indices: [0, 1] },
+      { indices: [0, 1, 3] },
+      { indices: [-1, 1, 2] },
+      { indices: [0.5, 1, 2] },
+    ]) {
+      const fileData = createFileData();
+      Object.assign((fileData.project.layers[0] as ViviMeshNode).mesh, geometry);
+      expectRuntimeErrorCode(
+        () => ViviRuntime.load(fileData),
+        VIVI_RUNTIME_ERROR_CODES.validation,
+      );
+    }
+  });
   it("loads a public model and exposes stable runtime snapshots", () => {
     const runtime = ViviRuntime.load(createFileData());
 
@@ -291,6 +396,33 @@ describe("ViviRuntime facade", () => {
       () => ViviRuntime.load(malformed as unknown as ViviFileData),
       VIVI_RUNTIME_ERROR_CODES.validation,
     );
+  });
+
+  it("rejects malformed numeric and structural data before runtime publication", () => {
+    const mutations: Array<(data: ViviFileData) => void> = [
+      (data) => { data.atlases[0]!.width = -16; },
+      (data) => { data.project.width = -64; },
+      (data) => {
+        const mesh = data.project.layers[0] as ViviMeshNode;
+        mesh.mesh.vertices[0] = Number.NaN;
+      },
+      (data) => {
+        const mesh = data.project.layers[0] as ViviMeshNode;
+        mesh.mesh.vertices[0] = "not-a-number" as unknown as number;
+      },
+    ];
+    for (const mutate of mutations) {
+      const data = createFileData();
+      mutate(data);
+      expectRuntimeErrorCode(
+        () => ViviRuntime.load(data),
+        VIVI_RUNTIME_ERROR_CODES.validation,
+      );
+      expectRuntimeErrorCode(
+        () => ViviRuntime.parse(JSON.stringify(data)),
+        VIVI_RUNTIME_ERROR_CODES.validation,
+      );
+    }
   });
 
   it("normalizes hostile direct-load accessors to canonical validation errors", () => {

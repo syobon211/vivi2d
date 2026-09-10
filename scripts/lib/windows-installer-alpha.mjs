@@ -12,6 +12,95 @@ export const MAX_INSTALLED_FOOTPRINT_BYTES = 700 * 1024 * 1024;
 export const WINDOWS_INSTALLER_UNSIGNED_VERIFICATION_SUMMARY =
   "unsigned alpha; no Authenticode signature; protected environment approval not yet recorded";
 
+const PUBLIC_MANUAL_REVIEW_KEYS = [
+  "firstLaunchNetworkPassed",
+  "installPassed",
+  "intentionalRemnants",
+  "reviewedBy",
+  "reviewDate",
+  "status",
+  "uninstallPassed",
+  "windowsVersion",
+];
+const PUBLIC_REMNANT_LABELS = Object.freeze({
+  "editor-user-data": "Editor user data retained.",
+  "editor-cache": "Editor cache retained.",
+  "viewer-user-data": "Viewer user data retained.",
+  "viewer-cache": "Viewer cache retained.",
+});
+
+// This is a closed public-data projection, not free-text secret sanitization.
+export function publicWindowsManualReview(value) {
+  const invalid = () => {
+    throw new Error("Invalid public manual Windows review summary.");
+  };
+  if (!value || typeof value !== "object" || Array.isArray(value)) invalid();
+  if (
+    Object.keys(value).length !== PUBLIC_MANUAL_REVIEW_KEYS.length ||
+    PUBLIC_MANUAL_REVIEW_KEYS.some((key) => !Object.hasOwn(value, key))
+  )
+    invalid();
+  const results = [
+    value.installPassed,
+    value.firstLaunchNetworkPassed,
+    value.uninstallPassed,
+  ];
+  if (results.some((result) => typeof result !== "boolean")) invalid();
+  if (
+    !Array.isArray(value.intentionalRemnants) ||
+    value.intentionalRemnants.length > Object.keys(PUBLIC_REMNANT_LABELS).length ||
+    value.intentionalRemnants.some(
+      (code) => typeof code !== "string" || !Object.hasOwn(PUBLIC_REMNANT_LABELS, code),
+    ) ||
+    new Set(value.intentionalRemnants).size !== value.intentionalRemnants.length
+  )
+    invalid();
+  if (value.status === "pending") {
+    if (
+      results.some(Boolean) ||
+      value.reviewedBy !== "" ||
+      value.reviewDate !== "" ||
+      value.windowsVersion !== "" ||
+      value.intentionalRemnants.length !== 0
+    )
+      invalid();
+  } else if (value.status === "passed") {
+    if (
+      !results.every(Boolean) ||
+      value.reviewedBy !== "owner" ||
+      !["windows-10", "windows-11"].includes(value.windowsVersion) ||
+      typeof value.reviewDate !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(value.reviewDate)
+    )
+      invalid();
+    const date = new Date(`${value.reviewDate}T00:00:00.000Z`);
+    if (
+      !Number.isFinite(date.getTime()) ||
+      date.toISOString().slice(0, 10) !== value.reviewDate
+    )
+      invalid();
+  } else invalid();
+  return {
+    firstLaunchNetworkPassed: value.firstLaunchNetworkPassed,
+    installPassed: value.installPassed,
+    intentionalRemnants: [...value.intentionalRemnants],
+    reviewedBy: value.reviewedBy,
+    reviewDate: value.reviewDate,
+    status: value.status,
+    uninstallPassed: value.uninstallPassed,
+    windowsVersion: value.windowsVersion,
+  };
+}
+
+export function formatIntentionalRemnants(value) {
+  const review = publicWindowsManualReview(value);
+  if (review.status === "pending") return "- Manual review pending.";
+  if (review.intentionalRemnants.length === 0) return "- None recorded.";
+  return review.intentionalRemnants
+    .map((code) => `- ${PUBLIC_REMNANT_LABELS[code]}`)
+    .join("\n");
+}
+
 export const WINDOWS_INSTALLER_REQUIRED_GATE_TRANSCRIPTS = Object.freeze([
   "check-quality",
   "check-quality-e2e-workflow-record",

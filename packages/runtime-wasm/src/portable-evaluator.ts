@@ -30,6 +30,7 @@ import {
   type ViviFileData,
   type ViviRuntimeErrorCode,
 } from "@vivi2d/core";
+import { parseViviFile } from "@vivi2d/model/project-parser";
 import {
   applyRuntimeBoneOverridesToLayers,
   evaluateRuntimeBindings,
@@ -275,6 +276,21 @@ function validateRuntimeLimits(fileData: ViviFileData, limits: RuntimeLimits): v
   assertLimit("bindingPoints", bindingPointCount, limits.maxBindingPoints);
 
   for (const mesh of meshes) {
+    const { vertices, uvs, indices } = mesh.mesh;
+    const vertexCount = vertices.length / 2;
+    if (
+      vertices.length % 2 !== 0 ||
+      uvs.length !== vertices.length ||
+      indices.length % 3 !== 0 ||
+      vertices.some((value) => !Number.isFinite(Math.fround(value))) ||
+      uvs.some((value) => !Number.isFinite(Math.fround(value))) ||
+      indices.some((index) => !Number.isInteger(index) || index < 0 || index >= vertexCount)
+    ) {
+      throw runtimeError(
+        VIVI_RUNTIME_ERROR_CODES.validation,
+        `invalid runtime mesh geometry: ${mesh.id}`,
+      );
+    }
     assertLimit(
       `vertices:${mesh.id}`,
       mesh.mesh.vertices.length / 2,
@@ -393,7 +409,9 @@ function normalizePortablePayload(
         `runtime payload exceeds ${limits.maxPayloadBytes} bytes`,
       );
     }
-    const clonedFileData = JSON.parse(payloadJson) as ViviFileData;
+    const clonedFileData = parseViviFile(payloadJson, {
+      profile: PUBLIC_PROJECT_PROFILE,
+    });
     validateRuntimeLimits(clonedFileData, limits);
     assertPublicViviFileProfile(clonedFileData);
     validateRuntimeTextureBindings(clonedFileData);
@@ -594,7 +612,17 @@ export class PortableRuntimeModel {
     fileData: ViviFileData,
     options?: RuntimeModelOptions,
   ): PortableRuntimeModel {
-    return new PortableRuntimeModel(normalizePortablePayload(fileData, options), options);
+    const payload = normalizePortablePayload(fileData, options);
+    try {
+      return new PortableRuntimeModel(payload, options);
+    } catch (error) {
+      if (error instanceof ViviRuntimeError) throw error;
+      throw runtimeError(
+        VIVI_RUNTIME_ERROR_CODES.validation,
+        "invalid runtime model data",
+        error,
+      );
+    }
   }
 
   static fromJSON(json: string, options?: RuntimeModelOptions): PortableRuntimeModel {

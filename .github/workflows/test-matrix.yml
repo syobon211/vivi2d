@@ -1,17 +1,36 @@
 # Playwright matrix for manual and CI-driven Electron checks.
 #
-# This workflow is intentionally `workflow_dispatch` only. Push and pull request
-# automation live in other workflows so ownership and runtime cost stay clear.
+# Pull requests run the Ubuntu smoke, dialog, integration, and visual-capture projects
+# when editor/E2E inputs change. Manual dispatch retains the wider matrix.
+# "all" covers the choices below; workflow-auto-setup remains a release-only
+# recording gate via check:quality:e2e-workflow-record, not part of this matrix.
 #
 # Expected usage:
 #   - smoke: quick regression pass
 #   - full / visual: wider editor and screenshot coverage
 #   - perf: scheduled or manual performance monitoring
 #
-# Electron 41 requires xvfb on Linux. Windows and macOS run without it.
+# Electron runs under xvfb on Linux. Windows and macOS run without it.
 name: Test Matrix
 
 on:
+  pull_request:
+    paths:
+      - ".github/workflows/test-matrix.yml"
+      - "e2e/**"
+      - "electron/**"
+      - "integrations/comfyui/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "packages/**"
+      - "scripts/check-e2e-project-coverage.mjs"
+      - "scripts/run-e2e-projects.mjs"
+      - "src/**"
+      - "tsconfig.json"
+      - "tsconfig.packages.json"
+      - "vite.aliases.ts"
+      - "vite.config.ts"
   workflow_dispatch:
     inputs:
       project:
@@ -37,9 +56,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: test-matrix-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit:
     name: Unit + Coverage
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,6 +77,9 @@ jobs:
           apps/vivi2d-com/scripts/build.mjs
           e2e/playwright.config.ts
           electron/ipc-contract.cjs
+          electron/atomic-write.cjs
+          packages/renderer-pixi/src/app-lifecycle.ts
+          packages/renderer-pixi/src/__tests__/app-lifecycle.test.ts
           electron/main.cjs
           electron/security.cjs
           electron/window.cjs
@@ -69,6 +96,7 @@ jobs:
           scripts/check-architecture-boundaries.mjs
           scripts/check-core-model-current-fixtures.mjs
           scripts/check-direct-model-mutations.mjs
+          scripts/check-direct-model-mutations.test.mjs
           scripts/check-docs-architecture.mjs
           scripts/check-docs-public-surface.mjs
           scripts/check-security-supported-versions.mjs
@@ -97,6 +125,7 @@ jobs:
           scripts/check-license-policy.mjs
           scripts/check-native-artifact-policy.mjs
           scripts/check-oss-readiness.mjs
+          scripts/check-web-npm-alpha-release.mjs
           scripts/check-github-release-alpha.mjs
           scripts/generate-github-release-alpha-review-packet.mjs
           scripts/prepare-github-release-assets.mjs
@@ -106,6 +135,18 @@ jobs:
           scripts/prepare-windows-installer-assets.mjs
           scripts/verify-windows-installer-assets.mjs
           scripts/lib/windows-installer-alpha.mjs
+          scripts/lib/release-node-cache-policy.mjs
+          scripts/check-npm-token-hygiene.mjs
+          scripts/check-environment-protection.mjs
+          scripts/check-npm-cli-version.mjs
+          scripts/check-release-input-version.mjs
+          scripts/check-release-tag.mjs
+          scripts/install-pinned-gitleaks.mjs
+          scripts/run-release-step.mjs
+          scripts/write-pack-output.mjs
+          scripts/record-web-npm-alpha-artifacts.mjs
+          scripts/verify-web-npm-alpha-release-record.mjs
+          scripts/verify-web-npm-alpha-publish.mjs
           scripts/generate-schema-validators.mjs
           scripts/check-model-jsc-portability.mjs
           scripts/check-pack-contents.mjs
@@ -113,8 +154,12 @@ jobs:
           scripts/check-web-sdk-unlock.mjs
           scripts/check-publication-history.mjs
           scripts/check-hosted-release-surfaces.mjs
+          scripts/lib/environment-protection-live.mjs
+          scripts/check-environment-protection.test.mjs
+          scripts/check-env-ignore.test.mjs
           scripts/create-source-review-archive.mjs
           scripts/check-quality-gate-drift.mjs
+          scripts/check-quality-gate-drift.test.mjs
           scripts/check-release-surface.mjs
           scripts/check-release-gates.test.mjs
           scripts/check-runtime-c-abi-link.mjs
@@ -124,6 +169,8 @@ jobs:
           scripts/check-ui-module-budget.mjs
           scripts/check-user-docs.mjs
           scripts/check-secrets.mjs
+          scripts/check-secret-redaction.test.mjs
+          scripts/check-tooling-hardening.test.mjs
           scripts/check-security-patterns.mjs
           scripts/check-security-patterns.test.mjs
           scripts/generate-third-party-notices.mjs
@@ -134,6 +181,7 @@ jobs:
           scripts/lib/content-safety-patterns.mjs
           scripts/lib/repo.test.mjs
           scripts/lib/repo.mjs
+          scripts/lib/direct-model-mutation-scan.mjs
           scripts/run-quality-gates.mjs
       - run: npx tsc --noEmit
       - run: npm run check:packages-types
@@ -150,22 +198,20 @@ jobs:
       - run: npm run check:publication-history
       - run: npm run notices:check
       - run: npm run audit:prod
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: coverage-${{ github.run_id }}
-          path: coverage/
-          retention-days: 7
 
   e2e:
     name: E2E (${{ matrix.project }} / ${{ matrix.os }})
     needs: unit
+    if: >-
+      always() &&
+      (needs.unit.result == 'success' || needs.unit.result == 'skipped')
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        project: ${{ github.event.inputs.project == 'all' && fromJSON('["smoke","full","perf","visual"]') || fromJSON(format('["{0}"]', github.event.inputs.project)) }}
-        os: ${{ github.event.inputs.os == 'triple' && fromJSON('["ubuntu-latest","windows-latest","macos-latest"]') || fromJSON('["ubuntu-latest"]') }}
+        project: ${{ github.event_name == 'pull_request' && fromJSON('["smoke","full-dialogs","full-integrations","visual"]') || (github.event.inputs.project == 'all' && fromJSON('["smoke","full-a11y","full-rig","full-editor","full-io","full-animation","full-dialogs","full-integrations","full-misc","perf","visual"]') || (github.event.inputs.project == 'full' && fromJSON('["full-a11y","full-rig","full-editor","full-io","full-animation","full-dialogs","full-integrations","full-misc"]') || fromJSON(format('["{0}"]', github.event.inputs.project)))) }}
+        os: ${{ github.event_name == 'pull_request' && fromJSON('["ubuntu-latest"]') || (github.event.inputs.os == 'triple' && fromJSON('["ubuntu-latest","windows-latest","macos-latest"]') || fromJSON('["ubuntu-latest"]')) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -173,24 +219,21 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run check:e2e-project-coverage
       - run: npx playwright install --with-deps chromium
       - name: Build for E2E
         run: npm run build:e2e
       - run: npm run check:release-surface
       - name: Run Playwright (${{ matrix.project }})
         # Linux Electron runs under xvfb so Chromium has a display server.
+        env:
+          # PR visual runs collect review artifacts. Pixel baselines remain an
+          # explicit, separately reviewed opt-in.
+          VIVI2D_COMPARE_VISUAL_BASELINES: "0"
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run --auto-servernum -- npx playwright test --config=e2e/playwright.config.ts --project=${{ matrix.project }}
+            xvfb-run --auto-servernum -- node scripts/run-e2e-projects.mjs --no-build --project=${{ matrix.project }}
           else
-            npx playwright test --config=e2e/playwright.config.ts --project=${{ matrix.project }}
+            node scripts/run-e2e-projects.mjs --no-build --project=${{ matrix.project }}
           fi
         shell: bash
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: playwright-report-${{ matrix.project }}-${{ matrix.os }}-${{ github.run_id }}
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 14

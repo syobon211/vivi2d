@@ -46,7 +46,7 @@ Quality gate tiers:
 - Pull request required gate: `npm run check:quality` plus any workflow-specific
   checks named in the PR template.
 - Release candidate gate: `npm run check:quality:e2e-workflow-record`,
-  `gitleaks detect --source . --no-git`, history secret scan, SBOM/notices,
+  `gitleaks detect --source . --no-git --redact=100`, history secret scan, SBOM/notices,
   audits, pack-content checks, and public-release checklist review.
 - Public publication gate: release candidate gate plus trusted publishing,
   tarball digest recording, provenance/SBOM attachment, and maintainer

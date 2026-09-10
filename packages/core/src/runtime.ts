@@ -2,6 +2,7 @@ import { hitTestColliders } from "./collider";
 import { getDrawOrder } from "./color-utils";
 import { flattenLayers } from "./layer-utils";
 import { mergeParameterDefaults } from "./parameter-utils";
+import { parseViviFile } from "./project-parser";
 import { PublicViviModel, type PublicViviModelOptions } from "./public-model";
 import {
   assertPublicRawViviFileProfile,
@@ -304,6 +305,21 @@ function validateRuntimeLimits(
   assertLimit("bindingPoints", bindingPointCount, limits.maxBindingPoints);
 
   for (const mesh of meshes) {
+    const { vertices, uvs, indices } = mesh.mesh;
+    const vertexCount = vertices.length / 2;
+    if (
+      vertices.length % 2 !== 0 ||
+      uvs.length !== vertices.length ||
+      indices.length % 3 !== 0 ||
+      vertices.some((value) => !Number.isFinite(Math.fround(value))) ||
+      uvs.some((value) => !Number.isFinite(Math.fround(value))) ||
+      indices.some((index) => !Number.isInteger(index) || index < 0 || index >= vertexCount)
+    ) {
+      throw runtimeError(
+        VIVI_RUNTIME_ERROR_CODES.validation,
+        `invalid runtime mesh geometry: ${mesh.id}`,
+      );
+    }
     assertLimit(
       `vertices:${mesh.id}`,
       mesh.mesh.vertices.length / 2,
@@ -475,7 +491,9 @@ export class RuntimeModel {
           `runtime payload exceeds ${maxPayloadBytes} bytes`,
         );
       }
-      const clonedFileData = JSON.parse(payloadJson) as ViviFileData;
+      const clonedFileData = parseViviFile(payloadJson, {
+        profile: PUBLIC_PROJECT_PROFILE,
+      });
       validateRuntimeLimits(clonedFileData, limits);
       assertPublicViviFileProfile(clonedFileData);
       validateRuntimeTextureBindings(clonedFileData);

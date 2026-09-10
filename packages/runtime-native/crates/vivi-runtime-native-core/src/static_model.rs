@@ -436,6 +436,7 @@ fn f32_field(object: &Map<String, Value>, key: &str, path: &str) -> Result<f32, 
         .and_then(Value::as_f64)
         .filter(|value| value.is_finite())
         .map(|value| value as f32)
+        .filter(|value| value.is_finite())
         .ok_or_else(|| validation_error(format!("{path} must be finite")))
 }
 
@@ -452,6 +453,7 @@ fn f32_array_field(
                 .as_f64()
                 .filter(|number| number.is_finite())
                 .map(|number| number as f32)
+                .filter(|number| number.is_finite())
                 .ok_or_else(|| validation_error(format!("{path}[{index}] must be finite")))
         })
         .collect()
@@ -504,7 +506,9 @@ fn optional_f32_field(
     value
         .as_f64()
         .filter(|number| number.is_finite())
-        .map(|number| Some(number as f32))
+        .map(|number| number as f32)
+        .filter(|number| number.is_finite())
+        .map(Some)
         .ok_or_else(|| validation_error(format!("{path} must be finite")))
 }
 
@@ -608,6 +612,49 @@ mod tests {
 
         assert_eq!(model.meshes()[0].x, 0.0);
         assert_eq!(model.meshes()[0].y, 0.0);
+    }
+
+    #[test]
+    fn rejects_unrepresentable_static_output_scalars() {
+        for value in [1e100, -1e100] {
+            for field in ["x", "y", "opacity"] {
+                let mut layer = base_layer();
+                layer[field] = json!(value);
+                let payload = runtime_payload(runtime_payload_value(layer));
+                let Err(error) = StaticModel::from_payload(&payload) else {
+                    panic!("expected finite-output static load rejection");
+                };
+                assert_eq!(error.status(), status::VALIDATION);
+            }
+            for field in ["multiplyColor", "screenColor"] {
+                for channel in ["r", "g", "b", "a"] {
+                    let mut layer = base_layer();
+                    layer[field] = json!({"r": 1, "g": 1, "b": 1, "a": 1});
+                    layer[field][channel] = json!(value);
+                    let payload = runtime_payload(runtime_payload_value(layer));
+                    let Err(error) = StaticModel::from_payload(&payload) else {
+                        panic!("expected finite-output static color rejection");
+                    };
+                    assert_eq!(error.status(), status::VALIDATION);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn preserves_representable_output_and_optional_alpha_defaults() {
+        let payload = runtime_payload(static_payload_with_layer(json!({
+            "x": f32::MAX as f64,
+            "y": -(f32::MAX as f64),
+            "multiplyColor": {"r": 1, "g": 0.5, "b": 0.25}
+        })));
+        let model = StaticModel::from_payload(&payload).unwrap();
+        assert_eq!(model.meshes()[0].x, f32::MAX);
+        assert_eq!(model.meshes()[0].y, -f32::MAX);
+        assert_eq!(
+            model.meshes()[0].multiply_color,
+            Some([1.0, 0.5, 0.25, 1.0])
+        );
     }
 
     #[test]

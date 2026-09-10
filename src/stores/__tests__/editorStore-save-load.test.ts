@@ -1,10 +1,12 @@
 import type { ViviFileData } from "@vivi2d/core/types";
+import * as vividFormat from "@vivi2d/core/vivid-format";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { clearTextures, setTexture } from "@/lib/texture-store";
+import * as projectSerializer from "@/lib/project-serializer";
+import { clearTextures, getTexture, setTexture } from "@/lib/texture-store";
 import { useEditorStore } from "@/stores/editorStore";
 import * as projectIO from "@/stores/projectIO";
 import { useSelectionStore } from "@/stores/selectionStore";
-import { createViviMesh, createProject } from "@/test/fixtures";
+import { createProject, createViviMesh } from "@/test/fixtures";
 import { mockCanvasContext, mockImageLoad } from "@/test/mocks";
 import {
   TEST_BAD_VIVI_PATH,
@@ -31,6 +33,43 @@ describe("editorStore: saveProject / loadProject", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     clearTextures();
+  });
+
+  it.each([
+    "vivi",
+    "vivid",
+  ])("keeps the current project and textures after %s decode failure", async (format) => {
+    const mesh = createViviMesh();
+    const project = createProject({ layers: [mesh] });
+    const texture = document.createElement("canvas");
+    setTexture(mesh.id, texture);
+    useEditorStore.setState({ project, projectVersion: 1 });
+    const currentProject = useEditorStore.getState().project;
+    const json = JSON.stringify({ version: 1, project, atlases: [] });
+    vi.spyOn(projectSerializer, "deserializeProject").mockRejectedValueOnce(
+      new Error("Failed to load atlas image"),
+    );
+    if (format === "vivi") {
+      vi.mocked(window.electronAPI.openViviFile).mockResolvedValueOnce({
+        data: json,
+        filePath: TEST_BAD_VIVI_PATH,
+      });
+    } else {
+      vi.spyOn(vividFormat, "decodeVivid").mockResolvedValueOnce(json);
+      vi.mocked(window.electronAPI.openVividFile).mockResolvedValueOnce({
+        binary: new ArrayBuffer(0),
+        filePath: TEST_BAD_VIVI_PATH,
+      });
+    }
+
+    const result =
+      format === "vivi"
+        ? await projectIO.loadProject()
+        : await projectIO.importVividProject("synthetic-test-password");
+
+    expect(result).toBe(false);
+    expect(useEditorStore.getState().project).toBe(currentProject);
+    expect(getTexture(mesh.id)).toBe(texture);
   });
 
   // ============================================================

@@ -55,8 +55,8 @@ class ViewerApiAssetBroker {
     }
     try {
       validateInlinePropImage(bytes, mimeType);
-    } catch (error) {
-      this.logger.warn?.("[viewer-api-assets] rejected file-picker asset", error);
+    } catch {
+      this.logger.warn?.("[viewer-api-assets] rejected file-picker asset");
       return brokerError("invalid_request", {
         field: "source",
         reason: "format",

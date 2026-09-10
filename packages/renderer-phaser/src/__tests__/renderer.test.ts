@@ -133,6 +133,22 @@ describe("ViviPhaserRenderer", () => {
 
   // --- setModel() ---
   describe("setModel()", () => {
+    it("keeps textures isolated between renderers sharing one scene", () => {
+      const first = new ViviPhaserRenderer({ scene: mockScene });
+      const second = new ViviPhaserRenderer({ scene: mockScene });
+      const textures = new Map([["mesh-1", document.createElement("canvas")]]);
+      first.setModel(createMockModel(), textures);
+      second.setModel(createMockModel(), textures);
+
+      const firstKey = mockScene.textures.addCanvas.mock.calls[0]![0];
+      const secondKey = mockScene.textures.addCanvas.mock.calls[1]![0];
+      expect(firstKey).not.toBe(secondKey);
+      first.destroy();
+      expect(mockScene.textures.exists(secondKey)).toBe(true);
+      second.destroy();
+      expect(mockScene.textures.exists(secondKey)).toBe(false);
+    });
+
     it("テクスチャが登録されメッシュが構築される", () => {
       const renderer = new ViviPhaserRenderer({ scene: mockScene });
       const model = createMockModel();

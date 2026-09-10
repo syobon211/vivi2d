@@ -22,6 +22,7 @@ const PHYSICS_FORCE_PROPAGATION: f64 = 0.5;
 const PHYSICS_MAX_ANGLE: f64 = std::f64::consts::PI * 2.0;
 const COORD_STRIDE: usize = 2;
 const TRIANGLE_VERTS: usize = 3;
+const MAX_CCD_ITERATIONS: usize = 1024;
 
 /// Runtime hit-test result.
 #[derive(Clone, Debug, PartialEq)]
@@ -268,7 +269,7 @@ impl RuntimeModel {
             self.run_physics(delta_seconds)?;
         }
         self.run_ik();
-        self.compute_meshes();
+        self.compute_meshes()?;
         self.state.prev_parameters = self.parameter_values();
         Ok(())
     }
@@ -490,7 +491,7 @@ impl RuntimeModel {
         next
     }
 
-    fn compute_meshes(&mut self) {
+    fn compute_meshes(&mut self) -> Result<(), RuntimeError> {
         let world_transforms = self.compute_world_transforms();
         let mut meshes = Vec::new();
         for layer in &self.scene.layers {
@@ -499,9 +500,9 @@ impl RuntimeModel {
             };
             let is_skinned = self.scene.skins.contains_key(&layer.id);
             let vertices = self.scene.skins.get(&layer.id).map_or_else(
-                || mesh.vertices.clone(),
+                || Ok(mesh.vertices.clone()),
                 |skin| compute_skinned_vertices(&mesh.vertices, skin, &world_transforms),
-            );
+            )?;
             let culled = layer.culling && layer.effective_visible && is_polygon_flipped(&vertices);
             meshes.push(MeshSnapshot {
                 id: layer.id.clone(),
@@ -509,9 +510,17 @@ impl RuntimeModel {
                 vertices,
                 uvs: mesh.uvs.clone(),
                 indices: mesh.indices.clone(),
-                x: if is_skinned { 0.0 } else { layer.x as f32 },
-                y: if is_skinned { 0.0 } else { layer.y as f32 },
-                opacity: layer.opacity as f32,
+                x: if is_skinned {
+                    0.0
+                } else {
+                    checked_f32(layer.x)?
+                },
+                y: if is_skinned {
+                    0.0
+                } else {
+                    checked_f32(layer.y)?
+                },
+                opacity: checked_f32(layer.opacity)?,
                 visible: layer.effective_visible && !culled,
                 culled,
                 blend_mode: layer.blend_mode,
@@ -528,6 +537,7 @@ impl RuntimeModel {
         {
             self.state.render_meshes = render_meshes;
         }
+        Ok(())
     }
 
     fn compute_world_transforms(&self) -> HashMap<String, Affine2D> {
@@ -1440,7 +1450,7 @@ fn parse_ik_controllers(
                 "maxIterations",
                 &format!("{path}.maxIterations"),
             )?
-            .and_then(|value| usize::try_from(value).ok())
+            .map(|value| value.min(MAX_CCD_ITERATIONS as u64) as usize)
             .unwrap_or(10),
         });
     }
@@ -1672,7 +1682,7 @@ fn compute_skinned_vertices(
     rest_vertices: &[f32],
     skin: &SkinData,
     world_transforms: &HashMap<String, Affine2D>,
-) -> Vec<f32> {
+) -> Result<Vec<f32>, RuntimeError> {
     let vertex_count = rest_vertices.len() / 2;
     let mut result = vec![0.0_f32; rest_vertices.len()];
     for vertex_index in 0..vertex_count {
@@ -1710,10 +1720,12 @@ fn compute_skinned_vertices(
             sum_x += rest_x * rest_weight;
             sum_y += rest_y * rest_weight;
         }
-        result[vertex_index * 2] = sum_x as f32;
-        result[vertex_index * 2 + 1] = sum_y as f32;
+        let x = checked_f32(sum_x)?;
+        let y = checked_f32(sum_y)?;
+        result[vertex_index * 2] = x;
+        result[vertex_index * 2 + 1] = y;
     }
-    result
+    Ok(result)
 }
 
 fn solve_ik_controller(
@@ -1831,7 +1843,7 @@ fn solve_ccd_ik(
     if angles.is_empty() {
         return HashMap::new();
     }
-    for _ in 0..controller.max_iterations {
+    for _ in 0..controller.max_iterations.min(MAX_CCD_ITERATIONS) {
         for index in (0..angles.len()).rev() {
             let (end_x, end_y) = ccd_end_effector(&positions, &angles, &lengths);
             let to_end = (end_y - positions[index].1).atan2(end_x - positions[index].0);
@@ -2319,6 +2331,7 @@ fn f32_array_field(
                 .as_f64()
                 .filter(|number| number.is_finite())
                 .map(|number| number as f32)
+                .filter(|number| number.is_finite())
                 .ok_or_else(|| validation_error(format!("{path}[{index}] must be finite")))
         })
         .collect()
@@ -2354,6 +2367,16 @@ fn u32_array_field(
         .collect()
 }
 
+fn checked_f32(value: f64) -> Result<f32, RuntimeError> {
+    let narrowed = value as f32;
+    if !narrowed.is_finite() {
+        return Err(validation_error(
+            "runtime output must be representable as finite f32",
+        ));
+    }
+    Ok(narrowed)
+}
+
 fn color_field(
     object: &Map<String, Value>,
     key: &str,
@@ -2366,10 +2389,10 @@ fn color_field(
         .as_object()
         .ok_or_else(|| validation_error(format!("{path} must be an object")))?;
     Ok(Some([
-        f64_field(color, "r", &format!("{path}.r"))? as f32,
-        f64_field(color, "g", &format!("{path}.g"))? as f32,
-        f64_field(color, "b", &format!("{path}.b"))? as f32,
-        optional_f64_field(color, "a", &format!("{path}.a"))?.unwrap_or(1.0) as f32,
+        checked_f32(f64_field(color, "r", &format!("{path}.r"))?)?,
+        checked_f32(f64_field(color, "g", &format!("{path}.g"))?)?,
+        checked_f32(f64_field(color, "b", &format!("{path}.b"))?)?,
+        checked_f32(optional_f64_field(color, "a", &format!("{path}.a"))?.unwrap_or(1.0))?,
     ]))
 }
 
@@ -2435,6 +2458,124 @@ mod tests {
 
     fn model_from_fixture(name: &str) -> RuntimeModel {
         model_from_file_data(fixture_file_data(name)).unwrap()
+    }
+
+    fn output_finite_fixture() -> Value {
+        let mut file_data = fixture_file_data("binding-skinning");
+        file_data["project"]["layers"][1]["mesh"]["vertices"] =
+            serde_json::json!([0, 0, 10, 0, 0, 10]);
+        file_data
+    }
+
+    fn assert_output_load_validation(file_data: Value) {
+        let Err(error) = model_from_file_data(file_data.clone()) else {
+            panic!("expected finite-output load rejection");
+        };
+        assert_eq!(error.status(), status::VALIDATION);
+        #[cfg(feature = "render-v02")]
+        {
+            let Err(error) = model_from_file_data_v02(file_data) else {
+                panic!("expected finite-output V2 load rejection");
+            };
+            assert_eq!(error.status(), status::VALIDATION);
+        }
+    }
+
+    #[test]
+    fn rejects_unrepresentable_derived_vertices_at_initial_load() {
+        for axis in ["scaleX", "scaleY"] {
+            for scale in [1e100, -1e100, 3e38, -3e38] {
+                let mut file_data = output_finite_fixture();
+                file_data["project"]["layers"][0]["bone"][axis] = serde_json::json!(scale);
+                assert_output_load_validation(file_data);
+            }
+        }
+    }
+
+    fn assert_output_update_rollback(mut model: RuntimeModel) {
+        let before_meshes = model.meshes().to_vec();
+        #[cfg(feature = "render-v02")]
+        let before_render_meshes = model.render_meshes().to_vec();
+        model.set_input("vivi.bone.rotate", 1.0).unwrap();
+
+        let error = model.update(0.0).unwrap_err();
+
+        assert_eq!(error.status(), status::EVALUATION);
+        assert_eq!(model.get_input("vivi.bone.rotate").unwrap(), 1.0);
+        assert_eq!(model.meshes(), before_meshes.as_slice());
+        assert!(
+            model
+                .meshes()
+                .iter()
+                .flat_map(|mesh| &mesh.vertices)
+                .all(|value| value.is_finite())
+        );
+        #[cfg(feature = "render-v02")]
+        assert_eq!(model.render_meshes(), before_render_meshes.as_slice());
+
+        model.set_input("vivi.bone.rotate", 0.0).unwrap();
+        model.update(0.0).unwrap();
+        assert_eq!(model.get_input("vivi.bone.rotate").unwrap(), 0.0);
+        assert_eq!(model.meshes(), before_meshes.as_slice());
+        #[cfg(feature = "render-v02")]
+        assert_eq!(model.render_meshes(), before_render_meshes.as_slice());
+    }
+
+    #[test]
+    fn unrepresentable_output_update_rolls_back_and_recovers() {
+        for scale in [1e100, 3e38] {
+            let mut file_data = output_finite_fixture();
+            let binding = &mut file_data["project"]["parameterBindings"][0];
+            binding["target"]["property"] = serde_json::json!("scaleX");
+            binding["bindingPoints"] = serde_json::json!([
+                {"paramValue": 0, "targetValue": 1},
+                {"paramValue": 1, "targetValue": scale}
+            ]);
+            assert_output_update_rollback(model_from_file_data(file_data.clone()).unwrap());
+            #[cfg(feature = "render-v02")]
+            assert_output_update_rollback(model_from_file_data_v02(file_data).unwrap());
+        }
+    }
+
+    #[test]
+    fn rejects_unrepresentable_runtime_output_scalars() {
+        for field in ["x", "y", "opacity"] {
+            let mut file_data = output_finite_fixture();
+            file_data["project"]["skins"] = serde_json::json!({});
+            file_data["project"]["layers"][1][field] = serde_json::json!(1e100);
+            assert_output_load_validation(file_data);
+        }
+        for field in ["multiplyColor", "screenColor"] {
+            for channel in ["r", "g", "b", "a"] {
+                let mut file_data = output_finite_fixture();
+                let color = &mut file_data["project"]["layers"][1][field];
+                *color = serde_json::json!({"r": 1, "g": 1, "b": 1, "a": 1});
+                color[channel] = serde_json::json!(1e100);
+                assert_output_load_validation(file_data);
+            }
+        }
+    }
+
+    #[test]
+    fn rejects_unrepresentable_dynamic_color_channels() {
+        for channel in ["r", "g", "b", "a"] {
+            let mut value = serde_json::json!({"color": {"r": 1, "g": 1, "b": 1, "a": 1}});
+            value["color"][channel] = serde_json::json!(1e100);
+            let error = color_field(value.as_object().unwrap(), "color", "color").unwrap_err();
+            assert_eq!(error.status(), status::VALIDATION);
+        }
+    }
+
+    #[test]
+    fn legacy_ik_iteration_budget_is_bounded_before_usize_conversion() {
+        let mut file_data = fixture_file_data("ik-two-bone");
+        file_data["project"]["ikControllers"][0]["maxIterations"] = serde_json::json!(u64::MAX);
+        let controllers = parse_ik_controllers(
+            file_data["project"].as_object().unwrap(),
+            RuntimeLimits::default(),
+        )
+        .unwrap();
+        assert_eq!(controllers[0].max_iterations, 1024);
     }
 
     fn model_error_from_file_data(file_data: Value) -> RuntimeError {

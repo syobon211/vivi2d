@@ -2,6 +2,7 @@ const { dialog } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
 const { assertAllowedPath } = require("../security.cjs");
+const { writeFileAtomically } = require("../atomic-write.cjs");
 const { MAX_SAVE_BINARY_BYTES, MAX_SAVE_TEXT_BYTES } = require("../ipc-contract.cjs");
 
 const MAX_VIVI_TEXT_FILE_BYTES = 128 * 1024 * 1024;
@@ -113,6 +114,12 @@ function binaryByteLength(value) {
   if (value instanceof ArrayBuffer) return value.byteLength;
   if (ArrayBuffer.isView(value)) return value.byteLength;
   return 0;
+}
+
+function binaryBuffer(value) {
+  return value instanceof ArrayBuffer
+    ? Buffer.from(value)
+    : Buffer.from(value.buffer, value.byteOffset, value.byteLength);
 }
 
 function basenameFromAnySeparator(filePath) {
@@ -276,12 +283,12 @@ function register({ handle, getMainWindow, allowlists }) {
       if (binaryByteLength(binary) > MAX_SAVE_BINARY_BYTES) {
         throw new Error("Project binary payload is too large.");
       }
-      fs.writeFileSync(targetPath, Buffer.from(binary));
+      writeFileAtomically(targetPath, binaryBuffer(binary));
     } else {
       if (Buffer.byteLength(data ?? "", "utf8") > MAX_SAVE_TEXT_BYTES) {
         throw new Error("Project text payload is too large.");
       }
-      fs.writeFileSync(targetPath, data, "utf-8");
+      writeFileAtomically(targetPath, data);
     }
     const resolved = path.resolve(targetPath);
     allowlists.saved.add(resolved);
@@ -305,7 +312,7 @@ function register({ handle, getMainWindow, allowlists }) {
     });
     if (result.canceled || !result.filePath) return null;
 
-    fs.writeFileSync(result.filePath, Buffer.from(binary));
+    writeFileAtomically(result.filePath, binaryBuffer(binary));
     const resolved = path.resolve(result.filePath);
     allowlists.saved.add(resolved);
     return { filePath: resolved };

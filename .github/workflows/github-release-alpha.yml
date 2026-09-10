@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   validate-and-package-github-release:
+    environment: desktop-installer-alpha
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -35,7 +36,7 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 22.14.0
-          cache: npm
+          package-manager-cache: false
       - name: Verify release tag before repository scripts run
         shell: bash
         run: |
@@ -47,6 +48,10 @@ jobs:
           test "$(git rev-list -n 1 "$RELEASE_REF")" = "$GITHUB_SHA"
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$(git rev-list -n 1 "$RELEASE_REF")" = "$(git rev-parse HEAD)"
+      - name: Verify live release environment before build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/check-environment-protection.mjs --live --environment desktop-installer-alpha
       - run: npm ci
       - run: node scripts/run-release-step.mjs --name playwright-install-browsers -- npx playwright install --with-deps chromium firefox webkit
       - run: node scripts/run-release-step.mjs --name rust-wasm-target -- rustup target add wasm32-unknown-unknown
@@ -68,8 +73,8 @@ jobs:
       - run: node scripts/run-release-step.mjs --name check-viewer-mediapipe-assets -- npm run check:viewer-mediapipe-assets
       - run: node scripts/install-pinned-gitleaks.mjs --manifest scripts/release-tool-versions.json
       - run: node scripts/run-release-step.mjs --name check-history-secrets -- npm run check:history-secrets
-      - run: node scripts/run-release-step.mjs --name gitleaks-worktree -- gitleaks detect --source . --no-git
-      - run: node scripts/run-release-step.mjs --name gitleaks-history -- gitleaks git --log-opts="--all" .
+      - run: node scripts/run-release-step.mjs --name gitleaks-worktree -- gitleaks detect --source . --no-git --redact=100
+      - run: node scripts/run-release-step.mjs --name gitleaks-history -- gitleaks git --log-opts="--all" . --redact=100
       - run: node scripts/run-release-step.mjs --name sbom-generate -- npm run sbom:generate
       - run: node scripts/run-release-step.mjs --name archive-source-review -- npm run archive:source-review
       - run: npm run release:github:prepare -- --version "$VERSION" --tag "$RELEASE_REF"

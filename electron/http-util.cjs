@@ -2,6 +2,8 @@
 //
 // Responses are capped while streaming so untrusted local tools cannot force the
 // Electron main process to buffer unbounded bodies before validation.
+// Positive timeouts bound one HTTP request through response-body completion,
+// in addition to socket inactivity; they are not whole-workflow deadlines.
 const http = require("node:http");
 const https = require("node:https");
 
@@ -11,39 +13,56 @@ function httpGet(url, options = {}) {
   return new Promise((resolve, reject) => {
     const mod = url.startsWith("https") ? https : http;
     const maxBytes = options.maxBytes ?? DEFAULT_MAX_RESPONSE_BYTES;
-    const req = mod.get(url, { timeout: options.timeout || 10000 }, (res) => {
+    const timeoutMs = options.timeout || 10000;
+    let timer;
+    let settled = false;
+    const fail = (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    };
+    const req = mod.get(url, { timeout: timeoutMs }, (res) => {
       const chunks = [];
       let total = 0;
-      let rejected = false;
+      const rejectIncompleteResponse = () => {
+        fail(new Error("HTTP response body was interrupted."));
+      };
+      res.once("aborted", rejectIncompleteResponse);
+      res.once("error", rejectIncompleteResponse);
       const contentLength = Number(res.headers["content-length"]);
       if (Number.isFinite(contentLength) && contentLength > maxBytes) {
-        rejected = true;
+        fail(new Error("HTTP response body is too large."));
         req.destroy();
-        reject(new Error("HTTP response body is too large."));
         return;
       }
       res.on("data", (chunk) => {
-        if (rejected) return;
+        if (settled) return;
         total += chunk.byteLength;
         if (total > maxBytes) {
-          rejected = true;
+          fail(new Error("HTTP response body is too large."));
           req.destroy();
-          reject(new Error("HTTP response body is too large."));
           return;
         }
         chunks.push(chunk);
       });
       res.on("end", () => {
-        if (rejected) return;
+        if (settled) return;
         const body = Buffer.concat(chunks);
+        settled = true;
+        clearTimeout(timer);
         resolve({ status: res.statusCode, body });
       });
     });
-    req.on("error", reject);
-    req.on("timeout", () => {
+    const onTimeout = () => {
+      if (settled) return;
+      fail(new Error("Request timed out."));
       req.destroy();
-      reject(new Error("Request timed out."));
-    });
+    };
+    req.on("error", fail);
+    req.on("timeout", onTimeout);
+    // Keep the socket-idle timeout and also bound the complete response.
+    if (timeoutMs > 0) timer = setTimeout(onTimeout, timeoutMs);
   });
 }
 
@@ -53,6 +72,15 @@ function httpPost(url, data, headers = {}, timeout = 30000) {
     const mod = url.startsWith("https") ? https : http;
     const parsed = new URL(url);
     const maxBytes = options.maxBytes ?? DEFAULT_MAX_RESPONSE_BYTES;
+    const timeoutMs = options.timeout ?? 30000;
+    let timer;
+    let settled = false;
+    const fail = (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(error);
+    };
     const req = mod.request(
       {
         hostname: parsed.hostname,
@@ -60,44 +88,57 @@ function httpPost(url, data, headers = {}, timeout = 30000) {
         path: parsed.pathname + parsed.search,
         method: "POST",
         headers,
-        timeout: options.timeout ?? 30000,
+        timeout: timeoutMs,
       },
       (res) => {
         const chunks = [];
         let total = 0;
-        let rejected = false;
+        const rejectIncompleteResponse = () => {
+          fail(new Error("HTTP response body was interrupted."));
+        };
+        res.once("aborted", rejectIncompleteResponse);
+        res.once("error", rejectIncompleteResponse);
         const contentLength = Number(res.headers["content-length"]);
         if (Number.isFinite(contentLength) && contentLength > maxBytes) {
-          rejected = true;
+          fail(new Error("HTTP response body is too large."));
           req.destroy();
-          reject(new Error("HTTP response body is too large."));
           return;
         }
         res.on("data", (chunk) => {
-          if (rejected) return;
+          if (settled) return;
           total += chunk.byteLength;
           if (total > maxBytes) {
-            rejected = true;
+            fail(new Error("HTTP response body is too large."));
             req.destroy();
-            reject(new Error("HTTP response body is too large."));
             return;
           }
           chunks.push(chunk);
         });
         res.on("end", () => {
-          if (rejected) return;
+          if (settled) return;
           const body = Buffer.concat(chunks);
+          settled = true;
+          clearTimeout(timer);
           resolve({ status: res.statusCode, body });
         });
       },
     );
-    req.on("error", reject);
-    req.on("timeout", () => {
+    const onTimeout = () => {
+      if (settled) return;
+      fail(new Error("Request timed out."));
       req.destroy();
-      reject(new Error("Request timed out."));
-    });
-    req.write(data);
-    req.end();
+    };
+    req.on("error", fail);
+    req.on("timeout", onTimeout);
+    // A zero POST timeout retains Node's existing disabled-timeout behavior.
+    if (timeoutMs > 0) timer = setTimeout(onTimeout, timeoutMs);
+    try {
+      req.write(data);
+      req.end();
+    } catch (error) {
+      fail(error);
+      req.destroy();
+    }
   });
 }
 

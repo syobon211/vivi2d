@@ -8,9 +8,8 @@
   "compatPlugin": {
     "installDirectory": "vivi2d_compat_plugin",
     "sourceLocation": "repo:integrations/comfyui/vivi2d_compat_plugin",
-    "sourceRevision": "ec7fea44678e76d7c17b96cfbb2d9bcefde06c24",
     "version": "0.1.0",
-    "sha256": "sha256:96b02d47c4f9522ad31b169bf26d226415d1e8f80460d764870000f64c73bfe7",
+    "sha256": "sha256:b6547770d8b1f39b621a0ae6118e6af69273ded5cecfa016ae3d7db35694416e",
     "signature": null,
     "licenseSpdx": "Apache-2.0",
     "licenseStatus": "releaseReviewed",

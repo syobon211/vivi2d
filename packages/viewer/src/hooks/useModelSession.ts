@@ -5,22 +5,29 @@ import {
 } from "@vivi2d/core/load-limits";
 import { ViviModel } from "@vivi2d/core/model";
 import { parseViviFile } from "@vivi2d/core/project-parser";
-import { extractTextures, ParticleEffectRenderer, ViviPixiRenderer } from "@vivi2d/renderer-pixi";
+import {
+  extractTextures,
+  ParticleEffectRenderer,
+  ViviPixiRenderer,
+} from "@vivi2d/renderer-pixi";
 import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
 import type { TranslationKey } from "../i18n";
 import type { ViewerRecorder } from "../recorder";
-import { autoDetectPlatformFaceMapping } from "../tracking/platform-face-channels";
 import {
   autoDetectHandMapping,
   autoDetectMapping,
   autoDetectPoseMapping,
 } from "../tracking/auto-mapper";
+import { autoDetectPlatformFaceMapping } from "../tracking/platform-face-channels";
 import type { UseViewerStateResult } from "./useViewerState";
 
 export interface UseModelSessionParams {
   canvasRef: RefObject<HTMLCanvasElement | null>;
   recorderRef: RefObject<ViewerRecorder | null>;
-  recorderFactory: (canvas: HTMLCanvasElement) => ViewerRecorder;
+  recorderFactory: (
+    canvas: HTMLCanvasElement,
+    beforeCapture: () => void,
+  ) => ViewerRecorder;
   state: Pick<
     UseViewerStateResult,
     | "setError"
@@ -56,34 +63,42 @@ async function readResponseTextWithLimit(
   response: Response,
   label: string,
 ): Promise<string> {
-  const contentLengthHeader = response.headers.get("content-length");
-  if (contentLengthHeader) {
-    const contentLength = Number(contentLengthHeader);
-    if (Number.isFinite(contentLength) && contentLength > 0) {
-      assertByteLengthWithinLimit(contentLength, MAX_VIVI_TEXT_FILE_BYTES, label);
-    }
-  }
-
   const reader = response.body?.getReader();
-  if (!reader) {
-    const text = await response.text();
+  try {
+    const contentLengthHeader = response.headers.get("content-length");
+    if (contentLengthHeader) {
+      const contentLength = Number(contentLengthHeader);
+      if (Number.isFinite(contentLength) && contentLength > 0) {
+        assertByteLengthWithinLimit(contentLength, MAX_VIVI_TEXT_FILE_BYTES, label);
+      }
+    }
+
+    if (!reader) {
+      const text = await response.text();
+      assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, label);
+      return text;
+    }
+
+    const decoder = new TextDecoder();
+    let totalBytes = 0;
+    let text = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      assertByteLengthWithinLimit(totalBytes, MAX_VIVI_TEXT_FILE_BYTES, label);
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
     assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, label);
     return text;
+  } catch (error) {
+    // Stop downloading rejected payloads and preserve the original load error.
+    await reader?.cancel().catch(() => {});
+    throw error;
+  } finally {
+    reader?.releaseLock();
   }
-
-  const decoder = new TextDecoder();
-  let totalBytes = 0;
-  let text = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    totalBytes += value.byteLength;
-    assertByteLengthWithinLimit(totalBytes, MAX_VIVI_TEXT_FILE_BYTES, label);
-    text += decoder.decode(value, { stream: true });
-  }
-  text += decoder.decode();
-  assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, label);
-  return text;
 }
 
 export function useModelSession({
@@ -95,18 +110,35 @@ export function useModelSession({
 }: UseModelSessionParams): UseModelSessionResult {
   const modelRef = useRef<ViviModel | null>(null);
   const rendererRef = useRef<ViviPixiRenderer | null>(null);
+  const rendererInitRef = useRef<Promise<ViviPixiRenderer | null> | null>(null);
   const particlesRef = useRef<ParticleEffectRenderer | null>(null);
+  const loadAbortRef = useRef<AbortController | null>(null);
+  const mountedRef = useRef(true);
   const [loading, setLoading] = useState(false);
 
   const loadModel = useCallback(
     async (source: File | string) => {
+      if (!mountedRef.current) return;
+      loadAbortRef.current?.abort();
+      const abort = new AbortController();
+      loadAbortRef.current = abort;
+      const isCurrent = () =>
+        mountedRef.current && loadAbortRef.current === abort && !abort.signal.aborted;
+      let replacingRenderer = false;
       setLoading(true);
       try {
         state.setError(null);
         let text: string;
         if (typeof source === "string") {
-          const response = await fetch(source);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const response = await fetch(source, {
+            signal: abort.signal,
+            credentials: "omit",
+          });
+          if (!isCurrent()) return;
+          if (!response.ok) {
+            void response.body?.cancel().catch(() => {});
+            throw new Error(`HTTP ${response.status}`);
+          }
           text = await readResponseTextWithLimit(response, "Remote .vivi model");
         } else {
           assertByteLengthWithinLimit(
@@ -117,36 +149,62 @@ export function useModelSession({
           text = await source.text();
           assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, ".vivi file");
         }
+        if (!isCurrent()) return;
         const fileData = parseViviFile(text, { profile: "publicProfileV1" });
         const model = ViviModel.fromFileData(fileData);
         const textures = await extractTextures(fileData);
+        if (!isCurrent()) return;
 
         if (!canvasRef.current) return;
 
-        if (rendererRef.current) {
-          rendererRef.current.destroy();
+        // One renderer owns the mounted canvas. Overlapping loads share only
+        // initialization; only the latest load may install a model into it.
+        if (!rendererRef.current && !rendererInitRef.current) {
+          const canvas = canvasRef.current;
+          const initialization: Promise<ViviPixiRenderer | null> =
+            ViviPixiRenderer.create(canvas, {
+              backgroundColor: 0x000000,
+              transparent: true,
+            })
+              .then((renderer) => {
+                if (
+                  !mountedRef.current ||
+                  rendererInitRef.current !== initialization ||
+                  canvasRef.current !== canvas
+                ) {
+                  renderer.destroy();
+                  return null;
+                }
+                rendererRef.current = renderer;
+                return renderer;
+              })
+              .finally(() => {
+                if (rendererInitRef.current === initialization)
+                  rendererInitRef.current = null;
+              });
+          rendererInitRef.current = initialization;
         }
-
-        canvasRef.current.width = model.width;
-        canvasRef.current.height = model.height;
-
-        const renderer = await ViviPixiRenderer.create(canvasRef.current, {
-          backgroundColor: 0x000000,
-          transparent: true,
-        });
+        const renderer = rendererRef.current ?? (await rendererInitRef.current);
+        if (!isCurrent() || !renderer || !canvasRef.current) return;
+        // setModel may destroy the previous model before throwing. Once renderer
+        // replacement begins, a failure must clear both sides of that binding.
+        replacingRenderer = true;
+        renderer.resize(model.width, model.height);
         renderer.setModel(model, textures);
 
         if (particlesRef.current) particlesRef.current.destroy();
         const particles = new ParticleEffectRenderer(renderer.pixiApp);
         particlesRef.current = particles;
 
-        rendererRef.current = renderer;
-        modelRef.current = model;
-        state.setLoaded(true);
+        model.update();
+        renderer.render();
 
         const name =
           typeof source === "string"
-            ? (source.split("/").pop()?.replace(".vivi", "") ?? "Remote Model")
+            ? new URL(source, window.location.href).pathname
+                .split("/")
+                .pop()
+                ?.replace(/\.vivi$/, "") || "Remote Model"
             : model.project.name || source.name.replace(".vivi", "");
         state.setModelName(name);
 
@@ -154,7 +212,9 @@ export function useModelSession({
         state.trackingMapRef.current = mapping;
         state.setMappedCount(Object.values(mapping).filter(Boolean).length);
 
-        const platformFaceMapping = autoDetectPlatformFaceMapping(model.project.parameters);
+        const platformFaceMapping = autoDetectPlatformFaceMapping(
+          model.project.parameters,
+        );
         state.platformFaceMapRef.current = platformFaceMapping;
         state.setPlatformFaceMappedCount(
           Object.values(platformFaceMapping).filter(Boolean).length,
@@ -168,14 +228,32 @@ export function useModelSession({
         state.poseTrackingMapRef.current = poseMapping;
         state.setPoseMappedCount(Object.values(poseMapping).filter(Boolean).length);
 
-        recorderRef.current = recorderFactory(canvasRef.current);
+        recorderRef.current ??= recorderFactory(canvasRef.current, () => {
+          const currentRenderer = rendererRef.current;
+          if (!currentRenderer) throw new Error("Recording failed.");
+          currentRenderer.render();
+        });
 
-        model.update();
-        renderer.render();
-      } catch (e) {
-        state.setError(e instanceof Error ? e.message : t("errFileLoad"));
+        modelRef.current = model;
+        state.setLoaded(true);
+      } catch {
+        if (isCurrent()) {
+          if (replacingRenderer) {
+            modelRef.current = null;
+            state.setLoaded(false);
+            state.setModelName("");
+            const particles = particlesRef.current;
+            const renderer = rendererRef.current;
+            particlesRef.current = null;
+            rendererRef.current = null;
+            particles?.destroy();
+            renderer?.destroy();
+          }
+          // Source errors can include credential-bearing URLs or model values.
+          state.setError(t("errFileLoad"));
+        }
       } finally {
-        setLoading(false);
+        if (isCurrent()) setLoading(false);
       }
     },
     [canvasRef, recorderRef, recorderFactory, state, t],
@@ -231,11 +309,21 @@ export function useModelSession({
   );
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
+      loadAbortRef.current?.abort();
+      loadAbortRef.current = null;
+      rendererInitRef.current = null;
+      recorderRef.current?.cancel();
+      recorderRef.current = null;
       particlesRef.current?.destroy();
       rendererRef.current?.destroy();
+      particlesRef.current = null;
+      rendererRef.current = null;
+      modelRef.current = null;
     };
-  }, []);
+  }, [recorderRef]);
 
   return {
     modelRef,

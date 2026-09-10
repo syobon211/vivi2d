@@ -21,189 +21,393 @@ const DEFAULT_OPTIONS: Required<RecordingOptions> = {
 
 export type OnRecordingStateChange = (state: RecordingState, elapsed: number) => void;
 
+// Bounds retained raw ImageData only, not scratch/encoder/process peak memory.
+const MAX_RETAINED_GIF_FRAME_BYTES = 128 * 1024 * 1024;
+const RECORDING_FAILED = "Recording failed.";
+
+interface RecordingSession {
+  state: "recording" | "processing";
+  options: Required<RecordingOptions>;
+  width: number;
+  height: number;
+  frameBytes: number;
+  startedAt: number;
+  onStateChange?: OnRecordingStateChange;
+  onAutoComplete?: (blob: Blob) => void;
+  onError?: (error: Error) => void;
+  recorder: MediaRecorder | null;
+  nativeStopObserved: boolean;
+  stream: MediaStream | null;
+  chunks: Blob[];
+  frames: ImageData[];
+  retainedBytes: number;
+  context: CanvasRenderingContext2D | null;
+  scratch: HTMLCanvasElement | null;
+  captureTimer: number | null;
+  elapsedTimer: number | null;
+  deadlineTimer: number | null;
+  stopPromise?: Promise<Blob>;
+  resolveStop?: (blob: Blob) => void;
+  rejectStop?: (error: Error) => void;
+  cancelled: boolean;
+}
+
 export class ViewerRecorder {
-  private canvas: HTMLCanvasElement;
-  private state: RecordingState = "idle";
-  private onStateChange: OnRecordingStateChange | null = null;
+  private session: RecordingSession | null = null;
 
-  private recorder: MediaRecorder | null = null;
-  private chunks: Blob[] = [];
-
-  private gifFrames: ImageData[] = [];
-  private gifCaptureId = 0;
-
-  private startTime = 0;
-  private elapsedTimerId = 0;
-  private options: Required<RecordingOptions> = DEFAULT_OPTIONS;
-
-  constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-  }
+  constructor(
+    private readonly canvas: HTMLCanvasElement,
+    private readonly beforeCapture?: () => void,
+  ) {}
 
   get recordingState(): RecordingState {
-    return this.state;
+    return this.session?.state ?? "idle";
   }
 
   start(
     options?: RecordingOptions,
     onStateChange?: OnRecordingStateChange,
+    onAutoComplete?: (blob: Blob) => void,
+    onError?: (error: Error) => void,
   ): RecordingFormat {
-    if (this.state !== "idle") throw new Error("Recording is already in progress");
-
-    this.options = { ...DEFAULT_OPTIONS, ...options };
-    this.onStateChange = onStateChange ?? null;
-    this.startTime = performance.now();
-
-    if (this.options.format === "gif") {
-      this.startGifCapture();
-    } else {
-      this.startMediaRecorder();
+    if (this.session) throw new Error("Recording is already in progress");
+    const settings = { ...DEFAULT_OPTIONS, ...options };
+    const { width, height } = this.canvas;
+    validateRecordingOptions(settings);
+    const frameBytes = settings.format === "gif" ? gifFrameBytes(width, height) : 0;
+    const session: RecordingSession = {
+      state: "recording",
+      options: settings,
+      width,
+      height,
+      frameBytes,
+      startedAt: performance.now(),
+      onStateChange,
+      onAutoComplete,
+      onError,
+      recorder: null,
+      nativeStopObserved: false,
+      stream: null,
+      chunks: [],
+      frames: [],
+      retainedBytes: 0,
+      context: null,
+      scratch: null,
+      captureTimer: null,
+      elapsedTimer: null,
+      deadlineTimer: null,
+      cancelled: false,
+    };
+    this.session = session;
+    try {
+      if (settings.format === "gif") this.startGifCapture(session);
+      else this.startMediaRecorder(session);
+      session.elapsedTimer = window.setInterval(() => {
+        if (this.session === session && session.state === "recording") {
+          this.emitState(
+            session,
+            "recording",
+            (performance.now() - session.startedAt) / 1000,
+          );
+        }
+      }, 200);
+      session.deadlineTimer = window.setTimeout(
+        () => this.autoStop(session),
+        settings.maxDuration * 1000,
+      );
+      // Resource ownership is established before a synchronous host callback.
+      this.emitState(session, "recording", 0);
+      return settings.format;
+    } catch {
+      this.fail(session);
+      throw new Error(RECORDING_FAILED);
     }
-
-    this.state = "recording";
-    this.startElapsedTimer();
-    this.onStateChange?.(this.state, 0);
-
-    setTimeout(() => {
-      if (this.state === "recording") this.stop();
-    }, this.options.maxDuration * 1000);
-
-    return this.options.format;
   }
 
-  async stop(): Promise<Blob> {
-    if (this.state !== "recording") throw new Error("Recording is not in progress");
-
-    this.clearElapsedTimer();
-    this.state = "processing";
-    this.onStateChange?.(this.state, this.elapsed());
-
-    let blob: Blob;
-    if (this.options.format === "gif") {
-      blob = await this.stopGifCapture();
-    } else {
-      blob = await this.stopMediaRecorder();
+  stop(): Promise<Blob> {
+    const session = this.session;
+    if (!session) return Promise.reject(new Error("Recording is not in progress"));
+    if (session.stopPromise) return session.stopPromise;
+    const stopped = new Promise<Blob>((resolve, reject) => {
+      session.resolveStop = resolve;
+      session.rejectStop = reject;
+    });
+    session.stopPromise = stopped;
+    session.state = "processing";
+    this.clearTimers(session);
+    this.emitState(session, "processing", (performance.now() - session.startedAt) / 1000);
+    if (this.session !== session) return stopped;
+    try {
+      if (session.options.format === "gif") {
+        this.assertGifDimensions(session);
+        if (session.frames.length === 0) throw new Error(RECORDING_FAILED);
+        const blob = new Blob(
+          [
+            encodeGif(
+              session.frames,
+              session.width,
+              session.height,
+              Math.round(100 / session.options.fps),
+            ).buffer as ArrayBuffer,
+          ],
+          { type: "image/gif" },
+        );
+        this.finish(session, blob);
+      } else if (session.nativeStopObserved) {
+        this.finishMedia(session);
+      } else if (session.recorder?.state !== "inactive") {
+        session.recorder?.stop();
+      }
+      // inactive alone does not mean the queued final data/error/stop arrived.
+    } catch {
+      this.fail(session);
     }
-
-    this.state = "idle";
-    this.onStateChange?.(this.state, 0);
-    return blob;
+    return stopped;
   }
 
   cancel(): void {
-    this.clearElapsedTimer();
-    if (this.recorder && this.recorder.state !== "inactive") {
-      this.recorder.stop();
-    }
-    if (this.gifCaptureId) {
-      clearInterval(this.gifCaptureId);
-      this.gifCaptureId = 0;
-    }
-    this.chunks = [];
-    this.gifFrames = [];
-    this.recorder = null;
-    this.state = "idle";
+    const session = this.session;
+    if (!session) return;
+    session.cancelled = true;
+    this.finish(session, null, new DOMException("Recording cancelled.", "AbortError"));
   }
 
-  private elapsed(): number {
-    return (performance.now() - this.startTime) / 1000;
-  }
-
-  // MediaRecorder (WebM/MP4)
-
-  private startMediaRecorder(): void {
+  private startMediaRecorder(session: RecordingSession): void {
     const stream = this.canvas.captureStream(30);
-    const mimeType = this.selectMimeType();
-    this.chunks = [];
-
-    this.recorder = new MediaRecorder(stream, {
+    session.stream = stream;
+    const mimeType = this.selectMimeType(session.options.format);
+    if (session.options.format === "mp4" && mimeType.startsWith("video/webm")) {
+      session.options.format = "webm";
+    }
+    const recorder = new MediaRecorder(stream, {
       mimeType,
-      videoBitsPerSecond: Math.floor(2_500_000 * this.options.quality),
+      videoBitsPerSecond: Math.floor(2_500_000 * session.options.quality),
     });
-
-    this.recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) this.chunks.push(e.data);
+    session.recorder = recorder;
+    recorder.ondataavailable = (event) => {
+      if (this.session === session && event.data.size > 0)
+        session.chunks.push(event.data);
     };
-
-    this.recorder.start(100);
+    recorder.onerror = () => this.fail(session);
+    recorder.onstop = () => {
+      if (this.session !== session) return;
+      session.nativeStopObserved = true;
+      if (session.state === "recording") this.autoStop(session);
+      else this.finishMedia(session);
+    };
+    recorder.start(100);
   }
 
-  private stopMediaRecorder(): Promise<Blob> {
-    return new Promise((resolve) => {
-      if (!this.recorder) {
-        resolve(new Blob());
-        return;
-      }
-      this.recorder.onstop = () => {
-        const mimeType = this.recorder?.mimeType ?? "video/webm";
-        const blob = new Blob(this.chunks, { type: mimeType });
-        this.chunks = [];
-        this.recorder = null;
-        resolve(blob);
-      };
-      this.recorder.stop();
-    });
+  private finishMedia(session: RecordingSession): void {
+    if (this.session !== session) return;
+    try {
+      const blob = new Blob(session.chunks, {
+        type: session.recorder?.mimeType ?? "video/webm",
+      });
+      this.finish(session, blob);
+    } catch {
+      this.fail(session);
+    }
   }
 
-  private selectMimeType(): string {
-    if (this.options.format === "mp4") {
-      const mp4Types = ["video/mp4;codecs=h264", "video/mp4;codecs=avc1", "video/mp4"];
-      for (const t of mp4Types) {
-        if (MediaRecorder.isTypeSupported(t)) return t;
+  private selectMimeType(format: RecordingFormat): string {
+    if (format === "mp4") {
+      for (const type of [
+        "video/mp4;codecs=h264",
+        "video/mp4;codecs=avc1",
+        "video/mp4",
+      ]) {
+        if (MediaRecorder.isTypeSupported(type)) return type;
       }
     }
-    const webmTypes = ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"];
-    for (const t of webmTypes) {
-      if (MediaRecorder.isTypeSupported(t)) return t;
+    for (const type of ["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"]) {
+      if (MediaRecorder.isTypeSupported(type)) return type;
     }
     return "video/webm";
   }
 
-  private startGifCapture(): void {
-    this.gifFrames = [];
-    const interval = Math.round(1000 / this.options.fps);
-    this.gifCaptureId = window.setInterval(() => {
-      this.captureGifFrame();
-    }, interval);
+  private startGifCapture(session: RecordingSession): void {
+    session.context = this.canvas.getContext("2d");
+    if (!session.context) {
+      // A WebGL canvas cannot also own a2D context. Keep readback separately owned.
+      const scratch = document.createElement("canvas");
+      scratch.width = session.width;
+      scratch.height = session.height;
+      session.scratch = scratch;
+      session.context = scratch.getContext("2d", { willReadFrequently: true });
+      if (!session.context) throw new Error(RECORDING_FAILED);
+    }
+    session.captureTimer = window.setInterval(
+      () => this.captureGifFrame(session),
+      Math.max(1, Math.round(1000 / session.options.fps)),
+    );
   }
 
-  private captureGifFrame(): void {
-    const ctx = this.canvas.getContext("2d");
-    if (!ctx) return;
-    const imageData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-    this.gifFrames.push(imageData);
+  private assertGifDimensions(session: RecordingSession): void {
+    if (this.canvas.width !== session.width || this.canvas.height !== session.height) {
+      throw new Error(RECORDING_FAILED);
+    }
   }
 
-  private async stopGifCapture(): Promise<Blob> {
-    clearInterval(this.gifCaptureId);
-    this.gifCaptureId = 0;
-
-    if (this.gifFrames.length === 0) return new Blob();
-
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-    const delay = Math.round(100 / this.options.fps);
-    const data = encodeGif(this.gifFrames, w, h, delay);
-    this.gifFrames = [];
-    return new Blob([data.buffer as ArrayBuffer], { type: "image/gif" });
-  }
-
-  private startElapsedTimer(): void {
-    this.elapsedTimerId = window.setInterval(() => {
-      if (this.state === "recording") {
-        this.onStateChange?.(this.state, this.elapsed());
+  private captureGifFrame(session: RecordingSession): void {
+    if (this.session !== session || session.state !== "recording") return;
+    try {
+      this.assertGifDimensions(session);
+      // Check before getImageData allocates the next raw frame.
+      if (session.retainedBytes > MAX_RETAINED_GIF_FRAME_BYTES - session.frameBytes) {
+        this.autoStop(session);
+        return;
       }
-    }, 200);
+      this.beforeCapture?.();
+      if (this.session !== session || session.state !== "recording") return;
+      this.assertGifDimensions(session);
+      const context = session.context!;
+      if (session.scratch) context.drawImage(this.canvas, 0, 0);
+      const frame = context.getImageData(0, 0, session.width, session.height);
+      if (frame.data.byteLength !== session.frameBytes) throw new Error(RECORDING_FAILED);
+      session.frames.push(frame);
+      session.retainedBytes += session.frameBytes;
+      // Complete at the exact budget, or as soon as another whole frame cannot fit.
+      if (session.retainedBytes > MAX_RETAINED_GIF_FRAME_BYTES - session.frameBytes) {
+        this.autoStop(session);
+      }
+    } catch {
+      this.fail(session);
+    }
   }
 
-  private clearElapsedTimer(): void {
-    if (this.elapsedTimerId) {
-      clearInterval(this.elapsedTimerId);
-      this.elapsedTimerId = 0;
+  private autoStop(session: RecordingSession): void {
+    if (this.session !== session || session.state !== "recording") return;
+    void this.stop()
+      .then((blob) => {
+        if (!session.cancelled) {
+          try {
+            session.onAutoComplete?.(blob);
+          } catch {
+            /* Host owns delivery failures. */
+          }
+        }
+      })
+      .catch(() => {
+        // stop/fail already cleaned the session and reported a fixed error.
+        // Automatic timers must never leave an unhandled rejected promise.
+      });
+  }
+
+  private fail(session: RecordingSession): void {
+    if (this.session !== session) return;
+    const error = new Error(RECORDING_FAILED);
+    this.finish(session, null, error);
+  }
+
+  private finish(session: RecordingSession, blob: Blob | null, error?: Error): void {
+    if (this.session !== session) return;
+    // Detach ownership before cleanup/events can synchronously reenter.
+    this.session = null;
+    this.clearTimers(session);
+    const recorder = session.recorder;
+    session.recorder = null;
+    if (recorder) {
+      recorder.ondataavailable = null;
+      recorder.onstop = null;
+      recorder.onerror = null;
+      if (recorder.state !== "inactive") {
+        try {
+          recorder.stop();
+        } catch {
+          /* Continue releasing owned tracks. */
+        }
+      }
+    }
+    const stream = session.stream;
+    session.stream = null;
+    for (const track of stream?.getTracks() ?? []) {
+      try {
+        track.stop();
+      } catch {
+        /* Continue releasing other owned tracks. */
+      }
+    }
+    session.chunks.length = 0;
+    session.frames.length = 0;
+    session.retainedBytes = 0;
+    session.context = null;
+    if (session.scratch) {
+      session.scratch.width = 0;
+      session.scratch.height = 0;
+      session.scratch = null;
+    }
+    const resolve = session.resolveStop;
+    const reject = session.rejectStop;
+    session.resolveStop = undefined;
+    session.rejectStop = undefined;
+    if (error) reject?.(error);
+    else if (blob) resolve?.(blob);
+    this.emitState(session, "idle", 0);
+    if (error) {
+      try {
+        session.onError?.(error);
+      } catch {
+        /* Host callbacks cannot retain resources. */
+      }
+    }
+  }
+
+  private clearTimers(session: RecordingSession): void {
+    if (session.captureTimer !== null) clearInterval(session.captureTimer);
+    if (session.elapsedTimer !== null) clearInterval(session.elapsedTimer);
+    if (session.deadlineTimer !== null) clearTimeout(session.deadlineTimer);
+    session.captureTimer = session.elapsedTimer = session.deadlineTimer = null;
+  }
+
+  private emitState(
+    session: RecordingSession,
+    state: RecordingState,
+    elapsed: number,
+  ): void {
+    try {
+      session.onStateChange?.(state, elapsed);
+    } catch {
+      /* Preserve lifecycle ownership. */
     }
   }
 }
 
+function gifFrameBytes(width: number, height: number): number {
+  if (
+    !Number.isSafeInteger(width) ||
+    !Number.isSafeInteger(height) ||
+    width <= 0 ||
+    height <= 0 ||
+    width > 65535 ||
+    height > 65535 ||
+    width > Math.floor(MAX_RETAINED_GIF_FRAME_BYTES / 4 / height)
+  ) {
+    throw new Error(RECORDING_FAILED);
+  }
+  return width * height * 4;
+}
+
+function validateRecordingOptions(options: Required<RecordingOptions>): void {
+  const interval = Math.round(1000 / options.fps);
+  const gifDelay = Math.round(100 / options.fps);
+  if (
+    !["gif", "webm", "mp4"].includes(options.format) ||
+    !Number.isFinite(options.fps) ||
+    options.fps <= 0 ||
+    !Number.isFinite(interval) ||
+    interval > 2147483647 ||
+    !Number.isFinite(options.maxDuration) ||
+    options.maxDuration <= 0 ||
+    options.maxDuration * 1000 > 2147483647 ||
+    !Number.isFinite(options.quality) ||
+    options.quality < 0 ||
+    options.quality > 1 ||
+    (options.format === "gif" && (gifDelay < 1 || gifDelay > 65535))
+  ) {
+    throw new Error(RECORDING_FAILED);
+  }
+}
 function encodeGif(
   frames: ImageData[],
   width: number,

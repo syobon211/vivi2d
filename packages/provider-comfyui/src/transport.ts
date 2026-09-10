@@ -21,6 +21,7 @@ export interface ComfyUITransport {
 
 export interface HttpTransportOptions {
   baseUrl: string;
+  /** Deadline for one HTTP request, including response-body consumption. */
   timeout: number;
 }
 
@@ -49,17 +50,17 @@ export class HttpTransport implements ComfyUITransport {
 
   async ping(): Promise<boolean> {
     try {
-      const res = await this.fetch("/system_stats", { timeout: 5000 });
-      return res.ok;
+      return await this.withResponse("/system_stats", (res) => res.ok, { timeout: 5000 });
     } catch {
       return false;
     }
   }
 
   async getSystemStats(): Promise<Record<string, unknown>> {
-    const res = await this.fetch("/system_stats");
-    if (!res.ok) throw new Error(`ComfyUI connection error: ${res.status}`);
-    return res.json();
+    return this.withResponse("/system_stats", async (res) => {
+      if (!res.ok) throw new Error(`ComfyUI connection error: ${res.status}`);
+      return res.json();
+    });
   }
 
   async uploadImage(imageBuffer: ArrayBuffer, filename: string): Promise<string> {
@@ -67,38 +68,44 @@ export class HttpTransport implements ComfyUITransport {
     formData.append("image", new Blob([imageBuffer]), filename);
     formData.append("overwrite", "true");
 
-    const res = await globalThis.fetch(`${this.baseUrl}/upload/image`, {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!res.ok) throw new Error(`Image upload failed: ${res.status}`);
-    const data = await res.json();
-    return data.name as string;
+    return this.withResponse(
+      "/upload/image",
+      async (res) => {
+        if (!res.ok) throw new Error(`Image upload failed: ${res.status}`);
+        const data = await res.json();
+        return data.name as string;
+      },
+      { method: "POST", body: formData },
+    );
   }
 
   async enqueue(workflow: ComfyUIWorkflow, clientId?: string): Promise<QueueResponse> {
     const body: Record<string, unknown> = { prompt: workflow };
     if (clientId) body.client_id = clientId;
 
-    const res = await this.fetch("/prompt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Workflow execution failed: ${res.status} ${text}`);
-    }
-    return res.json();
+    return this.withResponse(
+      "/prompt",
+      async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Workflow execution failed: ${res.status} ${text}`);
+        }
+        return res.json();
+      },
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
   }
 
   async getHistory(promptId: string): Promise<HistoryEntry | null> {
-    const res = await this.fetch(`/history/${promptId}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return (data[promptId] as HistoryEntry) ?? null;
+    return this.withResponse(`/history/${promptId}`, async (res) => {
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data[promptId] as HistoryEntry) ?? null;
+    });
   }
 
   async downloadOutput(
@@ -116,37 +123,46 @@ export class HttpTransport implements ComfyUITransport {
       throw new Error("ComfyUI download byte limit is invalid.");
     }
     const params = new URLSearchParams({ filename, subfolder, type });
-    const res = await this.fetch(`/view?${params.toString()}`);
-    if (!res.ok) throw new Error(`Image download failed: ${res.status} ${filename}`);
-    return readBoundedResponse(res, effectiveMaxBytes);
+    return this.withResponse(`/view?${params.toString()}`, (res) => {
+      if (!res.ok) throw new Error(`Image download failed: ${res.status} ${filename}`);
+      return readBoundedResponse(res, effectiveMaxBytes);
+    });
   }
 
   async getNodeInfo(nodeType: string): Promise<Record<string, unknown> | null> {
-    const res = await this.fetch(`/object_info/${nodeType}`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data[nodeType] as Record<string, unknown>;
+    return this.withResponse(`/object_info/${nodeType}`, async (res) => {
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data[nodeType] as Record<string, unknown>;
+    });
   }
 
   getWebSocketUrl(clientId = "vivi2d"): string | null {
     return `${toWebSocketBaseUrl(this.baseUrl)}/ws?clientId=${encodeURIComponent(clientId)}`;
   }
 
-  private async fetch(
+  private async withResponse<T>(
     path: string,
+    consume: (res: Response) => T | Promise<T>,
     init?: RequestInit & { timeout?: number },
-  ): Promise<Response> {
+  ): Promise<T> {
     const controller = new AbortController();
     const timeoutMs = init?.timeout ?? this.timeout;
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let response: Response | undefined;
 
     try {
-      return await globalThis.fetch(`${this.baseUrl}${path}`, {
+      response = await globalThis.fetch(`${this.baseUrl}${path}`, {
         ...init,
         signal: controller.signal,
       });
+      return await consume(response);
     } finally {
       clearTimeout(timer);
+      // Status-only and early-error paths do not consume their owned body.
+      if (response?.body && !response.bodyUsed) {
+        void response.body.cancel().catch(() => {});
+      }
     }
   }
 }
@@ -176,7 +192,9 @@ async function readBoundedResponse(
     }
   }
 
-  if (!res.body) return new ArrayBuffer(0);
+  if (!res.body) {
+    throw new Error("ComfyUI download response body is unavailable.");
+  }
 
   const reader = res.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -187,16 +205,15 @@ async function readBoundedResponse(
       if (done) break;
       totalBytes += value.byteLength;
       if (totalBytes > maxBytes) {
-        await reader.cancel();
         throw new Error("ComfyUI download is too large.");
       }
       chunks.push(value);
     }
   } catch (error) {
-    try {
-      await reader.cancel();
-    } catch {}
+    void reader.cancel().catch(() => {});
     throw error;
+  } finally {
+    reader.releaseLock();
   }
 
   const result = new Uint8Array(totalBytes);

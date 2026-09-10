@@ -118,6 +118,12 @@ partially mutated by a failed update. A mesh snapshot also carries the layer
 translation fields `x` and `y` so renderers can position unskinned meshes
 without reading editor-layer structures.
 
+Legacy CCD evaluation caps each solve at 1,024 iterations in the TypeScript,
+portable, and native implementations. A larger serialized `maxIterations`
+remains loadable but cannot cause unbounded synchronous work; the default is
+still 10. This execution guard does not change the separate Evaluation Payload
+v1 validation or lowering contract.
+
 ## Conformance Scope
 
 Phase 0 conformance fixtures live under `tests/conformance/runtime-v1/`.

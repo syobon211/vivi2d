@@ -12,6 +12,7 @@ import {
   type PublicProjectProfile,
 } from "@vivi2d/core/public-profile";
 import type { AtlasEntry, ProjectData, ViviFileData } from "@vivi2d/core/types";
+import { assertAtlasImageAllocationWithinLimits } from "@vivi2d/model/load-limits";
 import { assertNoLocalMotionPreviewFields } from "@vivi2d/model/private-profile-guards";
 import { buildAtlases, remapUvs, unremapUvs } from "./atlas-packer";
 import { clearTextures, setTexture } from "./texture-store";
@@ -56,7 +57,8 @@ export function serializeProject(
 
   const fileData: ViviFileData = {
     version: 9,
-    profile: options.profile === PUBLIC_PROJECT_PROFILE ? PUBLIC_PROJECT_PROFILE : undefined,
+    profile:
+      options.profile === PUBLIC_PROJECT_PROFILE ? PUBLIC_PROJECT_PROFILE : undefined,
     project: clonedProject,
     atlases,
   };
@@ -71,9 +73,11 @@ export function parseViviFile(json: string): ViviFileData {
 }
 
 export async function deserializeProject(fileData: ViviFileData): Promise<ProjectData> {
-  clearTextures();
-
   const { project, atlases } = fileData;
+  assertAtlasImageAllocationWithinLimits(atlases);
+  // Keep the active project's textures intact until every atlas is decoded and
+  // project migration succeeds. A rejected import must not damage the open file.
+  const nextTextures = new Map<string, HTMLCanvasElement>();
 
   const entryMap = new Map<
     string,
@@ -107,7 +111,7 @@ export async function deserializeProject(fileData: ViviFileData): Promise<Projec
           entry.height,
         );
       }
-      setTexture(entry.layerId, texCanvas);
+      nextTextures.set(entry.layerId, texCanvas);
     }
   }
 
@@ -136,6 +140,8 @@ export async function deserializeProject(fileData: ViviFileData): Promise<Projec
     );
   }
 
+  clearTextures();
+  for (const [layerId, canvas] of nextTextures) setTexture(layerId, canvas);
   return project;
 }
 

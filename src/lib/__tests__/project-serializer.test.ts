@@ -13,13 +13,13 @@ import {
   setTexture,
 } from "@/lib/texture-store";
 import {
-  createViviMesh,
   createBoneNode,
   createEmptyProject,
   createGroup,
   createProject,
+  createViviMesh,
 } from "@/test/fixtures";
-import { mockCanvasContext, mockImageLoad } from "@/test/mocks";
+import { MOCK_PNG_BASE64, mockCanvasContext, mockImageLoad } from "@/test/mocks";
 
 function makeCanvas(w: number, h: number): HTMLCanvasElement {
   const c = document.createElement("canvas");
@@ -191,10 +191,45 @@ describe("deserializeProject", () => {
     expect(project.name).toBe("Empty project");
   });
 
+  it("preserves current textures when a later atlas image fails to load", async () => {
+    const original = makeCanvas(2, 2);
+    setTexture("existing-mesh", original);
+    let imageIndex = 0;
+    vi.mocked(globalThis.Image).mockImplementation(function () {
+      const img = { onload: null, onerror: null } as unknown as HTMLImageElement;
+      const fail = imageIndex++ === 1;
+      Object.defineProperty(img, "src", {
+        set() {
+          queueMicrotask(() => {
+            if (fail) img.onerror?.(new Event("error"));
+            else img.onload?.(new Event("load"));
+          });
+        },
+      });
+      return img;
+    } as unknown as typeof Image);
+    const fileData: ViviFileData = {
+      version: 1,
+      project: createEmptyProject(),
+      atlases: ["incoming-one", "incoming-two"].map((layerId) => ({
+        image: MOCK_PNG_BASE64,
+        width: 2,
+        height: 2,
+        entries: [{ layerId, x: 0, y: 0, width: 2, height: 2 }],
+      })),
+    };
+
+    await expect(deserializeProject(fileData)).rejects.toThrow(
+      "Failed to load atlas image",
+    );
+    expect(getAllTextureIds()).toEqual(["existing-mesh"]);
+    expect(getTexture("existing-mesh")).toBe(original);
+  });
+
   it("アトラスからテクスチャを復元して texture-store に登録する", async () => {
     const entry = { layerId: "mesh-1", x: 2, y: 2, width: 64, height: 64 };
     const atlas: AtlasData = {
-      image: "AAAA",
+      image: MOCK_PNG_BASE64,
       width: 256,
       height: 256,
       entries: [entry],
@@ -238,8 +273,41 @@ describe("deserializeProject", () => {
     await deserializeProject(fileData);
     expect(getTexture("old")).toBeUndefined();
   });
-});
 
+  it.each([
+    { width: 0, height: 2, expected: [0, 0, 0, 0, 0, 0.5, 0, 0.5] },
+    { width: 2, height: 0, expected: [0, 0, 0.5, 0, 0, 0, 0.5, 0] },
+    { width: 0, height: 0, expected: [0, 0, 0, 0, 0, 0, 0, 0] },
+  ])(
+    "canonicalizes zero axes when restoring a parsed $width x $height entry",
+    async ({ width, height, expected }) => {
+      const mesh = createViviMesh({ id: "mesh-1" });
+      mesh.mesh.uvs = [0.25, 0.25, 0.375, 0.25, 0.25, 0.375, 0.375, 0.375];
+      const fileData: ViviFileData = {
+        version: 1,
+        project: createProject({ layers: [mesh] }),
+        atlases: [
+          {
+            image: MOCK_PNG_BASE64,
+            width: 8,
+            height: 8,
+            entries: [{ layerId: "mesh-1", x: 2, y: 2, width, height }],
+          },
+        ],
+      };
+
+      const project = await deserializeProject(parseViviFile(JSON.stringify(fileData)));
+
+      expect(getAllTextureIds()).toEqual(["mesh-1"]);
+      expect(getTexture("mesh-1")!.width).toBe(width);
+      expect(getTexture("mesh-1")!.height).toBe(height);
+      const restored = project.layers[0]!;
+      if (restored.kind !== "viviMesh") throw new Error("Expected restored mesh");
+      expect(restored.mesh.uvs).toEqual(expected);
+      expect(restored.mesh.uvs.every(Number.isFinite)).toBe(true);
+    },
+  );
+});
 
 describe("ラウンドトリップ: serialize → parse → deserialize", () => {
   beforeEach(() => {
@@ -308,7 +376,6 @@ describe("ラウンドトリップ: serialize → parse → deserialize", () => 
   });
 });
 
-
 describe("parseViviFile — エッジケース", () => {
   it("不正なJSONで例外を投げる", () => {
     expect(() => parseViviFile("{invalid json")).toThrow(
@@ -360,7 +427,6 @@ describe("parseViviFile — エッジケース", () => {
     ).toThrow(".vivi file is missing the parameters field");
   });
 });
-
 
 describe("parseViviFile — バージョン分岐カバレッジ", () => {
   it("version=1 を正常にパースできる", () => {
@@ -453,7 +519,6 @@ describe("parseViviFile — バージョン分岐カバレッジ", () => {
   });
 });
 
-
 describe("serializeProject — ブランチカバレッジ強化", () => {
   beforeEach(() => mockCanvasContext());
   afterEach(() => {
@@ -482,7 +547,6 @@ describe("serializeProject — ブランチカバレッジ強化", () => {
     }
   });
 });
-
 
 describe("deserializeProject — ブランチカバレッジ強化", () => {
   beforeEach(() => {
@@ -525,7 +589,6 @@ describe("deserializeProject — ブランチカバレッジ強化", () => {
     const restoredMesh = project.layers.find((l) => l.id === "orphan-mesh");
     expect(restoredMesh).toBeDefined();
   });
-
 
   it("ボーン親子階層がシリアライズ後も保持される", async () => {
     const grandchild = createBoneNode({ id: "gc", name: "孫", parentBoneId: "child" });

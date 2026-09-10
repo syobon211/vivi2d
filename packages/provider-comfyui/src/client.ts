@@ -100,7 +100,8 @@ export class ComfyUIClient {
           if (msg.type === "executed" && msg.data?.prompt_id === promptId) {
             clearTimeout(timeout);
             ws.close();
-            const history = await this.getHistory(promptId);
+            // Fetch failures must settle this path so polling can take over.
+            const history = await this.getHistory(promptId).catch(() => null);
             if (history) {
               resolve(history);
             } else {

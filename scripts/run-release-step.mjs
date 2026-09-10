@@ -28,7 +28,7 @@ const startedAt = new Date().toISOString();
 const command = commandForPlatform(commandArgs[0], commandArgs.slice(1));
 const stdout = createTranscriptBuffer();
 const stderr = createTranscriptBuffer();
-let spawnError = null;
+let spawnFailed = false;
 let lastOutputAt = Date.now();
 const heartbeatMs = parseHeartbeatMs(process.env.VIVI2D_RELEASE_STEP_HEARTBEAT_MS);
 
@@ -40,7 +40,7 @@ const result = await new Promise((resolve) => {
     const secondsSinceOutput = Math.round((Date.now() - lastOutputAt) / 1000);
     const message = `[release-step:${name}] still running; no child output for ${secondsSinceOutput}s.\n`;
     process.stderr.write(message);
-    stderr.append(message);
+    // Do not splice heartbeat text into a credential split across child chunks.
   }, heartbeatMs);
   heartbeat.unref();
 
@@ -48,20 +48,15 @@ const result = await new Promise((resolve) => {
   child.stderr.setEncoding("utf8");
   child.stdout.on("data", (chunk) => {
     lastOutputAt = Date.now();
-    process.stdout.write(chunk);
     stdout.append(chunk);
   });
   child.stderr.on("data", (chunk) => {
     lastOutputAt = Date.now();
-    process.stderr.write(chunk);
     stderr.append(chunk);
   });
-  child.on("error", (error) => {
+  child.on("error", () => {
     lastOutputAt = Date.now();
-    spawnError = error;
-    const message = `${error.message}\n`;
-    process.stderr.write(message);
-    stderr.append(message);
+    spawnFailed = true;
   });
   child.on("close", (status, signal) => {
     clearInterval(heartbeat);
@@ -69,21 +64,26 @@ const result = await new Promise((resolve) => {
   });
 });
 const finishedAt = new Date().toISOString();
-const status = result.status ?? (spawnError ? 1 : null);
+const status = result.status ?? (spawnFailed ? 1 : null);
 const signal = result.signal ?? null;
+// Redact complete bounded streams, never raw chunks (a credential can span chunks).
+const stdoutText = redact(stdout.text());
+const stderrText =
+  redact(stderr.text()) +
+  (spawnFailed ? "\n[release-step] child process could not be started.\n" : "");
 const transcript = [
   `name: ${name}`,
-  `command: ${commandArgs.join(" ")}`,
+  "command: <omitted; see named workflow step>",
   `startedAt: ${startedAt}`,
   `finishedAt: ${finishedAt}`,
   `status: ${status ?? 1}`,
   `signal: ${signal ?? ""}`,
   "",
   "stdout:",
-  redact(stdout.text()),
+  stdoutText,
   "",
   "stderr:",
-  redact(stderr.text()),
+  stderrText,
   "",
 ].join("\n");
 fs.writeFileSync(path.join("transcripts", `${name}.log`), transcript);
@@ -95,10 +95,12 @@ if (status !== 0) {
       signal ? ` and signal ${signal}` : ""
     }. Transcript written to ${transcriptPath}.`,
   );
-  printTail("stdout", stdout.text());
-  printTail("stderr", stderr.text());
+  printTail("stdout", stdoutText);
+  printTail("stderr", stderrText);
   process.exit(status ?? 1);
 }
+process.stdout.write(stdoutText);
+process.stderr.write(stderrText);
 
 function valueAfter(args, flag) {
   const index = args.indexOf(flag);
@@ -112,7 +114,7 @@ function redact(text) {
       "<github-token-redacted>",
     )
     .replace(/\bsk-(?:proj-)?[A-Za-z0-9_-]{20,}\b/g, "<openai-key-redacted>")
-    .replace(/\b(?:NPM_TOKEN|NODE_AUTH_TOKEN)=\S+/g, "$1=<redacted>")
+    .replace(/\b(NPM_TOKEN|NODE_AUTH_TOKEN)=\S+/g, "$1=<redacted>")
     .replace(/[A-Za-z]:[\\/]+Users[\\/]+[^\\/]+[\\/]/g, "<user-path-redacted>/");
 }
 
@@ -153,7 +155,7 @@ function parseHeartbeatMs(value) {
 }
 
 function printTail(label, text) {
-  const redacted = redact(text).trimEnd();
+  const redacted = text.trimEnd();
   if (redacted.length === 0) {
     console.error(`[release-step:${name}] ${label} tail: <empty>`);
     return;
@@ -185,7 +187,10 @@ function createTranscriptBuffer() {
       if (remaining > 0) {
         content += Buffer.from(chunk).subarray(0, remaining).toString("utf8");
       }
-      content += "\n[release-step] transcript truncated after 128 MiB.\n";
+      // Dropping the incomplete last line avoids publishing a credential prefix
+      // cut short before it can match the complete-value redaction patterns.
+      content = content.slice(0, content.lastIndexOf("\n") + 1);
+      content += "[release-step] transcript truncated after 128 MiB.\n";
       truncated = true;
       byteLength = MAX_TRANSCRIPT_BUFFER_BYTES;
     },

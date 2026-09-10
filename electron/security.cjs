@@ -233,6 +233,9 @@ function validateSafeRelativePath(relativePath, label = "relative path") {
     if (segment === "" || segment === "." || segment === "..") {
       throw new Error(`Invalid ${label}: path traversal is not allowed`);
     }
+    if (/[<>:"|?*]/.test(segment)) {
+      throw new Error(`Invalid ${label}: Windows special characters are not allowed`);
+    }
     if (segment.endsWith(".") || segment.endsWith(" ")) {
       throw new Error(`Invalid ${label}: trailing dots or spaces are not allowed`);
     }

@@ -1,6 +1,8 @@
 import type { Affine2D } from "./bone-utils";
 import type { IKBoneConstraint, IKController } from "./types";
 
+const MAX_CCD_ITERATIONS = 1024;
+
 export interface IKSolution {
   /** Final absolute bone angles keyed by bone id. */
   solvedAngles: Map<string, number>;
@@ -135,7 +137,7 @@ export function solveCCDIK(
 
   let reached = false;
 
-  for (let iter = 0; iter < maxIterations; iter++) {
+  for (let iter = 0; iter < Math.min(maxIterations, MAX_CCD_ITERATIONS); iter++) {
     for (let i = bones.length - 1; i >= 0; i--) {
       const endEffector = computeEndEffector();
 

@@ -12,12 +12,12 @@ function revokeGrant(server, closeCodes, grantId) {
   server.grantWriteTimestamps.delete(grantId);
   try {
     server.saveGrants();
-  } catch (error) {
+  } catch {
     server.grants.set(grantId, existing);
     if (previousWriteTimestamps) {
       server.grantWriteTimestamps.set(grantId, previousWriteTimestamps);
     }
-    server.logger.warn?.("[viewer-api] grant revoke save failed", error);
+    server.logger.warn?.("[viewer-api] grant revoke save failed");
     return false;
   }
   for (const client of server.wsServer?.clients ?? []) {
@@ -37,12 +37,12 @@ function revokeGrant(server, closeCodes, grantId) {
           fingerprint,
         });
         client.send(event, closeRevoked);
-      } catch (error) {
-        server.logger.warn?.("[viewer-api] failed to send grant revocation", error);
+      } catch {
+        server.logger.warn?.("[viewer-api] failed to send grant revocation");
         try {
           closeRevoked();
-        } catch (closeError) {
-          server.logger.warn?.("[viewer-api] failed to close revoked client", closeError);
+        } catch {
+          server.logger.warn?.("[viewer-api] failed to close revoked client");
         }
       }
     }
@@ -69,8 +69,8 @@ function scheduleGrantSave(server) {
     server.grantSaveTimer = null;
     try {
       saveGrants(server);
-    } catch (error) {
-      server.logger.warn?.("[viewer-api] scheduled grant save failed", error);
+    } catch {
+      server.logger.warn?.("[viewer-api] scheduled grant save failed");
     }
   }, 1_000);
   server.grantSaveTimer.unref?.();
@@ -82,8 +82,8 @@ function flushScheduledGrantSave(server) {
   server.grantSaveTimer = null;
   try {
     saveGrants(server);
-  } catch (error) {
-    server.logger.warn?.("[viewer-api] grant save flush failed", error);
+  } catch {
+    server.logger.warn?.("[viewer-api] grant save flush failed");
   }
 }
 

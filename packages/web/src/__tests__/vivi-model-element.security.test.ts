@@ -55,8 +55,47 @@ describe("ViviModelElement security guards", () => {
     await element.load("huge.vivi");
     const message = await errorPromise;
 
-    expect(message).toContain("Remote .vivi model is too large");
+    expect(message).toBe("Could not load a Vivi2D model.");
 
     document.body.removeChild(element);
+  });
+
+  it("cancels a non-OK fetched response owned by the element", async () => {
+    const cancel = vi.fn();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ReadableStream({ cancel }), { status: 503 }),
+    );
+    const element = document.createElement("vivi-model") as ViviModelElement;
+    document.body.appendChild(element);
+    try {
+      await element.load("https://example.invalid/model.vivi");
+      expect(cancel).toHaveBeenCalledOnce();
+    } finally {
+      element.remove();
+    }
+  });
+
+  it.each([
+    new TypeError("synthetic-password in fetch URL"),
+    "synthetic-password",
+  ])("does not forward rejected source details through public error events", async (failure) => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(failure);
+    const element = document.createElement("vivi-model") as ViviModelElement;
+    document.body.appendChild(element);
+    const messages: string[] = [];
+    for (const name of ["error", "vivi-error"]) {
+      element.addEventListener(name, (event) => {
+        messages.push((event as CustomEvent).detail.message);
+      });
+    }
+    try {
+      await element.load("https://example.invalid/model.vivi");
+      expect(messages).toEqual([
+        "Could not load a Vivi2D model.",
+        "Could not load a Vivi2D model.",
+      ]);
+    } finally {
+      element.remove();
+    }
   });
 });

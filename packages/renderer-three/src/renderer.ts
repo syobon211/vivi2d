@@ -203,6 +203,8 @@ export class ViviThreeRenderer {
         screenMaterial = createScreenColorMaterial(
           texture,
           runtimeColorToRgb(state.screenColor),
+          runtimeColorToRgb(state.multiplyColor ?? [1, 1, 1, 1]),
+          state.opacity,
         );
         const scBlend = toThreeBlendConfig(state.blendMode);
         applyThreeBlendConfig(screenMaterial, scBlend);
@@ -257,7 +259,7 @@ export class ViviThreeRenderer {
       mesh.renderOrder = state.drawOrder;
       mesh.visible = state.visible;
 
-      (mesh.material as Material).opacity = state.opacity;
+      baseMaterial.opacity = state.opacity;
 
       baseMaterial.color.setHex(runtimeColorToHex(state.multiplyColor));
 
@@ -269,12 +271,16 @@ export class ViviThreeRenderer {
           updateScreenColorMaterial(
             managed.screenMaterial,
             runtimeColorToRgb(state.screenColor),
+            runtimeColorToRgb(state.multiplyColor ?? [1, 1, 1, 1]),
+            state.opacity,
           );
           managed.screenMaterial.opacity = state.opacity;
         } else {
           managed.screenMaterial = createScreenColorMaterial(
             texture,
             runtimeColorToRgb(state.screenColor),
+            runtimeColorToRgb(state.multiplyColor ?? [1, 1, 1, 1]),
+            state.opacity,
           );
           managed.screenMaterial.opacity = state.opacity;
         }

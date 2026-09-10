@@ -276,8 +276,8 @@ export function unremapUvs(
   for (let i = 0; i < atlasUvs.length; i += 2) {
     const u = atlasUvs[i] ?? 0;
     const v = atlasUvs[i + 1] ?? 0;
-    result[i] = (u * atlasWidth - entry.x) / entry.width;
-    result[i + 1] = (v * atlasHeight - entry.y) / entry.height;
+    result[i] = entry.width === 0 ? 0 : (u * atlasWidth - entry.x) / entry.width;
+    result[i + 1] = entry.height === 0 ? 0 : (v * atlasHeight - entry.y) / entry.height;
   }
   return result;
 }

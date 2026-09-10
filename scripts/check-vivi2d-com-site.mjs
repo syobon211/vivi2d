@@ -13,7 +13,13 @@ function fail(message) {
 }
 
 function readJson(relativePath) {
-  return JSON.parse(fs.readFileSync(path.join(root, relativePath), "utf8"));
+  try {
+    return JSON.parse(fs.readFileSync(path.join(root, relativePath), "utf8"));
+  } catch {
+    throw new Error(
+      `${relativePath} must contain strict, comment-free JSON for this checker.`,
+    );
+  }
 }
 
 function normalizeJson(value) {
@@ -241,6 +247,14 @@ if (!fs.existsSync(headersPath)) {
 `;
   if (headers !== expectedHeaders) {
     fail("_headers must pin the reviewed vivi2d.com security headers.");
+  }
+  if (headers.includes("script-src 'none'")) {
+    for (const entry of fs.readdirSync(outDir, { recursive: true })) {
+      if (!entry.endsWith(".html")) continue;
+      const html = fs.readFileSync(path.join(outDir, entry), "utf8");
+      if (/<script\b/i.test(html))
+        fail(`script-free CSP is incompatible with script tags in ${entry}.`);
+    }
   }
 }
 

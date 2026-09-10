@@ -98,7 +98,7 @@ describe("ViviModelElement release gate smoke", () => {
       );
     });
 
-    expect(message).toContain("404");
+    expect(message).toBe("Could not load a Vivi2D model.");
     expect(el!.isConnected).toBe(true);
   });
 

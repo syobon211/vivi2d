@@ -245,9 +245,9 @@ The installer release record must include:
 - code signing status and signature verification result
 - protected release environment name and approval summary
 - build-provenance attestation URL or owner-approved exception
-- manual Windows VM review summary, including reviewer, review date, Windows
-  version, install result, first-launch network result, uninstall result, and
-  intentional remnants
+- manual Windows VM review summary containing only the fixed public reviewer
+  role, calendar date, Windows family, strict boolean results, and allowlisted
+  remnant codes described below; never names, machine paths, or private notes
 - installer scope: Windows x64 NSIS only
 - application scope: exactly which app installers are included, starting with
   Editor and adding Vivi2D Viewer for alpha.3 and later after verifier support
@@ -282,6 +282,60 @@ gitleaks-history
 windows-installer-build
 verify-windows-installer-assets
 ```
+
+This v1 record list declares the expected gates; it is not proof that their
+transcripts exist. Preserve Linux evidence in `windows-installer-alpha-baseline`
+and Windows evidence in `windows-installer-alpha-baseline-windows` (14-day CI
+retention). For builds containing the Viewer, inspect the additional
+`windows-viewer-installer-build` transcript as well. The v1 list above remains
+unchanged so historical records are not reinterpreted by a new allowlist.
+
+Hosted dispatch does not accept manual-review JSON or other free-form review
+metadata. The preparer emits its fixed `pending` summary: an earlier review
+cannot attest to installers that this workflow has not built yet. Review the
+exact emitted Editor/Viewer installer hashes after the build, retain evidence
+containing account or machine details outside this public checkout and outside
+Actions inputs/logs/artifacts, and obtain owner publication approval separately.
+A draft build or a `passed` summary is not publication approval.
+
+For a local summary of the exact reviewed artifacts, `--manual-review-json`,
+`VIVI2D_WINDOWS_MANUAL_REVIEW_JSON`, and the legacy `MANUAL_REVIEW_JSON` accept only
+the closed public-data shape below. Do not pass private notes to these inputs;
+validation is not a way to sanitize arbitrary text or protect shell history.
+The preparer and asset verifier reject unknown or missing keys, invalid JSON,
+coerced booleans, arbitrary strings, and inconsistent review status. Input
+values are not included in manual-review validation errors.
+
+| v1 field | Accepted public value |
+| --- | --- |
+| `status` | `pending` or `passed` |
+| `installPassed`, `firstLaunchNetworkPassed`, `uninstallPassed` | JSON booleans only |
+| `reviewedBy` | Empty for pending; fixed role label `owner` for passed, not a person's identity |
+| `reviewDate` | Empty for pending; a real calendar date in `YYYY-MM-DD` form for passed |
+| `windowsVersion` | Empty for pending; `windows-10` or `windows-11` for passed |
+| `intentionalRemnants` | An array of unique codes from the table below |
+
+`pending` requires all three booleans to be `false`, all metadata strings empty,
+and no remnant codes. `passed` requires all three booleans to be `true`, the fixed
+reviewer role, a valid date, and a supported Windows family. This summary alone
+does not attest who performed the review or replace the exact artifact digest
+checks and separate owner approval.
+
+| Remnant code | Fixed release-notes text |
+| --- | --- |
+| `editor-user-data` | Editor user data retained. |
+| `editor-cache` | Editor cache retained. |
+| `viewer-user-data` | Viewer user data retained. |
+| `viewer-cache` | Viewer cache retained. |
+
+No absolute path, user name, email, free-form description, or nested object is
+accepted as a remnant. An unlisted remnant or Windows family needs a reviewed
+policy update before a new public summary can represent it; there is no `other`
+escape hatch. Release notes use only the fixed text above, or a fixed pending /
+no-remnants message. The v1 key set and installer/checksum binding remain
+unchanged. Historical free-text records are not modified or grandfathered into
+the stricter verifier: prepare a new public-safe summary for a new release
+candidate while retaining historical evidence separately.
 
 `check:environment-protection` or a successor hosted-settings check must verify
 that the environment requires owner approval, restricts publishing to release
@@ -424,8 +478,8 @@ npm run check:source-review-archive
 npm run check:viewer-mediapipe-assets
 npm run check:history-secrets
 node scripts/install-pinned-gitleaks.mjs --manifest scripts/release-tool-versions.json
-gitleaks detect --source . --no-git
-gitleaks git --log-opts="--all" .
+gitleaks detect --source . --no-git --redact=100
+gitleaks git --log-opts="--all" . --redact=100
 ```
 
 `gitleaks` remains Linux-only until `scripts/release-tool-versions.json` adds a
@@ -545,6 +599,20 @@ The installer workflow should mirror the hardened GitHub Release alpha pattern:
 - Artifact upload between jobs must use a short retention window and a stable
   allowlisted artifact name. The write-scoped release job must verify the
   downloaded bundle again before attaching it.
+
+Both artifact-producing jobs (`linux-validation` and `windows-packaging`)
+require `desktop-installer-alpha` approval before they start, then run
+`node scripts/check-environment-protection.mjs --live --environment desktop-installer-alpha`
+before installation/build commands. Failure to read or match the live
+protection policy blocks uploads; producer steps must not use
+`continue-on-error`. This environment is also shared with the `v*-alpha.*`
+source-release workflow. Approval authorizes generation and hosting of public
+review artifacts, not the later exact-installer manual review or publication.
+Hosted manual review remains pending. Artifact uploads use normal success
+handling and are never a private review channel. Inspect public inputs and
+templates before authorizing a run, then review its actual record/notes before
+any later publication; approval before generation is not inspection of the
+not-yet-generated files.
 
 Do not combine installer publication with the source/provenance-only workflow
 until both verifier contracts are merged intentionally. A separate installer

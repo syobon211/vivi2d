@@ -8,8 +8,17 @@ useDefault = true
 id = "generic-api-key"
 
 [[rules.allowlists]]
-description = "Ignore generic-api-key false positives only across generated 100-character WebAssembly base64 chunk boundaries."
+description = "Ignore reviewed generic-api-key match shapes only at generated 100-character WebAssembly base64 chunk boundaries, including fragment truncation and reviewed decoded-symbol shapes."
 condition = "AND"
 regexTarget = "match"
 paths = ['''^packages/runtime-wasm/src/native-wasm-bytes\.ts$''']
-regexes = ['''^[A-Za-z0-9+/]{15,73}",\n  "[A-Za-z0-9+/]{100}"$''']
+regexes = [
+  '''^[A-Za-z0-9+/]{15,73}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{61}",\n  "[A-Za-z0-9+/]{10,100}$''',
+  '''^[A-Za-z0-9]{10}_[A-Za-z0-9]{17}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{11}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{10}_[A-Za-z0-9]{18}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{9}_[A-Za-z0-9]{4}_[A-Za-z0-9]{14}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{16}",\n  "[A-Za-z0-9+/]{100}"$''',
+]

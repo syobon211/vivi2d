@@ -1,9 +1,9 @@
-import type { ViviFileData } from "@vivi2d/core/types";
 import { assertPublicViviFileProfile } from "@vivi2d/core/public-profile";
+import type { ViviFileData } from "@vivi2d/core/types";
 import { decodeViviBinary, encodeViviBinary } from "@vivi2d/core/vivib-format";
 import { t as tGlobal } from "@/lib/i18n";
 import { inferProjectSourceKind } from "@/lib/project-source-kind";
-import { clearTextures, getAllTextures } from "@/lib/texture-store";
+import { getAllTextures } from "@/lib/texture-store";
 import { useEditorStore } from "../editorStore";
 import { useNotificationStore } from "../notificationStore";
 import { initParameterValues, resetRelatedStores } from "./reset";
@@ -20,7 +20,6 @@ export async function loadProject(): Promise<boolean> {
     const fileData: ViviFileData =
       "binary" in result ? decodeViviBinary(result.binary) : parseViviFile(result.data);
     assertPublicViviFileProfile(fileData);
-    clearTextures();
     const project = await deserializeProject(fileData);
     const inferredSourceKind = inferProjectSourceKind(project);
     project.sourceKind = inferredSourceKind === "none" ? undefined : inferredSourceKind;

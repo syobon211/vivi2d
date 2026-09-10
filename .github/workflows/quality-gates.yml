@@ -11,8 +11,13 @@ on:
       - "README.md"
       - "SECURITY.md"
       - "docs/**"
+      - "e2e/**"
       - "electron/**"
+      - "electron-builder.yml"
+      - "electron-builder.viewer.yml"
       - "examples/**"
+      - "index.html"
+      - "integrations/**"
       - "package.json"
       - "package-lock.json"
       - "packages/**"
@@ -50,6 +55,9 @@ jobs:
           apps/vivi2d-com/scripts/build.mjs
           e2e/playwright.config.ts
           electron/ipc-contract.cjs
+          electron/atomic-write.cjs
+          packages/renderer-pixi/src/app-lifecycle.ts
+          packages/renderer-pixi/src/__tests__/app-lifecycle.test.ts
           electron/main.cjs
           electron/security.cjs
           electron/window.cjs
@@ -66,6 +74,7 @@ jobs:
           scripts/check-architecture-boundaries.mjs
           scripts/check-core-model-current-fixtures.mjs
           scripts/check-direct-model-mutations.mjs
+          scripts/check-direct-model-mutations.test.mjs
           scripts/check-docs-architecture.mjs
           scripts/check-docs-public-surface.mjs
           scripts/check-security-supported-versions.mjs
@@ -104,8 +113,12 @@ jobs:
           scripts/prepare-windows-installer-assets.mjs
           scripts/verify-windows-installer-assets.mjs
           scripts/lib/windows-installer-alpha.mjs
+          scripts/lib/release-node-cache-policy.mjs
           scripts/check-npm-token-hygiene.mjs
           scripts/check-environment-protection.mjs
+          scripts/lib/environment-protection-live.mjs
+          scripts/check-environment-protection.test.mjs
+          scripts/check-env-ignore.test.mjs
           scripts/check-npm-cli-version.mjs
           scripts/check-release-input-version.mjs
           scripts/check-release-tag.mjs
@@ -125,6 +138,7 @@ jobs:
           scripts/check-hosted-release-surfaces.mjs
           scripts/create-source-review-archive.mjs
           scripts/check-quality-gate-drift.mjs
+          scripts/check-quality-gate-drift.test.mjs
           scripts/check-release-surface.mjs
           scripts/check-release-gates.test.mjs
           scripts/check-runtime-c-abi-link.mjs
@@ -132,6 +146,8 @@ jobs:
           scripts/check-runtime-png.mjs
           scripts/check-runtime-wasm-browser.mjs
           scripts/check-secrets.mjs
+          scripts/check-secret-redaction.test.mjs
+          scripts/check-tooling-hardening.test.mjs
           scripts/check-security-patterns.mjs
           scripts/check-security-patterns.test.mjs
           scripts/generate-third-party-notices.mjs
@@ -143,6 +159,7 @@ jobs:
           scripts/lib/content-safety-patterns.mjs
           scripts/lib/repo.test.mjs
           scripts/lib/repo.mjs
+          scripts/lib/direct-model-mutation-scan.mjs
           scripts/run-quality-gates.mjs
       - run: npm run check:model-schema-validators
       - run: npx tsc --noEmit
@@ -158,10 +175,12 @@ jobs:
       - run: npm run check:escalation-template
       - run: npm run docs:user:check
       - run: npm run docs:user:check:release
+      - run: npm run docs:media:check
       - run: npm run docs:site:check
       - run: npm run check:security-supported-versions
       - run: npm run check:docs-public-surface
       - run: npm run check:quality-gate-drift
+      - run: npm run check:e2e-project-coverage
       - run: npm run test
       - run: npm run i18n:check:all
       - run: npm run check:ipc-contract
@@ -182,7 +201,10 @@ jobs:
       - run: npm run check:history-secrets
       - run: npm run check:source-comments
       - run: npm run check:viewer-tests
+      - run: npm run check:viewer-mediapipe-assets
       - run: npm run check:provider-conformance
+      - run: npm run check:provider-sdk-samples
+      - run: npm run check:viewer-api-contracts
       - run: npm run check:core-model-current-fixtures
       - run: npm run check:model-fixtures
       - run: npm run check:samples:static

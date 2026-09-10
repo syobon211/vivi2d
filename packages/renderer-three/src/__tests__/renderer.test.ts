@@ -405,6 +405,33 @@ describe("ViviThreeRenderer", () => {
   });
 
   describe("スクリーンカラー", () => {
+    it("passes opacity and multiply color through screen material creation and sync", async () => {
+      const { ShaderMaterial } = await import("three");
+      vi.mocked(ShaderMaterial).mockClear();
+      const renderer = ViviThreeRenderer.create(canvas);
+      const state = createMockMeshState({
+        multiplyColor: [0.4, 0.5, 0.6, 1],
+        screenColor: [0.1, 0.2, 0.3, 1],
+        opacity: 0.25,
+      });
+      renderer.setModel(
+        createMockModel(new Map([["mesh-1", state]])),
+        new Map([["mesh-1", document.createElement("canvas")]]),
+      );
+      const material = vi.mocked(ShaderMaterial).mock.results[0]!.value;
+      expect(vi.mocked(ShaderMaterial).mock.calls[0]![0]?.vertexShader).not.toMatch(
+        /\b(?:attribute|in)\s+vec2\s+uv\s*;/,
+      );
+      expect(material.uniforms.uOpacity.value).toBe(0.25);
+      expect(material.uniforms.uMultiplyColor.value).toMatchObject({ x: 0.4, y: 0.5, z: 0.6 });
+      state.opacity = 0.75;
+      state.multiplyColor = [0.7, 0.8, 0.9, 1];
+      renderer.sync();
+      expect(material.uniforms.uOpacity.value).toBe(0.75);
+      expect(material.uniforms.uMultiplyColor.value.set).toHaveBeenCalledWith(0.7, 0.8, 0.9);
+      renderer.destroy();
+    });
+
     it("screenColorありでShaderMaterialが使われる", () => {
       const renderer = ViviThreeRenderer.create(canvas);
       const state = createMockMeshState({
@@ -433,6 +460,48 @@ describe("ViviThreeRenderer", () => {
   });
 
   describe("screen material blend sync", () => {
+    it.each([false, true])(
+      "restores current base opacity in one sync after screen removal (initial screen=%s)",
+      async (initialScreen) => {
+        const { Mesh, MeshBasicMaterial, ShaderMaterial } = await import("three");
+        vi.mocked(Mesh).mockClear();
+        vi.mocked(MeshBasicMaterial).mockClear();
+        vi.mocked(ShaderMaterial).mockClear();
+        const renderer = ViviThreeRenderer.create(canvas);
+        const state = createMockMeshState({
+          opacity: 0.5,
+          screenColor: initialScreen ? [0.1, 0.2, 0.3, 1] : null,
+        });
+        try {
+          renderer.setModel(
+            createMockModel(new Map([["mesh-1", state]])),
+            new Map([["mesh-1", document.createElement("canvas")]]),
+          );
+          const mesh = vi.mocked(Mesh).mock.results[0]!.value;
+          const baseMaterial = vi.mocked(MeshBasicMaterial).mock.results[0]!.value;
+          if (!initialScreen) {
+            expect(mesh.material).toBe(baseMaterial);
+            state.screenColor = [0.1, 0.2, 0.3, 1];
+            renderer.sync();
+          }
+          const screenMaterial = vi.mocked(ShaderMaterial).mock.results[0]!.value;
+          expect(mesh.material).toBe(screenMaterial);
+          expect(screenMaterial.uniforms.uOpacity.value).toBe(0.5);
+
+          state.screenColor = null;
+          state.opacity = 0.3;
+          renderer.sync();
+
+          expect(baseMaterial.opacity).toBe(0.3);
+          expect(mesh.material).toBe(baseMaterial);
+          expect(mesh.material.opacity).toBe(0.3);
+          expect(screenMaterial.dispose).toHaveBeenCalledTimes(1);
+        } finally {
+          renderer.destroy();
+        }
+      },
+    );
+
     it("applies custom blend factors to screen material during build", async () => {
       const { ShaderMaterial } = await import("three");
       vi.mocked(ShaderMaterial).mockClear();

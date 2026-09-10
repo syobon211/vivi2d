@@ -57,6 +57,25 @@ If another local tool controls Viewer, pair it only when you understand the prom
 
 ## Check Your Result
 
+### Recording limits
+
+Recordings stop automatically after 60 seconds and use the same save path as a
+manual stop. GIF recording may finish sooner: retained raw frames are limited to
+128 MiB. Viewer stops before another complete frame would exceed that budget and
+saves the captured portion, including when the budget is reached exactly. This is
+not a limit on total memory use; the canvas, encoder and output need additional
+memory. Larger frames therefore allow shorter GIF recordings.
+
+If one GIF frame already exceeds the budget, recording is rejected before that
+frame is allocated. GIF dimensions must be positive integers no greater than
+65,535 per side. Changing the canvas dimensions during GIF recording cancels it
+with a fixed recording error and does not save partial output. Stop recording
+before resizing or loading a differently sized model. A recording with no captured
+frame is not saved as an empty GIF.
+
+If MP4 encoding is unavailable, the supported WebM fallback is saved with a
+`.webm` extension.
+
 Viewer should load the model, respond to controls, and return to a stable rest state. You should be able to explain any warning before moving to export.
 
 ## If Something Looks Wrong

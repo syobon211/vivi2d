@@ -33,7 +33,10 @@ async function bootstrap(
     ({ nextTheme, nextLocale }) => {
       try {
         localStorage.clear();
-        localStorage.setItem("vivi2d-theme", nextTheme);
+        localStorage.setItem(
+          "vivi2d-theme",
+          JSON.stringify({ state: { theme: nextTheme }, version: 1 }),
+        );
         localStorage.setItem("vivi2d-locale", nextLocale);
         localStorage.setItem("vivi2d-workspace-mode", "default");
       } catch {
@@ -367,8 +370,10 @@ test.describe("design layout contracts", () => {
     const hasPrivateOpener = await window.evaluate(() => {
       const runtime = (globalThis as Window & typeof globalThis).__vivi2d as any;
       const blockedOpenerName = ["open", "Correct", "ive", "Wizard"].join("");
-      return typeof runtime?.useProjectDialogsStore?.getState()[blockedOpenerName] ===
-        "function";
+      return (
+        typeof runtime?.useProjectDialogsStore?.getState()[blockedOpenerName] ===
+        "function"
+      );
     });
     expect(hasPrivateOpener).toBe(false);
     await expect(window.getByRole("dialog")).toHaveCount(beforeCount);

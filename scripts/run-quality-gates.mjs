@@ -110,6 +110,12 @@ if (recordE2eWorkflows) {
   commands.push(["npm", ["run", "test:e2e:workflows"]]);
 }
 
+if (process.argv.includes("--list")) {
+  // Machine-readable inventory only; never execute a gate in this mode.
+  console.log(JSON.stringify(commands));
+  process.exit(0);
+}
+
 for (const [command, args] of commands) {
   console.log(`\n[quality] ${command} ${args.join(" ")}`);
   const result =

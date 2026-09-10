@@ -8,6 +8,7 @@ import {
   MAX_INSTALLED_FOOTPRINT_BYTES,
   MAX_INSTALLER_BYTES,
   matchesForbiddenGlob,
+  publicWindowsManualReview,
   resolveInsideRepo,
   WINDOWS_INSTALLER_ENVIRONMENT,
   WINDOWS_INSTALLER_FORBIDDEN_GLOBS,
@@ -72,7 +73,12 @@ for (const name of expectedChecksumNames) {
 }
 
 const recordPath = path.join(assetDir, assetNames.installerRecord);
-const record = JSON.parse(fs.readFileSync(recordPath, "utf8"));
+let record;
+try {
+  record = JSON.parse(fs.readFileSync(recordPath, "utf8"));
+} catch {
+  throw new Error("Installer record must be valid JSON.");
+}
 assertRecord(record);
 
 console.log("[windows-installer-alpha] verified");
@@ -133,15 +139,7 @@ function assertRecord(record) {
   if (!record.buildProvenance?.status) {
     throw new Error("installer record must include buildProvenance status.");
   }
-  if (
-    !record.manualWindowsReview ||
-    !["pending", "passed"].includes(record.manualWindowsReview.status)
-  ) {
-    throw new Error("installer record must include manualWindowsReview status.");
-  }
-  if (!Array.isArray(record.manualWindowsReview.intentionalRemnants)) {
-    throw new Error("manualWindowsReview.intentionalRemnants must be an array.");
-  }
+  publicWindowsManualReview(record.manualWindowsReview);
   if (record.sizeBudgets?.installerBytes > MAX_INSTALLER_BYTES) {
     throw new Error("installer exceeds size budget.");
   }
