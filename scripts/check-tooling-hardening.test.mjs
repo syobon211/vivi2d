@@ -20,6 +20,7 @@ function checkReleaseCacheFixture(checker, workflowPath, mutate = (text) => text
         (block, indent) => `${block}${indent}    package-manager-cache: false\n`,
       );
     fs.writeFileSync(path.join(directory, "workflow.yml"), mutate(workflow));
+    fs.writeFileSync(path.join(lib, "workflow-path.json"), JSON.stringify(workflowPath));
     const originalRepo = pathToFileURL(path.join(root, "scripts/lib/repo.mjs")).href;
     fs.writeFileSync(
       path.join(lib, "repo.mjs"),
@@ -27,7 +28,8 @@ function checkReleaseCacheFixture(checker, workflowPath, mutate = (text) => text
         'import fs from "node:fs";',
         `export * from ${JSON.stringify(originalRepo)};`,
         `import { readText as originalReadText } from ${JSON.stringify(originalRepo)};`,
-        `export function readText(file) { return file === ${JSON.stringify(workflowPath)} ? fs.readFileSync(${JSON.stringify(path.join(directory, "workflow.yml"))}, "utf8") : originalReadText(file); }`,
+        'const workflowPath = JSON.parse(fs.readFileSync(new URL("./workflow-path.json", import.meta.url), "utf8"));',
+        'export function readText(file) { return file === workflowPath ? fs.readFileSync(new URL("../workflow.yml", import.meta.url), "utf8") : originalReadText(file); }',
       ].join("\n"),
     );
     for (const helper of [
