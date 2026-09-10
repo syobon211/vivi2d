@@ -17,7 +17,7 @@ sha2 = { version = "0.10", default-features = false }
 vivi-asset-resolver = { path = "../vivi-asset-resolver", default-features = false }
 
 [dev-dependencies]
-base64 = "0.22"
+base64 = "0.23"
 tempfile = "3"
 
 [target.'cfg(windows)'.dependencies]
