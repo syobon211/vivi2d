@@ -4,6 +4,7 @@ import type {
   ProjectData,
   ViviMeshNode,
 } from "@vivi2d/core";
+import { VIVI_RUNTIME_ERROR_CODES, ViviRuntimeError } from "@vivi2d/model/runtime-spec";
 import type { RuntimeAffine2D } from "./bone";
 import {
   getRuntimeDrawOrder,
@@ -122,7 +123,7 @@ function computeFinalVerticesInto(
   layer: ViviMeshNode,
   out: Float32Array,
 ): void {
-  const skin = ctx.project.skins[layer.id];
+  const skin = ctx.project.skins?.[layer.id];
   const vertices = skin
     ? computeRuntimeSkinnedVertices(
         layer.mesh.vertices,
@@ -130,6 +131,15 @@ function computeFinalVerticesInto(
         ctx.worldTransforms,
       )
     : layer.mesh.vertices;
+  // Scratch can alias published state: validate all coordinates before any copy.
+  for (const value of vertices) {
+    if (!Number.isFinite(Math.fround(value))) {
+      throw new ViviRuntimeError(
+        VIVI_RUNTIME_ERROR_CODES.validation,
+        "runtime mesh coordinates must be finite binary32 values",
+      );
+    }
+  }
   const length = Math.min(out.length, vertices.length);
   for (let index = 0; index < length; index += 1) {
     out[index] = vertices[index]!;

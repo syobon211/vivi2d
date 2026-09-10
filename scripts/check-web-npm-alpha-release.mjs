@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { checkReleaseNodeCachePolicy } from "./lib/release-node-cache-policy.mjs";
 import { readJson, readText } from "./lib/repo.mjs";
 
 const failures = [];
@@ -91,6 +92,7 @@ function checkRequiredFiles() {
 }
 
 function checkWorkflowShape() {
+  failures.push(...checkReleaseNodeCachePolicy(workflow, workflowPath));
   requireText("workflow_dispatch:");
   requireText("version:");
   requireText("ref:");
@@ -158,8 +160,8 @@ function checkWorkflowRequirements() {
     "npm run audit:all",
     "npm run audit:prod",
     "npm run check:history-secrets",
-    "gitleaks detect --source . --no-git",
-    'gitleaks git --log-opts="--all" .',
+    "gitleaks detect --source . --no-git --redact=100",
+    'gitleaks git --log-opts="--all" . --redact=100',
     "npm run sbom:generate",
   ]) {
     if (!workflow.includes(command)) {
@@ -171,8 +173,14 @@ function checkWorkflowRequirements() {
     "node scripts/install-pinned-gitleaks.mjs --manifest scripts/release-tool-versions.json",
     "npm run check:history-secrets",
   );
-  assertOrder("npm run check:history-secrets", "gitleaks detect --source . --no-git");
-  assertOrder("gitleaks detect --source . --no-git", 'gitleaks git --log-opts="--all" .');
+  assertOrder(
+    "npm run check:history-secrets",
+    "gitleaks detect --source . --no-git --redact=100",
+  );
+  assertOrder(
+    "gitleaks detect --source . --no-git --redact=100",
+    'gitleaks git --log-opts="--all" . --redact=100',
+  );
   assertOrder(
     "npm pack --workspace @vivi2d/web --json",
     "node scripts/write-pack-output.mjs",

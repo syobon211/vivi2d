@@ -2804,8 +2804,8 @@
       "kind": "assignment",
       "line": 280,
       "path": "src/lib/atlas-packer.ts",
-      "signature": "src/lib/atlas-packer.ts:assignment:result[i + 1] = (v * atlasHeight - entry.y) / entry.height",
-      "text": "result[i + 1] = (v * atlasHeight - entry.y) / entry.height"
+      "signature": "src/lib/atlas-packer.ts:assignment:result[i + 1] = entry.height === 0 ? 0 : (v * atlasHeight - entry.y) / entry.height",
+      "text": "result[i + 1] = entry.height === 0 ? 0 : (v * atlasHeight - entry.y) / entry.height"
     },
     {
       "kind": "assignment",
@@ -2818,8 +2818,8 @@
       "kind": "assignment",
       "line": 279,
       "path": "src/lib/atlas-packer.ts",
-      "signature": "src/lib/atlas-packer.ts:assignment:result[i] = (u * atlasWidth - entry.x) / entry.width",
-      "text": "result[i] = (u * atlasWidth - entry.x) / entry.width"
+      "signature": "src/lib/atlas-packer.ts:assignment:result[i] = entry.width === 0 ? 0 : (u * atlasWidth - entry.x) / entry.width",
+      "text": "result[i] = entry.width === 0 ? 0 : (u * atlasWidth - entry.x) / entry.width"
     },
     {
       "kind": "mutating-call",
@@ -4920,6 +4920,13 @@
       "path": "src/lib/project-serializer.ts",
       "signature": "src/lib/project-serializer.ts:mutating-call:entryMap.set(entry.layerId, { entry, atlasWidth: atlas.width, atlasHeight: atlas.height, })",
       "text": "entryMap.set(entry.layerId, { entry, atlasWidth: atlas.width, atlasHeight: atlas.height, })"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 114,
+      "path": "src/lib/project-serializer.ts",
+      "signature": "src/lib/project-serializer.ts:mutating-call:nextTextures.set(entry.layerId, texCanvas)",
+      "text": "nextTextures.set(entry.layerId, texCanvas)"
     },
     {
       "kind": "assignment",

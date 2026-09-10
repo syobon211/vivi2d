@@ -6,8 +6,10 @@ import {
   describeFileForRecord,
   directorySizeBytes,
   expectedWindowsInstallerDownloadableAssetNames,
+  formatIntentionalRemnants,
   MAX_INSTALLED_FOOTPRINT_BYTES,
   MAX_INSTALLER_BYTES,
+  publicWindowsManualReview,
   resolveInsideRepo,
   TEXT_FILE_EXTENSIONS,
   WINDOWS_APP_FORBIDDEN_FILE_NAMES,
@@ -66,6 +68,16 @@ const releaseNotesTemplate = resolveInsideRepo(
 const signingStatus = options["signing-status"] ?? "unsigned";
 const chromiumMajorVersion = requireOption("chromium-major-version");
 const electronEmbeddedNodeVersion = requireOption("electron-embedded-node-version");
+if (!/^[1-9]\d{0,3}$/.test(chromiumMajorVersion)) {
+  throw new Error(
+    "Chromium major version must be a positive integer of at most four digits.",
+  );
+}
+if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(electronEmbeddedNodeVersion)) {
+  throw new Error(
+    "Electron embedded Node version must be a numeric major.minor.patch version.",
+  );
+}
 const manualReview = parseManualReview(options["manual-review-json"]);
 
 if (signingStatus !== "unsigned") {
@@ -358,37 +370,13 @@ function parseManualReview(rawValue) {
     rawValue ??
     process.env.VIVI2D_WINDOWS_MANUAL_REVIEW_JSON ??
     process.env.MANUAL_REVIEW_JSON;
-  const value = rawJson ? JSON.parse(rawJson) : fallback;
-  if (!["pending", "passed"].includes(value.status)) {
-    throw new Error("manualWindowsReview.status must be pending or passed.");
+  try {
+    return publicWindowsManualReview(
+      rawJson === undefined ? fallback : JSON.parse(rawJson),
+    );
+  } catch {
+    throw new Error("Invalid public manual Windows review summary.");
   }
-  if (!Array.isArray(value.intentionalRemnants)) {
-    throw new Error("manualWindowsReview.intentionalRemnants must be an array.");
-  }
-  return {
-    firstLaunchNetworkPassed: Boolean(value.firstLaunchNetworkPassed),
-    installPassed: Boolean(value.installPassed),
-    intentionalRemnants: value.intentionalRemnants,
-    reviewedBy: String(value.reviewedBy ?? ""),
-    reviewDate: String(value.reviewDate ?? ""),
-    status: value.status,
-    uninstallPassed: Boolean(value.uninstallPassed),
-    windowsVersion: String(value.windowsVersion ?? ""),
-  };
-}
-
-function formatIntentionalRemnants(manualReview) {
-  if (manualReview.intentionalRemnants.length === 0) return "- None recorded.";
-  return manualReview.intentionalRemnants
-    .map((entry) => `- ${singleLineMarkdownText(entry)}`)
-    .join("\n");
-}
-
-function singleLineMarkdownText(value) {
-  return String(value ?? "")
-    .replace(/[\r\n]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 function assertToolVersion(toolName, actualVersion) {

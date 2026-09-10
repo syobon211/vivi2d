@@ -222,6 +222,95 @@ describe("@vivi2d/web programmatic SDK", () => {
     ).rejects.toMatchObject({ code: "VIVI_WEB_INVALID_INPUT" });
   });
 
+  it.each([
+    "header",
+    "stream",
+  ])("cancels and releases an oversized SDK %s without waiting for its source", async (limitSource) => {
+    const reader = {
+      read: vi.fn().mockResolvedValue({
+        done: false,
+        value: { byteLength: MAX_VIVI_TEXT_FILE_BYTES + 1 },
+      }),
+      cancel: vi.fn(() => new Promise<void>(() => {})),
+      releaseLock: vi.fn(),
+    };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      headers: new Headers(
+        limitSource === "header"
+          ? {
+              "content-length": String(MAX_VIVI_TEXT_FILE_BYTES + 1),
+            }
+          : {},
+      ),
+      body: { getReader: () => reader },
+    } as unknown as Response);
+
+    await expect(
+      loadViviWebModel("https://example.invalid/large.vivi"),
+    ).rejects.toMatchObject({ code: "VIVI_WEB_LIMIT_EXCEEDED" });
+    expect(reader.read).toHaveBeenCalledTimes(limitSource === "header" ? 0 : 1);
+    expect(reader.cancel).toHaveBeenCalledOnce();
+    expect(reader.releaseLock).toHaveBeenCalledOnce();
+  });
+
+  it("aborts a pending caller Response clone without consuming the caller branch", async () => {
+    const abort = new AbortController();
+    const stream = new ReadableStream<Uint8Array>();
+    const response = new Response(stream);
+    const result = loadViviWebModel(response, { signal: abort.signal }).then(
+      () => "resolved",
+      (error: ViviWebError) => error.code,
+    );
+    await Promise.resolve();
+    abort.abort();
+    const outcome = await Promise.race([
+      result,
+      new Promise<string>((resolve) => setTimeout(() => resolve("pending"), 100)),
+    ]);
+    try {
+      // Cancelling one tee branch must not await the untouched caller branch.
+      expect(response.bodyUsed).toBe(false);
+      expect(outcome).toBe("VIVI_WEB_ABORTED");
+    } finally {
+      void response.body?.cancel();
+    }
+  });
+
+  it("releases a completed response reader and leaves the caller Response readable", async () => {
+    const response = new Response(makeViviJson());
+    const release = vi.spyOn(ReadableStreamDefaultReader.prototype, "releaseLock");
+    await loadViviWebModel(response);
+    expect(release).toHaveBeenCalled();
+    expect(response.bodyUsed).toBe(false);
+    expect(await response.text()).toBe(makeViviJson());
+  });
+
+  it("does not clone or consume a non-OK caller Response", async () => {
+    const cancel = vi.fn();
+    const response = new Response(new ReadableStream({ cancel }), { status: 503 });
+    const clone = vi.spyOn(response, "clone");
+    await expect(loadViviWebModel(response)).rejects.toMatchObject({
+      code: "VIVI_WEB_FETCH_FAILED",
+    });
+    expect(clone).not.toHaveBeenCalled();
+    expect(response.bodyUsed).toBe(false);
+    expect(cancel).not.toHaveBeenCalled();
+    await response.body?.cancel();
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
+  it("cancels a non-OK fetched response owned by the SDK", async () => {
+    const cancel = vi.fn();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ReadableStream({ cancel }), { status: 503 }),
+    );
+    await expect(
+      loadViviWebModel("https://example.invalid/model.vivi"),
+    ).rejects.toMatchObject({ code: "VIVI_WEB_FETCH_FAILED" });
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
   it("loads supported source variants and enforces safe fetch defaults", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
@@ -444,6 +533,41 @@ describe("@vivi2d/web programmatic SDK", () => {
     expect(frameRequests).toBe(2);
     expect(player.running).toBe(true);
     player.dispose();
+  });
+
+  it.each([
+    "start",
+    "dispose",
+  ] as const)("keeps disposal terminal when a stop listener calls %s", async (action) => {
+    let onStop = () => {};
+    let nextFrame = 0;
+    const frames = new Set<number>();
+    const events: string[] = [];
+    const player = await createViviWebPlayer({
+      autoStart: true,
+      canvas: document.createElement("canvas"),
+      model: await loadViviWebModel(makeViviObject()),
+      onEvent: (event) => {
+        events.push(event.type);
+        if (event.type === "stop") onStop();
+      },
+      scheduler: {
+        requestFrame: () => {
+          frames.add(++nextFrame);
+          return nextFrame;
+        },
+        cancelFrame: (handle) => {
+          frames.delete(handle);
+        },
+      },
+    });
+    onStop = () => player[action]();
+    player.dispose();
+    expect(player.disposed).toBe(true);
+    expect(player.running).toBe(false);
+    expect(frames.size).toBe(0);
+    expect(mocks.renderer.destroy).toHaveBeenCalledOnce();
+    expect(events).toEqual(["load", "start", "stop", "dispose"]);
   });
 
   it("does not emit load when autoStart fails before the player is usable", async () => {

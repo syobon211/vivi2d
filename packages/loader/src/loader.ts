@@ -1,3 +1,4 @@
+import { assertAtlasImageAllocationWithinLimits } from "@vivi2d/model/load-limits";
 import type { AtlasEntry, LayerNode, ViviFileData } from "@vivi2d/model/types";
 
 export interface ExtractedTexture {
@@ -22,6 +23,7 @@ function flattenLayers(layers: readonly LayerNode[]): LayerNode[] {
 export async function extractTextures(
   fileData: ViviFileData,
 ): Promise<Map<string, HTMLCanvasElement>> {
+  assertAtlasImageAllocationWithinLimits(fileData.atlases);
   const textures = new Map<string, HTMLCanvasElement>();
 
   const entryMap = new Map<
@@ -68,8 +70,9 @@ export async function extractTextures(
     const { entry, atlasWidth, atlasHeight } = mapping;
     const uvs = node.mesh.uvs;
     for (let i = 0; i < uvs.length; i += 2) {
-      uvs[i] = (uvs[i]! * atlasWidth - entry.x) / entry.width || 0;
-      uvs[i + 1] = (uvs[i + 1]! * atlasHeight - entry.y) / entry.height || 0;
+      uvs[i] = entry.width === 0 ? 0 : (uvs[i]! * atlasWidth - entry.x) / entry.width || 0;
+      uvs[i + 1] =
+        entry.height === 0 ? 0 : (uvs[i + 1]! * atlasHeight - entry.y) / entry.height || 0;
     }
   }
 

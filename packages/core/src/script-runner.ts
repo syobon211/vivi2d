@@ -116,6 +116,9 @@ async function executeCommand(
       for (let i = 0; i < count; i++) {
         if (state.cancelled) return;
         await executeCommands(cmd.commands, api, state);
+        // Resolved promises yield only to microtasks. Give host events a turn
+        // so even an empty or synchronous infinite loop can be cancelled.
+        if (i + 1 < count) await sleep(1, state);
       }
       break;
     }

@@ -72,6 +72,8 @@ export type ViviPhaserRenderableModel =
   | RenderableViviModel
   | LegacyRenderableViviModel;
 
+let nextTextureOrdinal = 0;
+
 export class ViviPhaserRenderer {
   private phaserScene: PhaserSceneLike;
   private meshes: Map<string, ManagedMesh> = new Map();
@@ -79,7 +81,6 @@ export class ViviPhaserRenderer {
   private offsetX: number;
   private offsetY: number;
   private depthBase: number;
-  private textureCounter = 0;
 
   constructor(options: ViviPhaserRendererOptions) {
     this.phaserScene = options.scene;
@@ -98,7 +99,10 @@ export class ViviPhaserRenderer {
     for (const state of getRuntimeRenderList(this.model)) {
       const canvas = canvasTextures.get(state.id) ?? canvasTextures.get(state.textureId);
       if (!canvas) continue;
-      const key = `vivi_${state.id}_${this.textureCounter++}`;
+      let key: string;
+      do {
+        key = `vivi_${state.id}_${nextTextureOrdinal++}`;
+      } while (this.phaserScene.textures.exists(key));
       this.phaserScene.textures.addCanvas(key, canvas);
       this.buildMesh(state, key);
     }

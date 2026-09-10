@@ -432,7 +432,7 @@ The initial scaffold lives in `apps/vivi2d-com/`. It names:
   assigned,
 - build command: `npm run docs:site:build`,
 - local validation command: `npm run docs:site:check`,
-- deployment target: Cloudflare Pages or Vercel,
+- current portal deployment target: Cloudflare Workers static assets,
 - generated-route public-surface scan command:
   `npm run check:docs-public-surface`.
 
@@ -487,8 +487,9 @@ The scaffold is ready when:
 - Generated route metadata is tracked in `apps/vivi2d-com/route-metadata.json`
   and included in `npm run check:docs-public-surface`.
 - The build and validation commands are documented in developer docs.
-- The deployment target is recorded as Cloudflare Pages or Vercel, with DNS
-  managed by Cloudflare.
+- The current portal target is Cloudflare Workers static assets, with Cloudflare
+  DNS. Generated docs routes remain unpublished; current builds leave
+  `VIVI_DOCS_BASE_URL` empty until those routes receive publication approval.
 
 ## Later Media Pass
 

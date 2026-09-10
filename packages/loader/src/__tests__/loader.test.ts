@@ -86,12 +86,46 @@ function createMinimalFileData(): ViviFileData {
 }
 
 describe("extractTextures (@vivi2d/loader)", () => {
+  it("rejects oversized decoded atlases before creating a canvas", async () => {
+    const fileData = createMinimalFileData();
+    fileData.atlases[0]!.width = 1_000_000;
+    fileData.atlases[0]!.height = 1_000_000;
+    const callsBefore = vi.mocked(document.createElement).mock.calls.length;
+    await expect(extractTextures(fileData)).rejects.toThrow();
+    expect(vi.mocked(document.createElement).mock.calls.length).toBe(callsBefore);
+  });
   it("アトラスからテクスチャCanvasが抽出される", async () => {
     const result = await extractTextures(createMinimalFileData());
     expect(result.size).toBe(1);
     expect(result.has("mesh-1")).toBe(true);
     expect(result.get("mesh-1")!.tagName).toBe("CANVAS");
   });
+
+  it.each([
+    { width: 0, height: 2, expected: [0, 0, 0, 0, 0, 0.5, 0, 0.5] },
+    { width: 2, height: 0, expected: [0, 0, 0.5, 0, 0, 0, 0.5, 0] },
+    { width: 0, height: 0, expected: [0, 0, 0, 0, 0, 0, 0, 0] },
+  ])(
+    "canonicalizes zero axes and retains a $width x $height texture",
+    async ({ width, height, expected }) => {
+      const fileData = createMinimalFileData();
+      const atlas = fileData.atlases[0]!;
+      atlas.width = 8;
+      atlas.height = 8;
+      atlas.entries = [{ layerId: "mesh-1", x: 2, y: 2, width, height }];
+      const mesh = fileData.project.layers[0]!;
+      if (mesh.kind !== "viviMesh") throw new Error("Expected mesh fixture");
+      mesh.mesh.uvs = [0.25, 0.25, 0.375, 0.25, 0.25, 0.375, 0.375, 0.375];
+
+      const textures = await extractTextures(fileData);
+
+      expect([...textures.keys()]).toEqual(["mesh-1"]);
+      expect(textures.get("mesh-1")!.width).toBe(width);
+      expect(textures.get("mesh-1")!.height).toBe(height);
+      expect(mesh.mesh.uvs).toEqual(expected);
+      expect(mesh.mesh.uvs.every(Number.isFinite)).toBe(true);
+    },
+  );
 
   it("空アトラスで空マップが返る", async () => {
     const fd = createMinimalFileData();

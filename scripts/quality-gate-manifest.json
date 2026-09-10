@@ -33,6 +33,8 @@
       ".github/workflows/test-matrix.yml"
     ],
     "requiredScripts": [
+      "packages/renderer-pixi/src/app-lifecycle.ts",
+      "packages/renderer-pixi/src/__tests__/app-lifecycle.test.ts",
       "apps/vivi2d-com/scripts/build.mjs",
       "scripts/check-architecture-boundaries.mjs",
       "scripts/check-core-model-current-fixtures.mjs",
@@ -51,6 +53,9 @@
       "scripts/check-docs-architecture.mjs",
       "scripts/check-history-secrets.mjs",
       "scripts/check-hosted-release-surfaces.mjs",
+      "scripts/lib/environment-protection-live.mjs",
+      "scripts/check-environment-protection.test.mjs",
+      "scripts/check-env-ignore.test.mjs",
       "scripts/create-source-review-archive.mjs",
       "scripts/check-ip-markers.mjs",
       "scripts/check-ip-product-profile.mjs",
@@ -65,6 +70,7 @@
       "scripts/check-model-jsc-portability.mjs",
       "scripts/check-native-artifact-policy.mjs",
       "scripts/check-oss-readiness.mjs",
+      "scripts/check-web-npm-alpha-release.mjs",
       "scripts/check-github-release-alpha.mjs",
       "scripts/generate-github-release-alpha-review-packet.mjs",
       "scripts/prepare-github-release-assets.mjs",
@@ -74,12 +80,27 @@
       "scripts/prepare-windows-installer-assets.mjs",
       "scripts/verify-windows-installer-assets.mjs",
       "scripts/lib/windows-installer-alpha.mjs",
+      "scripts/lib/release-node-cache-policy.mjs",
+      "scripts/check-npm-token-hygiene.mjs",
+      "scripts/check-environment-protection.mjs",
+      "scripts/check-npm-cli-version.mjs",
+      "scripts/check-release-input-version.mjs",
+      "scripts/check-release-tag.mjs",
+      "scripts/install-pinned-gitleaks.mjs",
+      "scripts/run-release-step.mjs",
+      "scripts/write-pack-output.mjs",
+      "scripts/record-web-npm-alpha-artifacts.mjs",
+      "scripts/verify-web-npm-alpha-release-record.mjs",
+      "scripts/verify-web-npm-alpha-publish.mjs",
       "scripts/check-pack-contents.mjs",
       "scripts/check-package-boundaries.mjs",
       "scripts/check-web-sdk-unlock.mjs",
       "scripts/check-ui-module-budget.mjs",
       "scripts/check-publication-history.mjs",
       "scripts/check-quality-gate-drift.mjs",
+      "scripts/check-quality-gate-drift.test.mjs",
+      "scripts/check-secret-redaction.test.mjs",
+      "scripts/check-tooling-hardening.test.mjs",
       "scripts/check-release-surface.mjs",
       "scripts/check-release-gates.test.mjs",
       "scripts/check-runtime-c-abi-link.mjs",
@@ -108,6 +129,83 @@
     ]
   },
   "gates": [
+    {
+      "npmScript": "docs:media:check",
+      "command": "npm run docs:media:check",
+      "requiredWorkflows": [".github/workflows/quality-gates.yml"],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:e2e-project-coverage",
+      "command": "npm run check:e2e-project-coverage",
+      "requiredWorkflows": [".github/workflows/quality-gates.yml", ".github/workflows/test-matrix.yml"],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:viewer-mediapipe-assets",
+      "command": "npm run check:viewer-mediapipe-assets",
+      "requiredWorkflows": [".github/workflows/quality-gates.yml"],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:provider-sdk-samples",
+      "command": "npm run check:provider-sdk-samples",
+      "requiredWorkflows": [".github/workflows/quality-gates.yml"],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:viewer-api-contracts",
+      "command": "npm run check:viewer-api-contracts",
+      "requiredWorkflows": [".github/workflows/quality-gates.yml"],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:viewer-api-samples",
+      "command": "npm run check:viewer-api-samples",
+      "requiredWorkflows": [],
+      "intentionallySplit": true,
+      "splitReason": "Local browser sample smoke requires a Chromium installation. It is not currently CI-covered; keep it explicit rather than adding another browser build to every PR quality job.",
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:viewer-api-e2e",
+      "command": "npm run check:viewer-api-e2e",
+      "requiredWorkflows": [],
+      "intentionallySplit": true,
+      "splitReason": "Local Viewer API Electron E2E requires a separate Viewer build, Chromium and a Linux display server. It is not currently CI-covered; the editor Playwright matrix does not cover this separate suite.",
+      "escalatable": true
+    },
+    {
+      "npmScript": "test:coverage",
+      "command": "npm run test:coverage",
+      "requiredWorkflows": [".github/workflows/test-matrix.yml"],
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
+      "npmScript": "test:e2e:smoke",
+      "command": "npm run test:e2e:smoke",
+      "requiredWorkflows": [],
+      "intentionallySplit": true,
+      "splitReason": "Opt-in local wrapper. The smoke project is run by test-matrix.yml through the parameterized run-e2e-projects.mjs command; check:e2e-project-coverage validates that project coverage.",
+      "escalatable": true
+    },
+    {
+      "npmScript": "test:e2e:workflows",
+      "command": "npm run test:e2e:workflows",
+      "requiredWorkflows": [],
+      "intentionallySplit": true,
+      "splitReason": "Opt-in local workflow verification suite is not currently in the blocking CI matrix. Do not imply it is covered by unrelated editor project names.",
+      "escalatable": true
+    },
+    {
+      "npmScript": "test:e2e:workflow-record",
+      "command": "npm run test:e2e:workflow-record",
+      "requiredWorkflows": [],
+      "intentionallySplit": true,
+      "splitReason": "Opt-in local documentation recording writes reviewable media artifacts; recording is deliberately not a CI validation job.",
+      "escalatable": true
+    },
     {
       "id": "root-typecheck",
       "npmScript": null,

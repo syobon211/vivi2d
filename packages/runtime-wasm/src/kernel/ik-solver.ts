@@ -1,6 +1,8 @@
 import type { IKBoneConstraint, IKController } from "@vivi2d/core";
 import type { RuntimeAffine2D } from "./bone";
 
+const MAX_CCD_ITERATIONS = 1024;
+
 export interface RuntimeIKSolution {
   readonly solvedAngles: Map<string, number>;
   readonly reached: boolean;
@@ -122,7 +124,11 @@ export function solveRuntimeCCDIK(
 
   let reached = false;
 
-  for (let iteration = 0; iteration < maxIterations; iteration += 1) {
+  for (
+    let iteration = 0;
+    iteration < Math.min(maxIterations, MAX_CCD_ITERATIONS);
+    iteration += 1
+  ) {
     for (let index = bones.length - 1; index >= 0; index -= 1) {
       const endEffector = computeEndEffector();
       const toEnd = Math.atan2(

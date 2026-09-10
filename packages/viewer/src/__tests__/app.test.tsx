@@ -34,6 +34,7 @@ const rendererInstance = {
   render: vi.fn(),
   setBackground: vi.fn(),
   setModel: vi.fn(),
+  resize: vi.fn(),
   screenToWorld: vi.fn(() => ({ x: 100, y: 200 })),
   pixiApp: {},
 };

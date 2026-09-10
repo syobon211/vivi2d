@@ -230,8 +230,8 @@ class ViewerApiEventQueue {
         if (!clientState || !grant || !this.isActiveGrantSession(ws, grant)) continue;
         if (!this.shouldDeliverEvent(clientState, grant, publicEvent)) continue;
         if (this.enqueueEvent(ws, clientState, publicEvent)) delivered += 1;
-      } catch (error) {
-        this.logger.warn?.("[viewer-api] failed to publish event to client", error);
+      } catch {
+        this.logger.warn?.("[viewer-api] failed to publish event to client");
       }
     }
     return delivered;

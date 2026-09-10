@@ -1,5 +1,7 @@
 import { vi } from "vitest";
 
+export const MOCK_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLttAAAAABJRU5ErkJggg==";
+
 export function mockCanvasContext() {
   const original = document.createElement.bind(document);
   vi.spyOn(document, "createElement").mockImplementation(
@@ -18,7 +20,7 @@ export function mockCanvasContext() {
           }
           return origGetContext(id, opts);
         }) as typeof canvas.getContext;
-        canvas.toDataURL = vi.fn().mockReturnValue("data:image/png;base64,AAAA");
+        canvas.toDataURL = vi.fn().mockReturnValue(`data:image/png;base64,${MOCK_PNG_BASE64}`);
       }
       return el;
     },

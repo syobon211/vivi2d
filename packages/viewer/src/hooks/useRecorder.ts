@@ -1,7 +1,12 @@
-import { type RefObject, useCallback, useEffect } from "react";
+import { type RefObject, useCallback, useEffect, useRef } from "react";
 import { RECORDING_MAX_DURATION } from "../constants";
 import type { TranslationKey } from "../i18n";
-import { downloadBlob, getRecordingExtension, type ViewerRecorder } from "../recorder";
+import {
+  downloadBlob,
+  getRecordingExtension,
+  type RecordingFormat,
+  type ViewerRecorder,
+} from "../recorder";
 import type { UseViewerStateResult } from "./useViewerState";
 
 export interface UseRecorderParams {
@@ -22,47 +27,112 @@ export interface UseRecorderResult {
   toggleRecording: () => Promise<void>;
 }
 
+interface OwnedRecording {
+  recorder: ViewerRecorder;
+  format: RecordingFormat;
+  modelName: string;
+  finishing: boolean;
+  generation: number;
+}
+
 export function useRecorder({
   recorderRef,
   state,
   t,
 }: UseRecorderParams): UseRecorderResult {
+  const mountedRef = useRef(true);
+  const activeRef = useRef<OwnedRecording | null>(null);
+  const generationRef = useRef(0);
   const toggleRecording = useCallback(async () => {
     const rec = recorderRef.current;
-    if (!rec) return;
+    if (!rec || !mountedRef.current) return;
+    const obsolete = activeRef.current;
+    if (obsolete && obsolete.recorder !== rec) {
+      activeRef.current = null;
+      generationRef.current++;
+      obsolete.recorder.cancel();
+    }
 
-    if (state.recordingState === "recording") {
+    const isLatest = (recording: OwnedRecording) =>
+      mountedRef.current &&
+      generationRef.current === recording.generation &&
+      recorderRef.current === recording.recorder;
+    const isCurrent = (recording: OwnedRecording) =>
+      isLatest(recording) && activeRef.current === recording;
+    const fail = (recording: OwnedRecording, error?: unknown) => {
+      if (!isCurrent(recording)) return;
+      activeRef.current = null;
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        state.setError(t("errRecording"));
+      }
+      state.setRecordingState("idle");
+      state.setRecordingElapsed(0);
+    };
+    const complete = (recording: OwnedRecording, blob: Blob) => {
+      if (!isCurrent(recording)) return;
+      if (blob.size === 0) {
+        fail(recording);
+        return;
+      }
+      // Claim delivery once before any download operation can reenter the hook.
+      activeRef.current = null;
       try {
-        const blob = await rec.stop();
-        const ext = getRecordingExtension(state.recordingFormat);
-        const filename = `${state.modelName || "vivi"}-${Date.now()}.${ext}`;
-        downloadBlob(blob, filename);
+        const ext = getRecordingExtension(recording.format);
+        downloadBlob(blob, `${recording.modelName || "vivi"}-${Date.now()}.${ext}`);
+      } catch {
+        if (isLatest(recording)) state.setError(t("errRecording"));
+      }
+      if (isLatest(recording)) {
         state.setRecordingState("idle");
         state.setRecordingElapsed(0);
-      } catch (_e) {
-        state.setError(t("errRecording"));
-        state.setRecordingState("idle");
+      }
+    };
+
+    const current = activeRef.current;
+    if (current) {
+      if (current.finishing || current.recorder !== rec) return;
+      current.finishing = true;
+      try {
+        const blob = await rec.stop();
+        complete(current, blob);
+      } catch (error) {
+        fail(current, error);
       }
       return;
     }
 
+    const recording: OwnedRecording = {
+      recorder: rec,
+      format: state.recordingFormat,
+      modelName: state.modelName,
+      finishing: false,
+      generation: ++generationRef.current,
+    };
+    activeRef.current = recording;
     try {
-      rec.start(
+      recording.format = rec.start(
         { format: state.recordingFormat, maxDuration: RECORDING_MAX_DURATION },
         (s, elapsed) => {
+          if (!isCurrent(recording)) return;
+          if (s === "processing") recording.finishing = true;
           state.setRecordingState(s);
           state.setRecordingElapsed(elapsed);
         },
+        (blob) => complete(recording, blob),
+        (error) => fail(recording, error),
       );
-      state.setRecordingState("recording");
-    } catch (_e) {
-      state.setError(t("errRecording"));
+    } catch (error) {
+      fail(recording, error);
     }
   }, [recorderRef, state, t]);
 
   // unmount cleanup
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
+      generationRef.current++;
+      activeRef.current = null;
       recorderRef.current?.cancel();
     };
   }, [recorderRef]);

@@ -102,9 +102,8 @@ function shannonEntropy(value) {
   return entropy;
 }
 
-function addFailure(relativePath, lineNumber, kind, match) {
-  const redacted = `${match.slice(0, 6)}...${match.slice(-4)}`;
-  failures.push(`${relativePath}:${lineNumber}: ${kind}: ${redacted}`);
+function addFailure(relativePath, lineNumber, kind) {
+  failures.push(`${relativePath}:${lineNumber}: ${kind}: [REDACTED]`);
 }
 
 function lineNumberForOffset(text, offset) {
@@ -123,12 +122,7 @@ function scanFile(relativePath) {
 
   for (const { name, pattern } of HIGH_CONFIDENCE_PATTERNS) {
     for (const match of text.matchAll(pattern)) {
-      addFailure(
-        relativePath,
-        lineNumberForOffset(text, match.index ?? 0),
-        name,
-        match[0],
-      );
+      addFailure(relativePath, lineNumberForOffset(text, match.index ?? 0), name);
     }
   }
 
@@ -137,7 +131,6 @@ function scanFile(relativePath) {
       relativePath,
       lineNumberForOffset(text, match.index ?? 0),
       "private key block",
-      match[0],
     );
   }
 
@@ -150,7 +143,6 @@ function scanFile(relativePath) {
       relativePath,
       lineNumberForOffset(text, match.index ?? 0),
       "secret-like assignment",
-      value,
     );
   }
 }

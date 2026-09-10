@@ -437,7 +437,7 @@ the public-release status, and route users to the dedicated documentation host.
 This mirrors the split used by projects that keep a short home page on the main
 domain and put long-form guides on a docs subdomain.
 
-Recommended route shape:
+Planned route shape once generated user-doc routes are approved for publication:
 
 ```text
 vivi2d.com/
@@ -452,8 +452,9 @@ Route behavior:
 
 - `vivi2d.com/` shows a short product intro and a documentation language
   selector.
-- `vivi2d.com/docs` is a compatibility entry point that redirects to
-  `docs.vivi2d.com/en/latest/`.
+- `vivi2d.com/docs` currently redirects to `https://docs.vivi2d.com/`.
+  Generated locale routes remain unpublished; the docs host is a temporary
+  redirect to the public GitHub docs tree.
 - `docs.vivi2d.com/{locale}/latest/...` uses explicit locale routing.
 - The `latest` segment is the initial channel. Future versioned docs may add
   additional channel names without changing the portal URL.
@@ -467,19 +468,18 @@ Current infrastructure decision:
 - Domain registrar: Cloudflare Registrar.
 - DNS: Cloudflare.
 
-Deferred infrastructure decision:
-
-- First host: Cloudflare Pages or Vercel.
+- Current portal host: Cloudflare Workers static assets via `wrangler.jsonc`.
 - DNS names: `vivi2d.com` for the portal, `docs.vivi2d.com` for user
   documentation, and future `api.vivi2d.com` / `cdn.vivi2d.com` records if they
   become useful.
 
 Website scaffolding under `apps/vivi2d-com/` is intentionally minimal. It uses
 `npm run docs:site:build` for local builds and `npm run docs:site:check` for
-route-publication validation. The deployment target is Cloudflare Pages or
-Vercel, with Cloudflare DNS. Local builds can generate same-origin docs links;
-portal deployments should set `VIVI_DOCS_BASE_URL=https://docs.vivi2d.com` so
-the root page links to the docs subdomain.
+route-publication validation. The portal uses Cloudflare Workers static assets
+and Cloudflare DNS. Current local and public builds leave `VIVI_DOCS_BASE_URL`
+empty, linking to the reserved docs entry point rather than unpublished routes.
+Set `VIVI_DOCS_BASE_URL=https://docs.vivi2d.com` only for a later reviewed
+deployment of published generated docs routes.
 
 ## Contributor Workflow
 

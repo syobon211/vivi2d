@@ -43,8 +43,10 @@ Pull requests that change editor or E2E inputs run the selected Ubuntu tier:
 `smoke`, `full-dialogs`, `full-integrations`, and `visual`. This closes the
 startup, dialog-inventory, integration, and rendered-state gaps without claiming
 that every `full-*` project runs on every pull request. The visual project is
-capture-only in pull-request CI: screenshots are uploaded for human review, and
-CI never creates or refreshes a pixel baseline automatically.
+capture-only in pull-request CI: rendering and capture still run, but coverage,
+reports, traces, screenshots, and videos are not uploaded automatically. Reproduce
+locally with synthetic public fixtures for visual review. CI never creates or
+refreshes a pixel baseline automatically.
 
 Enable `VIVI2D_COMPARE_VISUAL_BASELINES=1` only when reviewing an intentional,
 platform-pinned baseline change. Generate baseline PNGs with Playwright's

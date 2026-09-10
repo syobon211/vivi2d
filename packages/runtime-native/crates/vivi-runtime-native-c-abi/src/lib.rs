@@ -22,7 +22,7 @@ use vivi_runtime_native_core::ABI_VERSION;
 use vivi_runtime_native_core::DrawCommandType as CoreDrawCommandType;
 use vivi_runtime_native_core::{
     BlendMode as CoreBlendMode, MeshSnapshot as CoreMeshSnapshot, RUNTIME_VERSION, RuntimeError,
-    RuntimeLimits as CoreRuntimeLimits, RuntimeModel as CoreRuntimeModel,
+    RuntimeLimits as CoreRuntimeLimits, RuntimeModel as CoreRuntimeModel, RuntimePayload,
     SUPPORTED_SPEC_MAX_VERSION, SUPPORTED_SPEC_MIN_VERSION,
     SUPPORTED_SPEC_MIN_VERSION as RUNTIME_SPEC_VERSION, Version, parse_runtime_payload, status,
 };
@@ -970,6 +970,17 @@ fn model_load_impl(
             return error.status();
         }
     };
+    // The core accepts JSON's complete Unicode string domain. C ABI metadata
+    // and identifier inputs use NUL-terminated strings, so reject values that
+    // cannot round-trip through that representation before publishing a handle.
+    if has_unrepresentable_model_strings(&runtime_model, &payload) {
+        set_runtime_error(
+            runtime,
+            status::VALIDATION,
+            "C ABI model strings must not contain NUL",
+        );
+        return status::VALIDATION;
+    }
     let parameter_strings = runtime_model
         .parameters()
         .iter()
@@ -1084,6 +1095,64 @@ fn model_load_impl(
         *out_model = Box::into_raw(model);
     }
     status::OK
+}
+
+fn has_unrepresentable_model_strings(model: &CoreRuntimeModel, payload: &RuntimePayload) -> bool {
+    let has_nul = |value: &str| value.as_bytes().contains(&0);
+    if model.parameters().iter().any(|value| has_nul(&value.id))
+        || model
+            .textures()
+            .iter()
+            .any(|value| has_nul(&value.id) || has_nul(&value.host_image_id))
+        || model
+            .meshes()
+            .iter()
+            .any(|value| has_nul(&value.id) || has_nul(&value.texture_id))
+        || model.expression_presets().iter().any(|value| {
+            has_nul(&value.id)
+                || has_nul(&value.name)
+                || value.color.as_deref().is_some_and(has_nul)
+                || value.hotkey.as_deref().is_some_and(has_nul)
+                || value
+                    .values
+                    .iter()
+                    .any(|value| has_nul(&value.parameter_id))
+        })
+    {
+        return true;
+    }
+    #[cfg(feature = "abi-v02")]
+    if model
+        .render_meshes()
+        .iter()
+        .any(|value| has_nul(&value.id) || has_nul(&value.texture_id))
+    {
+        return true;
+    }
+
+    // Collider IDs are exposed lazily by hit_test rather than by a metadata
+    // accessor. Inspect only these already core-validated fields; unrelated
+    // authoring text and opaque JSON keys retain the core's string domain.
+    payload
+        .value
+        .pointer("/project/colliders")
+        .and_then(|value| value.as_array())
+        .is_some_and(|colliders| {
+            colliders.iter().any(|collider| {
+                collider
+                    .get("id")
+                    .and_then(|value| value.as_str())
+                    .is_some_and(has_nul)
+                    || (collider
+                        .pointer("/shape/type")
+                        .and_then(|value| value.as_str())
+                        == Some("mesh")
+                        && collider
+                            .pointer("/shape/meshId")
+                            .and_then(|value| value.as_str())
+                            .is_some_and(has_nul))
+            })
+        })
 }
 
 fn model_destroy_impl(model: *mut ViviModel) {
@@ -3287,6 +3356,137 @@ mod tests {
             unsafe { CStr::from_ptr(vivi_runtime_last_error_message(runtime)) }.to_string_lossy();
         assert!(message.contains("forbidden public-profile marker"));
 
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[test]
+    fn c_abi_rejects_nul_id_collisions_without_affecting_an_existing_model() {
+        let valid = br#"{"profile":"publicProfileV1","version":10,"project":{"layers":[],"parameters":[{"id":"a\ufffdb","minValue":0,"maxValue":1,"defaultValue":0}]},"atlases":[]}"#;
+        let (runtime, previous_model) = load_test_model(valid);
+        let payload = br#"{"profile":"publicProfileV1","version":10,"project":{"layers":[],"parameters":[{"id":"a\u0000b","minValue":0,"maxValue":1,"defaultValue":0},{"id":"a\ufffdb","minValue":0,"maxValue":1,"defaultValue":0}]},"atlases":[]}"#;
+        // The restriction belongs only to the C string transport, not the core
+        // JSON parser, native evaluator, or its sibling WASM binding.
+        let parsed = parse_runtime_payload(payload, CoreRuntimeLimits::default()).unwrap();
+        let core =
+            CoreRuntimeModel::from_payload_with_limits(&parsed, CoreRuntimeLimits::default())
+                .unwrap();
+        assert_eq!(core.parameters()[0].id, "a\0b");
+        assert_eq!(core.parameters()[1].id, "a\u{fffd}b");
+
+        let mut rejected_model = previous_model;
+        assert_eq!(
+            vivi_model_load(
+                runtime,
+                payload.as_ptr(),
+                payload.len() as u64,
+                &mut rejected_model
+            ),
+            status::VALIDATION
+        );
+        assert!(rejected_model.is_null());
+        let message = unsafe { CStr::from_ptr(vivi_runtime_last_error_message(runtime)) };
+        assert_eq!(
+            message.to_str().unwrap(),
+            "C ABI model strings must not contain NUL"
+        );
+        let id = CString::new("a\u{fffd}b").unwrap();
+        assert_eq!(
+            vivi_model_set_input(previous_model, id.as_ptr(), 0.75),
+            status::OK
+        );
+        let mut value = 0.0;
+        assert_eq!(
+            vivi_model_get_input(previous_model, id.as_ptr(), &mut value),
+            status::OK
+        );
+        assert_eq!(value, 0.75);
+        #[cfg(feature = "abi-v02")]
+        assert_eq!(unsafe { (*runtime).public_model_generation }, 1);
+        vivi_model_destroy(previous_model);
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[test]
+    fn c_abi_rejects_nul_in_mesh_texture_and_hit_strings() {
+        let mesh = std::str::from_utf8(basic_mesh_payload()).unwrap();
+        let hit = std::str::from_utf8(hit_test_payload()).unwrap();
+        for payload in [
+            mesh.replace("mesh-body", r"mesh\u0000body"),
+            mesh.replace("host-atlas-0", r"host\u0000atlas"),
+            hit.replace("rect-a", r"rect\u0000a"),
+            r#"{"profile":"publicProfileV1","version":10,"project":{"layers":[],"colliders":[{"id":"hit","enabled":true,"shape":{"type":"mesh","meshId":"mesh\u0000id"}}]},"atlases":[]}"#.to_owned(),
+        ] {
+            assert_c_abi_string_rejected(payload.as_bytes());
+        }
+    }
+
+    #[test]
+    fn c_abi_rejects_nul_in_preset_metadata_and_value_ids() {
+        let preset = r##"{"profile":"publicProfileV1","version":10,"project":{"layers":[],"expressionPresets":[{"id":"preset-id","name":"preset-name","color":"#123456","hotkey":1,"values":{"value-id":0.5}}]},"atlases":[]}"##;
+        for field in ["preset-id", "preset-name", "#123456", "value-id"] {
+            assert_c_abi_string_rejected(preset.replace(field, r"bad\u0000value").as_bytes());
+        }
+    }
+
+    #[test]
+    fn c_abi_preserves_unicode_strings_without_rejecting_unexposed_json_text() {
+        let payload = r##"{"profile":"publicProfileV1","version":10,"project":{"name":"unexposed\u0000name","layers":[],"parameters":[{"id":"入力�😀","minValue":0,"maxValue":1,"defaultValue":0}],"expressionPresets":[{"id":"表情�","name":"笑顔😀","color":"色�","hotkey":1,"values":{"入力�😀":0.5}}]},"atlases":[],"ignored\u0000key":"unexposed\u0000value"}"##;
+        let (runtime, model) = load_test_model(payload.as_bytes());
+        let mut parameter = parameter_info_output();
+        assert_eq!(
+            vivi_model_parameter_info(model, 0, &mut parameter),
+            status::OK
+        );
+        let id = unsafe { CStr::from_ptr(parameter.id) };
+        assert_eq!(id.to_str().unwrap(), "入力�😀");
+        assert_eq!(vivi_model_set_input(model, id.as_ptr(), 0.25), status::OK);
+        let mut preset = expression_preset_info_output();
+        assert_eq!(
+            vivi_model_expression_preset_info(model, 0, &mut preset),
+            status::OK
+        );
+        assert_eq!(
+            unsafe { CStr::from_ptr(preset.id) }.to_str().unwrap(),
+            "表情�"
+        );
+        assert_eq!(
+            unsafe { CStr::from_ptr(preset.name) }.to_str().unwrap(),
+            "笑顔😀"
+        );
+        assert_eq!(
+            unsafe { CStr::from_ptr(preset.color) }.to_str().unwrap(),
+            "色�"
+        );
+        assert_eq!(
+            vivi_model_apply_expression_preset(model, preset.id),
+            status::OK
+        );
+        let mut value = 0.0;
+        assert_eq!(
+            vivi_model_get_input(model, id.as_ptr(), &mut value),
+            status::OK
+        );
+        assert_eq!(value, 0.5);
+        vivi_model_destroy(model);
+        vivi_runtime_destroy(runtime);
+    }
+
+    fn assert_c_abi_string_rejected(payload: &[u8]) {
+        let parsed = parse_runtime_payload(payload, CoreRuntimeLimits::default()).unwrap();
+        CoreRuntimeModel::from_payload_with_limits(&parsed, CoreRuntimeLimits::default()).unwrap();
+        let (runtime, previous_model) = load_test_model(minimal_static_payload());
+        let mut model = previous_model;
+        assert_eq!(
+            vivi_model_load(runtime, payload.as_ptr(), payload.len() as u64, &mut model),
+            status::VALIDATION
+        );
+        assert!(model.is_null());
+        let mut version = version_output();
+        assert_eq!(
+            vivi_model_get_spec_version(previous_model, &mut version),
+            status::OK
+        );
+        vivi_model_destroy(previous_model);
         vivi_runtime_destroy(runtime);
     }
 

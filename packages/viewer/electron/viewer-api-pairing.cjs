@@ -138,10 +138,10 @@ function approveChallenge(server, challengeId, confirmationCode) {
   server.grants.set(grant.id, grant);
   try {
     server.saveGrants();
-  } catch (error) {
+  } catch {
     server.grants.delete(grant.id);
     sendChallengeTerminal(server, challenge, false, {}, "grant persistence failed");
-    server.logger.warn?.("[viewer-api] grant save failed", error);
+    server.logger.warn?.("[viewer-api] grant save failed");
     return null;
   }
   sendChallengeTerminal(server, challenge, true, {

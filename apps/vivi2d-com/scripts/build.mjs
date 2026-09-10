@@ -144,40 +144,14 @@ function siteAbsoluteUrl(route) {
 }
 
 function languageSelector({ locale = "en", slug = "", id = "language-selector", external = false } = {}) {
-  const options = locales
-    .map((candidate) => {
-      const selected = candidate === locale ? " selected" : "";
-      const value = external ? docsUrl(candidate, slug) : routePath(candidate, slug);
-      return `<option value="${escapeHtml(value)}"${selected}>${escapeHtml(localeLabels[candidate])}</option>`;
-    })
-    .join("\n");
   const links = locales
     .map((candidate) => {
       const href = external ? docsUrl(candidate, slug) : routePath(candidate, slug);
-      return `<a href="${escapeHtml(href)}">${escapeHtml(localeLabels[candidate])}</a>`;
+      const current = candidate === locale ? ' aria-current="page"' : "";
+      return `<a href="${escapeHtml(href)}" hreflang="${escapeHtml(candidate)}"${current}>${escapeHtml(localeLabels[candidate])}</a>`;
     })
     .join(" ");
-  return `<form class="language-selector" data-language-selector="${escapeHtml(id)}">
-  <label for="${escapeHtml(id)}">Language</label>
-  <select id="${escapeHtml(id)}" name="language">
-${options}
-  </select>
-  <button type="button" data-language-submit>Open</button>
-</form>
-<noscript><p>${links}</p></noscript>
-<script>
-(() => {
-  const form = document.querySelector("[data-language-selector='${escapeHtml(id)}']");
-  if (!form) return;
-  const select = form.querySelector("select");
-  const submit = form.querySelector("[data-language-submit]");
-  const go = () => {
-    if (select?.value) window.location.href = select.value;
-  };
-  select?.addEventListener("change", go);
-  submit?.addEventListener("click", go);
-})();
-</script>`;
+  return `<nav class="language-selector" id="${escapeHtml(id)}" aria-label="Language">${links}</nav>`;
 }
 
 function writeOutput(relativePath, text) {

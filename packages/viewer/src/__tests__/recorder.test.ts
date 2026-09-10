@@ -6,6 +6,399 @@ import {
   ViewerRecorder,
 } from "../recorder";
 
+describe("recording resource and GIF policy regressions", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  function gifCanvas(width = 2, height = 2) {
+    const read = vi.fn(() => {
+      const byteLength = width * height * 4;
+      // Even a regressed preflight must not allocate hostile fixture dimensions.
+      const data =
+        Number.isSafeInteger(byteLength) && byteLength >= 0 && byteLength <= 64
+          ? new Uint8ClampedArray(byteLength)
+          : { byteLength };
+      return { data, width, height };
+    });
+    const canvas = { width, height, getContext: vi.fn(() => ({ getImageData: read })) };
+    return { canvas: canvas as unknown as HTMLCanvasElement, read };
+  }
+
+  function mediaHarness() {
+    const tracks: Array<{ stop: ReturnType<typeof vi.fn> }> = [];
+    const instances: MockRecorder[] = [];
+    class MockRecorder {
+      static isTypeSupported() {
+        return true;
+      }
+      state = "inactive";
+      mimeType = "video/webm";
+      ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      start = vi.fn(() => {
+        this.state = "recording";
+      });
+      stop = vi.fn(() => {
+        this.state = "inactive";
+      });
+      constructor() {
+        instances.push(this);
+      }
+    }
+    vi.stubGlobal("MediaRecorder", MockRecorder);
+    const canvas = {
+      width: 2,
+      height: 2,
+      captureStream: () => {
+        const track = { stop: vi.fn() };
+        tracks.push(track);
+        return { getTracks: () => [track] };
+      },
+    } as unknown as HTMLCanvasElement;
+    return { recorder: new ViewerRecorder(canvas), tracks, instances };
+  }
+
+  it("clears an old deadline before a cancelled recording is replaced", async () => {
+    vi.useFakeTimers();
+    const { canvas } = gifCanvas();
+    const recorder = new ViewerRecorder(canvas);
+    recorder.start({ format: "gif", maxDuration: 1 });
+    recorder.cancel();
+    recorder.start({ format: "gif", maxDuration: 10 });
+    await vi.advanceTimersByTimeAsync(1001);
+    expect(recorder.recordingState).toBe("recording");
+    recorder.cancel();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("settles cancelled processing and ignores its late data and stop events", async () => {
+    const { recorder, instances, tracks } = mediaHarness();
+    recorder.start();
+    const oldData = instances[0]!.ondataavailable!;
+    const stopped = recorder.stop();
+    const oldStop = instances[0]!.onstop!;
+    const rejected = expect(stopped).rejects.toMatchObject({ name: "AbortError" });
+    recorder.cancel();
+    await rejected;
+    expect(tracks[0]!.stop).toHaveBeenCalledOnce();
+    recorder.start();
+    oldData({ data: new Blob(["obsolete"]) });
+    oldStop();
+    expect(recorder.recordingState).toBe("recording");
+    instances[1]!.ondataavailable!({ data: new Blob(["new"]) });
+    const nextStopped = recorder.stop();
+    instances[1]!.onstop!();
+    expect((await nextStopped).size).toBe(3);
+    expect(tracks[1]!.stop).toHaveBeenCalledOnce();
+  });
+
+  it("cleans owned tracks on error and reports only fixed error copy", () => {
+    const { recorder, instances, tracks } = mediaHarness();
+    const onError = vi.fn();
+    recorder.start({}, undefined, undefined, onError);
+    instances[0]!.onerror!();
+    expect(recorder.recordingState).toBe("idle");
+    expect(tracks[0]!.stop).toHaveBeenCalledOnce();
+    expect(onError).toHaveBeenCalledOnce();
+    expect(onError.mock.calls[0]![0].message).toBe("Recording failed.");
+  });
+
+  it.each([
+    "stop",
+    "error",
+  ])("waits for queued native %s after state becomes inactive", async (event) => {
+    const { recorder, instances, tracks } = mediaHarness();
+    const onError = vi.fn();
+    recorder.start({}, undefined, undefined, onError);
+    instances[0]!.state = "inactive";
+    const stop = recorder.stop();
+    const settled = vi.fn();
+    void stop.then(settled, settled);
+    await Promise.resolve();
+    expect(settled).not.toHaveBeenCalled();
+    expect(tracks[0]!.stop).not.toHaveBeenCalled();
+    instances[0]!.ondataavailable!({ data: new Blob(["last"]) });
+    if (event === "error") {
+      const rejected = expect(stop).rejects.toThrow("Recording failed.");
+      instances[0]!.onerror!();
+      await rejected;
+      expect(onError).toHaveBeenCalledOnce();
+    } else {
+      instances[0]!.onstop!();
+      expect((await stop).size).toBe(4);
+    }
+    expect(tracks[0]!.stop).toHaveBeenCalledOnce();
+  });
+
+  it("normal and repeated stop await the same native completion", async () => {
+    const { recorder, instances } = mediaHarness();
+    recorder.start();
+    const stopped = recorder.stop();
+    expect(recorder.stop()).toBe(stopped);
+    expect(instances[0]!.stop).toHaveBeenCalledOnce();
+    instances[0]!.ondataavailable!({ data: new Blob(["last"]) });
+    instances[0]!.onstop!();
+    expect((await stopped).size).toBe(4);
+  });
+
+  it("returns the actual WebM format when requested MP4 is unsupported", () => {
+    const { recorder } = mediaHarness();
+    vi.spyOn(MediaRecorder, "isTypeSupported").mockImplementation((type) =>
+      type.startsWith("video/webm"),
+    );
+    expect(recorder.start({ format: "mp4" })).toBe("webm");
+    recorder.cancel();
+  });
+
+  it("cleans all timers when a recording callback synchronously cancels", () => {
+    vi.useFakeTimers();
+    const { canvas } = gifCanvas();
+    const recorder = new ViewerRecorder(canvas);
+    recorder.start({ format: "gif" }, (state) => {
+      if (state === "recording") recorder.cancel();
+    });
+    expect(recorder.recordingState).toBe("idle");
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("handles a throwing fresh-render callback without reading a frame", async () => {
+    vi.useFakeTimers();
+    const { canvas, read } = gifCanvas();
+    const complete = vi.fn();
+    const error = vi.fn();
+    const recorder = new ViewerRecorder(canvas, () => {
+      throw new Error("synthetic detail");
+    });
+    recorder.start({ format: "gif" }, undefined, complete, error);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(read).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledOnce();
+    expect(error.mock.calls[0]![0].message).toBe("Recording failed.");
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("copies a WebGL source through owned scratch after rendering and releases it on cancel", async () => {
+    vi.useFakeTimers();
+    const order: string[] = [];
+    const source = {
+      width: 2,
+      height: 2,
+      getContext: vi.fn(() => null),
+    } as unknown as HTMLCanvasElement;
+    const drawImage = vi.fn(() => order.push("copy"));
+    const getImageData = vi.fn(() => {
+      order.push("read");
+      return { data: new Uint8ClampedArray(16), width: 2, height: 2 };
+    });
+    const scratch = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({ drawImage, getImageData })),
+    };
+    const create = vi
+      .spyOn(document, "createElement")
+      .mockReturnValue(scratch as unknown as HTMLCanvasElement);
+    const recorder = new ViewerRecorder(source, () => order.push("render"));
+    recorder.start({ format: "gif", fps: 10 });
+    await vi.advanceTimersByTimeAsync(100);
+    expect(source.getContext).toHaveBeenCalledWith("2d");
+    expect(create).toHaveBeenCalledExactlyOnceWith("canvas");
+    expect(scratch.getContext).toHaveBeenCalledWith("2d", { willReadFrequently: true });
+    expect([scratch.width, scratch.height]).toEqual([2, 2]);
+    expect(order).toEqual(["render", "copy", "read"]);
+    expect(drawImage).toHaveBeenCalledExactlyOnceWith(source, 0, 0);
+    expect(getImageData).toHaveBeenCalledExactlyOnceWith(0, 0, 2, 2);
+    recorder.cancel();
+    expect([scratch.width, scratch.height]).toEqual([0, 0]);
+    expect([source.width, source.height]).toEqual([2, 2]);
+    expect(recorder.recordingState).toBe("idle");
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("rejects a resize inside beforeCapture before reading any frame", async () => {
+    vi.useFakeTimers();
+    const { canvas, read } = gifCanvas();
+    const complete = vi.fn();
+    const error = vi.fn();
+    const beforeCapture = vi.fn(() => {
+      canvas.width++;
+    });
+    const recorder = new ViewerRecorder(canvas, beforeCapture);
+    recorder.start({ format: "gif", fps: 10 }, undefined, complete, error);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(beforeCapture).toHaveBeenCalledOnce();
+    expect(read).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledOnce();
+    expect(error.mock.calls[0]![0].message).toBe("Recording failed.");
+    expect(recorder.recordingState).toBe("idle");
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([
+    [65535, 1],
+    [1, 65535],
+    [8192, 4096],
+  ])("accepts safe GIF dimensions %s×%s without an eager frame allocation", (width, height) => {
+    const { canvas, read } = gifCanvas(width, height);
+    const recorder = new ViewerRecorder(canvas);
+    expect(recorder.start({ format: "gif" })).toBe("gif");
+    expect(read).not.toHaveBeenCalled();
+    recorder.cancel();
+  });
+
+  it.each([
+    "constructor",
+    "start",
+  ])("releases capture tracks on recorder %s failure", (where) => {
+    const stopTrack = vi.fn();
+    class BrokenRecorder {
+      static isTypeSupported() {
+        return true;
+      }
+      state = "inactive";
+      constructor() {
+        if (where === "constructor") throw new Error("synthetic detail");
+      }
+      start() {
+        throw new Error("synthetic detail");
+      }
+      stop() {}
+    }
+    vi.stubGlobal("MediaRecorder", BrokenRecorder);
+    const canvas = {
+      captureStream: () => ({ getTracks: () => [{ stop: stopTrack }] }),
+    } as unknown as HTMLCanvasElement;
+    const recorder = new ViewerRecorder(canvas);
+    expect(() => recorder.start()).toThrow("Recording failed.");
+    expect(stopTrack).toHaveBeenCalledOnce();
+    expect(recorder.recordingState).toBe("idle");
+  });
+
+  it("handles a thrown stop and an automatic stop rejection without leaked timers", async () => {
+    vi.useFakeTimers();
+    const { recorder, instances, tracks } = mediaHarness();
+    const onError = vi.fn();
+    recorder.start({ maxDuration: 0.1 }, undefined, undefined, onError);
+    instances[0]!.stop.mockImplementation(() => {
+      throw new Error("synthetic detail");
+    });
+    await vi.advanceTimersByTimeAsync(150);
+    expect(recorder.recordingState).toBe("idle");
+    expect(onError).toHaveBeenCalledOnce();
+    expect(tracks[0]!.stop).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([
+    [4096, 2048, 4],
+    [3000, 3000, 3],
+  ])("stops before another whole frame would exceed128MiB (%s×%s)", async (width, height, count) => {
+    vi.useFakeTimers();
+    const bytes = width * height * 4;
+    // Fake readback metadata tests accounting without allocating128MiB in unit CI.
+    const read = vi.fn(() => ({ data: { byteLength: bytes }, width, height }));
+    const canvas = {
+      width,
+      height,
+      getContext: () => ({ getImageData: read }),
+    } as unknown as HTMLCanvasElement;
+    const recorder = new ViewerRecorder(canvas);
+    const stopped = vi.spyOn(recorder, "stop").mockImplementation(async () => {
+      recorder.cancel();
+      return new Blob(["test"]);
+    });
+    recorder.start({ format: "gif", fps: 10 });
+    await vi.advanceTimersByTimeAsync(100 * (count + 2));
+    expect(read).toHaveBeenCalledTimes(count);
+    expect(stopped).toHaveBeenCalledOnce();
+    expect(read.mock.calls.length * bytes).toBeLessThanOrEqual(128 * 1024 * 1024);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([
+    0,
+    -1,
+    1.5,
+    NaN,
+    Infinity,
+    65536,
+  ])("rejects unsafe GIF height %s before allocation", (height) => {
+    const { canvas } = gifCanvas(1, height);
+    expect(() => new ViewerRecorder(canvas).start({ format: "gif" })).toThrow();
+    expect(canvas.getContext).not.toHaveBeenCalled();
+  });
+
+  it("cancels a resize seen during capture with fixed error and no auto completion", async () => {
+    vi.useFakeTimers();
+    const { canvas, read } = gifCanvas();
+    const complete = vi.fn();
+    const error = vi.fn();
+    const recorder = new ViewerRecorder(canvas);
+    recorder.start({ format: "gif" }, undefined, complete, error);
+    canvas.height++;
+    await vi.advanceTimersByTimeAsync(100);
+    expect(read).not.toHaveBeenCalled();
+    expect(complete).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledOnce();
+    expect(recorder.recordingState).toBe("idle");
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([
+    0,
+    -1,
+    1.5,
+    NaN,
+    Infinity,
+    Number.MAX_SAFE_INTEGER,
+    65536,
+  ])("rejects unsafe GIF width %s before context or frame allocation", (width) => {
+    const { canvas } = gifCanvas(width, 1);
+    const recorder = new ViewerRecorder(canvas);
+    expect(() => recorder.start({ format: "gif" })).toThrow();
+    expect(canvas.getContext).not.toHaveBeenCalled();
+  });
+
+  it("rejects a single frame over128MiB before allocation", () => {
+    const { canvas } = gifCanvas(8192, 4097);
+    expect(() => new ViewerRecorder(canvas).start({ format: "gif" })).toThrow();
+    expect(canvas.getContext).not.toHaveBeenCalled();
+  });
+
+  it("cancels resized GIF at stop without completing or saving", async () => {
+    vi.useFakeTimers();
+    const { canvas } = gifCanvas();
+    const recorder = new ViewerRecorder(canvas);
+    const complete = vi.fn();
+    const error = vi.fn();
+    recorder.start({ format: "gif" }, undefined, complete, error);
+    await vi.advanceTimersByTimeAsync(100);
+    canvas.width++;
+    await expect(recorder.stop()).rejects.toThrow("Recording failed.");
+    expect(complete).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("delivers automatic completion through the normal stop result", async () => {
+    vi.useFakeTimers();
+    const { canvas } = gifCanvas();
+    const recorder = new ViewerRecorder(canvas);
+    const complete = vi.fn();
+    recorder.start({ format: "gif", maxDuration: 0.2 }, undefined, complete);
+    await vi.advanceTimersByTimeAsync(250);
+    expect(complete).toHaveBeenCalledOnce();
+    expect(complete.mock.calls[0]![0].type).toBe("image/gif");
+    expect(complete.mock.calls[0]![0].size).toBeGreaterThan(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
 
 describe("getRecordingExtension", () => {
   it("webmフォーマットの拡張子を返す", () => {
@@ -50,7 +443,6 @@ describe("downloadBlob", () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
   });
 });
-
 
 function createMockCanvas(): HTMLCanvasElement {
   const mockCtx = {
@@ -287,7 +679,6 @@ describe("ViewerRecorder", () => {
     recorder.cancel();
   });
 
-
   it("MediaRecorder ondataavailable: データチャンクが正しく蓄積される", async () => {
     let capturedOndataavailable: ((e: { data: Blob }) => void) | null = null;
     let capturedOnstop: (() => void) | null = null;
@@ -339,7 +730,6 @@ describe("ViewerRecorder", () => {
   });
 
   it("stopMediaRecorder: recorderがnullの場合は空Blobを返す", async () => {
-
     let capturedOnstop: (() => void) | null = null;
 
     vi.stubGlobal(
@@ -472,22 +862,14 @@ describe("ViewerRecorder", () => {
     recorder.cancel();
   });
 
-  it("GIFフレーム0件: 即停止で空Blobが返される", async () => {
-    const canvas = {
-      width: 2,
-      height: 2,
-      getContext: vi.fn(() => null),
-      captureStream: vi.fn(() => ({ getTracks: () => [] })),
-    } as unknown as HTMLCanvasElement;
+  it("GIF with no captured frame fails without returning an empty download", async () => {
+    const canvas = createMockCanvas();
 
     const recorder = new ViewerRecorder(canvas);
     recorder.start({ format: "gif", fps: 10 });
 
-    await new Promise((r) => setTimeout(r, 150));
-
-    const blob = await recorder.stop();
-    expect(blob).toBeInstanceOf(Blob);
-    expect(blob.size).toBe(0);
+    await expect(recorder.stop()).rejects.toThrow("Recording failed.");
+    expect(recorder.recordingState).toBe("idle");
   });
 
   it("cancel(): MediaRecorderがアクティブな状態で中止する", () => {
@@ -819,8 +1201,7 @@ describe("ViewerRecorder", () => {
     recorder.cancel();
   });
 
-  it("stopMediaRecorder: recorderがnull状態でstopMediaRecorderが呼ばれると空Blobが返される", async () => {
-
+  it("native stop without data returns an empty Blob for the host to reject", async () => {
     vi.stubGlobal(
       "MediaRecorder",
       class MockMR {
@@ -847,8 +1228,6 @@ describe("ViewerRecorder", () => {
     const canvas = createMockCanvas();
     const recorder = new ViewerRecorder(canvas);
     recorder.start({ format: "webm" });
-
-    (recorder as unknown as { recorder: null }).recorder = null;
 
     const blob = await recorder.stop();
     expect(blob).toBeInstanceOf(Blob);

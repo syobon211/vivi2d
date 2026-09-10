@@ -75,6 +75,7 @@ export class ViviWebSdkBasicDemo {
   private lastAbortOrigin: AbortOrigin | null = null;
   private model: ViviWebModel | null = null;
   private player: ViviWebPlayer | null = null;
+  private pendingPlayerCreation: Promise<void> = Promise.resolve();
   private sliderValues = new Map<string, number>();
 
   constructor(private readonly elements: SampleElements) {}
@@ -206,28 +207,13 @@ export class ViviWebSdkBasicDemo {
         signal: this.controller?.signal,
       });
       if (this.isStale(runId)) return;
-      const player = await createViviWebPlayer({
-        autoStart: false,
-        backgroundColor: 0xfaf9ff,
-        canvas: this.elements.canvas,
-        model,
-        onEvent: (event) => {
-          if (event.type === "error") this.showError(formatViviWebError(event.error));
-        },
-        signal: this.controller?.signal,
-        strictInputs: this.elements.strictInputs.checked,
-        transparent: false,
-      });
-      if (this.isStale(runId)) {
-        player.dispose();
-        return;
-      }
-      this.player = player;
-      this.model = model;
-      this.sliderValues.clear();
-      this.renderMetadata(model.metadata);
-      this.renderParameters(player.getParameters());
-      this.setStatus("Ready. Press Start to run the animation loop.", "ready");
+      // Abort is cooperative: an old create may still own this canvas until
+      // it settles and its stale player has been disposed.
+      await this.pendingPlayerCreation;
+      if (this.isStale(runId)) return;
+      const creation = this.createPlayerForRun(model, runId);
+      this.pendingPlayerCreation = creation.catch(() => {});
+      await creation;
     } catch (error) {
       if (this.isStale(runId)) return;
       const copy = formatViviWebError(error);
@@ -245,6 +231,33 @@ export class ViviWebSdkBasicDemo {
       if (!this.isStale(runId)) this.lastAbortOrigin = null;
       this.updateControls();
     }
+  }
+
+  private async createPlayerForRun(model: ViviWebModel, runId: number): Promise<void> {
+    const player = await createViviWebPlayer({
+      autoStart: false,
+      backgroundColor: 0xfaf9ff,
+      canvas: this.elements.canvas,
+      model,
+      onEvent: (event) => {
+        if (event.type === "error" && !this.isStale(runId)) {
+          this.showError(formatViviWebError(event.error));
+        }
+      },
+      signal: this.controller?.signal,
+      strictInputs: this.elements.strictInputs.checked,
+      transparent: false,
+    });
+    if (this.isStale(runId)) {
+      player.dispose();
+      return;
+    }
+    this.player = player;
+    this.model = model;
+    this.sliderValues.clear();
+    this.renderMetadata(model.metadata);
+    this.renderParameters(player.getParameters());
+    this.setStatus("Ready. Press Start to run the animation loop.", "ready");
   }
 
   private beginReplacement(origin: AbortOrigin): number {

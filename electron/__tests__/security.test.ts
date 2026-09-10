@@ -264,6 +264,8 @@ describe("electron/security.cjs", () => {
       expect(() => validateSafeRelativePath("CON")).toThrow();
       expect(() => validateSafeRelativePath("layers/NUL.png")).toThrow();
       expect(() => validateSafeRelativePath("layers/name.")).toThrow();
+      expect(() => validateSafeRelativePath("layers/name.png:hidden")).toThrow();
+      expect(() => validateSafeRelativePath("layers/name?.png")).toThrow();
     });
   });
 

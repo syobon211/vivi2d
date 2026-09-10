@@ -53,9 +53,18 @@ The portal is configured for Cloudflare Workers static assets through the root
 Project name: vivi2d
 Root directory: /
 Build command: npm run docs:site:build
-Deploy command: npx wrangler deploy
+Deploy command: requires a reviewed, exact Wrangler version before the next deployment (see below)
 Variables: none required
 ```
+
+Deployment hold: before the next push to the connected production branch,
+disable automatic production builds in Cloudflare or approve a sufficiently
+narrow watch-path policy. The dashboard configuration has not been verified by
+repository checks. The previously documented `npx wrangler deploy` resolves an
+unpinned CLI; do not use it for the next production deployment. First review an
+exact Wrangler version, pin it in the deployment command/toolchain, and validate
+it without publication. This repository does not install a deployment CLI or
+grant deployment authority as part of ordinary builds and tests.
 
 `wrangler.jsonc` intentionally has no Worker script entry point. Wrangler uploads
 the generated files from `apps/vivi2d-com/dist/` as static assets, keeping the
@@ -77,8 +86,9 @@ browsers retaining a permanent GitHub redirect.
 The generated `_headers` file applies a strict static-site security profile:
 `nosniff`, strict referrer policy, permissions restrictions, frame denial, HSTS
 without `includeSubDomains`, and a CSP with `script-src 'none'`. If hosted docs
-routes later need client-side scripts, remove those scripts or update the CSP in
-the same change that publishes the routes.
+routes later need client-side scripts, remove those scripts or review the CSP in
+the same change that publishes the routes. The current generated language
+navigation uses ordinary links and requires no script or form submission.
 
 ## Hosting Plan
 

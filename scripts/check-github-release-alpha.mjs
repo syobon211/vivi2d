@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { checkReleaseNodeCachePolicy } from "./lib/release-node-cache-policy.mjs";
 import { readText } from "./lib/repo.mjs";
 
 const failures = [];
@@ -48,8 +49,8 @@ const requiredValidateCommands = [
   "npm run check:source-review-archive",
   "npm run check:viewer-mediapipe-assets",
   "npm run check:history-secrets",
-  "gitleaks detect --source . --no-git",
-  'gitleaks git --log-opts="--all" .',
+  "gitleaks detect --source . --no-git --redact=100",
+  'gitleaks git --log-opts="--all" . --redact=100',
   "npm run sbom:generate",
   "npm run archive:source-review",
   "npm run release:github:prepare",
@@ -101,6 +102,7 @@ function checkRequiredFiles() {
 }
 
 function checkWorkflowShape() {
+  failures.push(...checkReleaseNodeCachePolicy(workflow, workflowPath));
   for (const text of [
     "workflow_dispatch:",
     "version:",
@@ -194,9 +196,19 @@ function checkWorkflowShape() {
   if (!/contents:\s*write/.test(releaseJob)) {
     failures.push("create-github-release must request contents: write.");
   }
-  if (/\b(?:GH_TOKEN|GITHUB_TOKEN|GITHUB_TOKEN:)\b/.test(validateJob)) {
+  const liveCheckStep = [
+    "      - name: Verify live release environment before build",
+    "        env:",
+    "          GH_TOKEN: $" + "{{ github.token }}",
+    "        run: node scripts/check-environment-protection.mjs --live --environment desktop-installer-alpha",
+  ].join("\n");
+  const normalizedValidateJob = validateJob.replaceAll("\r\n", "\n");
+  if (
+    !normalizedValidateJob.includes(liveCheckStep) ||
+    /\b(?:GH_TOKEN|GITHUB_TOKEN)\b/.test(normalizedValidateJob.replace(liveCheckStep, ""))
+  ) {
     failures.push(
-      "validate-and-package-github-release must not receive a release token.",
+      "validate-and-package-github-release may expose its read-only token only in the exact live environment check step.",
     );
   }
   if (/\b(?:GH_TOKEN|GITHUB_TOKEN|GITHUB_TOKEN:)\b/.test(verifyJob)) {
@@ -246,7 +258,7 @@ function checkWorkflowCommands() {
   assertRunOrder(
     validateSteps,
     "node scripts/install-pinned-gitleaks.mjs --manifest scripts/release-tool-versions.json",
-    "gitleaks detect --source . --no-git",
+    "gitleaks detect --source . --no-git --redact=100",
     "validate-and-package-github-release",
   );
   assertRunOrder(

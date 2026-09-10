@@ -55,34 +55,42 @@ async function readResponseTextWithLimit(
   response: Response,
   label: string,
 ): Promise<string> {
-  const contentLengthHeader = response.headers.get("content-length");
-  if (contentLengthHeader) {
-    const contentLength = Number(contentLengthHeader);
-    if (Number.isFinite(contentLength) && contentLength > 0) {
-      assertByteLengthWithinLimit(contentLength, MAX_VIVI_TEXT_FILE_BYTES, label);
-    }
-  }
-
   const reader = response.body?.getReader();
-  if (!reader) {
-    const text = await response.text();
+  try {
+    const contentLengthHeader = response.headers.get("content-length");
+    if (contentLengthHeader) {
+      const contentLength = Number(contentLengthHeader);
+      if (Number.isFinite(contentLength) && contentLength > 0) {
+        assertByteLengthWithinLimit(contentLength, MAX_VIVI_TEXT_FILE_BYTES, label);
+      }
+    }
+
+    if (!reader) {
+      const text = await response.text();
+      assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, label);
+      return text;
+    }
+
+    const decoder = new TextDecoder();
+    let totalBytes = 0;
+    let text = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      assertByteLengthWithinLimit(totalBytes, MAX_VIVI_TEXT_FILE_BYTES, label);
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
     assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, label);
     return text;
+  } catch (error) {
+    // Stop downloading rejected payloads and preserve the original load error.
+    await reader?.cancel().catch(() => {});
+    throw error;
+  } finally {
+    reader?.releaseLock();
   }
-
-  const decoder = new TextDecoder();
-  let totalBytes = 0;
-  let text = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    totalBytes += value.byteLength;
-    assertByteLengthWithinLimit(totalBytes, MAX_VIVI_TEXT_FILE_BYTES, label);
-    text += decoder.decode(value, { stream: true });
-  }
-  text += decoder.decode();
-  assertTextLengthWithinLimit(text, MAX_VIVI_TEXT_FILE_BYTES, label);
-  return text;
 }
 
 export class ViviModelElement extends HTMLElement {
@@ -96,6 +104,7 @@ export class ViviModelElement extends HTMLElement {
   private lastTime = 0;
   private _loading = false;
   private loadAbort: AbortController | null = null;
+  private loadGeneration = 0;
   private scriptState: ScriptRunnerState = { running: false, cancelled: false };
 
   constructor() {
@@ -148,53 +157,75 @@ export class ViviModelElement extends HTMLElement {
   }
 
   async load(src: string): Promise<void> {
-    this.loadAbort?.abort();
+    const generation = this.dispose();
+    // A synchronous dispose listener may start a newer load or disconnect us.
+    if (generation !== this.loadGeneration) return;
     const abort = new AbortController();
     this.loadAbort = abort;
+    const isCurrent = () => this.loadAbort === abort && !abort.signal.aborted;
+    let pendingRenderer: ViviPixiRenderer | null = null;
 
-    this.dispose();
     this._loading = true;
     this.dispatchEvent(new CustomEvent("vivi-load-start"));
 
     try {
+      if (!isCurrent()) return;
       const response = await fetch(src, {
         credentials: "omit",
         mode: "cors",
         signal: abort.signal,
       });
+      if (!isCurrent()) return;
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${src}`);
+        void response.body?.cancel().catch(() => {});
+        throw new Error(`HTTP ${response.status}`);
       }
       const json = await readResponseTextWithLimit(response, "Remote .vivi model");
+      if (!isCurrent()) return;
       const fileData = parseViviFile(json, { profile: "publicProfileV1" });
       const model = PublicViviModel.fromFileData(fileData);
       const textures = await extractTextures(fileData);
+      if (!isCurrent()) return;
 
-      this.canvas.width = model.width;
-      this.canvas.height = model.height;
+      // Each async initialization owns its canvas; an obsolete renderer must
+      // never draw into (or destroy) the canvas used by a newer load.
+      const canvas = document.createElement("canvas");
+      canvas.width = model.width;
+      canvas.height = model.height;
 
-      const renderer = await ViviPixiRenderer.create(this.canvas, {
+      pendingRenderer = await ViviPixiRenderer.create(canvas, {
         backgroundColor: 0x000000,
         transparent: true,
       });
-      renderer.setModel(model, textures);
+      if (!isCurrent()) return;
+      pendingRenderer.setModel(model, textures);
+      model.update();
+      pendingRenderer.render();
 
-      this.renderer = renderer;
+      this.canvas.replaceWith(canvas);
+      this.canvas = canvas;
+      this.renderer = pendingRenderer;
+      pendingRenderer = null;
       this._model = model;
       this._loading = false;
-
-      model.update();
-      renderer.render();
 
       this.startLoop();
 
       this.dispatchEvent(new CustomEvent("load", { detail: { model } }));
-      this.dispatchEvent(new CustomEvent("vivi-load", { detail: { model } }));
-    } catch (e) {
+      if (isCurrent()) {
+        this.dispatchEvent(new CustomEvent("vivi-load", { detail: { model } }));
+      }
+    } catch {
+      if (!isCurrent()) return;
       this._loading = false;
-      const message = e instanceof Error ? e.message : String(e);
+      // Fetch/parser/renderer exceptions can contain credentials or model data.
+      const message = "Could not load a Vivi2D model.";
       this.dispatchEvent(new CustomEvent("error", { detail: { message } }));
-      this.dispatchEvent(new CustomEvent("vivi-error", { detail: { message } }));
+      if (isCurrent()) {
+        this.dispatchEvent(new CustomEvent("vivi-error", { detail: { message } }));
+      }
+    } finally {
+      pendingRenderer?.destroy();
     }
   }
 
@@ -317,7 +348,12 @@ export class ViviModelElement extends HTMLElement {
     this.animFrameId = requestAnimationFrame(loop);
   }
 
-  private dispose(): void {
+  private dispose(): number {
+    const generation = ++this.loadGeneration;
+    this.loadAbort?.abort();
+    this.loadAbort = null;
+    this._loading = false;
+    this.cancelScript();
     if (this.animFrameId) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = 0;
@@ -327,5 +363,6 @@ export class ViviModelElement extends HTMLElement {
     this._model = null;
     this.lastTime = 0;
     this.dispatchEvent(new CustomEvent("vivi-dispose"));
+    return generation;
   }
 }

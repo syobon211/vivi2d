@@ -164,7 +164,7 @@ export default function App() {
   } = useModelSession({
     canvasRef,
     recorderRef,
-    recorderFactory: (canvas) => new ViewerRecorder(canvas),
+    recorderFactory: (canvas, beforeCapture) => new ViewerRecorder(canvas, beforeCapture),
     state: viewerState,
     t,
   });

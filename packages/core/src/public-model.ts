@@ -11,7 +11,11 @@ import { evaluateBindingsAdditive } from "./parameter-binding-eval";
 import { mergeParameterDefaults } from "./parameter-utils";
 import { createPhysicsRuntimeState } from "./physics-engine";
 import { parseViviFile } from "./project-parser";
-import { VIVI_RUNTIME_ALLOWED_BINDING_TARGET_TYPES } from "./runtime-spec";
+import {
+  VIVI_RUNTIME_ALLOWED_BINDING_TARGET_TYPES,
+  VIVI_RUNTIME_ERROR_CODES,
+  ViviRuntimeError,
+} from "./runtime-spec";
 import { computeSkinnedVertices } from "./skin-utils";
 import type {
   BoneBindingPropertyType,
@@ -554,6 +558,15 @@ export class PublicViviModel {
     const vertices = skin
       ? computeSkinnedVertices(layer.mesh.vertices, skin, worldTransforms)
       : layer.mesh.vertices;
+    // Check the complete result before changing any reusable scratch coordinate.
+    for (const value of vertices) {
+      if (!Number.isFinite(Math.fround(value))) {
+        throw new ViviRuntimeError(
+          VIVI_RUNTIME_ERROR_CODES.validation,
+          "runtime mesh coordinates must be finite binary32 values",
+        );
+      }
+    }
     const length = Math.min(out.length, vertices.length);
     for (let index = 0; index < length; index += 1) {
       out[index] = vertices[index]!;

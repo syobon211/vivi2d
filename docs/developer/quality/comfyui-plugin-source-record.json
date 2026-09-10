@@ -9,7 +9,7 @@
     "installDirectory": "vivi2d_compat_plugin",
     "sourceLocation": "repo:integrations/comfyui/vivi2d_compat_plugin",
     "version": "0.1.0",
-    "sha256": "sha256:c8e474c0b0c56b84162f18d67f81113bbf4f60a48536e8104edfe4c6459fc1e7",
+    "sha256": "sha256:b6547770d8b1f39b621a0ae6118e6af69273ded5cecfa016ae3d7db35694416e",
     "signature": null,
     "licenseSpdx": "Apache-2.0",
     "licenseStatus": "releaseReviewed",

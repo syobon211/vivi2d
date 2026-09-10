@@ -2,6 +2,8 @@ import type { ViviFileData } from "@vivi2d/core/types";
 import { describe, expect, it, vi } from "vitest";
 import { extractTextures } from "../loader";
 
+const PNG_FIXTURE = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk";
+
 
 vi.stubGlobal(
   "Image",
@@ -167,13 +169,13 @@ describe("extractTextures", () => {
       ],
       atlases: [
         {
-          image: "iVBOR1",
+          image: PNG_FIXTURE,
           width: 200,
           height: 200,
           entries: [{ layerId: "mesh-A", x: 0, y: 0, width: 50, height: 50 }],
         },
         {
-          image: "iVBOR2",
+          image: PNG_FIXTURE,
           width: 200,
           height: 200,
           entries: [{ layerId: "mesh-B", x: 10, y: 10, width: 80, height: 80 }],
@@ -220,7 +222,7 @@ describe("extractTextures", () => {
       layers: [layer],
       atlases: [
         {
-          image: "iVBOR",
+          image: PNG_FIXTURE,
           width: 200,
           height: 200,
           entries: [{ layerId: "mesh-uv", x: 50, y: 50, width: 100, height: 100 }],
@@ -295,7 +297,7 @@ describe("extractTextures", () => {
       layers: [layer],
       atlases: [
         {
-          image: "iVBOR",
+          image: PNG_FIXTURE,
           width: 200,
           height: 200,
           entries: [{ layerId: "other-mesh", x: 0, y: 0, width: 100, height: 100 }],
@@ -360,7 +362,7 @@ describe("extractTextures", () => {
       ],
       atlases: [
         {
-          image: "iVBOR",
+          image: PNG_FIXTURE,
           width: 200,
           height: 200,
           entries: [

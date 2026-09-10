@@ -1,6 +1,8 @@
 {
   "environment": "desktop-installer-alpha",
   "requiredReviewersMinimum": 1,
+  "requiredReviewerIdentities": [{ "type": "User", "id": 288079945 }],
+  "preventSelfReview": false,
   "adminBypassDisabled": true,
   "deploymentBranchPolicy": {
     "protectedBranches": false,
@@ -9,6 +11,8 @@
   },
   "requiredSecrets": [],
   "notes": [
+    "GitHub requires one approval from the listed reviewers, not one approval per listed identity.",
+    "The sole owner may approve their own manual dispatch; admin bypass remains disabled.",
     "Windows installer alpha releases are draft-first.",
     "Unsigned builds require owner approval and clear release notes before publish.",
     "Signing enablement requires a separate ADR and protected signing configuration."

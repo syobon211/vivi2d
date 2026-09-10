@@ -13,6 +13,166 @@ import { ComfyUIClient } from "../client";
 useMswServer();
 
 describe("ComfyUIClient", () => {
+  describe("HTTP response deadlines", () => {
+    const bodyCases: Array<{
+      name: string;
+      status?: number;
+      data: string;
+      invoke: (client: ComfyUIClient) => Promise<unknown>;
+    }> = [
+      { name: "system stats", data: "{}", invoke: (client) => client.getSystemStats() },
+      { name: "node info", data: "{}", invoke: (client) => client.getNodeInfo("Fixture") },
+      { name: "history", data: "{}", invoke: (client) => client.getHistory("fixture") },
+      { name: "enqueue JSON", data: "{}", invoke: (client) => client.enqueue({}) },
+      { name: "enqueue error text", status: 400, data: "synthetic", invoke: (client) => client.enqueue({}) },
+      { name: "download", data: "x", invoke: (client) => client.downloadOutput("fixture.png") },
+      { name: "upload JSON", data: "{\"name\":\"fixture.png\"}", invoke: (client) => client.uploadImage(new ArrayBuffer(1), "fixture.png") },
+    ];
+
+    it.each(bodyCases)("keeps the abort deadline active through $name body consumption", async ({ status, data, invoke }) => {
+      vi.useFakeTimers();
+      let controller: ReadableStreamDefaultController<Uint8Array> | undefined;
+      let signal: AbortSignal | null | undefined;
+      const abort = () => controller?.error(new DOMException("Timed out", "AbortError"));
+      const response = new Response(new ReadableStream<Uint8Array>({
+        start(value) {
+          controller = value;
+          value.enqueue(new TextEncoder().encode(data));
+        },
+      }), { status: status ?? 200 });
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+        signal = init?.signal;
+        signal?.addEventListener("abort", abort, { once: true });
+        return response;
+      });
+      let outcome = "pending";
+      const operation = invoke(new ComfyUIClient({ timeout: 50 })).then(
+        () => { outcome = "resolved"; },
+        () => { outcome = "rejected"; },
+      );
+      try {
+        await vi.advanceTimersByTimeAsync(60);
+        expect(outcome).toBe("rejected");
+        expect(signal?.aborted).toBe(true);
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        signal?.removeEventListener("abort", abort);
+        try { controller?.close(); } catch {}
+        await operation;
+        fetchSpy.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
+    it("applies the configured timeout to upload before response headers", async () => {
+      vi.useFakeTimers();
+      let finishFetch: ((response: Response) => void) | undefined;
+      let signal: AbortSignal | null | undefined;
+      let rejectFetch: ((error: Error) => void) | undefined;
+      const abort = () => rejectFetch?.(new DOMException("Timed out", "AbortError"));
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation((_input, init) => {
+        signal = init?.signal;
+        signal?.addEventListener("abort", abort, { once: true });
+        return new Promise<Response>((resolve, reject) => {
+          finishFetch = resolve;
+          rejectFetch = reject;
+        });
+      });
+      let outcome = "pending";
+      const operation = new ComfyUIClient({ timeout: 50 }).uploadImage(new ArrayBuffer(1), "fixture.png").then(
+        () => { outcome = "resolved"; },
+        () => { outcome = "rejected"; },
+      );
+      try {
+        await vi.advanceTimersByTimeAsync(60);
+        expect(outcome).toBe("rejected");
+        expect(signal?.aborted).toBe(true);
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        signal?.removeEventListener("abort", abort);
+        finishFetch?.(Response.json({ name: "fixture.png" }));
+        await operation;
+        fetchSpy.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
+    it.each([
+      { name: "ping status", status: 200, invoke: (client: ComfyUIClient) => client.ping() },
+      { name: "missing history", status: 404, invoke: (client: ComfyUIClient) => client.getHistory("fixture") },
+      { name: "missing node", status: 404, invoke: (client: ComfyUIClient) => client.getNodeInfo("Fixture") },
+      { name: "failed stats", status: 500, invoke: (client: ComfyUIClient) => client.getSystemStats() },
+    ])("cancels the unused owned response body for $name", async ({ status, invoke }) => {
+      vi.useFakeTimers();
+      const cancel = vi.fn();
+      const response = new Response(new ReadableStream<Uint8Array>({ cancel }), { status });
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+      try {
+        await invoke(new ComfyUIClient({ timeout: 50 })).catch(() => undefined);
+        expect(cancel).toHaveBeenCalledOnce();
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        if (!response.bodyUsed) await response.body?.cancel();
+        fetchSpy.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
+    it.each(["declared-size", "stream-size"])("returns the %s byte-cap failure without waiting for cancellation", async (mode) => {
+      vi.useFakeTimers();
+      let finishCancel: (() => void) | undefined;
+      const cancel = vi.fn(() => new Promise<void>((resolve) => { finishCancel = resolve; }));
+      const response = new Response(new ReadableStream<Uint8Array>({
+        start(controller) { controller.enqueue(new Uint8Array(5)); },
+        cancel,
+      }), { headers: mode === "declared-size" ? { "content-length": "5" } : {} });
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+      let outcome = "pending";
+      const operation = new ComfyUIClient({ timeout: 50 }).downloadOutput("fixture.png", "", "output", 4).then(
+        () => { outcome = "resolved"; },
+        (error: Error) => { outcome = error.message === "ComfyUI download is too large." ? "byte-limit" : "other-rejection"; },
+      );
+      try {
+        await vi.advanceTimersByTimeAsync(0);
+        expect(outcome).toBe("byte-limit");
+        expect(cancel).toHaveBeenCalledOnce();
+        expect(response.body?.locked).toBe(false);
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        finishCancel?.();
+        await operation;
+        fetchSpy.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+
+    it.each(["success", "invalid-json", "fetch-rejection"])("clears the HTTP timer after %s", async (terminal) => {
+      vi.useFakeTimers();
+      const abort = vi.fn();
+      let signal: AbortSignal | null | undefined;
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+        signal = init?.signal;
+        signal?.addEventListener("abort", abort);
+        if (terminal === "fetch-rejection") throw new Error("synthetic failure");
+        return new Response(terminal === "success" ? "{}" : "{");
+      });
+      try {
+        const outcome = await new ComfyUIClient({ timeout: 50 }).getHistory("fixture").then(
+          () => "resolved",
+          () => "rejected",
+        );
+        expect(outcome).toBe(terminal === "success" ? "resolved" : "rejected");
+        expect(vi.getTimerCount()).toBe(0);
+        await vi.advanceTimersByTimeAsync(60);
+        expect(abort).not.toHaveBeenCalled();
+      } finally {
+        signal?.removeEventListener("abort", abort);
+        fetchSpy.mockRestore();
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe("ping()", () => {
     it("接続成功でtrueを返す", async () => {
       let capturedUrl = "";
@@ -380,6 +540,26 @@ describe("ComfyUIClient", () => {
   });
 
   describe("waitForCompletion (WebSocket)", () => {
+    it("falls back to polling when fetching executed history rejects", async () => {
+      const history = {
+        outputs: {},
+        status: { completed: true, status_str: "success" },
+      };
+      server.use(
+        comfyuiWsLink.addEventListener("connection", ({ client }) => {
+          client.send(comfyuiExecutedMessage("failed-history"));
+        }),
+      );
+      const client = new ComfyUIClient({ timeout: 5000 });
+      const getHistory = vi
+        .spyOn(client, "getHistory")
+        .mockRejectedValueOnce(new Error("synthetic history request failure"))
+        .mockResolvedValue(history);
+
+      await expect(client.waitForCompletion("failed-history")).resolves.toEqual(history);
+      expect(getHistory).toHaveBeenCalledTimes(2);
+    }, 1000);
+
     it("executed メッセージで履歴を取得して返す", async () => {
       const history = {
         outputs: { "9": { images: [{ filename: "out.png" }] } },

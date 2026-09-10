@@ -74,8 +74,8 @@ def _assert_bounded_string(value: str, field: str, max_bytes: int) -> None:
         raise RuntimeError(f"Vivi2D manifest {field} is invalid.")
     try:
         byte_length = len(value.encode("utf-8"))
-    except UnicodeEncodeError as exc:
-        raise RuntimeError(f"Vivi2D manifest {field} is invalid UTF-8.") from exc
+    except UnicodeEncodeError:
+        raise RuntimeError(f"Vivi2D manifest {field} is invalid UTF-8.") from None
     if byte_length > max_bytes:
         raise RuntimeError(
             f"Vivi2D manifest {field} exceeds the maximum supported length."
@@ -203,8 +203,10 @@ def _validate_manifest(manifest: dict[str, Any]) -> None:
         raise RuntimeError("Vivi2D manifest contains too many layers.")
     try:
         validate(instance=manifest, schema=load_schema())
-    except ValidationError as exc:
-        raise RuntimeError("Vivi2D manifest does not match the expected schema.") from exc
+    except ValidationError:
+        # ComfyUI records formatted tracebacks; jsonschema exceptions include
+        # untrusted manifest values, so suppress the original exception chain.
+        raise RuntimeError("Vivi2D manifest does not match the expected schema.") from None
     _validate_manifest_semantics(manifest)
 
 
@@ -261,8 +263,8 @@ def write_manifest(path: Path, manifest: dict[str, Any]) -> None:
             indent=2,
             allow_nan=False,
         )
-    except (TypeError, ValueError) as exc:
-        raise RuntimeError("Vivi2D manifest is not valid finite JSON.") from exc
+    except (TypeError, ValueError):
+        raise RuntimeError("Vivi2D manifest is not valid finite JSON.") from None
     _validate_manifest(manifest)
     encoded = serialized.encode("utf-8")
     if len(encoded) > MAX_MANIFEST_BYTES:
@@ -297,16 +299,16 @@ def read_manifest(path: Path) -> dict[str, Any]:
         raise RuntimeError("Vivi2D manifest exceeds the maximum supported size.")
     try:
         text = encoded.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise RuntimeError("Vivi2D manifest is not valid UTF-8.") from exc
+    except UnicodeDecodeError:
+        raise RuntimeError("Vivi2D manifest is not valid UTF-8.") from None
     try:
         data = json.loads(
             text,
             parse_float=_parse_finite_float,
             parse_constant=_reject_nonfinite_constant,
         )
-    except (json.JSONDecodeError, ValueError) as exc:
-        raise RuntimeError("Vivi2D manifest is not valid JSON.") from exc
+    except (json.JSONDecodeError, ValueError):
+        raise RuntimeError("Vivi2D manifest is not valid JSON.") from None
     if not isinstance(data, dict):
         raise RuntimeError("Vivi2D manifest must be a JSON object.")
     _validate_manifest(data)

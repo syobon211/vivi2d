@@ -33,6 +33,23 @@ const reviewFiles = [
 
 const fixtureResults = runVerifierFixtures();
 const preparerFixtureResults = runPreparerFixtures();
+for (const [suite, results] of [
+  ["verifier", fixtureResults],
+  ["preparer", preparerFixtureResults],
+]) {
+  const failed = results.filter((result) => !result.ok);
+  console.log(
+    `[windows-installer-fixtures] ${suite}: ${results.length - failed.length}/${results.length} passed`,
+  );
+  if (failed.length > 0) {
+    console.error(
+      `[windows-installer-fixtures] ${suite}: ${failed.map((item) => item.name).join(", ")}`,
+    );
+  }
+}
+if ([...fixtureResults, ...preparerFixtureResults].some((result) => !result.ok)) {
+  throw new Error("Windows installer fixtures failed.");
+}
 const packet = [
   "# Vivi2D Windows Installer Alpha Review Packet",
   "",
@@ -119,9 +136,10 @@ function summarizeJob(jobSection) {
 }
 
 function runVerifierFixtures() {
-  const root = resolveRepoPath("tmp/windows-installer-alpha-review-fixtures");
-  fs.rmSync(root, { recursive: true, force: true });
-  fs.mkdirSync(root, { recursive: true });
+  fs.mkdirSync(resolveRepoPath("tmp"), { recursive: true });
+  const root = fs.mkdtempSync(
+    resolveRepoPath("tmp/windows-installer-alpha-review-fixtures-"),
+  );
 
   const fixtures = [
     { name: "valid exact source-review zip name", expected: "pass", mutate: () => {} },
@@ -270,39 +288,92 @@ function runVerifierFixtures() {
           record.manualWindowsReview.intentionalRemnants = "none";
         }),
     },
+    ...manualReviewCases().map((fixture) => ({
+      name: fixture.name,
+      expected: fixture.expected,
+      mutate: (dir) =>
+        updateRecord(dir, (record) => {
+          record.manualWindowsReview = fixture.review;
+        }),
+    })),
+    {
+      name: "malformed record JSON has source-free diagnostic",
+      expected: "fail",
+      forbidOutput: "LOCAL_REVIEW_MARKER",
+      mutate: (dir) => {
+        fs.writeFileSync(
+          path.join(dir, windowsInstallerAssetNames(version).installerRecord),
+          '{"manualWindowsReview":{"LOCAL_REVIEW_MARKER": invalid}}',
+        );
+        writeChecksums(dir);
+      },
+    },
   ];
 
-  const results = fixtures.map((fixture) => {
-    const dir = path.join(root, slugify(fixture.name));
-    createValidFixture(dir);
-    fixture.mutate(dir);
-    const result = runVerifier(dir, fixture.verifierSha ?? sourceCommit);
-    const expectedPass = fixture.expected === "pass";
-    const actualPass = result.status === 0;
-    return {
-      actual: actualPass ? "pass" : "fail",
-      diagnostic: firstDiagnostic(result),
-      expected: fixture.expected,
-      name: fixture.name,
-      ok: expectedPass === actualPass,
-    };
-  });
-  fs.rmSync(root, { recursive: true, force: true });
-  const failed = results.filter((result) => !result.ok);
-  if (failed.length > 0) {
-    throw new Error(
-      `Verifier fixtures failed: ${failed.map((item) => item.name).join(", ")}`,
-    );
+  try {
+    return fixtures.map((fixture) => {
+      const dir = path.join(root, slugify(fixture.name));
+      createValidFixture(dir);
+      fixture.mutate(dir);
+      const result = runVerifier(dir, fixture.verifierSha ?? sourceCommit);
+      const expectedPass = fixture.expected === "pass";
+      const actualPass = result.status === 0;
+      return {
+        actual: actualPass ? "pass" : "fail",
+        diagnostic: firstDiagnostic(result),
+        expected: fixture.expected,
+        name: fixture.name,
+        ok:
+          expectedPass === actualPass &&
+          !(
+            fixture.forbidOutput &&
+            `${result.stdout}\n${result.stderr}`.includes(fixture.forbidOutput)
+          ),
+      };
+    });
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
   }
-  return results;
 }
 
 function runPreparerFixtures() {
-  const root = resolveRepoPath("tmp/windows-installer-alpha-preparer-fixtures");
-  fs.rmSync(root, { recursive: true, force: true });
-  fs.mkdirSync(root, { recursive: true });
+  fs.mkdirSync(resolveRepoPath("tmp"), { recursive: true });
+  const root = fs.mkdtempSync(
+    resolveRepoPath("tmp/windows-installer-alpha-preparer-fixtures-"),
+  );
 
   const fixtures = [
+    {
+      name: "default pending manual summary without environment input",
+      expected: "pass",
+      manualReviewJson: null,
+      mutate: () => {},
+      postCheck: (dir) => {
+        const assets = path.join(dir, "assets");
+        const names = windowsInstallerAssetNames(version);
+        const record = JSON.parse(
+          fs.readFileSync(path.join(assets, names.installerRecord), "utf8"),
+        );
+        const notes = fs.readFileSync(path.join(assets, names.releaseNotes), "utf8");
+        const review = record.manualWindowsReview;
+        if (
+          review.status !== "pending" ||
+          review.reviewedBy !== "" ||
+          review.reviewDate !== "" ||
+          review.windowsVersion !== "" ||
+          review.installPassed !== false ||
+          review.firstLaunchNetworkPassed !== false ||
+          review.uninstallPassed !== false ||
+          review.intentionalRemnants.length !== 0 ||
+          !notes.includes("- Manual review pending.") ||
+          runVerifier(assets, record.sourceCommit).status !== 0
+        ) {
+          throw new Error(
+            "default manual summary must remain pending and publicly bounded.",
+          );
+        }
+      },
+    },
     {
       name: "valid win-unpacked app root",
       expected: "pass",
@@ -394,40 +465,127 @@ function runPreparerFixtures() {
         );
       },
     },
+    ...manualReviewCases().map((fixture) => ({
+      name: fixture.name,
+      expected: fixture.expected,
+      manualReviewJson: JSON.stringify(fixture.review),
+      mutate: () => {},
+      ...(fixture.expected === "pass" ? { postCheck: checkPublicManualReview } : {}),
+    })),
+    {
+      name: "malformed manual JSON has source-free diagnostic",
+      expected: "fail",
+      manualReviewJson: '{"LOCAL_REVIEW_MARKER": invalid}',
+      forbidOutput: "LOCAL_REVIEW_MARKER",
+      mutate: () => {},
+    },
   ];
 
-  const results = fixtures.map((fixture) => {
-    const dir = path.join(root, slugify(fixture.name));
-    createPreparerFixture(dir);
-    fixture.mutate(dir);
-    const result = runPreparer(dir, fixture.runVersion ?? version);
-    const expectedPass = fixture.expected === "pass";
-    let actualPass = result.status === 0;
-    let diagnostic = firstDiagnostic(result);
-    if (actualPass && typeof fixture.postCheck === "function") {
-      try {
-        fixture.postCheck(dir);
-      } catch (error) {
-        actualPass = false;
-        diagnostic = error.message;
+  try {
+    return fixtures.map((fixture) => {
+      const dir = path.join(root, slugify(fixture.name));
+      createPreparerFixture(dir);
+      fixture.mutate(dir);
+      const result = runPreparer(
+        dir,
+        fixture.runVersion ?? version,
+        fixture.manualReviewJson,
+      );
+      const expectedPass = fixture.expected === "pass";
+      let actualPass = result.status === 0;
+      let diagnostic = firstDiagnostic(result);
+      if (actualPass && typeof fixture.postCheck === "function") {
+        try {
+          fixture.postCheck(dir);
+        } catch (error) {
+          actualPass = false;
+          diagnostic = error.message;
+        }
       }
-    }
-    return {
-      actual: actualPass ? "pass" : "fail",
-      diagnostic,
-      expected: fixture.expected,
-      name: fixture.name,
-      ok: expectedPass === actualPass,
-    };
-  });
-  fs.rmSync(root, { recursive: true, force: true });
-  const failed = results.filter((result) => !result.ok);
-  if (failed.length > 0) {
+      return {
+        actual: actualPass ? "pass" : "fail",
+        diagnostic,
+        expected: fixture.expected,
+        name: fixture.name,
+        ok:
+          expectedPass === actualPass &&
+          !(
+            fixture.forbidOutput &&
+            `${result.stdout}\n${result.stderr}`.includes(fixture.forbidOutput)
+          ),
+      };
+    });
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+}
+
+function manualReviewCases() {
+  const passed = {
+    firstLaunchNetworkPassed: true,
+    installPassed: true,
+    intentionalRemnants: ["editor-user-data", "viewer-cache"],
+    reviewedBy: "owner",
+    reviewDate: "2026-09-11",
+    status: "passed",
+    uninstallPassed: true,
+    windowsVersion: "windows-11",
+  };
+  const invalid = [
+    ["reviewer free text", { reviewedBy: "LOCAL_REVIEW_MARKER" }],
+    ["Windows version free text", { windowsVersion: "LOCAL_REVIEW_MARKER" }],
+    [
+      "remnant absolute path",
+      { intentionalRemnants: ["C:/Users/User/local-review.txt"] },
+    ],
+    ["remnant object", { intentionalRemnants: [{ note: "LOCAL_REVIEW_MARKER" }] }],
+    ["unknown manual field", { note: "LOCAL_REVIEW_MARKER" }],
+    ["nonboolean manual result", { installPassed: "false" }],
+    ["missing manual result", { installPassed: undefined }],
+    ["invalid calendar date", { reviewDate: "2026-02-30" }],
+    ["date free text", { reviewDate: "2026-09-11 LOCAL_REVIEW_MARKER" }],
+    ["duplicate remnant code", { intentionalRemnants: ["editor-cache", "editor-cache"] }],
+    ["unknown remnant code", { intentionalRemnants: ["other"] }],
+    ["passed with failed result", { uninstallPassed: false }],
+    ["passed without reviewer", { reviewedBy: "" }],
+    ["passed without OS", { windowsVersion: "" }],
+    ["passed without date", { reviewDate: "" }],
+    ["pending with passed details", { status: "pending" }],
+  ];
+  return [
+    { name: "public manual passed summary", expected: "pass", review: passed },
+    {
+      name: "public manual Windows 10 leap date",
+      expected: "pass",
+      review: { ...passed, windowsVersion: "windows-10", reviewDate: "2024-02-29" },
+    },
+    ...invalid.map(([name, changes]) => ({
+      name,
+      expected: "fail",
+      review: { ...passed, ...changes },
+    })),
+  ];
+}
+
+function checkPublicManualReview(dir) {
+  const assets = path.join(dir, "assets");
+  const names = windowsInstallerAssetNames(version);
+  const record = JSON.parse(
+    fs.readFileSync(path.join(assets, names.installerRecord), "utf8"),
+  );
+  const notes = fs.readFileSync(path.join(assets, names.releaseNotes), "utf8");
+  if (
+    !notes.includes("- Editor user data retained.") ||
+    !notes.includes("- Viewer cache retained.") ||
+    notes.includes("editor-user-data")
+  ) {
+    throw new Error("manual review notes must use fixed public remnant labels.");
+  }
+  if (runVerifier(assets, record.sourceCommit).status !== 0) {
     throw new Error(
-      `Preparer fixtures failed: ${failed.map((item) => item.name).join(", ")}`,
+      "prepared public manual summary must preserve verifier/hash binding.",
     );
   }
-  return results;
 }
 
 function createValidFixture(dir) {
@@ -595,7 +753,24 @@ function runVerifier(dir, sha) {
   );
 }
 
-function runPreparer(dir, fixtureVersion = version) {
+function runPreparer(dir, fixtureVersion = version, manualReviewJson) {
+  const env = { ...process.env };
+  delete env.MANUAL_REVIEW_JSON;
+  delete env.VIVI2D_WINDOWS_MANUAL_REVIEW_JSON;
+  if (manualReviewJson !== null) {
+    env.VIVI2D_WINDOWS_MANUAL_REVIEW_JSON =
+      manualReviewJson ??
+      JSON.stringify({
+        firstLaunchNetworkPassed: false,
+        installPassed: false,
+        intentionalRemnants: [],
+        reviewedBy: "",
+        reviewDate: "",
+        status: "pending",
+        uninstallPassed: false,
+        windowsVersion: "",
+      });
+  }
   return spawnSync(
     process.execPath,
     [
@@ -632,19 +807,7 @@ function runPreparer(dir, fixtureVersion = version) {
     {
       cwd: repoRoot,
       encoding: "utf8",
-      env: {
-        ...process.env,
-        MANUAL_REVIEW_JSON: JSON.stringify({
-          firstLaunchNetworkPassed: false,
-          installPassed: false,
-          intentionalRemnants: [],
-          reviewedBy: "",
-          reviewDate: "",
-          status: "pending",
-          uninstallPassed: false,
-          windowsVersion: "",
-        }),
-      },
+      env,
       stdio: ["ignore", "pipe", "pipe"],
     },
   );

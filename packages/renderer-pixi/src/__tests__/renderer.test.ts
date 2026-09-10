@@ -11,7 +11,9 @@ type MutableRuntimeMeshSnapshot = {
   -readonly [Key in keyof RuntimeMeshSnapshot]: RuntimeMeshSnapshot[Key];
 };
 
-vi.mock("pixi.js", () => {
+vi.mock("pixi.js", async (importOriginal) => {
+  const { Color, GlContextSystem, GlBackBufferSystem } =
+    await importOriginal<typeof import("pixi.js")>();
   function mockContainer(): any {
     const children: unknown[] = [];
     return {
@@ -39,6 +41,8 @@ vi.mock("pixi.js", () => {
     return {
       init: vi.fn().mockResolvedValue(undefined),
       destroy: vi.fn(),
+      stop: vi.fn(),
+      ticker: { destroy: vi.fn() },
       render: vi.fn(),
       stage: mockContainer(),
       renderer: { resize: vi.fn() },
@@ -48,6 +52,11 @@ vi.mock("pixi.js", () => {
   });
 
   return {
+    Color,
+    GlContextSystem,
+    GlBackBufferSystem,
+    isWebGLSupported: vi.fn(() => false),
+    EventsTicker: { events: null },
     Application: appFactory,
     Container: vi.fn().mockImplementation(mockContainer),
     MeshSimple: vi.fn().mockImplementation(function (opts: any) {
@@ -150,6 +159,26 @@ describe("ViviPixiRenderer", () => {
 
   // --- create() ---
   describe("create()", () => {
+    it("rejects invalid colors before constructing an Application", async () => {
+      const { Application } = await import("pixi.js");
+      const count = vi.mocked(Application).mock.calls.length;
+      await expect(
+        ViviPixiRenderer.create(canvas, { backgroundColor: -1 }),
+      ).rejects.toThrow("Invalid renderer background color.");
+      expect(vi.mocked(Application).mock.calls.length).toBe(count);
+    });
+
+    it("rejects unavailable target contexts before constructing an Application", async () => {
+      const { Application, isWebGLSupported } = await import("pixi.js");
+      vi.mocked(isWebGLSupported).mockReturnValueOnce(true);
+      vi.spyOn(canvas, "getContext").mockReturnValue(null);
+      const count = vi.mocked(Application).mock.calls.length;
+      await expect(ViviPixiRenderer.create(canvas)).rejects.toThrow(
+        "Could not initialize the renderer canvas.",
+      );
+      expect(vi.mocked(Application).mock.calls.length).toBe(count);
+    });
+
     it("Applicationが初期化されレンダラーが返される", async () => {
       const renderer = await ViviPixiRenderer.create(canvas);
       expect(renderer).toBeInstanceOf(ViviPixiRenderer);
@@ -166,6 +195,7 @@ describe("ViviPixiRenderer", () => {
           backgroundColor: 0xffffff,
           antialias: true,
           backgroundAlpha: 1,
+          autoStart: false,
         }),
       );
       renderer.destroy();
@@ -319,9 +349,10 @@ describe("ViviPixiRenderer", () => {
       const app = renderer.pixiApp;
 
       renderer.destroy();
+      renderer.destroy();
 
-      expect(app.destroy).not.toHaveBeenCalled();
-      expect(app.stage.removeChild).toHaveBeenCalled();
+      expect(app.destroy).toHaveBeenCalledExactlyOnceWith(false, { children: true });
+      expect(app.stop).toHaveBeenCalledTimes(1);
     });
 
     it("メッシュが全て破棄される", async () => {

@@ -1,7 +1,9 @@
 {
   "environment": "npm-alpha",
   "purpose": "Protected environment for @vivi2d/web npm alpha Trusted Publishing.",
-  "requiredReviewersMinimum": 2,
+  "requiredReviewersMinimum": 1,
+  "requiredReviewerIdentities": [{ "type": "User", "id": 288079945 }],
+  "preventSelfReview": false,
   "adminBypassDisabled": true,
   "deploymentBranchPolicy": {
     "customBranchPolicies": true,
@@ -10,6 +12,8 @@
   },
   "requiredSecrets": [],
   "notes": [
+    "GitHub requires one approval from the listed reviewers, not one approval per listed identity.",
+    "The sole owner may approve their own manual dispatch; admin bypass remains disabled.",
     "The real GitHub environment must be configured to match this tracked policy before publishing.",
     "The publish workflow also verifies GITHUB_REF against the requested web-v* release tag."
   ]

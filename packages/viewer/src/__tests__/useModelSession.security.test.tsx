@@ -108,9 +108,7 @@ describe("useModelSession security guards", () => {
     });
 
     expect(text).not.toHaveBeenCalled();
-    expect(result.current.state.setError).toHaveBeenCalledWith(
-      expect.stringContaining(".vivi file is too large"),
-    );
+    expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
   });
 
   it("rejects oversized remote models from content-length", async () => {
@@ -129,8 +127,63 @@ describe("useModelSession security guards", () => {
     });
 
     expect(fetchSpy).toHaveBeenCalled();
-    expect(result.current.state.setError).toHaveBeenCalledWith(
-      expect.stringContaining("Remote .vivi model is too large"),
+    expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
+  });
+
+  it("cancels and releases an oversized streaming response", async () => {
+    const reader = {
+      read: vi.fn().mockResolvedValue({
+        done: false,
+        value: { byteLength: MAX_VIVI_TEXT_FILE_BYTES + 1 },
+      }),
+      cancel: vi.fn().mockResolvedValue(undefined),
+      releaseLock: vi.fn(),
+    };
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      headers: new Headers(),
+      body: { getReader: () => reader },
+    } as unknown as Response);
+    const { result } = renderUseModelSession();
+    await act(async () => {
+      await result.current.loadModel("https://example.com/oversized.vivi");
+    });
+    expect(reader.cancel).toHaveBeenCalledOnce();
+    expect(reader.releaseLock).toHaveBeenCalledOnce();
+    expect(mockParseViviFile).not.toHaveBeenCalled();
+  });
+
+  it("cancels a non-OK fetched response owned by the Viewer", async () => {
+    const cancel = vi.fn();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ReadableStream({ cancel }), { status: 503 }),
     );
+    const { result } = renderUseModelSession();
+    await act(async () => {
+      await result.current.loadModel("https://example.invalid/model.vivi");
+    });
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(mockParseViviFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "fetch",
+    "parse",
+  ])("does not display raw %s failure details", async (stage) => {
+    const failure = new TypeError("synthetic-password in rejected source");
+    const { result } = renderUseModelSession();
+    if (stage === "fetch") vi.spyOn(globalThis, "fetch").mockRejectedValue(failure);
+    else
+      mockParseViviFile.mockImplementationOnce(() => {
+        throw failure;
+      });
+    await act(async () => {
+      await result.current.loadModel(
+        stage === "fetch"
+          ? "https://example.invalid/model.vivi"
+          : ({ size: 2, name: "model.vivi", text: async () => "{}" } as File),
+      );
+    });
+    expect(result.current.state.setError).toHaveBeenLastCalledWith("t:errFileLoad");
   });
 });

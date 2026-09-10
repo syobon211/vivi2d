@@ -188,107 +188,230 @@ describe("source review archive gate", () => {
 });
 
 describe("hosted release surface gate", () => {
-  it("accepts allowlisted artifact names and paths", () => {
+  function releaseWorkflow() {
+    return [
+      "on:",
+      "  workflow_dispatch:",
+      "jobs:",
+      "  validate-and-package-github-release:",
+      "    environment: desktop-installer-alpha",
+      "    steps:",
+      "      - name: Verify live release environment before build",
+      "        env:",
+      "          GH_TOKEN: $" + "{{ github.token }}",
+      "        run: node scripts/check-environment-protection.mjs --live --environment desktop-installer-alpha",
+      "      - run: npm ci",
+      "      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+      "        with:",
+      "          name: github-release-alpha-assets",
+      "          path: tmp/github-release-assets/",
+      "          retention-days: 14",
+      "          if-no-files-found: error",
+    ].join("\n");
+  }
+
+  function checkFixture(text, filename = "github-release-alpha.yml") {
     const root = makeTempRepo();
     writeHostedChecklist(root);
-    writeFile(
-      root,
-      ".github/workflows/quality.yml",
-      [
-        "jobs:",
-        "  test:",
-        "    steps:",
-        "      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
-        "        with:",
-        "          name: coverage-$" + "{{ github.run_id }}",
-        "          path: coverage/",
-        "          retention-days: 7",
-      ].join("\n"),
-    );
+    writeFile(root, `.github/workflows/${filename}`, text);
+    return runHostedSurface(root);
+  }
 
-    const result = runHostedSurface(root);
-
-    expect(result.status).toBe(0);
+  it("accepts an approved release producer with a successful live check before build", () => {
+    expect(checkFixture(releaseWorkflow()).status).toBe(0);
   });
 
-  it("accepts Playwright artifacts only after release-surface preflight", () => {
-    const root = makeTempRepo();
-    writeHostedChecklist(root);
-    writeFile(
-      root,
-      ".github/workflows/e2e.yml",
-      [
+  it("accepts non-release CI without artifact uploads", () => {
+    expect(
+      checkFixture("jobs:\n  test:\n    steps:\n      - run: npm test\n", "quality.yml")
+        .status,
+    ).toBe(0);
+  });
+
+  for (const artifactPath of ["coverage/", "playwright-report/", "test-results/"]) {
+    it(`rejects automatic ${artifactPath} upload even after release-surface preflight`, () => {
+      const fixture = [
         "jobs:",
         "  test:",
         "    steps:",
         "      - run: npm run check:release-surface",
         "      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
         "        with:",
-        "          name: playwright-report-smoke-$" + "{{ github.run_id }}",
-        "          path: |",
-        "            playwright-report/",
-        "            test-results/",
+        "          name: coverage-fixture",
+        `          path: ${artifactPath}`,
         "          retention-days: 7",
-      ].join("\n"),
+      ].join("\n");
+      const result = checkFixture(fixture, "quality.yml");
+      expect(result.status).toBe(1);
+      expect(outputOf(result)).toContain("artifact upload");
+    });
+  }
+
+  for (const [label, mutate] of [
+    [
+      "missing approval",
+      (text) => text.replace("    environment: desktop-installer-alpha\n", ""),
+    ],
+    [
+      "wrong approval",
+      (text) =>
+        text.replace(
+          "    environment: desktop-installer-alpha",
+          "    environment: npm-alpha",
+        ),
+    ],
+    [
+      "expression approval",
+      (text) =>
+        text.replace(
+          "    environment: desktop-installer-alpha",
+          "    environment: $" + "{{ inputs.environment }}",
+        ),
+    ],
+    [
+      "missing live check",
+      (text) =>
+        text.replace(
+          "        run: node scripts/check-environment-protection.mjs --live --environment desktop-installer-alpha",
+          "        run: echo checked",
+        ),
+    ],
+    ["offline check", (text) => text.replace(" --live", "")],
+    [
+      "conditional live check",
+      (text) =>
+        text.replace(
+          "        run: node scripts/check-environment-protection",
+          "        if: false\n        run: node scripts/check-environment-protection",
+        ),
+    ],
+    [
+      "tolerated live failure",
+      (text) =>
+        text.replace(
+          "        run: node scripts/check-environment-protection",
+          "        continue-on-error: true\n        run: node scripts/check-environment-protection",
+        ),
+    ],
+    [
+      "live check after build",
+      (text) =>
+        text
+          .replace("      - run: npm ci\n", "")
+          .replace("    steps:\n", "    steps:\n      - run: npm ci\n"),
+    ],
+    [
+      "always upload",
+      (text) => text.replace("        with:\n", "        if: always()\n        with:\n"),
+    ],
+    [
+      "continued producer failure",
+      (text) => text.replace("    steps:\n", "    continue-on-error: true\n    steps:\n"),
+    ],
+    [
+      "continued validation failure",
+      (text) =>
+        text.replace(
+          "      - run: npm ci",
+          "      - run: npm ci\n        continue-on-error: true",
+        ),
+    ],
+    [
+      "skipped validation",
+      (text) =>
+        text.replace("      - run: npm ci", "      - run: npm ci\n        if: false"),
+    ],
+    [
+      "continued named scan failure",
+      (text) =>
+        text.replace(
+          "      - run: npm ci",
+          "      - name: Scan generated output\n        continue-on-error: true\n        run: npm ci",
+        ),
+    ],
+    [
+      "quoted continued validation failure",
+      (text) =>
+        text.replace(
+          "      - run: npm ci",
+          "      - run: npm ci\n        'continue-on-error': true",
+        ),
+    ],
+    [
+      "unknown producer",
+      (text) => text.replace("  validate-and-package-github-release:", "  unrelated:"),
+    ],
+    [
+      "unreviewed action",
+      (text) =>
+        text.replace(
+          "upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "upload-artifact@v7",
+        ),
+    ],
+    [
+      "extra artifact path",
+      (text) =>
+        text.replace(
+          "path: tmp/github-release-assets/",
+          "path: |\n            tmp/github-release-assets/\n            test-results/",
+        ),
+    ],
+    [
+      "duplicate approval",
+      (text) =>
+        text.replace(
+          "    environment: desktop-installer-alpha",
+          "    environment: desktop-installer-alpha\n    environment: npm-alpha",
+        ),
+    ],
+    [
+      "aliased upload",
+      (text) =>
+        text.replace(
+          "      - uses: actions/upload-artifact",
+          "      - &upload\n        uses: actions/upload-artifact",
+        ),
+    ],
+  ]) {
+    it(`rejects ${label}`, () => {
+      const result = checkFixture(mutate(releaseWorkflow()));
+      expect(result.status).toBe(1);
+    });
+  }
+
+  it("cannot borrow approval and live check from another job", () => {
+    const fixture = releaseWorkflow().replace(
+      "      - run: npm ci",
+      "  unapproved:\n    steps:\n      - run: npm ci",
     );
+    expect(checkFixture(fixture).status).toBe(1);
+  });
 
+  it("cannot borrow token binding from another step", () => {
+    const fixture = releaseWorkflow().replace(
+      "        run: node scripts/check-environment-protection",
+      "        run: echo unrelated\n      - run: node scripts/check-environment-protection",
+    );
+    expect(checkFixture(fixture).status).toBe(1);
+  });
+
+  it("accepts every current release producer without permitting CI uploads", () => {
+    const root = makeTempRepo();
+    writeHostedChecklist(root);
+    for (const filename of [
+      "github-release-alpha.yml",
+      "windows-installer-alpha.yml",
+      "publish-web-alpha.yml",
+      "test-matrix.yml",
+      "perf-monitor.yml",
+    ]) {
+      const workflowPath = `.github/workflows/${filename}`;
+      writeFile(root, workflowPath, fs.readFileSync(workflowPath, "utf8"));
+    }
     const result = runHostedSurface(root);
-
+    expect(outputOf(result)).toContain("[hosted-release-surfaces] passed");
     expect(result.status).toBe(0);
-  });
-
-  it("rejects Playwright artifacts without release-surface preflight", () => {
-    const root = makeTempRepo();
-    writeHostedChecklist(root);
-    writeFile(
-      root,
-      ".github/workflows/e2e.yml",
-      [
-        "jobs:",
-        "  test:",
-        "    steps:",
-        "      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
-        "        with:",
-        "          name: playwright-report-smoke-$" + "{{ github.run_id }}",
-        "          path: |",
-        "            playwright-report/",
-        "            test-results/",
-        "          retention-days: 7",
-      ].join("\n"),
-    );
-
-    const result = runHostedSurface(root);
-
-    expect(result.status).not.toBe(0);
-    expect(outputOf(result)).toContain(
-      "Playwright/test artifacts require npm run check:release-surface before upload",
-    );
-  });
-
-  it("rejects unallowlisted artifact paths", () => {
-    const root = makeTempRepo();
-    writeHostedChecklist(root);
-    writeFile(
-      root,
-      ".github/workflows/quality.yml",
-      [
-        "jobs:",
-        "  test:",
-        "    steps:",
-        "      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
-        "        with:",
-        "          name: coverage-$" + "{{ github.run_id }}",
-        "          path: docs/user/assets/",
-        "          retention-days: 7",
-      ].join("\n"),
-    );
-
-    const result = runHostedSurface(root);
-
-    expect(result.status).not.toBe(0);
-    expect(outputOf(result)).toContain(
-      "upload-artifact path is not public-safe allowlisted",
-    );
   });
 });
 

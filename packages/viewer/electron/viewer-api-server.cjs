@@ -184,8 +184,8 @@ class ViewerApiServer {
     for (const listener of this.statusListeners) {
       try {
         listener(status);
-      } catch (error) {
-        this.logger.warn?.("[viewer-api] status listener failed", error);
+      } catch {
+        this.logger.warn?.("[viewer-api] status listener failed");
       }
     }
   }

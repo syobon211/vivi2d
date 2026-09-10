@@ -36,8 +36,11 @@ https://github.com/syobon211/vivi2d/issues/new/choose.
 
 Manual review status: `<manual-review-status>`
 
-The release record contains the Windows VM review summary used for the draft or
-publish decision.
+The release record contains a bounded public Windows review summary. It uses a
+fixed reviewer-role label, Windows family, calendar date, boolean results, and
+allowlisted remnant categories; it does not contain personal or machine details.
+A passed summary does not replace exact artifact checks or owner publication
+approval. Hosted builds start with a pending summary.
 
 Intentional uninstall remnants recorded for this review:
 

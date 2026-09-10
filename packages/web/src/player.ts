@@ -306,9 +306,11 @@ class ViviWebPlayerImpl implements ViviWebPlayer {
 
   dispose(): void {
     if (this.disposedValue) return;
+    // stop emits a synchronous user callback. Make disposal terminal before
+    // that callback can restart the player or enter disposal a second time.
+    this.disposedValue = true;
     this.stop();
     destroyRendererQuietly(this.renderer);
-    this.disposedValue = true;
     this.emit({ type: "dispose" });
   }
 

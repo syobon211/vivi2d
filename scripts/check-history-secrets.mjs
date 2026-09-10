@@ -156,10 +156,9 @@ function lineNumberForOffset(text, offset) {
   return line;
 }
 
-function addFailure(objectId, relativePath, lineNumber, kind, match) {
-  const redacted = `${match.slice(0, 6)}...${match.slice(-4)}`;
+function addFailure(objectId, relativePath, lineNumber, kind) {
   failures.push(
-    `${relativePath}:${lineNumber}: ${kind}: ${redacted} (${objectId.slice(0, 12)})`,
+    `${relativePath}:${lineNumber}: ${kind}: [REDACTED] (${objectId.slice(0, 12)})`,
   );
 }
 
@@ -171,7 +170,6 @@ function scanText(objectId, relativePath, text) {
         relativePath,
         lineNumberForOffset(text, match.index ?? 0),
         name,
-        match[0],
       );
     }
   }
@@ -182,7 +180,6 @@ function scanText(objectId, relativePath, text) {
       relativePath,
       lineNumberForOffset(text, match.index ?? 0),
       "private key block",
-      match[0],
     );
   }
 
@@ -196,7 +193,6 @@ function scanText(objectId, relativePath, text) {
       relativePath,
       lineNumberForOffset(text, match.index ?? 0),
       "secret-like assignment",
-      value,
     );
   }
 }

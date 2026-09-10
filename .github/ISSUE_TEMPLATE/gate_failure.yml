@@ -28,11 +28,17 @@ body:
         - check:escalation-template
         - docs:user:check
         - docs:user:check:release
+        - docs:media:check
         - docs:site:check
         - check:security-supported-versions
         - check:docs-public-surface
         - check:quality-gate-drift
+        - check:e2e-project-coverage
         - test
+        - test:coverage
+        - test:e2e:smoke
+        - test:e2e:workflows
+        - test:e2e:workflow-record
         - i18n:check:all
         - check:ipc-contract
         - check:ipc-contract-sync
@@ -48,7 +54,12 @@ body:
         - check:history-secrets
         - check:source-comments
         - check:viewer-tests
+        - check:viewer-mediapipe-assets
         - check:provider-conformance
+        - check:provider-sdk-samples
+        - check:viewer-api-samples
+        - check:viewer-api-contracts
+        - check:viewer-api-e2e
         - check:core-model-current-fixtures
         - check:model-fixtures
         - check:model-jsc-portability

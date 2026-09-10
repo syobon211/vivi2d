@@ -1,6 +1,12 @@
 # Dependencies
 node_modules/
 
+# Local environment values; only the exact root placeholder example is public.
+# Ignore rules are preventive, not a substitute for secret/content review.
+.env
+.env.*
+!/.env.example
+
 # Build outputs
 dist/
 packages/runtime-native/target/

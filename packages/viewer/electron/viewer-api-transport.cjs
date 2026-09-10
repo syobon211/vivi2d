@@ -47,8 +47,8 @@ function attachViewerApiConnection(server, ws, request, { closeCodes }) {
         if (challenge.ws === ws) server.pendingChallenges.delete(id);
       }
       server.eventQueue.clearClientState(clientState);
-    } catch (error) {
-      server.logger.warn?.("[viewer-api] failed to clear client state", error);
+    } catch {
+      server.logger.warn?.("[viewer-api] failed to clear client state");
     }
   };
   ws.on("close", purgePending);
@@ -319,7 +319,7 @@ function attachViewerApiConnection(server, ws, request, { closeCodes }) {
         ok ? undefined : data?.reason ?? "request failed",
         ok ? undefined : data?.details,
       );
-    } catch (error) {
+    } catch {
       const context = extractSafeMessageContext(raw, clientState.negotiatedVersion);
       ws.send(
         JSON.stringify(
@@ -336,7 +336,8 @@ function attachViewerApiConnection(server, ws, request, { closeCodes }) {
           ),
         ),
       );
-      server.logger.warn?.("[viewer-api] rejected message", error);
+      // Parse/handler exceptions can contain tokens, request text, or local paths.
+      server.logger.warn?.("[viewer-api] rejected message");
     }
   });
 }

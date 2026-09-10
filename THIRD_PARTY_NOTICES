@@ -14,7 +14,7 @@ generation, or provenance review before public distribution.
 | @types/earcut | 3.0.0 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped.git | LICENSE |
 | @types/react | 19.2.15 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped.git | LICENSE |
 | @webgpu/types | 0.1.70 | BSD-3-Clause | gpuweb/types | LICENSE |
-| @xmldom/xmldom | 0.8.13 | MIT | git://github.com/xmldom/xmldom.git | LICENSE |
+| @xmldom/xmldom | 0.8.15 | MIT | git://github.com/xmldom/xmldom.git | LICENSE |
 | ag-psd | 30.1.1 | MIT | https://github.com/Agamnentzar/ag-psd | LICENSE |
 | base64-js | 1.5.1 | MIT | git://github.com/beatgammit/base64-js.git | LICENSE |
 | crypto-js | 4.2.0 | MIT | http://github.com/brix/crypto-js.git | LICENSE |
@@ -194,7 +194,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-### @xmldom/xmldom@0.8.13 - LICENSE
+### @xmldom/xmldom@0.8.15 - LICENSE
 
 Source path: `node_modules/@xmldom/xmldom/LICENSE`
 

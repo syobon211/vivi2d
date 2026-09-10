@@ -1053,6 +1053,58 @@ describe("viewer-api-server.cjs", () => {
     await server.stop();
   });
 
+  it.each([
+    "malformed-json",
+    "unknown-key",
+  ])("does not log request content on %s failures", async (kind) => {
+    const warn = vi.fn();
+    const server = createViewerApiServer({ port: 0, logger: { warn } });
+    await server.start();
+    const ws = await openClient(server);
+    try {
+      const marker = "s3crt";
+      const raw =
+        kind === "malformed-json"
+          ? marker
+          : JSON.stringify({ ...envelope("viewer.state.get"), [marker]: true });
+      ws.send(raw);
+      const response = await waitForMessage(ws);
+      expectErrorCode(response, "invalid_request");
+      expect(warn).toHaveBeenCalledExactlyOnceWith("[viewer-api] rejected message");
+    } finally {
+      ws.terminate();
+      await server.stop();
+    }
+  });
+
+  it("does not log private details from request handler errors", async () => {
+    const warn = vi.fn();
+    const server = createViewerApiServer({
+      port: 0,
+      logger: { warn },
+      allowSessionGrants: true,
+      handlers: {
+        "viewer.state.get": () => {
+          throw new Error("synthetic-private-handler-detail");
+        },
+      },
+    });
+    await server.start();
+    const { ws, tokenMessage } = await approveTestGrant(server, ["read:state"]);
+    try {
+      const token = (tokenMessage.data as Record<string, string>).token;
+      ws.send(JSON.stringify(envelope("viewer.auth.authenticate", { token })));
+      await waitForMessage(ws);
+      ws.send(JSON.stringify(envelope("viewer.state.get")));
+      const response = await waitForMessage(ws);
+      expectErrorCode(response, "invalid_request");
+      expect(warn).toHaveBeenCalledExactlyOnceWith("[viewer-api] rejected message");
+    } finally {
+      ws.terminate();
+      await server.stop();
+    }
+  });
+
   it("omits oversized request ids from malformed preview errors", async () => {
     const server = createViewerApiServer({
       port: 0,
@@ -1542,10 +1594,7 @@ describe("viewer-api-server.cjs", () => {
       expect.any(Function),
     );
     expect(goodClient.close).toHaveBeenCalled();
-    expect(warn).toHaveBeenCalledWith(
-      "[viewer-api] failed to send grant revocation",
-      expect.any(Error),
-    );
+    expect(warn).toHaveBeenCalledWith("[viewer-api] failed to send grant revocation");
   });
 
   it("expires grants for re-pairing and rejects the old token", async () => {

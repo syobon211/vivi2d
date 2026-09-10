@@ -150,6 +150,11 @@ import "@vivi2d/web/auto-register";
 The repository-local `packages/web/demo.html` remains the custom-element demo.
 Open it through the repository dev server, not as a standalone `file://` page.
 
+The custom element's `error` and `vivi-error` events use a fixed, source-free
+`detail.message`. Rejected URLs, model fields and underlying exception text are
+not forwarded through these display-oriented events. Do not depend on raw HTTP
+or parser text in those messages.
+
 ## Experimental Status And Compatibility
 
 This package is pre-1.0 and marked as experimental. The custom element name,
@@ -163,7 +168,7 @@ stability, or long-term low-level renderer internals.
 Browser assumptions:
 
 - Modern evergreen browser.
-- ES2020-compatible runtime.
+- ES2020-compatible runtime with `WeakRef` support (an ES2021 API).
 - WebGL-capable `HTMLCanvasElement`.
 - Keyboard and pointer interaction for sliders and controls.
 

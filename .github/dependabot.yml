@@ -21,3 +21,12 @@ updates:
       day: monday
       time: "09:30"
       timezone: Asia/Tokyo
+
+  - package-ecosystem: cargo
+    directory: /packages/runtime-native
+    schedule:
+      interval: weekly
+      day: monday
+      time: "10:00"
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
