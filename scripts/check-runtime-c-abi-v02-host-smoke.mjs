@@ -19,6 +19,12 @@ const basicFixturePath = path.join(
 );
 const tmpRoot = path.join(root, "tmp");
 const libraryBaseName = "vivi_runtime_native_c_abi";
+const errorFixtureCases = [
+  ["texture-missing-atlas-entry.fixture.json", "VIVI_ERR_TEXTURE"],
+  ["texture-duplicate-atlas-entry.fixture.json", "VIVI_ERR_TEXTURE"],
+  ["private-profile-raw-key.fixture.json", "VIVI_ERR_PRIVATE_PROFILE"],
+  ["limit-max-meshes.fixture.json", "VIVI_ERR_LIMIT_EXCEEDED"],
+];
 
 const inheritedV01Exports = [
   "vivi_get_abi_version",
@@ -94,8 +100,14 @@ try {
   );
   copyRuntimeArtifacts(v02Artifacts, tmpDir);
 
-  const { basicPayloadPath, maskedPayloadPath, emptyPayloadPath } = writePayloads();
-  assertAbiV01ObservationParity(basicPayloadPath, defaultLibraryDir, tmpDir);
+  const { basicPayloadPath, maskedPayloadPath, emptyPayloadPath, errorPayloadPaths } =
+    writePayloads();
+  assertAbiV01ObservationParity(
+    basicPayloadPath,
+    errorPayloadPaths,
+    defaultLibraryDir,
+    tmpDir,
+  );
   writeGeneratedHeader();
   runRustConformanceHost(basicPayloadPath, maskedPayloadPath, emptyPayloadPath);
   runOptionalCAndCppHosts();
@@ -147,14 +159,53 @@ function writePayloads() {
 
   const maskedPayloadPath = path.join(tmpDir, "masked.runtime.json");
   writeFileSync(maskedPayloadPath, `${JSON.stringify(masked)}\n`);
-  return { basicPayloadPath, maskedPayloadPath, emptyPayloadPath };
+  const fixtureDir = path.dirname(basicFixturePath);
+  const manifest = JSON.parse(
+    readFileSync(path.join(fixtureDir, "manifest.json"), "utf8"),
+  );
+  if (
+    manifest.schemaVersion !== 1 ||
+    manifest.specVersion !== "runtime-v1" ||
+    !Array.isArray(manifest.fixtures)
+  ) {
+    throw new Error("Unsupported Runtime v1 fixture manifest");
+  }
+  const errorPayloadPaths = errorFixtureCases.map(([file, expected]) => {
+    const entries = manifest.fixtures.filter((entry) => entry?.file === file);
+    const errorFixture = JSON.parse(readFileSync(path.join(fixtureDir, file), "utf8"));
+    const expectedOptions =
+      file === "limit-max-meshes.fixture.json" ? { limits: { maxMeshes: 0 } } : undefined;
+    if (
+      entries.length !== 1 ||
+      entries[0].expected !== expected ||
+      errorFixture.expectError !== expected ||
+      !errorFixture.fileData ||
+      typeof errorFixture.fileData !== "object" ||
+      Array.isArray(errorFixture.fileData) ||
+      JSON.stringify(errorFixture.runtimeOptions) !== JSON.stringify(expectedOptions)
+    ) {
+      throw new Error(`Unsupported canonical load-error fixture: ${file}`);
+    }
+    const payloadPath = path.join(tmpDir, file.replace(".fixture.json", ".runtime.json"));
+    writeFileSync(payloadPath, `${JSON.stringify(errorFixture.fileData)}\n`);
+    return payloadPath;
+  });
+  return { basicPayloadPath, maskedPayloadPath, emptyPayloadPath, errorPayloadPaths };
 }
 
 function assertAbiV01ObservationParity(
   basicPayloadPath,
+  errorPayloadPaths,
   defaultLibraryDir,
   v02LibraryDir,
 ) {
+  copyFileSync(
+    path.join(
+      root,
+      "packages/runtime-native/crates/vivi-runtime-native-core/src/limits.rs",
+    ),
+    path.join(tmpDir, "canonical-runtime-limits.rs"),
+  );
   const hostPath = path.join(tmpDir, "rust-v01-observation-host.rs");
   writeFileSync(hostPath, rustV01ObservationHostSource());
   const observations = [
@@ -183,7 +234,11 @@ function assertAbiV01ObservationParity(
     run("rustc", rustcArgs);
     return [
       label,
-      runHostCapture(exePath, [basicPayloadPath, String(expectedAbi)], libraryDir).trim(),
+      runHostCapture(
+        exePath,
+        [basicPayloadPath, String(expectedAbi), ...errorPayloadPaths],
+        libraryDir,
+      ).trim(),
     ];
   });
 
@@ -725,11 +780,70 @@ function rustV01ObservationHostSource() {
   return `
 use std::ffi::{CStr, c_char, c_void};
 use std::fs;
-use std::mem::size_of;
+use std::mem::{offset_of, size_of};
 use std::ptr;
 use std::slice;
 
+#[allow(dead_code)]
+#[path = "canonical-runtime-limits.rs"]
+mod canonical_limits;
+
 const OK: i32 = 0;
+const PRIVATE_PROFILE: i32 = 5;
+const LIMIT_EXCEEDED: i32 = 6;
+const TEXTURE: i32 = 8;
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct ViviRuntimeLimits {
+    struct_size: u32,
+    reserved0: u32,
+    max_payload_bytes: u64,
+    max_texture_bytes: u64,
+    max_textures: u32,
+    max_layers: u32,
+    max_meshes: u32,
+    max_vertices_per_mesh: u32,
+    max_indices_per_mesh: u32,
+    max_bones: u32,
+    max_ik_controllers: u32,
+    max_physics_groups: u32,
+    max_pendulums_per_physics_group: u32,
+    max_parameters: u32,
+    max_binding_points: u32,
+    max_colliders: u32,
+    max_animation_clips: u32,
+    max_state_machines: u32,
+    max_states_per_state_machine: u32,
+    max_transitions_per_state_machine: u32,
+}
+
+fn default_limits() -> ViviRuntimeLimits {
+    let limits = canonical_limits::RuntimeLimits::default();
+    let c_limit = |value: usize| u32::try_from(value).expect("canonical limit fits C ABI");
+    ViviRuntimeLimits {
+        struct_size: size_of::<ViviRuntimeLimits>() as u32,
+        reserved0: 0,
+        max_payload_bytes: limits.max_payload_bytes,
+        max_texture_bytes: limits.max_texture_bytes,
+        max_textures: c_limit(limits.max_textures),
+        max_layers: c_limit(limits.max_layers),
+        max_meshes: c_limit(limits.max_meshes),
+        max_vertices_per_mesh: c_limit(limits.max_vertices_per_mesh),
+        max_indices_per_mesh: c_limit(limits.max_indices_per_mesh),
+        max_bones: c_limit(limits.max_bones),
+        max_ik_controllers: c_limit(limits.max_ik_controllers),
+        max_physics_groups: c_limit(limits.max_physics_groups),
+        max_pendulums_per_physics_group: c_limit(limits.max_pendulums_per_physics_group),
+        max_parameters: c_limit(limits.max_parameters),
+        max_binding_points: c_limit(limits.max_binding_points),
+        max_colliders: c_limit(limits.max_colliders),
+        max_animation_clips: c_limit(limits.max_animation_clips),
+        max_state_machines: c_limit(limits.max_state_machines),
+        max_states_per_state_machine: c_limit(limits.max_states_per_state_machine),
+        max_transitions_per_state_machine: c_limit(limits.max_transitions_per_state_machine),
+    }
+}
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -783,32 +897,79 @@ unsafe extern "C" {
 
 fn main() {
     assert_eq!(size_of::<ViviMeshSnapshot>(), 128);
-    let mut args = std::env::args_os().skip(1);
-    let payload_path = args.next().expect("payload path");
-    let expected_abi = args
-        .next()
-        .expect("expected ABI")
+    assert_eq!(size_of::<ViviRuntimeLimits>(), 88);
+    assert_eq!(offset_of!(ViviRuntimeLimits, max_meshes), 32);
+    let args: Vec<_> = std::env::args_os().skip(1).collect();
+    assert_eq!(args.len(), 6, "basic path, ABI and four error paths required");
+    let expected_abi = args[1]
         .to_string_lossy()
         .parse::<u32>()
         .expect("numeric expected ABI");
     assert_eq!(unsafe { vivi_get_abi_version() }, expected_abi, "loaded DLL ABI");
-    let payload = fs::read(payload_path).expect("read payload");
+    let payload = fs::read(&args[0]).expect("read payload");
+    let missing_atlas = fs::read(&args[2]).expect("read missing-atlas payload");
+    let duplicate_atlas = fs::read(&args[3]).expect("read duplicate-atlas payload");
+    let private_profile = fs::read(&args[4]).expect("read private-profile payload");
+    let mesh_limit = fs::read(&args[5]).expect("read mesh-limit payload");
     let mut runtime = ptr::null_mut();
     expect(
         unsafe { vivi_runtime_create(ptr::null(), ptr::null_mut(), &mut runtime) },
         "runtime_create",
     );
+    assert!(!runtime.is_null(), "default runtime");
     let mut model = ptr::null_mut();
     expect(
         unsafe { vivi_model_load(runtime, payload.as_ptr(), payload.len() as u64, &mut model) },
         "model_load",
     );
+    assert!(!model.is_null(), "basic model");
     let before = observe(model);
     let update_status = unsafe { vivi_model_update(model, 1.0 / 60.0) };
     let after = observe(model);
     println!("before={before}\nupdate_status={update_status}\nafter={after}");
     unsafe { vivi_model_destroy(model) };
+    expect_load_error(runtime, &missing_atlas, TEXTURE, "missing atlas entry");
+    expect_load_error(runtime, &duplicate_atlas, TEXTURE, "duplicate atlas entry");
+    expect_load_error(runtime, &private_profile, PRIVATE_PROFILE, "private profile key");
     unsafe { vivi_runtime_destroy(runtime) };
+
+    let limits = default_limits();
+    let mut default_runtime = ptr::null_mut();
+    expect(
+        unsafe { vivi_runtime_create(ptr::from_ref(&limits).cast(), ptr::null_mut(), &mut default_runtime) },
+        "explicit defaults runtime_create",
+    );
+    assert!(!default_runtime.is_null(), "explicit defaults runtime");
+    let mut default_model = ptr::null_mut();
+    expect(
+        unsafe { vivi_model_load(default_runtime, payload.as_ptr(), payload.len() as u64, &mut default_model) },
+        "explicit defaults basic load",
+    );
+    assert!(!default_model.is_null(), "explicit defaults basic model");
+    unsafe { vivi_model_destroy(default_model) };
+    // Without its host override, this fixture reaches its missing-atlas error.
+    expect_load_error(default_runtime, &mesh_limit, TEXTURE, "mesh fixture without override");
+    unsafe { vivi_runtime_destroy(default_runtime) };
+
+    let mut zero_mesh_limits = limits;
+    zero_mesh_limits.max_meshes = 0;
+    let mut limited_runtime = ptr::null_mut();
+    expect(
+        unsafe { vivi_runtime_create(ptr::from_ref(&zero_mesh_limits).cast(), ptr::null_mut(), &mut limited_runtime) },
+        "max_meshes zero runtime_create",
+    );
+    assert!(!limited_runtime.is_null(), "limited runtime");
+    expect_load_error(limited_runtime, &mesh_limit, LIMIT_EXCEEDED, "canonical maxMeshes override");
+    expect_load_error(limited_runtime, &payload, LIMIT_EXCEEDED, "valid basic with maxMeshes zero");
+    unsafe { vivi_runtime_destroy(limited_runtime) };
+}
+
+fn expect_load_error(runtime: *mut c_void, payload: &[u8], expected: i32, label: &str) {
+    // A sentinel proves failure clears the output; it is never dereferenced.
+    let mut model = ptr::dangling_mut::<c_void>();
+    let status = unsafe { vivi_model_load(runtime, payload.as_ptr(), payload.len() as u64, &mut model) };
+    assert_eq!(status, expected, "{label} status");
+    assert!(model.is_null(), "{label} clears out_model");
 }
 
 fn observe(model: *const c_void) -> String {

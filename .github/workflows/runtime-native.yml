@@ -38,7 +38,7 @@ on:
       - "scripts/generate-schema-validators.mjs"
       - "scripts/quality-gate-manifest.json"
       - "scripts/run-quality-gates.mjs"
-      - "tests/conformance/runtime-v1/basic-mesh.fixture.json"
+      - "tests/conformance/runtime-v1/**"
   workflow_dispatch:
 
 permissions:
