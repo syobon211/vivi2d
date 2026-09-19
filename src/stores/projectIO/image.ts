@@ -1,30 +1,7 @@
 import { DRAW_ORDER, VIEWPORT } from "@vivi2d/core/constants";
 import { flattenLayers } from "@vivi2d/core/layer-utils";
+import { MAX_PSD_PIXELS } from "@vivi2d/core/load-limits";
 import type { ManualPngImportMetadata } from "@vivi2d/core/types";
-import {
-  applyManualPngReimportToLayer,
-  assertManualPngReimportMatchesLayer,
-  getManualPngReimportTargetLayer,
-} from "@vivi2d/editor-core/manual-png-reimport-command";
-import { t as tGlobal } from "@/lib/i18n";
-import { decodePngToCanvas, trimTransparentBounds } from "@/lib/image-loader";
-import {
-  DEFAULT_MANUAL_IMAGE_IMPORT_OPTIONS,
-  type ManualImageImportOptions,
-  normalizeManualImageImportOptions,
-} from "@/lib/manual-image-import-options";
-import { generateAutoMesh } from "@/lib/auto-mesh";
-import type { ProjectSourceKind } from "@/lib/project-source-kind";
-import { clearTextures, getAllTextures, setTexture } from "@/lib/texture-store";
-import { useEditorStore } from "../editorStore";
-import { useNotificationStore } from "../notificationStore";
-import {
-  bumpProjectStructureVersion,
-  mutateProject,
-  runInHistoryTransaction,
-} from "../projectMutator";
-import { useSelectionStore } from "../selectionStore";
-import { useViewportStore } from "../viewportStore";
 import {
   assignSequentialDrawOrders,
   buildManualPngImportMetadata,
@@ -32,9 +9,9 @@ import {
   buildPreparedLayerEntry,
   computeLayerBounds,
   computeLayerPosition,
-  createViviMeshFromPreparedCanvas,
   createGroupNode,
   createProjectFromPreparedCanvas,
+  createViviMeshFromPreparedCanvas,
   getImageBaseName,
   getNextImportedDrawOrder,
   hasLargeTransparentPadding,
@@ -44,6 +21,41 @@ import {
   type PreparedLayerEntry,
   shouldAutoCenterImportedImage,
 } from "@vivi2d/editor-core/manual-png-import-command";
+import {
+  applyManualPngReimportToLayer,
+  assertManualPngReimportMatchesLayer,
+  getManualPngReimportTargetLayer,
+} from "@vivi2d/editor-core/manual-png-reimport-command";
+import { generateAutoMesh } from "@/lib/auto-mesh";
+import { t as tGlobal } from "@/lib/i18n";
+import { decodePngToCanvas, trimTransparentBounds } from "@/lib/image-loader";
+import {
+  DEFAULT_MANUAL_IMAGE_IMPORT_OPTIONS,
+  type ManualImageImportOptions,
+  normalizeManualImageImportOptions,
+} from "@/lib/manual-image-import-options";
+import type { ProjectSourceKind } from "@/lib/project-source-kind";
+import {
+  clearTextures,
+  getAllTextures,
+  getTexture,
+  getTextureStoreRevision,
+  hashTextureCanvas,
+  prepareTextureHistoryEffects,
+  setTexture,
+  snapshotTextureCanvas,
+  type TextureHistoryEffect,
+} from "@/lib/texture-store";
+import { useEditorStore } from "../editorStore";
+import { prepareHistorySnapshot, useHistoryStore } from "../historyStore";
+import { useNotificationStore } from "../notificationStore";
+import {
+  bumpProjectStructureVersion,
+  mutateProject,
+  runInHistoryTransaction,
+} from "../projectMutator";
+import { useSelectionStore } from "../selectionStore";
+import { useViewportStore } from "../viewportStore";
 import { applyLoadedProject, initParameterValues, resetRelatedStores } from "./reset";
 
 type NamedImageBuffer = {
@@ -59,14 +71,6 @@ type ManualPngReimportSource = {
 };
 const AUTO_MESH_PRESET = "standard";
 const EMPTY_PNG_FOLDER_MESSAGE = "Selected folder does not contain any PNG files.";
-const MANUAL_PNG_REIMPORT_PROJECT_WARNING =
-  "A project must be open before reimporting an image layer.";
-const MANUAL_PNG_REIMPORT_ELIGIBILITY_WARNING =
-  "Select a manual PNG-imported ViviMesh before reimporting.";
-const MANUAL_PNG_REIMPORT_SOURCE_WARNING =
-  "The selected imported PNG layer does not have a source path to reimport.";
-const MANUAL_PNG_REIMPORT_MISMATCH_ERROR =
-  "The reimported PNG no longer matches the current layer bounds. Import it as a new layer instead.";
 const AUTO_CENTER_IMPORT_MESSAGE_KEY = "imageImportOptions.largeImageAutoCentered";
 const TRANSPARENT_PADDING_WARNING_MESSAGE_KEY =
   "imageImportOptions.transparentPaddingWarning";
@@ -75,11 +79,7 @@ const FOCUSED_VIEWPORT_ON_IMPORT_MESSAGE_KEY =
 const FOCUSED_VIEWPORT_ON_IMPORT_MULTIPLE_MESSAGE_KEY =
   "imageImportOptions.focusedViewportOnImportMultiple";
 
-function generateImportedMesh(
-  canvas: HTMLCanvasElement,
-  width: number,
-  height: number,
-) {
+function generateImportedMesh(canvas: HTMLCanvasElement, width: number, height: number) {
   return generateAutoMesh(canvas, width, height, AUTO_MESH_PRESET);
 }
 
@@ -433,10 +433,7 @@ export async function importImageAsLayerFromBufferAsync(
   if (!currentProject) {
     useNotificationStore
       .getState()
-      .addNotification(
-        "warning",
-        tGlobal("imageImportOptions.projectRequiredForLayer"),
-      );
+      .addNotification("warning", tGlobal("imageImportOptions.projectRequiredForLayer"));
     return false;
   }
   const normalizedOptions = {
@@ -525,10 +522,7 @@ export async function importImagesAsLayersFromBuffersAsync(
   if (!currentProject) {
     useNotificationStore
       .getState()
-      .addNotification(
-        "warning",
-        tGlobal("imageImportOptions.projectRequiredForLayers"),
-      );
+      .addNotification("warning", tGlobal("imageImportOptions.projectRequiredForLayers"));
     return false;
   }
   if (files.length === 0) return false;
@@ -685,10 +679,7 @@ export async function reimportManualPngLayer(
   if (!project) {
     useNotificationStore
       .getState()
-      .addNotification(
-        "warning",
-        tGlobal("imageImportOptions.reimportProjectRequired"),
-      );
+      .addNotification("warning", tGlobal("imageImportOptions.reimportProjectRequired"));
     return false;
   }
 
@@ -701,55 +692,104 @@ export async function reimportManualPngLayer(
   }
   const { layer: existingLayer, metadata } = target;
 
-  let resolvedSource: { buffer: ArrayBuffer; fileName: string; sourcePath?: string };
-  let prepared: PreparedImageCanvas;
-  let nextPosition: { x: number; y: number };
-  let nextImportMetadata: ReturnType<typeof buildManualPngImportMetadata>;
-  const importOptions = buildManualPngImportOptionsFromMetadata(metadata);
-
+  let failureKey: Parameters<typeof tGlobal>[0] = "imageImportOptions.reimportFailed";
+  const fail = (key: Parameters<typeof tGlobal>[0]): never => {
+    failureKey = key;
+    throw new Error("PNG reimport failed");
+  };
   try {
-    resolvedSource = await resolveManualPngReimportSource(metadata, source);
-    prepared = await decodePreparedPng(resolvedSource.buffer, importOptions);
-    nextPosition = computeLayerPosition(
+    const historyBefore = useHistoryStore.getState();
+    const revision = getTextureStoreRevision();
+    const oldCanvas = getTexture(layerId);
+    if (
+      !oldCanvas ||
+      !Number.isSafeInteger(oldCanvas.width) ||
+      !Number.isSafeInteger(oldCanvas.height) ||
+      oldCanvas.width <= 0 ||
+      oldCanvas.height <= 0 ||
+      oldCanvas.width > MAX_PSD_PIXELS ||
+      oldCanvas.height > MAX_PSD_PIXELS ||
+      oldCanvas.width * oldCanvas.height > MAX_PSD_PIXELS
+    ) {
+      return fail("imageImportOptions.reimportFailed");
+    }
+    const before = snapshotTextureCanvas(layerId, oldCanvas);
+    const assertFresh = (verifyPixels: boolean) => {
+      const history = useHistoryStore.getState();
+      if (
+        useEditorStore.getState().project !== project ||
+        history.undoStack !== historyBefore.undoStack ||
+        history.redoStack !== historyBefore.redoStack ||
+        getTextureStoreRevision() !== revision ||
+        getTexture(layerId) !== oldCanvas ||
+        oldCanvas.width !== before.width ||
+        oldCanvas.height !== before.height ||
+        (verifyPixels && hashTextureCanvas(oldCanvas) !== before.hash)
+      ) {
+        fail("imageImportOptions.reimportStale");
+      }
+    };
+    if (!source?.buffer && !(source?.filePath ?? metadata.sourcePath)) {
+      return fail("imageImportOptions.reimportSourceMissing");
+    }
+    const importOptions = buildManualPngImportOptionsFromMetadata(metadata);
+    const resolvedSource = await resolveManualPngReimportSource(metadata, source);
+    const prepared = await decodePreparedPng(resolvedSource.buffer, importOptions);
+    assertFresh(false);
+    const nextPosition = computeLayerPosition(
       prepared,
       project.width,
       project.height,
       importOptions,
     );
-    assertManualPngReimportMatchesLayer(
-      existingLayer,
-      {
-        offsetX: prepared.offsetX,
-        offsetY: prepared.offsetY,
-        width: prepared.canvas.width,
-        height: prepared.canvas.height,
-      },
-      nextPosition,
-      metadata,
-      tGlobal("imageImportOptions.reimportMismatch"),
-    );
-    nextImportMetadata = buildManualPngImportMetadata(
+    try {
+      assertManualPngReimportMatchesLayer(
+        existingLayer,
+        {
+          offsetX: prepared.offsetX,
+          offsetY: prepared.offsetY,
+          width: prepared.canvas.width,
+          height: prepared.canvas.height,
+        },
+        nextPosition,
+        metadata,
+        "PNG reimport bounds mismatch",
+      );
+    } catch {
+      return fail("imageImportOptions.reimportMismatch");
+    }
+    const nextImportMetadata = buildManualPngImportMetadata(
       resolvedSource.fileName,
       prepared,
       nextPosition,
       importOptions,
       resolvedSource.sourcePath,
     );
-  } catch (e) {
-    useNotificationStore
-      .getState()
-      .addNotification("error", e instanceof Error ? e.message : String(e));
-    return false;
-  }
-
-  const previousTextures = new Map(getAllTextures());
-
-  try {
-    setTexture(layerId, prepared.canvas);
-
-    runInHistoryTransaction(() => {
-      mutateProject((draft) => {
-        const applied = applyManualPngReimportToLayer(draft, {
+    const after = snapshotTextureCanvas(layerId, prepared.canvas);
+    const pixelsChanged =
+      before.width !== after.width ||
+      before.height !== after.height ||
+      before.hash !== after.hash;
+    const nextMetadata = nextImportMetadata.manualPng;
+    const metadataChanged =
+      metadata.sourceFileName !== nextMetadata.sourceFileName ||
+      metadata.sourcePath !== nextMetadata.sourcePath ||
+      metadata.originalWidth !== nextMetadata.originalWidth ||
+      metadata.originalHeight !== nextMetadata.originalHeight ||
+      metadata.trimmedBounds.some(
+        (value, index) => value !== nextMetadata.trimmedBounds[index],
+      ) ||
+      metadata.finalOrigin.some(
+        (value, index) => value !== nextMetadata.finalOrigin[index],
+      ) ||
+      metadata.placementMode !== nextMetadata.placementMode ||
+      metadata.trimTransparentBoundsApplied !==
+        nextMetadata.trimTransparentBoundsApplied ||
+      metadata.autoGenerateMeshApplied !== nextMetadata.autoGenerateMeshApplied;
+    if (pixelsChanged || metadataChanged) {
+      const next = structuredClone(project);
+      if (
+        !applyManualPngReimportToLayer(next, {
           layerId,
           geometry: {
             x: nextPosition.x,
@@ -758,32 +798,89 @@ export async function reimportManualPngLayer(
             height: prepared.canvas.height,
           },
           importMetadata: nextImportMetadata,
+        })
+      ) {
+        return fail("imageImportOptions.reimportEligibility");
+      }
+      const effects: TextureHistoryEffect[] = pixelsChanged
+        ? [
+            {
+              kind: "texture",
+              undo: {
+                createdTextureIds: [],
+                restoredTextures: [before],
+                expectedCurrentHash: { [layerId]: after.hash },
+                expectedCurrentDimensions: {
+                  [layerId]: { width: after.width, height: after.height },
+                },
+              },
+              redo: {
+                promotedTextures: [{ textureId: layerId, snapshot: after }],
+                expectedCurrentHash: { [layerId]: before.hash },
+                expectedCurrentDimensions: {
+                  [layerId]: { width: before.width, height: before.height },
+                },
+              },
+              rendererInvalidation: "projectStructureVersion",
+            },
+          ]
+        : [];
+      const history = prepareHistorySnapshot(project, effects);
+      const textures = prepareTextureHistoryEffects(effects, "redo");
+      const editorBefore = useEditorStore.getState();
+      const rollback = {
+        project: editorBefore.project,
+        projectVersion: editorBefore.projectVersion,
+        projectStructureVersion: editorBefore.projectStructureVersion,
+      };
+      // The texture preparer validated changed pixels synchronously; the other
+      // path still needs a hash check. Nothing may yield before the commit.
+      assertFresh(!pixelsChanged);
+      try {
+        textures.commit();
+        useEditorStore.setState({
+          project: next,
+          projectStructureVersion: editorBefore.projectStructureVersion + 1,
         });
-        if (!applied) {
-          throw new Error(tGlobal("imageImportOptions.reimportEligibility"));
+        history.commit();
+      } catch {
+        try {
+          textures.rollback();
+        } finally {
+          try {
+            useEditorStore.setState(rollback);
+          } finally {
+            history.rollback();
+          }
         }
-      });
-      bumpProjectStructureVersion();
-      useSelectionStore.getState().selectLayer(layerId);
-    });
+        return fail("imageImportOptions.reimportFailed");
+      }
+    } else {
+      assertFresh(true);
+    }
+  } catch {
+    // Never read/stringify exceptions from IO, decoders, canvases or subscribers.
+    useNotificationStore.getState().addNotification("error", tGlobal(failureKey));
+    return false;
+  }
 
+  // UI observers cannot turn a committed import into a reported core failure.
+  try {
+    useSelectionStore.getState().selectLayer(layerId);
+  } catch {
+    // The core operation has already succeeded.
+  }
+  try {
     useNotificationStore
       .getState()
       .addNotification(
         "info",
         `${tGlobal("imageImportOptions.reimportedPrefix")} ${existingLayer.name}.`,
       );
-    return true;
-  } catch (e) {
-    clearTextures();
-    for (const [restoredLayerId, restoredCanvas] of previousTextures.entries()) {
-      setTexture(restoredLayerId, restoredCanvas);
-    }
-    useNotificationStore
-      .getState()
-      .addNotification("error", e instanceof Error ? e.message : String(e));
-    return false;
+  } catch {
+    // Do not expose subscriber errors or undo the successful import.
   }
+  return true;
 }
 
 export type { ManualImageImportOptions };

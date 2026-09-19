@@ -9,21 +9,30 @@ export interface TextureSnapshotEntry {
   rgba: Uint8ClampedArray;
 }
 
-export interface TexturePromotionEntry {
+export type TexturePromotionEntry = {
   textureId: string;
-  canvas: HTMLCanvasElement;
   hash?: string;
+} & (
+  | { canvas: HTMLCanvasElement; snapshot?: TextureSnapshotEntry }
+  | { canvas?: HTMLCanvasElement; snapshot: TextureSnapshotEntry }
+);
+
+export interface TextureDimensions {
+  width: number;
+  height: number;
 }
 
 export interface TextureRollbackPlan {
   createdTextureIds: string[];
   restoredTextures: TextureSnapshotEntry[];
   expectedCurrentHash: Record<string, string>;
+  expectedCurrentDimensions?: Record<string, TextureDimensions>;
 }
 
 export interface TexturePromotionPlan {
   promotedTextures: TexturePromotionEntry[];
   expectedCurrentHash: Record<string, string | null>;
+  expectedCurrentDimensions?: Record<string, TextureDimensions>;
 }
 
 export interface TextureHistoryEffect {
@@ -53,6 +62,32 @@ function createCanvasFromRgba(
   return canvas;
 }
 
+function createCanvasFromSnapshot(snapshot: TextureSnapshotEntry): HTMLCanvasElement {
+  const { width, height, rgba } = snapshot;
+  if (
+    !Number.isSafeInteger(width) ||
+    width <= 0 ||
+    !Number.isSafeInteger(height) ||
+    height <= 0 ||
+    !Number.isSafeInteger(width * height * 4) ||
+    rgba.length !== width * height * 4
+  ) {
+    throw new Error("Invalid texture snapshot");
+  }
+  return createCanvasFromRgba(width, height, rgba);
+}
+
+function preparePromotionCanvas(entry: TexturePromotionEntry): HTMLCanvasElement {
+  if (entry.snapshot) {
+    if (entry.snapshot.textureId !== entry.textureId) {
+      throw new Error("Invalid texture snapshot identity");
+    }
+    return createCanvasFromSnapshot(entry.snapshot);
+  }
+  if (!entry.canvas) throw new Error("Invalid texture promotion");
+  return entry.canvas;
+}
+
 export function hashTextureBytes(bytes: Uint8ClampedArray): string {
   return `sha256:${sha256Hex(bytes)}`;
 }
@@ -61,7 +96,10 @@ export function hashTextureCanvas(canvas: HTMLCanvasElement): string {
   return hashTextureBytes(getCanvasImageData(canvas).data);
 }
 
-function snapshotCanvas(textureId: string, canvas: HTMLCanvasElement): TextureSnapshotEntry {
+export function snapshotTextureCanvas(
+  textureId: string,
+  canvas: HTMLCanvasElement,
+): TextureSnapshotEntry {
   const imageData = getCanvasImageData(canvas);
   const rgba = new Uint8ClampedArray(imageData.data);
   return {
@@ -111,17 +149,15 @@ export function snapshotTextureEntries(
   for (const textureId of textureIds) {
     const canvas = textures.get(textureId);
     if (!canvas) continue;
-    snapshots.push(snapshotCanvas(textureId, canvas));
+    snapshots.push(snapshotTextureCanvas(textureId, canvas));
   }
   return snapshots;
 }
 
-export function restoreTextureSnapshot(
-  snapshots: readonly TextureSnapshotEntry[],
-): void {
+export function restoreTextureSnapshot(snapshots: readonly TextureSnapshotEntry[]): void {
   const restored = snapshots.map((snapshot) => ({
     textureId: snapshot.textureId,
-    canvas: createCanvasFromRgba(snapshot.width, snapshot.height, snapshot.rgba),
+    canvas: createCanvasFromSnapshot(snapshot),
   }));
   for (const entry of restored) {
     textures.set(entry.textureId, entry.canvas);
@@ -129,10 +165,12 @@ export function restoreTextureSnapshot(
   if (snapshots.length > 0) textureStoreRevision += 1;
 }
 
-export function promoteDraftTextures(
-  entries: readonly TexturePromotionEntry[],
-): void {
-  for (const entry of entries) {
+export function promoteDraftTextures(entries: readonly TexturePromotionEntry[]): void {
+  const prepared = entries.map((entry) => ({
+    textureId: entry.textureId,
+    canvas: preparePromotionCanvas(entry),
+  }));
+  for (const entry of prepared) {
     textures.set(entry.textureId, entry.canvas);
   }
   if (entries.length > 0) textureStoreRevision += 1;
@@ -147,34 +185,125 @@ export function deleteTextures(textureIds: readonly string[]): void {
 }
 
 function assertExpectedTextureHashes(
+  currentTextures: ReadonlyMap<string, HTMLCanvasElement>,
   expected: Record<string, string | null>,
+  dimensions: Record<string, TextureDimensions> | undefined,
+  hashes: WeakMap<HTMLCanvasElement, string>,
 ): void {
-  for (const [textureId, expectedHash] of Object.entries(expected)) {
-    const canvas = textures.get(textureId);
-    if (expectedHash === null) {
-      if (canvas) throw new Error(`Texture '${textureId}' already exists`);
-      continue;
-    }
-    if (!canvas) throw new Error(`Texture '${textureId}' is missing`);
-    const currentHash = hashTextureCanvas(canvas);
-    if (currentHash !== expectedHash) {
-      throw new Error(`Texture '${textureId}' changed unexpectedly`);
+  for (const [textureId, size] of Object.entries(dimensions ?? {})) {
+    const canvas = currentTextures.get(textureId);
+    if (!canvas || canvas.width !== size.width || canvas.height !== size.height) {
+      throw new Error("Texture dimensions changed unexpectedly");
     }
   }
+  for (const [textureId, expectedHash] of Object.entries(expected)) {
+    const canvas = currentTextures.get(textureId);
+    if (expectedHash === null) {
+      if (canvas) throw new Error("Texture already exists");
+      continue;
+    }
+    if (!canvas) throw new Error("Texture is missing");
+    const currentHash = hashes.get(canvas) ?? hashTextureCanvas(canvas);
+    hashes.set(canvas, currentHash);
+    if (currentHash !== expectedHash) {
+      throw new Error("Texture changed unexpectedly");
+    }
+  }
+}
+
+export interface PreparedTextureHistoryEffects {
+  commit: () => void;
+  rollback: () => void;
+}
+
+/** Prepare and validate the entire batch; the caller must commit without yielding. */
+export function prepareTextureHistoryEffects(
+  effects: readonly TextureHistoryEffect[],
+  direction: "undo" | "redo",
+): PreparedTextureHistoryEffects {
+  const simulated = new Map(textures);
+  const before = new Map<string, HTMLCanvasElement | undefined>();
+  const hashes = new WeakMap<HTMLCanvasElement, string>();
+  const revisionBefore = textureStoreRevision;
+  const remember = (textureId: string) => {
+    if (!before.has(textureId)) before.set(textureId, textures.get(textureId));
+  };
+  const prepareSnapshot = (snapshot: TextureSnapshotEntry) => {
+    const canvas = createCanvasFromSnapshot(snapshot);
+    hashes.set(canvas, snapshot.hash);
+    return canvas;
+  };
+
+  const ordered = direction === "undo" ? [...effects].reverse() : effects;
+  for (const effect of ordered) {
+    const plan = effect[direction];
+    assertExpectedTextureHashes(
+      simulated,
+      plan.expectedCurrentHash,
+      plan.expectedCurrentDimensions,
+      hashes,
+    );
+    if (direction === "undo") {
+      for (const textureId of effect.undo.createdTextureIds) {
+        remember(textureId);
+        simulated.delete(textureId);
+      }
+      for (const snapshot of effect.undo.restoredTextures) {
+        remember(snapshot.textureId);
+        simulated.set(snapshot.textureId, prepareSnapshot(snapshot));
+      }
+    } else {
+      for (const entry of effect.redo.promotedTextures) {
+        remember(entry.textureId);
+        const canvas = preparePromotionCanvas(entry);
+        if (entry.snapshot) hashes.set(canvas, entry.snapshot.hash);
+        simulated.set(entry.textureId, canvas);
+      }
+    }
+  }
+
+  const changes = [...before].map(([textureId, canvas]) => ({
+    textureId,
+    before: canvas,
+    after: simulated.get(textureId),
+  }));
+  let committed = false;
+  const rollback = () => {
+    if (!committed) return;
+    for (const change of changes) {
+      if (change.before) textures.set(change.textureId, change.before);
+      else textures.delete(change.textureId);
+    }
+    textureStoreRevision = revisionBefore;
+    committed = false;
+  };
+  return {
+    commit: () => {
+      if (committed) return;
+      if (textureStoreRevision !== revisionBefore) {
+        throw new Error("Texture store changed after preparation");
+      }
+      committed = true;
+      try {
+        for (const change of changes) {
+          if (change.after) textures.set(change.textureId, change.after);
+          else textures.delete(change.textureId);
+        }
+        if (changes.length > 0) textureStoreRevision += 1;
+      } catch (error) {
+        rollback();
+        throw error;
+      }
+    },
+    rollback,
+  };
 }
 
 export function applyTextureHistoryEffect(
   effect: TextureHistoryEffect,
   direction: "undo" | "redo",
 ): void {
-  if (direction === "undo") {
-    assertExpectedTextureHashes(effect.undo.expectedCurrentHash);
-    deleteTextures(effect.undo.createdTextureIds);
-    restoreTextureSnapshot(effect.undo.restoredTextures);
-    return;
-  }
-  assertExpectedTextureHashes(effect.redo.expectedCurrentHash);
-  promoteDraftTextures(effect.redo.promotedTextures);
+  prepareTextureHistoryEffects([effect], direction).commit();
 }
 
 export function getAllTextureIds(): string[] {
@@ -190,17 +319,16 @@ export function getTextureStoreRevision(): string {
 }
 
 const SHA256_K = new Uint32Array([
-  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
-  0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
-  0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
-  0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147,
-  0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
-  0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
-  0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a,
-  0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
-  0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4,
+  0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe,
+  0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f,
+  0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+  0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc,
+  0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b,
+  0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116,
+  0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7,
+  0xc67178f2,
 ]);
 
 function rotr(value: number, bits: number): number {
@@ -232,8 +360,10 @@ function sha256Hex(input: Uint8Array | Uint8ClampedArray): string {
       w[index] = view.getUint32(offset + index * 4);
     }
     for (let index = 16; index < 64; index += 1) {
-      const s0 = rotr(w[index - 15]!, 7) ^ rotr(w[index - 15]!, 18) ^ (w[index - 15]! >>> 3);
-      const s1 = rotr(w[index - 2]!, 17) ^ rotr(w[index - 2]!, 19) ^ (w[index - 2]! >>> 10);
+      const s0 =
+        rotr(w[index - 15]!, 7) ^ rotr(w[index - 15]!, 18) ^ (w[index - 15]! >>> 3);
+      const s1 =
+        rotr(w[index - 2]!, 17) ^ rotr(w[index - 2]!, 19) ^ (w[index - 2]! >>> 10);
       w[index] = (w[index - 16]! + s0 + w[index - 7]! + s1) >>> 0;
     }
 

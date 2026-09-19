@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { t, useI18nStore } from "@/lib/i18n";
 import {
   deserializeProject,
@@ -25,6 +25,7 @@ import {
   TEST_TMP_PARTS_ARM_PNG_PATH,
   TEST_TMP_PARTS_B_PNG_PATH,
 } from "@/test/path-fixtures";
+import { installRasterCanvas } from "@/test/raster-canvas";
 import { resetAllStores } from "@/test/store-reset";
 
 vi.mock("@/lib/image-loader", () => ({
@@ -36,15 +37,21 @@ vi.mock("@/lib/auto-mesh", () => ({
   generateAutoMesh: vi.fn(),
 }));
 
-vi.mock("@/lib/texture-store", () => ({
-  clearTextures: vi.fn(),
-  getAllTextures: vi.fn().mockReturnValue(new Map()),
-  setTexture: vi.fn(),
-}));
+vi.mock("@/lib/texture-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/texture-store")>();
+  return {
+    ...actual,
+    clearTextures: vi.fn(actual.clearTextures),
+    getAllTextures: vi.fn(actual.getAllTextures),
+    setTexture: vi.fn(actual.setTexture),
+  };
+});
 
 const { decodePngToCanvas, trimTransparentBounds } = await import("@/lib/image-loader");
 const { generateAutoMesh } = await import("@/lib/auto-mesh");
 const { clearTextures, getAllTextures, setTexture } = await import("@/lib/texture-store");
+const actualTextures =
+  await vi.importActual<typeof import("@/lib/texture-store")>("@/lib/texture-store");
 const {
   EMPTY_PNG_FOLDER_MESSAGE,
   importImageAsLayer,
@@ -57,11 +64,9 @@ const {
   reimportManualPngLayer,
 } = await import("../image");
 
-function createCanvas(width: number, height: number): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  return canvas;
+let raster: ReturnType<typeof installRasterCanvas>;
+function createCanvas(width: number, height: number, value = 0): HTMLCanvasElement {
+  return raster.create(width, height, value);
 }
 
 function mountCanvasSurface(width = 1000, height = 800): void {
@@ -88,6 +93,8 @@ async function waitForAnimationFrame(): Promise<void> {
 
 describe("projectIO/image", () => {
   beforeEach(() => {
+    raster = installRasterCanvas();
+    actualTextures.clearTextures();
     resetAllStores();
     vi.clearAllMocks();
     useI18nStore.getState().setLocale("en");
@@ -95,9 +102,9 @@ describe("projectIO/image", () => {
     vi.mocked(decodePngToCanvas).mockReset();
     vi.mocked(trimTransparentBounds).mockReset();
     vi.mocked(generateAutoMesh).mockReset();
-    vi.mocked(clearTextures).mockReset();
+    vi.mocked(clearTextures).mockReset().mockImplementation(actualTextures.clearTextures);
     vi.mocked(getAllTextures).mockReset();
-    vi.mocked(setTexture).mockReset();
+    vi.mocked(setTexture).mockReset().mockImplementation(actualTextures.setTexture);
     vi.mocked(window.electronAPI.openPngFile).mockReset();
     vi.mocked(window.electronAPI.openPngFiles).mockReset();
     vi.mocked(window.electronAPI.openPngFolder).mockReset();
@@ -112,6 +119,7 @@ describe("projectIO/image", () => {
       trimmed: false,
     }));
   });
+  afterEach(() => raster.restore());
 
   it("creates a single-viviMesh project from a PNG buffer", async () => {
     const canvas = createCanvas(640, 480);
@@ -725,7 +733,7 @@ describe("projectIO/image", () => {
       buffer: new ArrayBuffer(16),
       filename: "face.png",
     });
-    const replacementCanvas = createCanvas(128, 96);
+    const replacementCanvas = createCanvas(128, 96, 1);
     vi.mocked(decodePngToCanvas).mockResolvedValue(replacementCanvas);
 
     const result = await reimportManualPngLayer(importedLayer!.id);
@@ -734,7 +742,9 @@ describe("projectIO/image", () => {
     expect(window.electronAPI.readImageFile).toHaveBeenCalledWith({
       imagePath: TEST_ASSET_FACE_PNG_PATH,
     });
-    expect(setTexture).toHaveBeenCalledWith(importedLayer!.id, replacementCanvas);
+    expect(raster.read(actualTextures.getTexture(importedLayer!.id)!)).toEqual(
+      raster.read(replacementCanvas),
+    );
     const reimportedLayer = useEditorStore.getState().project?.layers.at(-1);
     expect(reimportedLayer).toMatchObject({
       id: importedLayer!.id,
@@ -796,7 +806,7 @@ describe("projectIO/image", () => {
       buffer: new ArrayBuffer(16),
       filename: "front.png",
     });
-    vi.mocked(decodePngToCanvas).mockResolvedValue(createCanvas(32, 32));
+    vi.mocked(decodePngToCanvas).mockResolvedValue(createCanvas(32, 32, 1));
 
     const result = await reimportManualPngLayer(childLayer!.id);
 
@@ -853,6 +863,9 @@ describe("projectIO/image", () => {
     if (!reopenedLayer || reopenedLayer.kind !== "viviMesh") {
       throw new Error("Expected reopened manual PNG layer");
     }
+    // This metadata round-trip deliberately serializes without an atlas.
+    // Reinstall its synthetic raster before exercising the real history path.
+    actualTextures.setTexture(reopenedLayer.id, createCanvas(128, 96));
     expect(reopenedLayer.mesh.vertices).toEqual(editedVertices);
     expect(reopenedLayer.importMetadata).toMatchObject({
       source: "manualPng",
@@ -935,7 +948,8 @@ describe("projectIO/image", () => {
     const importedLayer = useEditorStore.getState().project?.layers.at(-1);
 
     vi.clearAllMocks();
-    vi.mocked(getAllTextures).mockReturnValue(new Map());
+    const retainedTexture = actualTextures.getTexture(importedLayer!.id);
+    const retainedRevision = actualTextures.getTextureStoreRevision();
     vi.mocked(window.electronAPI.readImageFile).mockResolvedValue({
       buffer: new ArrayBuffer(32),
       filename: "trimmed.png",
@@ -945,7 +959,8 @@ describe("projectIO/image", () => {
     const result = await reimportManualPngLayer(importedLayer!.id);
 
     expect(result).toBe(false);
-    expect(setTexture).not.toHaveBeenCalled();
+    expect(actualTextures.getTexture(importedLayer!.id)).toBe(retainedTexture);
+    expect(actualTextures.getTextureStoreRevision()).toBe(retainedRevision);
     expect(useEditorStore.getState().project?.layers.at(-1)).toMatchObject({
       id: importedLayer!.id,
       width: 120,

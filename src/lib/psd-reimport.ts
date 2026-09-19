@@ -1,143 +1,116 @@
 import { DEFAULT_NAMES } from "@vivi2d/core/constants";
-import type { BlendMode, ProjectData } from "@vivi2d/core/types";
-import type { Layer } from "ag-psd";
-import { readPsd } from "ag-psd";
-import { isValidBlendMode } from "./blend-modes";
+import {
+  MAX_PSD_LAYER_PIXELS,
+  MAX_PSD_TOTAL_LAYER_PIXELS,
+} from "@vivi2d/core/load-limits";
+import type { ProjectData } from "@vivi2d/core/types";
 import {
   applyPsdReimportLeaves,
-  planPsdReimport,
-  type PsdReimportDiff,
   type PsdReimportLeafInput,
-  type PsdReimportTextureTarget,
+  type PsdReimportPlan,
+  type PsdReimportPlanEntry,
+  planPsdReimport,
 } from "@vivi2d/editor-core/psd-reimport-command";
 import {
   parseSeeThroughLeafToken,
   stripSeeThroughTechnicalName,
 } from "@vivi2d/editor-core/see-through-technical-name";
+import type { Layer } from "ag-psd";
+import { useEditorStore } from "@/stores/editorStore";
+import { prepareHistorySnapshot, useHistoryStore } from "@/stores/historyStore";
 import {
   assertPsdBufferWithinLimit,
   PSD_METADATA_READ_OPTIONS,
+  PSD_PARSE_ERROR_MESSAGE,
+  readPsdSafely,
   validateParsedPsdDocument,
 } from "./psd-security";
-import { setTexture } from "./texture-store";
+import {
+  getAllTextures,
+  getTexture,
+  getTextureStoreRevision,
+  hashTextureCanvas,
+  prepareTextureHistoryEffects,
+  snapshotTextureCanvas,
+  type TextureHistoryEffect,
+  type TextureSnapshotEntry,
+} from "./texture-store";
 
-export type { PsdReimportDiff } from "@vivi2d/editor-core/psd-reimport-command";
-
-interface PsdLayerInfo {
-  name: string;
-  parentName: string | null;
-  canvas: HTMLCanvasElement | null;
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-  isGroup: boolean;
-  children: PsdLayerInfo[];
-  visible: boolean;
-  opacity: number;
-  blendMode: BlendMode;
+export type PsdReimportPreviewEntry = Omit<
+  PsdReimportPlanEntry,
+  "matchedBy" | "nextToken"
+>;
+export interface PsdReimportPreview {
+  readonly documentWidth: number;
+  readonly documentHeight: number;
+  readonly entries: readonly Readonly<PsdReimportPreviewEntry>[];
+  readonly removed: readonly Readonly<{ nodeId: string; nodeName: string }>[];
 }
-
-interface PreparedPsdLeaf {
-  layer: PsdLayerInfo;
-  token: string | null;
-  displayName: string;
+export interface PsdReimportSelection {
+  selectedLeafIndices: readonly number[];
+  confirmedResolutionLeafIndices: readonly number[];
 }
+interface SourceTexture {
+  canvas: HTMLCanvasElement;
+  snapshot: TextureSnapshotEntry;
+}
+interface PendingReimport {
+  project: ProjectData;
+  undoStack: ReturnType<typeof useHistoryStore.getState>["undoStack"];
+  redoStack: ReturnType<typeof useHistoryStore.getState>["redoStack"];
+  revision: string;
+  leaves: PsdReimportLeafInput[];
+  canvases: (HTMLCanvasElement | undefined)[];
+  sources: Map<string, SourceTexture>;
+  plan: PsdReimportPlan;
+}
+// Only metadata reaches the UI. Decoded images and old pixels remain private.
+const pendingReimports = new WeakMap<PsdReimportPreview, PendingReimport>();
+const APPLY_ERROR = "Failed to reimport PSD. Reanalyze the file and try again.";
 
-function flattenPsdLayers(
-  layers: PsdLayerInfo[],
-  parentName: string | null = null,
-): PsdLayerInfo[] {
-  const result: PsdLayerInfo[] = [];
-  for (const layer of layers) {
-    layer.parentName = parentName;
-    result.push(layer);
-    if (layer.children.length > 0) {
-      result.push(...flattenPsdLayers(layer.children, layer.name));
-    }
+function flattenRasterLeaves(layers: Layer[] | undefined): Layer[] {
+  const leaves: Layer[] = [];
+  for (const layer of layers ?? []) {
+    if (layer.children) leaves.push(...flattenRasterLeaves(layer.children));
+    else leaves.push(layer);
   }
-  return result;
+  return leaves;
 }
-
-function toBlendMode(mode: string | undefined): BlendMode {
-  if (!mode) return "normal";
-  const normalized = mode.replace(/ /g, "-");
-  if (isValidBlendMode(normalized)) return normalized;
-  return "normal";
+function validRasterSize(width: number, height: number): boolean {
+  return (
+    Number.isSafeInteger(width) &&
+    Number.isSafeInteger(height) &&
+    width > 0 &&
+    height > 0 &&
+    width <= MAX_PSD_LAYER_PIXELS &&
+    height <= MAX_PSD_LAYER_PIXELS &&
+    width * height <= MAX_PSD_LAYER_PIXELS
+  );
 }
-
-function parsePsdLayer(layer: Layer): PsdLayerInfo {
-  const children = layer.children?.map(parsePsdLayer) ?? [];
-  const canvas = layer.canvas ?? null;
-  const width = canvas?.width ?? (layer.right ?? 0) - (layer.left ?? 0);
-  const height = canvas?.height ?? (layer.bottom ?? 0) - (layer.top ?? 0);
-
-  return {
-    name: layer.name ?? DEFAULT_NAMES.UNNAMED_LAYER,
-    parentName: null,
-    canvas,
-    left: layer.left ?? 0,
-    top: layer.top ?? 0,
-    width,
-    height,
-    isGroup: children.length > 0,
-    children,
-    visible: !layer.hidden,
-    opacity: (layer.opacity ?? 255) / 255,
-    blendMode: toBlendMode(layer.blendMode),
-  };
-}
-
-function preparePsdLeaves(psdFlat: PsdLayerInfo[]): PreparedPsdLeaf[] {
-  return psdFlat
-    .filter((layer) => !layer.isGroup)
-    .map((layer) => ({
-      layer,
-      token: parseSeeThroughLeafToken(layer.name),
-      displayName: stripSeeThroughTechnicalName(layer.name),
-    }));
-}
-
-function parsePreparedPsd(buffer: ArrayBuffer): {
-  psdFlat: PsdLayerInfo[];
-  psdLeaves: PreparedPsdLeaf[];
-} {
-  assertPsdBufferWithinLimit(buffer);
-  const metadata = readPsd(buffer, PSD_METADATA_READ_OPTIONS);
-  validateParsedPsdDocument(metadata);
-  const psd = readPsd(buffer, { useImageData: false });
-  validateParsedPsdDocument(psd);
-  const psdTree = psd.children?.map(parsePsdLayer) ?? [];
-  const psdFlat = flattenPsdLayers(psdTree);
-  return {
-    psdFlat,
-    psdLeaves: preparePsdLeaves(psdFlat),
-  };
-}
-
-function toPsdReimportLeafInputs(psdLeaves: PreparedPsdLeaf[]): PsdReimportLeafInput[] {
-  return psdLeaves.map((leaf) => ({
-    token: leaf.token,
-    displayName: leaf.displayName,
-    left: leaf.layer.left,
-    top: leaf.layer.top,
-    width: leaf.layer.width,
-    height: leaf.layer.height,
-    visible: leaf.layer.visible,
-    opacity: leaf.layer.opacity,
-    blendMode: leaf.layer.blendMode,
-    hasPixels: leaf.layer.canvas != null,
-  }));
-}
-
-function setTextureTargets(
-  psdLeaves: PreparedPsdLeaf[],
-  targets: PsdReimportTextureTarget[],
+function assertFresh(
+  operation: PendingReimport,
+  verifyPixels = true,
+  prevalidatedTextureIds?: ReadonlySet<string>,
 ): void {
-  for (const target of targets) {
-    const canvas = psdLeaves[target.leafIndex]?.layer.canvas;
-    if (canvas) {
-      setTexture(target.layerId, canvas);
+  const history = useHistoryStore.getState();
+  if (
+    useEditorStore.getState().project !== operation.project ||
+    history.undoStack !== operation.undoStack ||
+    history.redoStack !== operation.redoStack ||
+    getTextureStoreRevision() !== operation.revision
+  )
+    throw new Error(APPLY_ERROR);
+  for (const [id, { canvas, snapshot }] of operation.sources) {
+    const current = getTexture(id);
+    if (
+      current !== canvas ||
+      current.width !== snapshot.width ||
+      current.height !== snapshot.height ||
+      (verifyPixels &&
+        !prevalidatedTextureIds?.has(id) &&
+        hashTextureCanvas(current) !== snapshot.hash)
+    ) {
+      throw new Error(APPLY_ERROR);
     }
   }
 }
@@ -145,25 +118,197 @@ function setTextureTargets(
 export function analyzePsdReimport(
   buffer: ArrayBuffer,
   project: ProjectData,
-): { diff: PsdReimportDiff; psdLayers: PsdLayerInfo[] } {
-  const { psdFlat, psdLeaves } = parsePreparedPsd(buffer);
-  const plan = planPsdReimport(project, toPsdReimportLeafInputs(psdLeaves));
-  return { diff: plan.diff, psdLayers: psdFlat };
+): PsdReimportPreview {
+  try {
+    if (useEditorStore.getState().project !== project) throw new Error(APPLY_ERROR);
+    const history = useHistoryStore.getState();
+    const revision = getTextureStoreRevision();
+    assertPsdBufferWithinLimit(buffer);
+    const metadata = readPsdSafely(buffer, PSD_METADATA_READ_OPTIONS);
+    validateParsedPsdDocument(metadata);
+    const psd = readPsdSafely(buffer, {
+      useImageData: false,
+      skipCompositeImageData: true,
+      skipLinkedFilesData: true,
+    });
+    validateParsedPsdDocument(psd);
+    const rasterLeaves = flattenRasterLeaves(psd.children);
+    const canvases = rasterLeaves.map((layer) => layer.canvas ?? undefined);
+    const leaves: PsdReimportLeafInput[] = rasterLeaves.map((layer, index) => {
+      const name = layer.name ?? DEFAULT_NAMES.UNNAMED_LAYER;
+      return {
+        token: parseSeeThroughLeafToken(name),
+        displayName: stripSeeThroughTechnicalName(name),
+        left: layer.left ?? 0,
+        top: layer.top ?? 0,
+        width: canvases[index]?.width ?? (layer.right ?? 0) - (layer.left ?? 0),
+        height: canvases[index]?.height ?? (layer.bottom ?? 0) - (layer.top ?? 0),
+        hasPixels: !!canvases[index],
+      };
+    });
+    const sizes = new Map(
+      [...getAllTextures()].map(
+        ([id, canvas]) => [id, { width: canvas.width, height: canvas.height }] as const,
+      ),
+    );
+    const plan = planPsdReimport(project, leaves, sizes);
+    const sources = new Map<string, SourceTexture>();
+    let sourcePixels = 0;
+    for (const entry of plan.entries) {
+      if (!entry.nodeId || sources.has(entry.nodeId)) continue;
+      const canvas = getTexture(entry.nodeId);
+      if (!canvas || !validRasterSize(canvas.width, canvas.height)) continue;
+      sourcePixels += canvas.width * canvas.height;
+      if (sourcePixels > MAX_PSD_TOTAL_LAYER_PIXELS) throw new Error(APPLY_ERROR);
+      sources.set(entry.nodeId, {
+        canvas,
+        snapshot: snapshotTextureCanvas(entry.nodeId, canvas),
+      });
+    }
+    const operation: PendingReimport = {
+      project,
+      undoStack: history.undoStack,
+      redoStack: history.redoStack,
+      revision,
+      leaves,
+      canvases,
+      sources,
+      plan,
+    };
+    // Reject a stale project from an asynchronous file picker.
+    assertFresh(operation, false);
+    const preview: PsdReimportPreview = Object.freeze({
+      documentWidth: psd.width,
+      documentHeight: psd.height,
+      entries: Object.freeze(
+        plan.entries.map(({ matchedBy: _matchedBy, nextToken: _nextToken, ...entry }) =>
+          Object.freeze(entry),
+        ),
+      ),
+      removed: Object.freeze(plan.removed.map((entry) => Object.freeze({ ...entry }))),
+    });
+    pendingReimports.set(preview, operation);
+    return preview;
+  } catch {
+    // Never inspect/stringify/log untrusted parser or canvas exceptions.
+    throw new Error(PSD_PARSE_ERROR_MESSAGE);
+  }
+}
+export function disposePsdReimport(preview: PsdReimportPreview): void {
+  pendingReimports.delete(preview);
 }
 
 export function applyPsdReimport(
-  buffer: ArrayBuffer,
-  project: ProjectData,
-): { project: ProjectData; diff: PsdReimportDiff } {
-  const { psdLeaves } = parsePreparedPsd(buffer);
-  const leaves = toPsdReimportLeafInputs(psdLeaves);
-  const nextProject = structuredClone(project) as ProjectData;
-  const result = applyPsdReimportLeaves(nextProject, leaves, {
-    createLayerId: () => crypto.randomUUID(),
-  });
-
-  setTextureTargets(psdLeaves, result.updatedTextureTargets);
-  setTextureTargets(psdLeaves, result.addedTextureTargets);
-
-  return { project: nextProject, diff: result.diff };
+  preview: PsdReimportPreview,
+  selection: PsdReimportSelection,
+): { updatedCount: number } {
+  try {
+    const operation = pendingReimports.get(preview);
+    if (!operation) throw new Error(APPLY_ERROR);
+    assertFresh(operation, false);
+    const next = structuredClone(operation.project);
+    const selected = applyPsdReimportLeaves(
+      next,
+      operation.leaves,
+      operation.plan,
+      selection.selectedLeafIndices,
+      selection.confirmedResolutionLeafIndices,
+    );
+    const changedIds = new Set(selected.metadataChangedLayerIds);
+    const before: TextureSnapshotEntry[] = [];
+    const after: TextureSnapshotEntry[] = [];
+    const changedTextureIds = new Set<string>();
+    for (const target of selected.updatedTextureTargets) {
+      const source = operation.sources.get(target.layerId);
+      const canvas = operation.canvases[target.leafIndex];
+      if (!source || !canvas) throw new Error(APPLY_ERROR);
+      const snapshot = snapshotTextureCanvas(target.layerId, canvas);
+      const old = source.snapshot;
+      if (
+        snapshot.width === old.width &&
+        snapshot.height === old.height &&
+        snapshot.hash === old.hash
+      )
+        continue;
+      changedIds.add(target.layerId);
+      before.push(old);
+      after.push(snapshot);
+      changedTextureIds.add(target.layerId);
+    }
+    if (changedIds.size === 0) {
+      assertFresh(operation);
+      disposePsdReimport(preview);
+      return { updatedCount: 0 };
+    }
+    const effects: TextureHistoryEffect[] =
+      after.length === 0
+        ? []
+        : [
+            {
+              kind: "texture",
+              undo: {
+                createdTextureIds: [],
+                restoredTextures: before,
+                expectedCurrentHash: Object.fromEntries(
+                  after.map((s) => [s.textureId, s.hash]),
+                ),
+                expectedCurrentDimensions: Object.fromEntries(
+                  after.map((s) => [s.textureId, { width: s.width, height: s.height }]),
+                ),
+              },
+              redo: {
+                promotedTextures: after.map((snapshot) => ({
+                  textureId: snapshot.textureId,
+                  hash: snapshot.hash,
+                  snapshot,
+                })),
+                expectedCurrentHash: Object.fromEntries(
+                  before.map((s) => [s.textureId, s.hash]),
+                ),
+                expectedCurrentDimensions: Object.fromEntries(
+                  before.map((s) => [s.textureId, { width: s.width, height: s.height }]),
+                ),
+              },
+              rendererInvalidation: "projectStructureVersion",
+            },
+          ];
+    const history = prepareHistorySnapshot(operation.project, effects);
+    const textures = prepareTextureHistoryEffects(effects, "redo");
+    const editorBefore = useEditorStore.getState();
+    const editorRollback = {
+      project: editorBefore.project,
+      projectVersion: editorBefore.projectVersion,
+      projectStructureVersion: editorBefore.projectStructureVersion,
+    };
+    const editorNext = {
+      project: next,
+      projectStructureVersion: editorBefore.projectStructureVersion + 1,
+    };
+    // The synchronous texture preflight just validated changed inputs. Check
+    // all other matched pixels here, without reading the changed inputs twice.
+    assertFresh(operation, true, changedTextureIds);
+    try {
+      textures.commit();
+      useEditorStore.setState(editorNext);
+      history.commit();
+    } catch {
+      // Reverse state and resources already exist. Always restore all surfaces,
+      // even if an application subscriber throws while being notified.
+      try {
+        textures.rollback();
+      } finally {
+        try {
+          useEditorStore.setState(editorRollback);
+        } finally {
+          history.rollback();
+        }
+      }
+      throw new Error(APPLY_ERROR);
+    }
+    disposePsdReimport(preview);
+    return { updatedCount: changedIds.size };
+  } catch {
+    disposePsdReimport(preview);
+    throw new Error(APPLY_ERROR);
+  }
 }

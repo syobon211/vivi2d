@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "provisional-technical-review",
-  "lastUpdated": "2026-05-26",
+  "lastUpdated": "2026-09-19",
   "notes": "This manifest tracks reviewed translation source snapshots. zh-Hans and ko-KR copy is ready for implementation testing; native-speaker human review remains a release-candidate checklist item.",
   "entries": [
     {
@@ -24,15 +24,15 @@
       "surface": "editor",
       "namespace": "dialog",
       "sourcePath": "src/lib/i18n/ja/dialog.ts",
-      "sourceHash": "sha256:1f678460e188d665c5dedfeed0f47ed1388db3c82881bbfae6051edf95a7206f",
-      "reviewedBy": "Vivi2D provisional i18n review",
-      "reviewedAt": "2026-05-20",
+      "sourceHash": "sha256:c1274b5344a041256aee4b31aeb768aa9f734c4de6e7b9ad7e8a96b2de7395dc",
+      "reviewedBy": "Vivi2D provisional i18n review; Codex follow-up technical review",
+      "reviewedAt": "2026-09-19",
       "reviewStatus": "provisional-technical-review",
       "machineDraftUsed": true,
       "keysReviewed": [
         "*"
       ],
-      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+      "notes": "Retains the 2026-05-20 review for unchanged copy. Follow-up technical review covers changed PSD reimport notices, resolution/framing confirmation, held reasons, fixed errors, removed unused keys, and PNG reimport failure/stale messages against the English copy and authoring contract. Formatting-only changes do not alter other text. This is not native-speaker human review; that remains required before a public release candidate."
     },
     {
       "locale": "ja",

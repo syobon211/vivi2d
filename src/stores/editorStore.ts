@@ -1,4 +1,4 @@
-import { type MeshDensityPreset } from "@vivi2d/core/constants";
+import type { MeshDensityPreset } from "@vivi2d/core/constants";
 import { findLayerById } from "@vivi2d/core/layer-utils";
 import type {
   BlendMode,
@@ -16,11 +16,11 @@ import {
   setBlendMode as setBlendModeCommand,
   setClipMaskIds as setClipMaskIdsCommand,
   setCulling as setCullingCommand,
-  setDrawOrder as setDrawOrderCommand,
   setDrawOrderBatch as setDrawOrderBatchCommand,
+  setDrawOrder as setDrawOrderCommand,
   setLayerOpacity as setLayerOpacityCommand,
-  setLayerSemanticRole as setLayerSemanticRoleCommand,
   setLayerSemanticRoleBatch as setLayerSemanticRoleBatchCommand,
+  setLayerSemanticRole as setLayerSemanticRoleCommand,
   setMeshData as setMeshDataCommand,
   setMeshDivisions as setMeshDivisionsCommand,
   setMeshVertices as setMeshVerticesCommand,
@@ -108,12 +108,9 @@ export const useEditorStore = create<EditorStore>()(
         }),
 
       setLayerOpacity: (id, opacity) =>
-        mutateProject(
-          (project) => {
-            setLayerOpacityCommand(project, id, opacity);
-          },
-          `layer-opacity:${id}`,
-        ),
+        mutateProject((project) => {
+          setLayerOpacityCommand(project, id, opacity);
+        }, `layer-opacity:${id}`),
 
       moveLayer: (id, direction) =>
         mutateProject((project) => {
@@ -130,19 +127,15 @@ export const useEditorStore = create<EditorStore>()(
           setClipMaskIdsCommand(project, layerId, maskIds);
         }),
 
-      setMeshVertices: (layerId, vertices, mergeKey) =>
-        {
-          let replaced = false;
-          mutateProject(
-            (project) => {
-              replaced = setMeshVerticesCommand(project, layerId, vertices);
-            },
-            mergeKey,
-          );
-          if (replaced) {
-            usePuppetWarpStore.getState().invalidateMesh(layerId);
-          }
-        },
+      setMeshVertices: (layerId, vertices, mergeKey) => {
+        let replaced = false;
+        mutateProject((project) => {
+          replaced = setMeshVerticesCommand(project, layerId, vertices);
+        }, mergeKey);
+        if (replaced) {
+          usePuppetWarpStore.getState().invalidateMesh(layerId);
+        }
+      },
 
       setMeshData: (layerId, mesh) => {
         let replaced = false;
@@ -191,7 +184,12 @@ export const useEditorStore = create<EditorStore>()(
             const canvas = getTexture(id);
             if (!canvas) continue;
             const effectivePreset = presetOverrides?.[id] ?? preset;
-            const mesh = generateAutoMesh(canvas, node.width, node.height, effectivePreset);
+            const mesh = generateAutoMesh(
+              canvas,
+              node.width,
+              node.height,
+              effectivePreset,
+            );
             if (mesh) {
               node.mesh = mesh;
               invalidatedLayerIds.add(id);
@@ -225,20 +223,14 @@ export const useEditorStore = create<EditorStore>()(
         }),
 
       setMultiplyColor: (id, color) =>
-        mutateProject(
-          (project) => {
-            setMultiplyColorCommand(project, id, color);
-          },
-          `layer-multiplyColor:${id}`,
-        ),
+        mutateProject((project) => {
+          setMultiplyColorCommand(project, id, color);
+        }, `layer-multiplyColor:${id}`),
 
       setScreenColor: (id, color) =>
-        mutateProject(
-          (project) => {
-            setScreenColorCommand(project, id, color);
-          },
-          `layer-screenColor:${id}`,
-        ),
+        mutateProject((project) => {
+          setScreenColorCommand(project, id, color);
+        }, `layer-screenColor:${id}`),
 
       setCulling: (id, culling) =>
         mutateProject((project) => {
@@ -266,5 +258,19 @@ registerHistoryCallbacks({
       s.project = structuredClone(snapshot);
       s.projectStructureVersion += 1;
     });
+  },
+  prepareRestoreProject: (snapshot) => {
+    const { project, projectVersion, projectStructureVersion } =
+      useEditorStore.getState();
+    const preparedProject = structuredClone(snapshot);
+    return {
+      commit: () =>
+        useEditorStore.setState({
+          project: preparedProject,
+          projectStructureVersion: projectStructureVersion + 1,
+        }),
+      rollback: () =>
+        useEditorStore.setState({ project, projectVersion, projectStructureVersion }),
+    };
   },
 });

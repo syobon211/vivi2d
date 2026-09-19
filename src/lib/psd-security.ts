@@ -6,7 +6,29 @@ import {
   MAX_PSD_PIXELS,
   MAX_PSD_TOTAL_LAYER_PIXELS,
 } from "@vivi2d/core/load-limits";
-import type { Layer, ReadOptions } from "ag-psd";
+import { type Layer, type ReadOptions, readPsd } from "ag-psd";
+
+// Decoder exceptions are untrusted: never inspect, stringify, log or attach them.
+export const PSD_PARSE_ERROR_MESSAGE = "Failed to load PSD file.";
+
+const discardDecoderDiagnostic = () => {};
+
+export function readPsdSafely(
+  buffer: ArrayBuffer,
+  options: ReadOptions,
+): ReturnType<typeof readPsd> {
+  try {
+    // The editor consumes layer pixels, never the embedded JPEG thumbnail.
+    // ag-psd logs thumbnail decoder errors internally, before this catch.
+    return readPsd(buffer, {
+      ...options,
+      skipThumbnail: true,
+      log: discardDecoderDiagnostic,
+    });
+  } catch {
+    throw new Error(PSD_PARSE_ERROR_MESSAGE);
+  }
+}
 
 export const PSD_METADATA_READ_OPTIONS = {
   useImageData: false,
