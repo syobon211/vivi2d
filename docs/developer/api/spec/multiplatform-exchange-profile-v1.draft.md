@@ -76,9 +76,11 @@ candidate is:
 The initial editable fixture set therefore requires `clips`, `stateMachines`,
 `scenes`, and `sceneBlends` to be empty and excludes extended blend modes,
 inverted masks, and any other content that derives a render requirement. The
-scene restriction also prevents nested scene clips from bypassing the current
-requirement derivation. Later profiles may add a capability only after its
-owning contract and cross-implementation fixtures are approved.
+scene restriction remains part of this narrow base profile even though the
+internal Project derivation now accounts for nested scene clips. That fix does
+not adopt scene playback or widen this profile. Later profiles may add a
+capability only after its owning contract and cross-implementation fixtures are
+approved.
 
 The proposed mandatory core is intentionally small but nonempty. It covers
 document and canvas metadata; stable nested group, drawable-mesh, and bone

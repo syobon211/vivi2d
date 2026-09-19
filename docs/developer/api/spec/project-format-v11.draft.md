@@ -157,7 +157,7 @@ The current reference foundation supplies these candidate global ceilings:
 | --- | ---: | --- |
 | UTF-8 input bytes | 134,217,728 | The ordinary Windows writer is not connected to this profile. |
 | Container depth | 64 | A portable manifest must include exact boundary vectors. |
-| JSON tokens | 8,000,000 | Programmatic serialization must enforce an equivalent pre-allocation budget. |
+| JSON tokens | 8,000,000 | The internal TS canonicalizer enforces an equivalent output budget; portable boundary fixtures remain open. |
 | Decoded UTF-8 bytes in one string | 67,108,864 | A portable manifest must include exact boundary vectors. |
 | Embedded extension blob bytes | 16,777,216 | Extensions are excluded from the base profile. |
 | Aggregate canonical `extensions` map bytes | 16,777,216 | Extensions are excluded from the base profile. |
@@ -167,6 +167,15 @@ The adopted contract MUST also freeze Project collection, atlas count, decoded
 PNG bytes, pixel count, per-axis dimension, atlas-entry count, mesh count, and
 aggregate media ceilings. Those limits are not complete in the current Project
 schema and therefore remain open.
+
+The internal TS canonicalizer charges cumulative UTF-8 output bytes and lexical
+tokens before constructing escaped strings or joining complete child output.
+Canonical number spelling can be longer than accepted input spelling, so an
+input within the byte ceiling can still be rejected when its canonical output
+would exceed that ceiling. Reflection arrays, small number strings, and accepted
+prefixes may still allocate; this is not an allocation-free or OOM guarantee.
+This reference implementation does not adopt the portable profile or connect the
+ordinary Windows writer.
 
 Candidate input and output behavior:
 
@@ -250,11 +259,15 @@ set. The public rule must decide whether alternative input ordering is accepted
 and canonicalized or rejected, then align the schema comment, implementation,
 and fixtures. Implementation-local ordering is not authority.
 
-Current requirement derivation inspects root `clips` and `stateMachines` but
-does not account for clips nested in `scenes`. The base profile therefore
-requires both `scenes` and `sceneBlends` to be empty. Any later scene-bearing
-profile must first fix the derivation rule and add hostile fixtures proving that
-animation cannot pass without its required capability.
+The internal requirement derivation now includes both root `clips` and clips
+nested in `scenes`, deriving `vivi.cap.clipPlayback` once even when both occur.
+Focused host tests reject a missing declaration before either host Asset port, classify an
+unsupported declared render requirement as invalid, and preserve supported
+source through local duplication. Root `stateMachines` retains its own existing
+requirement. This closes the known nested-animation omission, not scene-runtime
+support or public conformance. The base profile still requires both `scenes` and
+`sceneBlends` to be empty; a later scene-bearing profile needs its own adoption
+and portable hostile fixtures.
 
 For a structurally and semantically accepted document, compatibility behavior is:
 

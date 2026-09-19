@@ -292,7 +292,10 @@ function deriveCoreRequirements(
   wire: ViviFileDataWireThroughV11,
 ): ViviRequiredCapabilityV11[] {
   const requirements: ViviRequiredCapabilityV11[] = [];
-  if ((project.clips?.length ?? 0) > 0) {
+  if (
+    (project.clips?.length ?? 0) > 0 ||
+    (project.scenes ?? []).some((scene) => scene.clips.length > 0)
+  ) {
     requirements.push(coreRequirement("vivi.cap.clipPlayback"));
   }
   if ((project.stateMachines?.length ?? 0) > 0) {
