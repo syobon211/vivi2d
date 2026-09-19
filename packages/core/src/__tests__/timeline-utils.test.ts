@@ -18,7 +18,6 @@ import type {
   IKControllerTrack,
 } from "../types";
 
-
 describe("interpolateTrack", () => {
   it("キーフレームが空の場合 null を返す", () => {
     const track: AnimationTrack = { parameterId: "x", keyframes: [] };
@@ -84,62 +83,92 @@ describe("interpolateTrack", () => {
     expect(interpolateTrack(track, 9)).toBe(10);
   });
 
-  it("ベジェ補間が動作する", () => {
-    const track: AnimationTrack = {
-      parameterId: "x",
-      keyframes: [
-        {
+  it("nonlinear interpolation dispatch preserves custom parameters and defaults", () => {
+    const rows: Array<{
+      name: string;
+      keyframe: AnimationTrack["keyframes"][number];
+      frame: number;
+      expected: number;
+    }> = [
+      // x(t)=t, y(t)=t^3: the midpoint must differ from linear interpolation.
+      {
+        name: "custom bezier",
+        keyframe: {
           frame: 0,
           value: 0,
           interpolation: "bezier",
-          cp1x: 0.25,
+          cp1x: 1 / 3,
+          cp2x: 2 / 3,
           cp1y: 0,
-          cp2x: 0.75,
-          cp2y: 1,
+          cp2y: 0,
         },
-        { frame: 10, value: 100, interpolation: "linear" },
-      ],
-    };
-    const mid = interpolateTrack(track, 5);
-    expect(mid).not.toBeNull();
-    expect(mid!).toBeGreaterThanOrEqual(0);
-    expect(mid!).toBeLessThanOrEqual(100);
-  });
-
-  it("楕円補間が動作する", () => {
-    const track: AnimationTrack = {
-      parameterId: "x",
-      keyframes: [
-        {
+        frame: 5,
+        expected: 12.5,
+      },
+      // Default Bezier at parameter 1/4 has x=29/128, y=5/32.
+      {
+        name: "default bezier",
+        keyframe: { frame: 0, value: 0, interpolation: "bezier" },
+        frame: 2.265625,
+        expected: 15.625,
+      },
+      {
+        name: "custom clockwise ellipse",
+        keyframe: {
+          frame: 0,
+          value: 0,
+          interpolation: "ellipse",
+          ellipseRatio: 0.25,
+          ellipseDirection: "cw",
+        },
+        frame: 5,
+        expected: 62.5,
+      },
+      {
+        name: "counterclockwise ellipse",
+        keyframe: {
           frame: 0,
           value: 0,
           interpolation: "ellipse",
           ellipseRatio: 0.5,
-          ellipseDirection: "cw",
+          ellipseDirection: "ccw",
         },
-        { frame: 10, value: 100, interpolation: "linear" },
-      ],
-    };
-    const mid = interpolateTrack(track, 5);
-    expect(mid).not.toBeNull();
-  });
-
-  it("SNS補間が動作する", () => {
-    const track: AnimationTrack = {
-      parameterId: "x",
-      keyframes: [
-        {
+        frame: 5,
+        expected: 25,
+      },
+      {
+        name: "default ellipse",
+        keyframe: { frame: 0, value: 0, interpolation: "ellipse" },
+        frame: 5,
+        expected: 75,
+      },
+      {
+        name: "undamped sns",
+        keyframe: {
           frame: 0,
           value: 0,
           interpolation: "sns",
           snsOscillations: 1,
-          snsDamping: 0.5,
+          snsDamping: 0,
         },
-        { frame: 10, value: 100, interpolation: "linear" },
-      ],
-    };
-    const mid = interpolateTrack(track, 5);
-    expect(mid).not.toBeNull();
+        frame: 2.5,
+        expected: 38.125,
+      },
+      // Quarter-cycle sine is 1; the default damping contributes exp(-5/8).
+      {
+        name: "default sns",
+        keyframe: { frame: 0, value: 0, interpolation: "sns" },
+        frame: 2.5,
+        expected: 15.625 + 22.5 * Math.exp(-0.625),
+      },
+    ];
+    for (const { name, keyframe, frame, expected } of rows) {
+      const track: AnimationTrack = {
+        parameterId: "x",
+        keyframes: [keyframe, { frame: 10, value: 100, interpolation: "linear" }],
+      };
+      expect(interpolateTrack(track, frame), name).toBeCloseTo(expected, 3);
+    }
   });
 
   it("3つ以上のキーフレームで正しく区間を選択する", () => {
@@ -155,7 +184,6 @@ describe("interpolateTrack", () => {
     expect(interpolateTrack(track, 15)).toBeCloseTo(75, 5);
   });
 });
-
 
 describe("evaluateClipAtFrame", () => {
   it("全トラックを評価してパラメータ値マップを返す", () => {
@@ -220,7 +248,6 @@ describe("evaluateClipAtFrame", () => {
     expect(values.valid_track).toBe(42);
   });
 });
-
 
 describe("evaluateBoneTracksAtFrame", () => {
   it("ボーンの角度トラックを評価する", () => {
@@ -289,7 +316,6 @@ describe("evaluateBoneTracksAtFrame", () => {
   });
 });
 
-
 describe("evaluateIKControllerTracksAtFrame", () => {
   it("IKコントローラのターゲット位置を評価する", () => {
     const tracks: IKControllerTrack[] = [
@@ -341,7 +367,6 @@ describe("evaluateIKControllerTracksAtFrame", () => {
   });
 });
 
-
 describe("formatFrameTime", () => {
   it("0フレームは 00:00:00 を返す", () => {
     expect(formatFrameTime(0, 30)).toBe("00:00:00");
@@ -356,7 +381,6 @@ describe("formatFrameTime", () => {
   });
 });
 
-
 describe("frameToSeconds", () => {
   it("フレーム番号を秒に変換する", () => {
     expect(frameToSeconds(30, 30)).toBe(1);
@@ -365,37 +389,63 @@ describe("frameToSeconds", () => {
   });
 });
 
-describe("ellipseInterpolation — ブランチカバレッジ", () => {
-  it("ratio=0 の場合、線形補間にフォールバックする", () => {
-    const result = ellipseInterpolation(0.5, 0, 100, 0, "cw");
-    expect(result).toBe(50);
+describe("ellipseInterpolation", () => {
+  it("non-positive ratio uses linear values at asymmetric endpoints and interior frames", () => {
+    for (const ratio of [0, -1]) {
+      for (const [t, expected] of [
+        [0, 10],
+        [0.25, 30],
+        [0.5, 50],
+        [0.75, 70],
+        [1, 90],
+      ]) {
+        expect(ellipseInterpolation(t!, 10, 90, ratio, "cw")).toBeCloseTo(expected!, 8);
+      }
+    }
   });
 
-  it("direction='ccw' の場合、逆方向の膨らみになる", () => {
-    const cw = ellipseInterpolation(0.5, 0, 100, 0.5, "cw");
-    const ccw = ellipseInterpolation(0.5, 0, 100, 0.5, "ccw");
-    expect(cw).not.toBe(ccw);
-  });
-
-  it("ratio が負の場合も線形補間にフォールバックする", () => {
-    const result = ellipseInterpolation(0.5, 10, 20, -1, "cw");
-    expect(result).toBe(15);
+  it("preserves endpoints, direction, ellipse strength, and equal-value tracks", () => {
+    const cases = [
+      [0, 0.5, "cw", 10],
+      [1, 0.5, "cw", 90],
+      [0.25, 0.5, "cw", 35.8578643763],
+      [0.25, 0.5, "ccw", 7.5735931288],
+      [0.5, 0.5, "cw", 70],
+      [0.5, 0.5, "ccw", 30],
+      [0.5, 1, "cw", 90],
+    ] as const;
+    for (const [t, ratio, direction, expected] of cases) {
+      expect(ellipseInterpolation(t, 10, 90, ratio, direction)).toBeCloseTo(expected, 8);
+    }
+    expect(ellipseInterpolation(0.25, 42, 42)).toBe(42);
   });
 });
 
-describe("snsInterpolation — 直接呼び出し", () => {
-  it("t=0 で startVal を返す", () => {
-    expect(snsInterpolation(0, 0, 100)).toBe(0);
+describe("snsInterpolation", () => {
+  it("preserves endpoints with default and high oscillation settings", () => {
+    expect(snsInterpolation(0, 10, 90)).toBe(10);
+    expect(snsInterpolation(1, 10, 90)).toBe(90);
+    expect(snsInterpolation(0, 10, 90, 5, 5)).toBe(10);
+    expect(snsInterpolation(1, 10, 90, 5, 5)).toBe(90);
   });
 
-  it("t=1 で endVal を返す", () => {
-    expect(snsInterpolation(1, 0, 100)).toBe(100);
+  it("distinguishes smoothstep, positive and negative vibration, and damping away from zero crossings", () => {
+    // At quarter-periods the oscillation is +1 or -1, not its midpoint zero.
+    expect(snsInterpolation(0.25, 10, 90, 0, 0.5)).toBeCloseTo(22.5, 8);
+    expect(snsInterpolation(0.75, 10, 90, 0, 0.5)).toBeCloseTo(77.5, 8);
+    expect(snsInterpolation(0.25, 0, 100, 1, 0)).toBeCloseTo(38.125, 8);
+    expect(snsInterpolation(0.25, 0, 100, 3, 0)).toBeCloseTo(-6.875, 8);
+    const damped = snsInterpolation(0.25, 0, 100, 1, 5);
+    expect(damped).toBeGreaterThan(15.625);
+    expect(damped).toBeLessThan(15.675);
   });
 
-  it("カスタム振動回数と減衰で動作する", () => {
-    const result = snsInterpolation(0.5, 0, 100, 2, 1.0);
-    expect(result).toBeGreaterThan(0);
-    expect(result).toBeLessThan(100);
+  it("keeps high-damping interior values bounded across an entire interval", () => {
+    for (let sample = 0; sample <= 100; sample++) {
+      const value = snsInterpolation(sample / 100, 0, 100, 1, 10);
+      expect(value).toBeGreaterThan(-20);
+      expect(value).toBeLessThan(120);
+    }
   });
 });
 
@@ -403,18 +453,6 @@ describe("solveCubicBezierT — エッジケース", () => {
   it("標準的な制御点で正しい t を返す", () => {
     const t = solveCubicBezierT(0.5, 0.25, 0.75);
     expect(t).toBeCloseTo(0.5, 2);
-  });
-
-  it("極端な制御点で二分探索にフォールバックしても正しく動く", () => {
-    const t = solveCubicBezierT(0.5, 0, 1);
-    expect(t).toBeGreaterThan(0);
-    expect(t).toBeLessThan(1);
-  });
-
-  it("導関数がゼロ付近になる制御点で二分探索にフォールバック", () => {
-    const t = solveCubicBezierT(0.5, 1, 0);
-    expect(t).toBeGreaterThanOrEqual(0);
-    expect(t).toBeLessThanOrEqual(1);
   });
 
   it("ニュートン法が発散する制御点で二分探索にフォールバック", () => {
@@ -454,61 +492,5 @@ describe("interpolateTrack — 追加ブランチ", () => {
       ],
     };
     expect(interpolateTrack(track, 5)).toBe(10);
-  });
-
-  it("ベジェ補間で制御点が未指定（デフォルト値使用）", () => {
-    const track: AnimationTrack = {
-      parameterId: "x",
-      keyframes: [
-        { frame: 0, value: 0, interpolation: "bezier" },
-        { frame: 10, value: 100, interpolation: "linear" },
-      ],
-    };
-    const result = interpolateTrack(track, 5);
-    expect(result).not.toBeNull();
-    expect(result!).toBeGreaterThanOrEqual(0);
-    expect(result!).toBeLessThanOrEqual(100);
-  });
-
-  it("楕円補間で ccw 方向", () => {
-    const track: AnimationTrack = {
-      parameterId: "x",
-      keyframes: [
-        {
-          frame: 0,
-          value: 0,
-          interpolation: "ellipse",
-          ellipseRatio: 0.5,
-          ellipseDirection: "ccw",
-        },
-        { frame: 10, value: 100, interpolation: "linear" },
-      ],
-    };
-    const result = interpolateTrack(track, 5);
-    expect(result).not.toBeNull();
-  });
-
-  it("楕円補間でパラメータ未指定（デフォルト値使用）", () => {
-    const track: AnimationTrack = {
-      parameterId: "x",
-      keyframes: [
-        { frame: 0, value: 0, interpolation: "ellipse" },
-        { frame: 10, value: 100, interpolation: "linear" },
-      ],
-    };
-    const result = interpolateTrack(track, 5);
-    expect(result).not.toBeNull();
-  });
-
-  it("SNS補間でパラメータ未指定（デフォルト値使用）", () => {
-    const track: AnimationTrack = {
-      parameterId: "x",
-      keyframes: [
-        { frame: 0, value: 0, interpolation: "sns" },
-        { frame: 10, value: 100, interpolation: "linear" },
-      ],
-    };
-    const result = interpolateTrack(track, 5);
-    expect(result).not.toBeNull();
   });
 });

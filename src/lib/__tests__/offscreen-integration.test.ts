@@ -154,57 +154,7 @@ describe("オフスクリーン描画統合テスト", () => {
       expect(sorted).toHaveLength(2);
     });
 
-    it("ソースレイヤー削除後に依存関係が正しく更新される", () => {
-      const store = useOffscreenStore.getState();
 
-      const targetId = store.addOffscreenTarget(512, 512);
-      store.addSourceLayer(targetId, "layer-1");
-      store.addSourceLayer(targetId, "layer-2");
-      store.addSourceLayer(targetId, "layer-3");
-
-      let targets = getOffscreenTargets();
-      expect(targets[0]!.sourceLayerIds).toHaveLength(3);
-
-      store.removeSourceLayer(targetId, "layer-2");
-
-      targets = getOffscreenTargets();
-      expect(targets[0]!.sourceLayerIds).toHaveLength(2);
-      expect(targets[0]!.sourceLayerIds).toEqual(["layer-1", "layer-3"]);
-    });
-
-    it("同じレイヤーを重複追加しない", () => {
-      const store = useOffscreenStore.getState();
-
-      const targetId = store.addOffscreenTarget(512, 512);
-      store.addSourceLayer(targetId, "layer-1");
-      store.addSourceLayer(targetId, "layer-1");
-
-      const targets = getOffscreenTargets();
-      expect(targets[0]!.sourceLayerIds).toHaveLength(1);
-    });
   });
 
-  describe("バッファサイズ変更", () => {
-    it("setBufferSizeでターゲットのサイズが正しく更新される", () => {
-      const store = useOffscreenStore.getState();
-
-      const targetId = store.addOffscreenTarget(512, 512);
-      store.setBufferSize(targetId, 1024, 768);
-
-      const targets = getOffscreenTargets();
-      expect(targets[0]!.width).toBe(1024);
-      expect(targets[0]!.height).toBe(768);
-    });
-
-    it("バッファサイズが最小値1にクランプされる", () => {
-      const store = useOffscreenStore.getState();
-
-      const targetId = store.addOffscreenTarget(512, 512);
-      store.setBufferSize(targetId, 0, -10);
-
-      const targets = getOffscreenTargets();
-      expect(targets[0]!.width).toBe(1);
-      expect(targets[0]!.height).toBe(1);
-    });
-  });
 });

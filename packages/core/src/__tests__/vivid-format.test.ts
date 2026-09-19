@@ -13,6 +13,7 @@ const PASSWORD = "test-password-2024";
 describe("encodeVivid / decodeVivid", () => {
   it("エンコード→デコードで元のJSONが復元される", async () => {
     const encoded = await encodeVivid(TEST_JSON, PASSWORD);
+    expect(isVividFormat(encoded)).toBe(true);
     const decoded = await decodeVivid(encoded, PASSWORD);
     expect(decoded).toBe(TEST_JSON);
   });
@@ -45,19 +46,10 @@ describe("encodeVivid / decodeVivid", () => {
     expect(decoded).toBe("");
   });
 
-  it("日本語を含むJSONもラウンドトリップする", async () => {
-    const json = JSON.stringify({ name: "紙吹雪エフェクト付きモデル" });
-    const encoded = await encodeVivid(json, PASSWORD);
-    const decoded = await decodeVivid(encoded, PASSWORD);
-    expect(decoded).toBe(json);
-  });
 });
 
 describe("isVividFormat", () => {
-  it(".vividファイルを正しく判定する", async () => {
-    const encoded = await encodeVivid(TEST_JSON, PASSWORD);
-    expect(isVividFormat(encoded)).toBe(true);
-  });
+
 
   it("通常のJSONを.vividでないと判定する", () => {
     const enc = new TextEncoder();
@@ -90,7 +82,9 @@ describe("decodeVivid エラーケース", () => {
   });
 
   it("バージョンが不正でエラーになる", async () => {
-    const encoded = new Uint8Array(await encodeVivid("{}", PASSWORD));
+    // Valid-length VIVD header: version rejection must precede key derivation.
+    const encoded = new Uint8Array(33);
+    encoded.set([0x56, 0x49, 0x56, 0x44]);
     encoded[4] = 255;
     await expect(decodeVivid(encoded.buffer, PASSWORD)).rejects.toThrow(
       "Unsupported .vivid version: 255",
@@ -172,13 +166,6 @@ describe("decodeVivid ファイルサイズ上限", () => {
   });
 });
 
-describe("vivid-format 定数検証", () => {
-  it("PBKDF2_ITERATIONSが600,000に設定されていることの確認", async () => {
-    const encoded = await encodeVivid("test", PASSWORD);
-    const decoded = await decodeVivid(encoded, PASSWORD);
-    expect(decoded).toBe("test");
-  });
-});
 
 describe("decodeVivid ciphertextが空", () => {
   it("ヘッダーのみ（ciphertext部分なし）の場合エラーになる", async () => {

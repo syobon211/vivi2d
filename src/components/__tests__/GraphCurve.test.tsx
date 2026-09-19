@@ -3,7 +3,6 @@ import type { AnimationTrack } from "@vivi2d/core/types";
 import { describe, expect, it } from "vitest";
 import { GraphCurve } from "../timeline/GraphCurve";
 
-
 function renderInSvg(element: React.ReactElement) {
   return render(
     <svg>
@@ -28,22 +27,6 @@ const frameToX = (frame: number) => 40 + frame * 5;
 const valueToY = (value: number) => 100 - value * 2;
 
 describe("GraphCurve", () => {
-  it("パスが描画される", () => {
-    const { container } = renderInSvg(
-      <GraphCurve
-        track={createLinearTrack()}
-        frameToX={frameToX}
-        valueToY={valueToY}
-        selected={false}
-      />,
-    );
-
-    const path = container.querySelector("path");
-    expect(path).toBeInTheDocument();
-    expect(path!.getAttribute("d")).toContain("M");
-    expect(path!.getAttribute("d")).toContain("L");
-  });
-
   it("空のキーフレームリストでは何もレンダリングしない", () => {
     const emptyTrack: AnimationTrack = { parameterId: "p1", keyframes: [] };
 
@@ -80,6 +63,9 @@ describe("GraphCurve", () => {
     const stroke1 = c1.querySelector("path")!.getAttribute("stroke");
     const stroke2 = c2.querySelector("path")!.getAttribute("stroke");
     expect(stroke1).not.toBe(stroke2);
+    expect(c1.querySelector("path")).toHaveAttribute("d", "M 40 100 L 190 70 L 340 40");
+    expect(c1.querySelector("path")).toHaveAttribute("opacity", "0.5");
+    expect(c2.querySelector("path")).toHaveAttribute("opacity", "1");
   });
 
   it("ステップ補間でパスに水平線が含まれる", () => {
@@ -275,34 +261,6 @@ describe("GraphCurve", () => {
 
     const d = container.querySelector("path")!.getAttribute("d")!;
     expect(d).toContain("C");
-  });
-
-  it("selected=trueで不透明度が1になる", () => {
-    const { container } = renderInSvg(
-      <GraphCurve
-        track={createLinearTrack()}
-        frameToX={frameToX}
-        valueToY={valueToY}
-        selected={true}
-      />,
-    );
-
-    const path = container.querySelector("path");
-    expect(path!.getAttribute("opacity")).toBe("1");
-  });
-
-  it("selected=falseで不透明度が0.5になる", () => {
-    const { container } = renderInSvg(
-      <GraphCurve
-        track={createLinearTrack()}
-        frameToX={frameToX}
-        valueToY={valueToY}
-        selected={false}
-      />,
-    );
-
-    const path = container.querySelector("path");
-    expect(path!.getAttribute("opacity")).toBe("0.5");
   });
 
   it("混合補間タイプのトラックが正しくレンダリングされる", () => {

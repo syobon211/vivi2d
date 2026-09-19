@@ -5,11 +5,10 @@ import { readPsd } from "ag-psd";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useEditorStore } from "@/stores/editorStore";
 import { useTimelineStore } from "@/stores/timelineStore";
-import { createAnimationClip, createViviMesh, createEmptyProject } from "@/test/fixtures";
+import { createAnimationClip, createEmptyProject, createViviMesh } from "@/test/fixtures";
 import { resetEditorStore, resetTimelineStore } from "@/test/store-reset";
 import { ImageSequenceTrackRow } from "../timeline/ImageSequenceTrackRow";
 import { TimelineBody } from "../timeline/TimelineBody";
-
 
 const mesh1 = createViviMesh({ id: "mesh-1", name: "顔" });
 const mesh2 = createViviMesh({ id: "mesh-2", name: "髪" });
@@ -63,45 +62,18 @@ describe("ImageSequenceTrackRow", () => {
     resetTimelineStore();
   });
 
-  it("画像シーケンストラックラベルが表示される", () => {
+  it("画像シーケンスのラベル・ブロック・操作入口が表示される", () => {
     setupWithImageSequence();
-    render(<TimelineBody />);
+    const { container } = render(<TimelineBody />);
     expect(screen.getByText(/顔/)).toBeInTheDocument();
-  });
-
-  it("画像シーケンスブロックが表示される", () => {
-    setupWithImageSequence();
-    const { container } = render(<TimelineBody />);
-    const blocks = container.querySelectorAll(".tl-imgseq-block");
-    expect(blocks.length).toBe(3);
-  });
-
-  it("エントリ追加ボタンが表示される", () => {
-    setupWithImageSequence();
-    render(<TimelineBody />);
+    expect(container.querySelectorAll(".tl-imgseq-block")).toHaveLength(3);
     expect(screen.getByTitle("現在のフレームにエントリ追加")).toBeInTheDocument();
-  });
-
-  it("トラック追加ドロップダウンに画像シーケンスグループがある", () => {
-    setupWithImageSequence();
-    const { container } = render(<TimelineBody />);
+    expect(screen.getAllByTitle("トラック削除").length).toBeGreaterThanOrEqual(1);
     const select = container.querySelector(".tl-add-track-select");
     expect(select).toBeInTheDocument();
-    const options = select?.querySelectorAll("option");
-    const imgSeqOption = Array.from(options ?? []).find(
-      (o) => o.value === "imgseq:mesh-2",
-    );
-    expect(imgSeqOption).toBeDefined();
-  });
-
-  it("トラック削除ボタンが表示される", () => {
-    setupWithImageSequence();
-    render(<TimelineBody />);
-    const removeBtns = screen.getAllByTitle("トラック削除");
-    expect(removeBtns.length).toBeGreaterThanOrEqual(1);
+    expect(select!.querySelector('option[value="imgseq:mesh-2"]')).toBeInTheDocument();
   });
 });
-
 
 const clipId = "clip-1";
 

@@ -11,11 +11,6 @@ describe("multiViewStore", () => {
     });
   });
 
-  it("初期状態は disabled", () => {
-    const s = useMultiViewStore.getState();
-    expect(s.enabled).toBe(false);
-    expect(s.views).toEqual([]);
-  });
 
   it("enableMultiView で horizontal 2分割を有効化", () => {
     useMultiViewStore.getState().enableMultiView("horizontal");

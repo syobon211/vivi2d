@@ -44,7 +44,7 @@ test("完全ワークフロー: 起動→読込→設定→エフェクト→HUD
   const title = await window.title();
   expect(title).toContain("Vivi Viewer");
 
-  const openBtn = window.locator("label", { hasText: /モデルを開く/ });
+  const openBtn = window.getByRole("button", { name: "モデルを開く", exact: true });
   await expect(openBtn).toBeVisible({ timeout: 10_000 });
 
   const placeholder = window.locator("p", { hasText: /.viviファイル/ });

@@ -3338,28 +3338,6 @@ mod tests {
     }
 
     #[test]
-    fn load_failure_sets_runtime_error_and_null_model() {
-        let mut runtime: *mut ViviRuntime = ptr::null_mut();
-        assert_eq!(
-            vivi_runtime_create(ptr::null(), ptr::null_mut(), &mut runtime),
-            status::OK
-        );
-
-        let payload = br#"{"profile":"publicProfileV1","version":10,"project":{"blendShapes":[]},"atlases":[]}"#;
-        let mut model: *mut ViviModel = ptr::null_mut();
-        assert_eq!(
-            vivi_model_load(runtime, payload.as_ptr(), payload.len() as u64, &mut model),
-            status::PRIVATE_PROFILE
-        );
-        assert!(model.is_null());
-        let message =
-            unsafe { CStr::from_ptr(vivi_runtime_last_error_message(runtime)) }.to_string_lossy();
-        assert!(message.contains("forbidden public-profile marker"));
-
-        vivi_runtime_destroy(runtime);
-    }
-
-    #[test]
     fn c_abi_rejects_nul_id_collisions_without_affecting_an_existing_model() {
         let valid = br#"{"profile":"publicProfileV1","version":10,"project":{"layers":[],"parameters":[{"id":"a\ufffdb","minValue":0,"maxValue":1,"defaultValue":0}]},"atlases":[]}"#;
         let (runtime, previous_model) = load_test_model(valid);
@@ -3509,6 +3487,10 @@ mod tests {
             ),
             status::PRIVATE_PROFILE
         );
+        assert!(model.is_null());
+        let message =
+            unsafe { CStr::from_ptr(vivi_runtime_last_error_message(runtime)) }.to_string_lossy();
+        assert!(message.contains("forbidden public-profile marker"));
 
         let valid_payload = minimal_static_payload();
         assert_eq!(

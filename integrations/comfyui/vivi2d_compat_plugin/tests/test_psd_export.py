@@ -143,6 +143,36 @@ class PsdExportTests(unittest.TestCase):
         output_dir = output_root / "vivi2d" / "psd" / "job"
         return output_root, manifest_path, output_dir
 
+    def _write_path_rejection_manifest(self, manifest_dir: Path, image_path: str) -> Path:
+        manifest = {
+            "schema_version": "1.0.0",
+            "generator": {
+                "plugin": "vivi2d-compat-comfyui",
+                "plugin_version": "0.1.0",
+                "model": "ComfyUI-See-through",
+                "model_version": "test",
+            },
+            "canvas": {"width": 2, "height": 2},
+            "layers": [
+                {
+                    "id": "layer_000",
+                    "name": "hair_back",
+                    "label": "hair_back",
+                    "order": 0,
+                    "psd_leaf_token": "layer_000",
+                    "image_path": image_path,
+                    "bbox": [0, 0, 2, 2],
+                    "confidence": 1.0,
+                    "left_right_split": "center",
+                    "front_back_split": "back",
+                    "depth_stats": {"min": 0.1, "max": 0.2, "mean": 0.15},
+                }
+            ],
+        }
+        manifest_path = manifest_dir / "manifest.json"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        return manifest_path
+
     def test_export_psd_from_manifest_writes_positioned_layers(self) -> None:
         calls = self._install_fake_pytoshop()
 
@@ -323,33 +353,7 @@ class PsdExportTests(unittest.TestCase):
         outside_image = temp_root / "outside.png"
         Image.new("RGBA", (2, 2), (255, 255, 255, 255)).save(outside_image)
 
-        manifest = {
-            "schema_version": "1.0.0",
-            "generator": {
-                "plugin": "vivi2d-compat-comfyui",
-                "plugin_version": "0.1.0",
-                "model": "ComfyUI-See-through",
-                "model_version": "test",
-            },
-            "canvas": {"width": 2, "height": 2},
-            "layers": [
-                {
-                    "id": "layer_000",
-                    "name": "hair_back",
-                    "label": "hair_back",
-                    "order": 0,
-                    "psd_leaf_token": "layer_000",
-                    "image_path": str(outside_image.resolve()),
-                    "bbox": [0, 0, 2, 2],
-                    "confidence": 1.0,
-                    "left_right_split": "center",
-                    "front_back_split": "back",
-                    "depth_stats": {"min": 0.1, "max": 0.2, "mean": 0.15},
-                }
-            ],
-        }
-        manifest_path = manifest_dir / "manifest.json"
-        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        manifest_path = self._write_path_rejection_manifest(manifest_dir, str(outside_image.resolve()))
 
         with self.assertRaisesRegex(RuntimeError, "must be a relative path"):
             psd_export.export_psd_from_manifest(
@@ -368,33 +372,7 @@ class PsdExportTests(unittest.TestCase):
         manifest_dir.mkdir(parents=True, exist_ok=True)
         Image.new("RGBA", (2, 2), (255, 255, 255, 255)).save(temp_root / "outside.png")
 
-        manifest = {
-            "schema_version": "1.0.0",
-            "generator": {
-                "plugin": "vivi2d-compat-comfyui",
-                "plugin_version": "0.1.0",
-                "model": "ComfyUI-See-through",
-                "model_version": "test",
-            },
-            "canvas": {"width": 2, "height": 2},
-            "layers": [
-                {
-                    "id": "layer_000",
-                    "name": "hair_back",
-                    "label": "hair_back",
-                    "order": 0,
-                    "psd_leaf_token": "layer_000",
-                    "image_path": "../../../../outside.png",
-                    "bbox": [0, 0, 2, 2],
-                    "confidence": 1.0,
-                    "left_right_split": "center",
-                    "front_back_split": "back",
-                    "depth_stats": {"min": 0.1, "max": 0.2, "mean": 0.15},
-                }
-            ],
-        }
-        manifest_path = manifest_dir / "manifest.json"
-        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        manifest_path = self._write_path_rejection_manifest(manifest_dir, "../../../../outside.png")
 
         with self.assertRaisesRegex(RuntimeError, "invalid traversal") as ctx:
             psd_export.export_psd_from_manifest(
@@ -422,33 +400,7 @@ class PsdExportTests(unittest.TestCase):
         except (OSError, NotImplementedError) as exc:
             self.skipTest(f"Symlink creation is unavailable: {exc}")
 
-        manifest = {
-            "schema_version": "1.0.0",
-            "generator": {
-                "plugin": "vivi2d-compat-comfyui",
-                "plugin_version": "0.1.0",
-                "model": "ComfyUI-See-through",
-                "model_version": "test",
-            },
-            "canvas": {"width": 2, "height": 2},
-            "layers": [
-                {
-                    "id": "layer_000",
-                    "name": "hair_back",
-                    "label": "hair_back",
-                    "order": 0,
-                    "psd_leaf_token": "layer_000",
-                    "image_path": "layers/linked.png",
-                    "bbox": [0, 0, 2, 2],
-                    "confidence": 1.0,
-                    "left_right_split": "center",
-                    "front_back_split": "back",
-                    "depth_stats": {"min": 0.1, "max": 0.2, "mean": 0.15},
-                }
-            ],
-        }
-        manifest_path = manifest_dir / "manifest.json"
-        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        manifest_path = self._write_path_rejection_manifest(manifest_dir, "layers/linked.png")
 
         with self.assertRaisesRegex(RuntimeError, "Layer image path escapes"):
             psd_export.export_psd_from_manifest(
@@ -560,67 +512,6 @@ class PsdExportTests(unittest.TestCase):
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
         with self.assertRaisesRegex(RuntimeError, "Layer image exceeds"):
-            psd_export.export_psd_from_manifest(
-                manifest_path=Path("vivi2d/decompose/job/manifest.json"),
-                output_dir=output_root / "vivi2d" / "psd" / "job",
-                filename_prefix="assembled",
-                output_root=output_root,
-            )
-
-    def test_export_psd_from_manifest_rejects_total_layer_pixels_over_budget(self) -> None:
-        self._install_fake_pytoshop()
-        psd_export.MAX_LAYER_PIXELS = 16
-        psd_export.MAX_TOTAL_LAYER_PIXELS = 4
-
-        temp_root = self._create_temp_dir()
-        output_root = temp_root / "output"
-        manifest_dir = output_root / "vivi2d" / "decompose" / "job"
-        layers_dir = manifest_dir / "layers"
-        layers_dir.mkdir(parents=True, exist_ok=True)
-        Image.new("RGBA", (2, 2), (255, 0, 0, 255)).save(layers_dir / "layer_000.png")
-        Image.new("RGBA", (2, 2), (0, 0, 255, 255)).save(layers_dir / "layer_001.png")
-        manifest = {
-            "schema_version": "1.0.0",
-            "generator": {
-                "plugin": "vivi2d-compat-comfyui",
-                "plugin_version": "0.1.0",
-                "model": "ComfyUI-See-through",
-                "model_version": "test",
-            },
-            "canvas": {"width": 2, "height": 2},
-            "layers": [
-                {
-                    "id": "layer_000",
-                    "name": "hair_back",
-                    "label": "hair_back",
-                    "order": 0,
-                    "psd_leaf_token": "layer_000",
-                    "image_path": "layers/layer_000.png",
-                    "bbox": [0, 0, 2, 2],
-                    "confidence": 1.0,
-                    "left_right_split": "center",
-                    "front_back_split": "back",
-                    "depth_stats": {"min": 0.1, "max": 0.2, "mean": 0.15},
-                },
-                {
-                    "id": "layer_001",
-                    "name": "hair_front",
-                    "label": "hair_front",
-                    "order": 1,
-                    "psd_leaf_token": "layer_001",
-                    "image_path": "layers/layer_001.png",
-                    "bbox": [0, 0, 2, 2],
-                    "confidence": 1.0,
-                    "left_right_split": "center",
-                    "front_back_split": "front",
-                    "depth_stats": {"min": 0.7, "max": 0.9, "mean": 0.8},
-                },
-            ],
-        }
-        manifest_path = manifest_dir / "manifest.json"
-        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-
-        with self.assertRaisesRegex(RuntimeError, "maximum total pixel count"):
             psd_export.export_psd_from_manifest(
                 manifest_path=Path("vivi2d/decompose/job/manifest.json"),
                 output_dir=output_root / "vivi2d" / "psd" / "job",

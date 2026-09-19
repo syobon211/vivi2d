@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runWorker } from "../worker-runner";
 
 
@@ -51,10 +51,18 @@ function makeRun<T>(worker: FakeWorker, signal?: AbortSignal): Promise<T> {
 describe("runWorker", () => {
   it("type:result のメッセージで Promise が resolve され Worker は terminate される", async () => {
     const worker = new FakeWorker();
-    const p = makeRun<number>(worker);
+    const terminate = vi.spyOn(worker, "terminate");
+    const ac = new AbortController();
+    const p = makeRun<number>(worker, ac.signal);
     worker.dispatchMessage({ type: "result", result: 42 });
     await expect(p).resolves.toBe(42);
-    expect(worker.terminated).toBe(true);
+    expect(terminate).toHaveBeenCalledTimes(1);
+    worker.dispatchMessage({ type: "result", result: 99 });
+    worker.dispatchMessage({ type: "error", message: "late failure" });
+    worker.dispatchError("late event");
+    ac.abort();
+    expect(terminate).toHaveBeenCalledTimes(1);
+    await expect(p).resolves.toBe(42);
   });
 
   it("type:error のメッセージで reject され message が伝播する", async () => {
@@ -90,14 +98,7 @@ describe("runWorker", () => {
     expect(worker.terminated).toBe(true);
   });
 
-  it("result 後に追加 message が来ても再度 resolve/terminate されない", async () => {
-    const worker = new FakeWorker();
-    const p = makeRun<number>(worker);
-    worker.dispatchMessage({ type: "result", result: 1 });
-    await p;
-    expect(worker.terminated).toBe(true);
-    worker.dispatchMessage({ type: "result", result: 2 });
-  });
+
 
   it("transfer が指定された場合は postMessage に transfer 配列が渡る", async () => {
     const worker = new FakeWorker();

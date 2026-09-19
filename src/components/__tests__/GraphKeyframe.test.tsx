@@ -2,7 +2,6 @@ import { fireEvent, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { GraphKeyframe } from "../timeline/GraphKeyframe";
 
-
 function renderInSvg(element: React.ReactElement) {
   return render(
     <svg>
@@ -29,55 +28,6 @@ describe("GraphKeyframe", () => {
     onDragEnd: vi.fn(),
     onClick: vi.fn(),
   };
-
-  it("キーフレームドットがレンダリングされる", () => {
-    const { container } = renderInSvg(<GraphKeyframe {...defaultProps} />);
-
-    const dot = container.querySelector(".graph-keyframe-dot");
-    expect(dot).toBeInTheDocument();
-    expect(dot!.getAttribute("cx")).toBe("100");
-    expect(dot!.getAttribute("cy")).toBe("50");
-  });
-
-  it("ハンドルなしの場合、ハンドル要素が表示されない", () => {
-    const { container } = renderInSvg(<GraphKeyframe {...defaultProps} />);
-
-    const handles = container.querySelectorAll(".graph-handle");
-    expect(handles).toHaveLength(0);
-  });
-
-  it("出力ハンドルが指定されている場合、ハンドルとラインが表示される", () => {
-    const { container } = renderInSvg(
-      <GraphKeyframe
-        {...defaultProps}
-        handleOutX={150}
-        handleOutY={30}
-        onDragHandleOut={vi.fn()}
-      />,
-    );
-
-    const handles = container.querySelectorAll(".graph-handle");
-    expect(handles).toHaveLength(1);
-
-    const lines = container.querySelectorAll("line");
-    expect(lines).toHaveLength(1);
-    expect(lines[0]!.getAttribute("x1")).toBe("100");
-    expect(lines[0]!.getAttribute("x2")).toBe("150");
-  });
-
-  it("入力ハンドルが指定されている場合、ハンドルとラインが表示される", () => {
-    const { container } = renderInSvg(
-      <GraphKeyframe
-        {...defaultProps}
-        handleInX={60}
-        handleInY={70}
-        onDragHandleIn={vi.fn()}
-      />,
-    );
-
-    const handles = container.querySelectorAll(".graph-handle");
-    expect(handles).toHaveLength(1);
-  });
 
   it("両方のハンドルが表示される", () => {
     const { container } = renderInSvg(
@@ -113,30 +63,48 @@ describe("GraphKeyframe", () => {
     expect(dot2.getAttribute("stroke-width")).toBe("2");
   });
 
-  it("キーフレームクリックで onClick が呼ばれる", () => {
-    const onClick = vi.fn();
-    const { container } = renderInSvg(
-      <GraphKeyframe {...defaultProps} onClick={onClick} />,
-    );
-
-    const dot = container.querySelector(".graph-keyframe-dot")!;
-    fireEvent.pointerDown(dot, { clientX: 100, clientY: 50 });
-
-    expect(onClick).toHaveBeenCalledTimes(1);
-  });
-
   it("キーフレームドラッグでonDragKeyframeがdy付きで呼ばれる", () => {
     const onDragKeyframe = vi.fn();
+    const onClick = vi.fn();
+    const onDragEnd = vi.fn();
     const { container } = renderInSvg(
-      <GraphKeyframe {...defaultProps} onDragKeyframe={onDragKeyframe} />,
+      <GraphKeyframe
+        {...defaultProps}
+        onDragKeyframe={onDragKeyframe}
+        onClick={onClick}
+        onDragEnd={onDragEnd}
+      />,
     );
 
     const dot = container.querySelector(".graph-keyframe-dot")!;
     const g = dot.closest("g")!;
+    expect(dot).toHaveAttribute("cx", "100");
+    expect(dot).toHaveAttribute("cy", "50");
+    expect(container.querySelectorAll(".graph-handle")).toHaveLength(0);
+    fireEvent.pointerMove(g, { clientX: 110, clientY: 55, pointerId: 1 });
+    fireEvent.pointerUp(g, { pointerId: 1 });
+    expect(onDragKeyframe).not.toHaveBeenCalled();
+    expect(onDragEnd).not.toHaveBeenCalled();
     vi.spyOn(dot as SVGElement, "setPointerCapture").mockImplementation(() => {});
     fireEvent.pointerDown(dot, { clientX: 100, clientY: 50, pointerId: 1 });
+    expect(onClick).toHaveBeenCalledTimes(1);
+    fireEvent.pointerUp(g, { pointerId: 1 });
+    expect(onDragKeyframe).not.toHaveBeenCalled();
+    expect(onDragEnd).toHaveBeenCalledTimes(1);
+
+    onClick.mockClear();
+    onDragEnd.mockClear();
+    fireEvent.pointerDown(dot, { clientX: 100, clientY: 50, pointerId: 1 });
+    expect(onClick).toHaveBeenCalledTimes(1);
     fireEvent.pointerMove(g, { clientX: 100, clientY: 60, pointerId: 1 });
+    expect(onClick).toHaveBeenCalledTimes(1);
     expect(onDragKeyframe).toHaveBeenCalledWith(10);
+    fireEvent.pointerUp(g, { pointerId: 1 });
+    expect(onDragEnd).toHaveBeenCalledTimes(1);
+    fireEvent.pointerMove(g, { clientX: 120, clientY: 80, pointerId: 1 });
+    fireEvent.pointerUp(g, { pointerId: 1 });
+    expect(onDragKeyframe).toHaveBeenCalledTimes(1);
+    expect(onDragEnd).toHaveBeenCalledTimes(1);
   });
 
   it("出力ハンドルドラッグでonDragHandleOutが呼ばれる", () => {
@@ -151,6 +119,11 @@ describe("GraphKeyframe", () => {
     );
 
     const handles = container.querySelectorAll(".graph-handle");
+    expect(handles).toHaveLength(1);
+    const lines = container.querySelectorAll("line");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toHaveAttribute("x1", "100");
+    expect(lines[0]).toHaveAttribute("x2", "150");
     const outHandle = handles[0]!;
     const g = outHandle.closest("g")!;
     vi.spyOn(outHandle as SVGElement, "setPointerCapture").mockImplementation(() => {});
@@ -171,50 +144,13 @@ describe("GraphKeyframe", () => {
     );
 
     const handles = container.querySelectorAll(".graph-handle");
+    expect(handles).toHaveLength(1);
     const inHandle = handles[0]!;
     const g = inHandle.closest("g")!;
     vi.spyOn(inHandle as SVGElement, "setPointerCapture").mockImplementation(() => {});
     fireEvent.pointerDown(inHandle, { clientX: 60, clientY: 70, pointerId: 1 });
     fireEvent.pointerMove(g, { clientX: 55, clientY: 65, pointerId: 1 });
     expect(onDragHandleIn).toHaveBeenCalledWith(-5, -5);
-  });
-
-  it("pointerUpでonDragEndが呼ばれる", () => {
-    const onDragEnd = vi.fn();
-    const { container } = renderInSvg(
-      <GraphKeyframe {...defaultProps} onDragEnd={onDragEnd} />,
-    );
-
-    const dot = container.querySelector(".graph-keyframe-dot")!;
-    const g = dot.closest("g")!;
-    vi.spyOn(dot as SVGElement, "setPointerCapture").mockImplementation(() => {});
-    fireEvent.pointerDown(dot, { clientX: 100, clientY: 50, pointerId: 1 });
-    fireEvent.pointerUp(g, { pointerId: 1 });
-    expect(onDragEnd).toHaveBeenCalled();
-  });
-
-  it("ドラッグなしでpointerUpしてもonDragEndは呼ばれない", () => {
-    const onDragEnd = vi.fn();
-    const { container } = renderInSvg(
-      <GraphKeyframe {...defaultProps} onDragEnd={onDragEnd} />,
-    );
-
-    const dot = container.querySelector(".graph-keyframe-dot")!;
-    const g = dot.closest("g")!;
-    fireEvent.pointerUp(g, { pointerId: 1 });
-    expect(onDragEnd).not.toHaveBeenCalled();
-  });
-
-  it("ドラッグなしでpointerMoveしても何も起きない", () => {
-    const onDragKeyframe = vi.fn();
-    const { container } = renderInSvg(
-      <GraphKeyframe {...defaultProps} onDragKeyframe={onDragKeyframe} />,
-    );
-
-    const dot = container.querySelector(".graph-keyframe-dot")!;
-    const g = dot.closest("g")!;
-    fireEvent.pointerMove(g, { clientX: 110, clientY: 55, pointerId: 1 });
-    expect(onDragKeyframe).not.toHaveBeenCalled();
   });
 
   // ============================================================

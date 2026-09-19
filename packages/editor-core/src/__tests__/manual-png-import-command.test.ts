@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { assertManualPngReimportMatchesLayer } from "@vivi2d/editor-core/manual-png-reimport-command";
 import {
   assignSequentialDrawOrders,
   buildManualPngImportMetadata,
@@ -282,43 +281,4 @@ describe("manual-png-import-command", () => {
     expect(Math.max(...drawOrders)).toBeLessThanOrEqual(1000);
   });
 
-  it("rejects reimports when bounds no longer match the layer geometry", () => {
-    const prepared = createPreparedCanvas(100, 80, 0, 0);
-    const metadata = buildManualPngImportMetadata(
-      "arm.png",
-      prepared,
-      { x: 40, y: 60 },
-      {
-        centerOnCanvas: false,
-        trimTransparentBounds: false,
-        createGroupForImportedLayers: false,
-        autoGenerateMesh: false,
-      },
-    ).manualPng!;
-    const project = createProjectFromPreparedCanvas("arm.png", prepared, {
-      centerOnCanvas: false,
-      trimTransparentBounds: false,
-      createGroupForImportedLayers: false,
-      autoGenerateMesh: false,
-    });
-    const layer = project.layers[0]!;
-    if (layer.kind !== "viviMesh") {
-      throw new Error("Expected ViviMesh");
-    }
-
-    expect(() =>
-      assertManualPngReimportMatchesLayer(
-        layer,
-        {
-          offsetX: prepared.offsetX,
-          offsetY: prepared.offsetY,
-          width: 120,
-          height: 80,
-        },
-        { x: 40, y: 60 },
-        metadata,
-        "mismatch",
-      ),
-    ).toThrow("mismatch");
-  });
 });

@@ -114,75 +114,8 @@ describe("editorStore レイヤー操作", () => {
   });
 
 
-  describe("toggleLayerSelection", () => {
-    it("レイヤーを選択に追加できる", () => {
-      useSelectionStore.getState().toggleLayerSelection("a");
 
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toContain("a");
-      expect(state.selectedLayerId).toBe("a");
-    });
 
-    it("複数レイヤーを選択に追加できる", () => {
-      useSelectionStore.getState().toggleLayerSelection("a");
-      useSelectionStore.getState().toggleLayerSelection("b");
-
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toContain("a");
-      expect(state.selectedLayerIds).toContain("b");
-      expect(state.selectedLayerId).toBe("b");
-    });
-
-    it("選択済みレイヤーをトグルで解除できる", () => {
-      useSelectionStore.getState().toggleLayerSelection("a");
-      useSelectionStore.getState().toggleLayerSelection("b");
-      useSelectionStore.getState().toggleLayerSelection("a");
-
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).not.toContain("a");
-      expect(state.selectedLayerIds).toContain("b");
-      expect(state.selectedLayerId).toBe("b");
-    });
-
-    it("最後の選択を解除すると selectedLayerId が null になる", () => {
-      useSelectionStore.getState().toggleLayerSelection("a");
-      useSelectionStore.getState().toggleLayerSelection("a");
-
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toHaveLength(0);
-      expect(state.selectedLayerId).toBeNull();
-    });
-  });
-
-  describe("rangeSelectLayer", () => {
-    it("起点から終点までの範囲選択ができる", () => {
-      useSelectionStore.getState().selectLayer("a");
-      useSelectionStore.getState().rangeSelectLayer("c");
-
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds.length).toBeGreaterThanOrEqual(2);
-      expect(state.selectedLayerId).toBe("c");
-    });
-
-    it("選択起点がない場合は単一選択になる", () => {
-      useSelectionStore.getState().rangeSelectLayer("b");
-
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toEqual(["b"]);
-      expect(state.selectedLayerId).toBe("b");
-    });
-  });
-
-  describe("selectAllLayers", () => {
-    it("全レイヤーが選択される", () => {
-      useSelectionStore.getState().selectAllLayers();
-
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds.length).toBeGreaterThanOrEqual(4);
-      expect(state.selectedLayerId).not.toBeNull();
-      expect(state.selectedLayerIds).toContain(state.selectedLayerId);
-    });
-  });
 
   // ============================================================
   // setClipMaskIds

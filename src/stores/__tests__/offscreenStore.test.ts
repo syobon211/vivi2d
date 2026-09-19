@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useEditorStore } from "@/stores/editorStore";
 import { useOffscreenStore } from "@/stores/offscreenStore";
-import { createProject } from "@/test/fixtures";
+import { createProject, createViviMesh } from "@/test/fixtures";
 import { resetEditorStore, resetHistoryStore } from "@/test/store-reset";
 
 beforeEach(() => {
@@ -70,65 +70,55 @@ describe("offscreenStore", () => {
   // addSourceLayer
   // ==============================================================
   describe("addSourceLayer", () => {
-    it("ソースレイヤーを追加する", () => {
-      const actions = setup();
+    it("ソースの追加・重複排除・resize・個別削除を同じターゲットへ反映する", () => {
+      const actions = setup({
+        layers: [
+          createViviMesh({ id: "mesh-a" }),
+          createViviMesh({ id: "mesh-b" }),
+          createViviMesh({ id: "mesh-c" }),
+        ],
+      });
       const id = actions.addOffscreenTarget(256, 256);
-
-      actions.addSourceLayer(id, "layer-1");
-
-      const project = useEditorStore.getState().project!;
-      const target = project.offscreenTargets!.find((t) => t.id === id)!;
-      expect(target.sourceLayerIds).toEqual(["layer-1"]);
-    });
-
-    it("重複IDは追加されない", () => {
-      const actions = setup();
-      const id = actions.addOffscreenTarget(256, 256);
-      actions.addSourceLayer(id, "layer-1");
-
-      actions.addSourceLayer(id, "layer-1");
-
-      const project = useEditorStore.getState().project!;
-      const target = project.offscreenTargets!.find((t) => t.id === id)!;
-      expect(target.sourceLayerIds).toEqual(["layer-1"]);
-      expect(target.sourceLayerIds).toHaveLength(1);
+      const target = () =>
+        useEditorStore.getState().project!.offscreenTargets!.find((t) => t.id === id)!;
+      actions.addSourceLayer(id, "mesh-a");
+      expect(target().sourceLayerIds).toEqual(["mesh-a"]);
+      actions.addSourceLayer(id, "mesh-b");
+      expect(target().sourceLayerIds).toEqual(["mesh-a", "mesh-b"]);
+      actions.addSourceLayer(id, "mesh-a");
+      expect(target().sourceLayerIds).toEqual(["mesh-a", "mesh-b"]);
+      actions.setBufferSize(id, 512, 1024);
+      expect(target()).toMatchObject({
+        width: 512,
+        height: 1024,
+        sourceLayerIds: ["mesh-a", "mesh-b"],
+      });
+      actions.setBufferSize(id, 512.7, 128.3);
+      expect(target()).toMatchObject({
+        width: 513,
+        height: 128,
+        sourceLayerIds: ["mesh-a", "mesh-b"],
+      });
+      actions.addSourceLayer(id, "mesh-c");
+      actions.removeSourceLayer(id, "mesh-b");
+      expect(target()).toMatchObject({
+        width: 513,
+        height: 128,
+        sourceLayerIds: ["mesh-a", "mesh-c"],
+      });
+      actions.removeSourceLayer(id, "mesh-a");
+      expect(target().sourceLayerIds).toEqual(["mesh-c"]);
     });
   });
 
   // ==============================================================
   // removeSourceLayer
   // ==============================================================
-  describe("removeSourceLayer", () => {
-    it("ソースレイヤーを削除する", () => {
-      const actions = setup();
-      const id = actions.addOffscreenTarget(256, 256);
-      actions.addSourceLayer(id, "layer-1");
-      actions.addSourceLayer(id, "layer-2");
-
-      actions.removeSourceLayer(id, "layer-1");
-
-      const project = useEditorStore.getState().project!;
-      const target = project.offscreenTargets!.find((t) => t.id === id)!;
-      expect(target.sourceLayerIds).toEqual(["layer-2"]);
-    });
-  });
 
   // ==============================================================
   // setBufferSize
   // ==============================================================
   describe("setBufferSize", () => {
-    it("サイズが変更される（整数に丸められる）", () => {
-      const actions = setup();
-      const id = actions.addOffscreenTarget(256, 256);
-
-      actions.setBufferSize(id, 512.7, 128.3);
-
-      const project = useEditorStore.getState().project!;
-      const target = project.offscreenTargets!.find((t) => t.id === id)!;
-      expect(target.width).toBe(513);
-      expect(target.height).toBe(128);
-    });
-
     it("0以下は1にクランプされる", () => {
       const actions = setup();
       const id = actions.addOffscreenTarget(256, 256);

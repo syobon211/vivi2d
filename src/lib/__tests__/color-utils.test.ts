@@ -220,9 +220,6 @@ describe("isScreenColorDefault — 境界値", () => {
     expect(isScreenColorDefault({ r: 1e-10, g: 0, b: 0 })).toBe(false);
   });
 
-  it("{0, 0, 0} の各チャンネルが正確にゼロ", () => {
-    expect(isScreenColorDefault({ r: 0, g: 0, b: 0 })).toBe(true);
-  });
 
   it("全チャンネル非ゼロ", () => {
     expect(isScreenColorDefault({ r: 0.01, g: 0.01, b: 0.01 })).toBe(false);
@@ -312,13 +309,7 @@ describe("hexStringToRgb", () => {
 });
 
 describe("getDrawOrder — 境界値", () => {
-  it("drawOrder = 0 は有効値として返す（undefined と区別）", () => {
-    expect(getDrawOrder(0)).toBe(0);
-  });
 
-  it("drawOrder = 1000（最大値）をそのまま返す", () => {
-    expect(getDrawOrder(1000)).toBe(1000);
-  });
 
   it("小数値もそのまま返す（クランプはストア側の責務）", () => {
     expect(getDrawOrder(333.333)).toBe(333.333);

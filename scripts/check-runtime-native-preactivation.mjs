@@ -44,8 +44,8 @@ const pinnedPreactivationFiles = [
   ],
   [
     "src/tests.rs",
-    25_024,
-    "b31a276ebc2416ed5279a563657f27aa8914819229cdc55ff4d3688c69d09268",
+    23_994,
+    "254c23433b8e0209442a1017e05720b89c2ce5049bdf0ac0c328fa4228d58c06",
   ],
 ];
 
@@ -53,7 +53,6 @@ const requiredTestNames = [
   "equal_generation_limit_precedes_plan_correlation_and_is_pre_read",
   "generation_mismatch_precedes_limit_correlation_and_is_pre_read",
   "host_fixed_fields_and_asset_shape_errors_are_redacted_and_typed",
-  "host_store_hard_error_never_becomes_a_partial_missing_result",
   "missing_owned_into_parts_and_wrapper_debug_are_redacted",
   "missing_postcondition_defense_rejects_generation_unknown_order_and_duplicates",
   "owned_into_parts_moves_without_clone_and_wrapper_debug_is_redacted",

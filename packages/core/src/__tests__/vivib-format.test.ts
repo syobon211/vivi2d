@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { ViviFileData } from "../types";
 import { decodeViviBinary, encodeViviBinary, isViviBinaryFormat } from "../vivib-format";
 
-
 const TINY_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQABNjN9GQAAAABJRElEQkSuQmCC";
 
@@ -72,7 +71,6 @@ function createMinimalFileData(overrides?: Partial<ViviFileData>): ViviFileData 
     ...overrides,
   } as ViviFileData;
 }
-
 
 describe("encodeViviBinary / decodeViviBinary ラウンドトリップ", () => {
   it("エンコード→デコードでViviFileDataが復元される", () => {
@@ -163,7 +161,6 @@ describe("encodeViviBinary / decodeViviBinary ラウンドトリップ", () => {
   });
 });
 
-
 describe("サイズ削減", () => {
   it("バイナリはJSONより小さい", () => {
     const fileData = createMinimalFileData();
@@ -173,7 +170,6 @@ describe("サイズ削減", () => {
     expect(binary.length).toBeLessThan(json.length);
   });
 });
-
 
 describe("isViviBinaryFormat", () => {
   it("有効な.vivbデータでtrueを返す", () => {
@@ -200,7 +196,6 @@ describe("isViviBinaryFormat", () => {
   });
 });
 
-
 describe("decodeViviBinary エラー処理", () => {
   it("ファイルが小さすぎるとエラー", () => {
     const tiny = new Uint8Array(5);
@@ -211,6 +206,7 @@ describe("decodeViviBinary エラー処理", () => {
     const bad = new Uint8Array(20);
     bad[0] = 0x00;
     expect(() => decodeViviBinary(bad.buffer)).toThrow("Invalid .vivb file");
+    expect(() => decodeViviBinary(bad.buffer)).toThrow(Error);
   });
 
   it("バージョンが未対応だとエラー", () => {
@@ -218,6 +214,7 @@ describe("decodeViviBinary エラー処理", () => {
     bad.set([0x56, 0x49, 0x56, 0x42], 0); // VIVB
     bad[4] = 99;
     expect(() => decodeViviBinary(bad.buffer)).toThrow("Unsupported .vivb version: 99");
+    expect(() => decodeViviBinary(bad.buffer)).toThrow(Error);
   });
 
   it("メタデータ長がファイルサイズを超えるとエラー", () => {
@@ -231,14 +228,9 @@ describe("decodeViviBinary エラー処理", () => {
     expect(() => decodeViviBinary(bad.buffer)).toThrow(
       ".vivb file is corrupted: metadata length exceeds file size",
     );
-  });
-
-  it("ファイルサイズ上限を超えるとエラー", () => {
-    const valid = encodeViviBinary(createMinimalFileData());
-    expect(isViviBinaryFormat(valid.buffer)).toBe(true);
+    expect(() => decodeViviBinary(bad.buffer)).toThrow(Error);
   });
 });
-
 
 describe("バイナリヘッダー構造", () => {
   it("マジックナンバーが VIVB", () => {
@@ -262,58 +254,6 @@ describe("バイナリヘッダー構造", () => {
     expect(metaLen).toBeLessThan(binary.length);
   });
 
-
-  it("PNGチャンク size=1 のラウンドトリップ", () => {
-    const oneByteBase64 = btoa(String.fromCharCode(0xff));
-    const fileData = createMinimalFileData({
-      atlases: [
-        {
-          image: oneByteBase64,
-          width: 1,
-          height: 1,
-          entries: [{ layerId: "m1", x: 0, y: 0, width: 1, height: 1 }],
-        },
-      ],
-    });
-    const binary = encodeViviBinary(fileData);
-    const decoded = decodeViviBinary(binary.buffer);
-    expect(decoded.atlases[0]!.image).toBe(oneByteBase64);
-  });
-
-  it("PNGチャンク size=2 のラウンドトリップ", () => {
-    const twoByteBase64 = btoa(String.fromCharCode(0xff, 0xaa));
-    const fileData = createMinimalFileData({
-      atlases: [
-        {
-          image: twoByteBase64,
-          width: 1,
-          height: 1,
-          entries: [{ layerId: "m1", x: 0, y: 0, width: 1, height: 1 }],
-        },
-      ],
-    });
-    const binary = encodeViviBinary(fileData);
-    const decoded = decodeViviBinary(binary.buffer);
-    expect(decoded.atlases[0]!.image).toBe(twoByteBase64);
-  });
-
-  it("PNGチャンク size=3 のラウンドトリップ", () => {
-    const threeByteBase64 = btoa(String.fromCharCode(0xff, 0xaa, 0x55));
-    const fileData = createMinimalFileData({
-      atlases: [
-        {
-          image: threeByteBase64,
-          width: 1,
-          height: 1,
-          entries: [{ layerId: "m1", x: 0, y: 0, width: 1, height: 1 }],
-        },
-      ],
-    });
-    const binary = encodeViviBinary(fileData);
-    const decoded = decodeViviBinary(binary.buffer);
-    expect(decoded.atlases[0]!.image).toBe(threeByteBase64);
-  });
-
   it("日本語を含む長いメタデータでPNGオフセットが正確", () => {
     const fileData = createMinimalFileData();
     fileData.project.name = "あ".repeat(200);
@@ -324,32 +264,23 @@ describe("バイナリヘッダー構造", () => {
   });
 
   it("複数PNGチャンク混在で各サイズのパディングが正しい", () => {
-    const oneByteBase64 = btoa(String.fromCharCode(0xff));
+    const images = [
+      btoa(String.fromCharCode(0xff)),
+      btoa(String.fromCharCode(0xff, 0xaa)),
+      btoa(String.fromCharCode(0xff, 0xaa, 0x55)),
+      TINY_PNG_BASE64,
+    ];
     const fileData = createMinimalFileData({
-      atlases: [
-        {
-          image: oneByteBase64,
-          width: 1,
-          height: 1,
-          entries: [{ layerId: "m1", x: 0, y: 0, width: 1, height: 1 }],
-        },
-        {
-          image: TINY_PNG_BASE64,
-          width: 1,
-          height: 1,
-          entries: [{ layerId: "m2", x: 0, y: 0, width: 1, height: 1 }],
-        },
-      ],
+      atlases: images.map((image, index) => ({
+        image,
+        width: 1,
+        height: 1,
+        entries: [{ layerId: `m${index + 1}`, x: 0, y: 0, width: 1, height: 1 }],
+      })),
     });
     const binary = encodeViviBinary(fileData);
     const decoded = decodeViviBinary(binary.buffer);
-    expect(decoded.atlases).toHaveLength(2);
-    expect(decoded.atlases[0]!.image).toBe(oneByteBase64);
-    expect(decoded.atlases[1]!.image).toBe(TINY_PNG_BASE64);
-  });
-
-  it("不正なマジック番号でエラー", () => {
-    const binary = new Uint8Array([0x00, 0x00, 0x00, 0x00, 1, 0, 0, 0, 0]);
-    expect(() => decodeViviBinary(binary.buffer)).toThrow();
+    expect(decoded.atlases).toHaveLength(4);
+    expect(decoded.atlases.map((atlas) => atlas.image)).toEqual(images);
   });
 });

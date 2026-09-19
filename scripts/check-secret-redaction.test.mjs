@@ -98,15 +98,6 @@ describe("generated WASM Gitleaks exception boundaries", () => {
     expect(matchExpressions).toHaveLength(8);
   });
 
-  it.each(regeneratedPrefixes)("accepts the reviewed regenerated $name shape", ({
-    lengths,
-  }) => {
-    const prefix = lengths.map((length) => "A".repeat(length)).join("_");
-    expect(
-      allowed(generatedPath, "generic-api-key", `${prefix}${separator}${chunk}"`),
-    ).toBe(true);
-  });
-
   it("accepts only the reviewed generated chunk match shapes", () => {
     for (const shape of [...shapes, ...regeneratedShapes]) {
       expect(allowed(generatedPath, "generic-api-key", shape)).toBe(true);

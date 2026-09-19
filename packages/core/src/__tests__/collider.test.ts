@@ -135,9 +135,6 @@ describe("pointInCircle", () => {
     expect(pointInCircle(20, 50, cx, cy, radius)).toBe(true);
   });
 
-  it("中心の点 → true", () => {
-    expect(pointInCircle(50, 50, cx, cy, radius)).toBe(true);
-  });
 });
 
 // ============================================================

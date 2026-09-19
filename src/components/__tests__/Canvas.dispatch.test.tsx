@@ -6,11 +6,11 @@ import { useMultiViewStore } from "@/stores/multiViewStore";
 import { useSelectionStore } from "@/stores/selectionStore";
 import { useViewportStore } from "@/stores/viewportStore";
 import {
-  createViviMesh,
   createBoneNode,
   createEmptyProject,
   createIKController,
   createProject,
+  createViviMesh,
 } from "@/test/fixtures";
 import { resetAllStores } from "@/test/store-reset";
 
@@ -149,12 +149,24 @@ describe("Canvas overlay dispatch", () => {
   it("routes pan pointer down to the viewport only", () => {
     const bone = createBoneNode({ id: "bone-a" });
     useEditorStore.setState({
-      project: { ...createEmptyProject(), layers: [bone] },
+      project: createProject({
+        layers: [bone],
+        colliders: [
+          {
+            id: "collider-1",
+            name: "Collider",
+            enabled: true,
+            shape: { type: "rectangle", x: 10, y: 20, width: 80, height: 40 },
+          },
+        ],
+        ikControllers: [createIKController({ id: "ik-1", targetX: 100, targetY: 120 })],
+      }),
     } as any);
     useSelectionStore.setState({ selectedLayerId: bone.id } as any);
     useViewportStore.setState({ activeTool: "pan" });
 
     render(<Canvas />);
+    expect(screen.queryByTestId("selection-overlay-svg")).toBeNull();
 
     fireEvent.pointerDown(screen.getByRole("application"), {
       button: 0,
@@ -166,24 +178,6 @@ describe("Canvas overlay dispatch", () => {
     expect(ikOverlayMock.onPointerDown).not.toHaveBeenCalled();
     expect(boneOverlayMock.onPointerDown).not.toHaveBeenCalled();
     expect(meshOverlayMock.onPointerDown).not.toHaveBeenCalled();
-  });
-
-  it("keeps selection svg overlays unmounted outside select mode", () => {
-    const collider = {
-      id: "collider-1",
-      name: "Collider",
-      enabled: true,
-      shape: { type: "rectangle" as const, x: 10, y: 20, width: 80, height: 40 },
-    };
-    const ik = createIKController({ id: "ik-1", targetX: 100, targetY: 120 });
-    useEditorStore.setState({
-      project: createProject({ colliders: [collider], ikControllers: [ik] }),
-    } as any);
-    useViewportStore.setState({ activeTool: "pan" });
-
-    render(<Canvas />);
-
-    expect(screen.queryByTestId("selection-overlay-svg")).toBeNull();
   });
 
   it("mounts mesh overlay svg immediately when mesh edit is active and a visual model exists", () => {

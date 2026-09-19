@@ -17,15 +17,6 @@ describe("PanelErrorBoundary", () => {
     useI18nStore.getState().setLocale("ja");
   });
 
-  it("エラーがないときは子がそのまま描画される", () => {
-    render(
-      <PanelErrorBoundary panelName="TestPanel">
-        <GoodChild />
-      </PanelErrorBoundary>,
-    );
-    expect(screen.getByTestId("good")).toBeInTheDocument();
-  });
-
   it("子が throw するとパネルスコープの alert が表示され、panelName が載る", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     render(
@@ -77,6 +68,7 @@ describe("PanelErrorBoundary", () => {
     expect(typeof id).toBe("string");
     expect((id as string).length).toBeGreaterThan(4);
     expect(info).toBeDefined();
+    expect(document.querySelector("code")?.textContent).toBe(id);
     spy.mockRestore();
   });
 
@@ -90,19 +82,6 @@ describe("PanelErrorBoundary", () => {
     );
     expect(screen.getByText(/Panel error:/)).toBeInTheDocument();
     expect(screen.getByText(/EnPanel/)).toBeInTheDocument();
-    spy.mockRestore();
-  });
-
-  it("エラーIDが表示される", () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-    render(
-      <PanelErrorBoundary panelName="IdPanel">
-        <ThrowingChild message="id" />
-      </PanelErrorBoundary>,
-    );
-    const codes = document.querySelectorAll("code");
-    const hasId = Array.from(codes).some((c) => (c.textContent ?? "").length > 4);
-    expect(hasId).toBe(true);
     spy.mockRestore();
   });
 

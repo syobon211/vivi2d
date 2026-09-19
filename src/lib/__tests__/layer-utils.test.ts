@@ -11,10 +11,10 @@ import {
 } from "@vivi2d/core/layer-utils";
 import { describe, expect, it } from "vitest";
 import {
-  createViviMesh,
   createBoneNode,
   createGroup,
   createLayerTree,
+  createViviMesh,
 } from "@/test/fixtures";
 
 describe("findLayerById", () => {
@@ -128,25 +128,6 @@ describe("flattenLayers", () => {
     expect(flat).toHaveLength(2);
     expect(flat.map((l) => l.name)).toEqual(["A", "B"]);
   });
-
-  it("ネストされたレイヤーを全て展開する", () => {
-    const { root } = createLayerTree();
-    const flat = flattenLayers(root);
-
-    expect(flat).toHaveLength(6);
-  });
-
-  it("親→子の順序で展開する", () => {
-    const child = createViviMesh({ name: "子" });
-    const parent = createGroup({
-      name: "親",
-      children: [child],
-    });
-
-    const flat = flattenLayers([parent]);
-    expect(flat[0]!.name).toBe("親");
-    expect(flat[1]!.name).toBe("子");
-  });
 });
 
 describe("findPathToLayer", () => {
@@ -248,48 +229,23 @@ describe("findLayerById 追加ケース", () => {
 });
 
 describe("flattenLayers 追加ケース", () => {
-  it("4階層の深いネストを正しく展開する", () => {
-    const leaf = createViviMesh({ name: "葉" });
-    const level3 = createGroup({
-      name: "3階層目",
-      children: [leaf],
-    });
-    const level2 = createGroup({
-      name: "2階層目",
-      children: [level3],
-    });
-    const level1 = createGroup({
-      name: "1階層目",
-      children: [level2],
-    });
-
-    const flat = flattenLayers([level1]);
-    expect(flat).toHaveLength(4);
-    expect(flat.map((l) => l.name)).toEqual(["1階層目", "2階層目", "3階層目", "葉"]);
-  });
-
-  it("複数のルートレイヤーが正しく展開される", () => {
-    const child = createViviMesh({ name: "子" });
-    const group = createGroup({
-      name: "グループ",
-      children: [child],
-    });
-    const standalone1 = createViviMesh({ name: "独立A" });
-    const standalone2 = createViviMesh({ name: "独立B" });
-
-    const flat = flattenLayers([standalone1, group, standalone2]);
-    expect(flat).toHaveLength(4);
-    expect(flat.map((l) => l.name)).toEqual(["独立A", "グループ", "子", "独立B"]);
-  });
-
-  it("ボーンノードも展開される", () => {
-    const child = createViviMesh({ name: "子レイヤー" });
-    const bone = createBoneNode({ name: "ボーン", children: [child] });
-
-    const flat = flattenLayers([bone]);
-    expect(flat).toHaveLength(2);
-    expect(flat[0]!.kind).toBe("bone");
-    expect(flat[1]!.kind).toBe("viviMesh");
+  it("混在4階層と複数ルートを親先行の順序で展開する", () => {
+    const leaf = createViviMesh({ id: "leaf" });
+    const level3 = createBoneNode({ id: "bone-child", children: [leaf] });
+    const sibling = createViviMesh({ id: "sibling" });
+    const level2 = createBoneNode({ id: "bone-parent", children: [level3, sibling] });
+    const group = createGroup({ id: "group", children: [level2] });
+    const before = createViviMesh({ id: "before" });
+    const after = createViviMesh({ id: "after" });
+    expect(flattenLayers([before, group, after]).map((node) => node.id)).toEqual([
+      "before",
+      "group",
+      "bone-parent",
+      "bone-child",
+      "leaf",
+      "sibling",
+      "after",
+    ]);
   });
 });
 
@@ -347,17 +303,6 @@ describe("isLayerEffectivelyVisible 追加ケース", () => {
     });
 
     expect(isLayerEffectivelyVisible(child, [bone])).toBe(false);
-  });
-
-  it("全祖先が表示中で子自身も表示中なら true", () => {
-    const child = createViviMesh({ name: "子", visible: true });
-    const group = createGroup({
-      name: "グループ",
-      visible: true,
-      children: [child],
-    });
-
-    expect(isLayerEffectivelyVisible(child, [group])).toBe(true);
   });
 });
 
@@ -472,14 +417,6 @@ describe("insertLayerAt", () => {
     const result = insertLayerAt(root, "nonexistent-id", newNode, "before");
     expect(result).toBe(false);
   });
-
-  it("挿入後に配列長が1つ増える", () => {
-    const { root, ids } = createLayerTree();
-    const originalLength = root.length;
-    const newNode = createViviMesh({ name: "追加ノード" });
-    insertLayerAt(root, ids.group, newNode, "after");
-    expect(root).toHaveLength(originalLength + 1);
-  });
 });
 
 // ============================================================
@@ -503,14 +440,6 @@ describe("removeFromTree", () => {
     const group = findLayerById(root, ids.group)!;
     expect(group.children).toHaveLength(2);
     expect(group.children[0]!.id).toBe(ids.childB);
-  });
-
-  it("削除後に配列長が1つ減る", () => {
-    const { root, ids } = createLayerTree();
-    const group = findLayerById(root, ids.group)!;
-    const originalChildCount = group.children.length;
-    removeFromTree(root, ids.childB);
-    expect(group.children).toHaveLength(originalChildCount - 1);
   });
 
   it("削除したノードが正しく返される", () => {
@@ -586,7 +515,6 @@ describe("isLayerSoloVisible", () => {
   });
 });
 
-
 describe("ボーン階層でのツリー操作", () => {
   it("findLayerByIdでボーン階層の深いノードを見つける", () => {
     const grandchild = createBoneNode({ name: "孫" });
@@ -652,19 +580,6 @@ describe("ボーン階層でのツリー操作", () => {
     removeFromTree(layers, leaf1.id);
     expect(mid.children).toHaveLength(1);
     expect(mid.children[0]!.id).toBe(leaf2.id);
-  });
-
-  it("flattenLayersでボーン階層が全てフラットに展開される", () => {
-    const leaf = createBoneNode({ name: "リーフ" });
-    const child = createBoneNode({ name: "子", children: [leaf] });
-    const root = createBoneNode({ name: "ルート", children: [child] });
-    const layers = [root];
-
-    const flat = flattenLayers(layers);
-    expect(flat).toHaveLength(3);
-    expect(flat.some((n) => n.id === root.id)).toBe(true);
-    expect(flat.some((n) => n.id === child.id)).toBe(true);
-    expect(flat.some((n) => n.id === leaf.id)).toBe(true);
   });
 
   it("findPathToLayerでボーン階層のパスが正しい", () => {

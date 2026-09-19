@@ -8,7 +8,6 @@ import {
   triangulate,
 } from "../auto-mesh";
 
-
 class MockImageData {
   data: Uint8ClampedArray;
   width: number;
@@ -22,7 +21,6 @@ class MockImageData {
 if (typeof globalThis.ImageData === "undefined") {
   (globalThis as any).ImageData = MockImageData;
 }
-
 
 function createImageData(
   w: number,
@@ -51,12 +49,11 @@ function createMockCanvas(w: number, h: number, imageData: ImageData) {
   } as unknown as HTMLCanvasElement;
 }
 
-
 describe("extractContour — エッジケース", () => {
   it("1×1 の最小画像で輪郭を抽出できる", () => {
     const img = createImageData(1, 1, () => 255);
     const contour = extractContour(img);
-    expect(contour.length % 2).toBe(0);
+    expect(contour).toEqual([0, 0, 1, 0, 1, 1, 0, 1]);
   });
 
   it("1ピクセルだけ不透明な画像", () => {
@@ -92,10 +89,13 @@ describe("extractContour — エッジケース", () => {
   it("市松模様（散在ピクセル）", () => {
     const img = createImageData(20, 20, (x, y) => ((x + y) % 2 === 0 ? 255 : 0));
     const contour = extractContour(img);
+    expect(contour.length).toBeGreaterThanOrEqual(6);
     expect(contour.length % 2).toBe(0);
+    expect(pointInPolygon(10, 10, contour)).toBe(true);
+    expect(Math.min(...contour)).toBe(0);
+    expect(Math.max(...contour)).toBe(20);
   });
 });
-
 
 describe("simplifyContour — 境界値", () => {
   it("空配列は空配列を返す", () => {
@@ -113,7 +113,7 @@ describe("simplifyContour — 境界値", () => {
   it("同一点の繰り返しは簡略化される", () => {
     const pts = [0, 0, 0, 0, 0, 0, 0, 0];
     const result = simplifyContour(pts, 1);
-    expect(result.length).toBeLessThanOrEqual(pts.length);
+    expect(result).toEqual([0, 0, 0, 0]);
   });
 
   it("負の座標を含む輪郭でもクラッシュしない", () => {
@@ -123,7 +123,6 @@ describe("simplifyContour — 境界値", () => {
     expect(result.length % 2).toBe(0);
   });
 });
-
 
 describe("pointInPolygon — 境界値", () => {
   it("空ポリゴンは false", () => {
@@ -152,7 +151,6 @@ describe("pointInPolygon — 境界値", () => {
   });
 });
 
-
 describe("generateInteriorPoints — 境界値", () => {
   it("spacing=1 の最小値でもクラッシュしない", () => {
     const contour = [0, 0, 20, 0, 20, 20, 0, 20];
@@ -162,7 +160,11 @@ describe("generateInteriorPoints — 境界値", () => {
       w: 20,
       h: 20,
     });
-    expect(Array.isArray(points)).toBe(true);
+    expect(points.length).toBeGreaterThan(0);
+    for (const coordinate of points) {
+      expect(coordinate).toBeGreaterThan(0);
+      expect(coordinate).toBeLessThan(20);
+    }
     expect(points.length % 2).toBe(0);
   });
 
@@ -192,7 +194,6 @@ describe("generateInteriorPoints — 境界値", () => {
   });
 });
 
-
 describe("triangulate — エッジケース", () => {
   it("3点ちょうどで1三角形を返す", () => {
     const pts = [0, 0, 10, 0, 5, 10];
@@ -203,7 +204,7 @@ describe("triangulate — エッジケース", () => {
   it("一直線上の3点では三角分割できない（退化三角形）", () => {
     const pts = [0, 0, 5, 0, 10, 0];
     const indices = triangulate(pts, pts);
-    expect(indices.length % 3).toBe(0);
+    expect(indices).toEqual([]);
   });
 
   it("重複点を含む入力でクラッシュしない", () => {
@@ -212,7 +213,6 @@ describe("triangulate — エッジケース", () => {
     expect(() => triangulate(pts, contour)).not.toThrow();
   });
 });
-
 
 describe("generateAutoMesh — エッジケース", () => {
   it("テクスチャサイズとレイヤーサイズが異なる（アスペクト比）", () => {
@@ -245,18 +245,27 @@ describe("generateAutoMesh — エッジケース", () => {
     );
     const canvas = createMockCanvas(100, 100, img);
     const mesh = generateAutoMesh(canvas, 100, 100, "coarse");
-    if (mesh) {
-      expect(mesh.indices.length).toBeGreaterThanOrEqual(3);
-    }
+    expect(mesh).not.toBeNull();
+    expect(mesh!.vertices.length).toBeGreaterThanOrEqual(6);
+    expect(mesh!.vertices.every(Number.isFinite)).toBe(true);
+    expect(mesh!.indices.length).toBeGreaterThanOrEqual(3);
+    expect(
+      mesh!.indices.every(
+        (i) => Number.isInteger(i) && i >= 0 && i < mesh!.vertices.length / 2,
+      ),
+    ).toBe(true);
   });
 
   it("ほぼ全透明で角に1ピクセルだけ不透明", () => {
     const img = createImageData(20, 20, (x, y) => (x === 0 && y === 0 ? 255 : 0));
     const canvas = createMockCanvas(20, 20, img);
     const mesh = generateAutoMesh(canvas, 100, 100, "standard");
-    if (mesh) {
-      expect(mesh.indices.length % 3).toBe(0);
-    }
+    expect(mesh).not.toBeNull();
+    expect(mesh!.divisionsX).toBeGreaterThan(0);
+    expect(mesh!.divisionsY).toBeGreaterThan(0);
+    expect(mesh!.indices.length).toBeGreaterThanOrEqual(3);
+    expect(mesh!.indices.length % 3).toBe(0);
+    expect(mesh!.vertices.every(Number.isFinite)).toBe(true);
   });
 
   it("canvas サイズ 0×0 では null を返す", () => {

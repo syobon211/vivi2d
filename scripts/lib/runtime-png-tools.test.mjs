@@ -2,6 +2,8 @@ import { spawnSync as realSpawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import vm from "node:vm";
+import ts from "typescript";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   commandExists,
@@ -29,6 +31,33 @@ function withFixture(run) {
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
+}
+
+// Extract declarations only: never import the checker's top-level build/cleanup.
+function checkerFunctions(names, globals) {
+  const source = fs.readFileSync(
+    path.join(process.cwd(), "scripts/check-runtime-png.mjs"),
+    "utf8",
+  );
+  const parsed = ts.createSourceFile(
+    "checker.mjs",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JS,
+  );
+  expect(parsed.parseDiagnostics).toEqual([]);
+  const declarations = parsed.statements.filter(ts.isFunctionDeclaration);
+  const selected = names.map((name) => {
+    const matches = declarations.filter((node) => node.name?.text === name);
+    expect(matches).toHaveLength(1);
+    return matches[0].getText(parsed);
+  });
+  const functions = vm.runInNewContext(
+    `${selected.join("\n")}\n({${names.join(",")}})`,
+    globals,
+  );
+  return { source, declarations, functions };
 }
 
 describe("PNG gate command lookup and npm invocation", () => {
@@ -71,7 +100,6 @@ describe("PNG gate command lookup and npm invocation", () => {
       expect(
         npmInvocation(["--version"], { platform: "win32", env: {}, execPath }),
       ).toEqual({ command: execPath, args: [cli, "--version"] });
-      expect(spawnSync).not.toHaveBeenCalled();
     }));
 
   it("fails closed when Windows has no direct npm CLI", () =>
@@ -83,7 +111,6 @@ describe("PNG gate command lookup and npm invocation", () => {
           execPath: path.join(directory, "node.exe"),
         }),
       ).toThrow("npm_execpath required");
-      expect(spawnSync).not.toHaveBeenCalled();
     }));
 
   it("keeps the Unix npm executable path shell-free", () => {
@@ -94,16 +121,134 @@ describe("PNG gate command lookup and npm invocation", () => {
   });
 
   it("keeps repository paths out of batch code in the complete PNG checker", () => {
-    const source = fs.readFileSync(
-      path.join(process.cwd(), "scripts/check-runtime-png.mjs"),
-      "utf8",
+    const dispatch = vi.fn();
+    const literalRoot = "C:/owned & (test)/%literal%!Ω";
+    const command = "C:/compiler & (test)/clang.exe";
+    const args = ["--output", `${literalRoot}/out file`];
+    const { source, declarations, functions } = checkerFunctions(
+      ["run", "runCapture", "nativeStaticLinkArgs", "buildCAbiArtifacts", "unquote"],
+      {
+        spawnSync: dispatch,
+        path,
+        root: literalRoot,
+        tmpDir: literalRoot,
+        nativeManifest: `${literalRoot}/Cargo.toml`,
+        libraryBaseName: "vivi_runtime_native_c_abi",
+        existsSync: () => true,
+        npmInvocation: (values) =>
+          npmInvocation(values, {
+            platform: "win32",
+            env: { npm_execpath: `${literalRoot}/npm-cli.js` },
+            execPath: "node.exe",
+          }),
+        process: {
+          env: {},
+          platform: "win32",
+          stderr: {
+            write: () => {
+              throw new Error("unexpected diagnostic");
+            },
+          },
+        },
+      },
     );
     expect(source).not.toMatch(/\.cmd\b|cmd\.exe|shell:\s*true|quoteCmdArg/);
     expect(source).toContain(
       'runCapture("dumpbin", ["/nologo", "/exports", dynamicLibrary], {',
     );
     expect(source).toContain("run(compiler.command, args, { env: compiler.env });");
-    expect(source.match(/shell: false/g)).toHaveLength(2);
+    // Cover every direct dispatch owner, including Cargo calls which use Node's
+    // default shell:false rather than an explicit property in the source.
+    const owners = declarations
+      .filter((declaration) => {
+        let found = false;
+        const visit = (node) => {
+          if (
+            ts.isCallExpression(node) &&
+            ts.isIdentifier(node.expression) &&
+            node.expression.text === "spawnSync"
+          )
+            found = true;
+          ts.forEachChild(node, visit);
+        };
+        visit(declaration);
+        return found;
+      })
+      .map((node) => node.name.text)
+      .sort();
+    expect(owners).toEqual([
+      "buildCAbiArtifacts",
+      "nativeStaticLinkArgs",
+      "run",
+      "runCapture",
+    ]);
+    dispatch.mockReturnValue({ status: 0, stdout: "captured", stderr: "" });
+    functions.run(command, args, { shell: true });
+    expect(functions.runCapture(command, args, { shell: true })).toBe("captured");
+    functions.runCapture("npm", ["pack", "--dry-run"], { shell: true });
+    expect(dispatch.mock.calls[0].slice(0, 2)).toEqual([command, args]);
+    expect(dispatch.mock.calls[1].slice(0, 2)).toEqual([command, args]);
+    expect(dispatch.mock.calls[2].slice(0, 2)).toEqual([
+      "node.exe",
+      [`${literalRoot}/npm-cli.js`, "pack", "--dry-run"],
+    ]);
+    dispatch.mockReturnValue({
+      status: 0,
+      stdout: "native-static-libs: kernel32.lib",
+      stderr: "",
+    });
+    expect(functions.nativeStaticLinkArgs({ targetDir: literalRoot })).toEqual([
+      "kernel32.lib",
+    ]);
+    dispatch.mockReturnValue({
+      status: 0,
+      stderr: "",
+      stdout: JSON.stringify({
+        reason: "compiler-artifact",
+        target: { name: "vivi_runtime_native_c_abi" },
+        package_id: "vivi-runtime-native-c-abi",
+        filenames: [
+          `${literalRoot}/vivi_runtime_native_c_abi.dll`,
+          `${literalRoot}/vivi_runtime_native_c_abi.lib`,
+        ],
+      }),
+    });
+    functions.buildCAbiArtifacts({ slug: "test", label: "test", features: [] });
+    expect(dispatch).toHaveBeenCalledTimes(5);
+    for (const [, , options] of dispatch.mock.calls) {
+      expect(options.shell ?? false).toBe(false);
+      expect(options.cwd).toBe(literalRoot);
+      expect(options.windowsHide).toBe(true);
+    }
+  });
+
+  it("deduplicates equal legacy PNG bytes within a host without merging distinct inputs", () => {
+    const { functions } = checkerFunctions(["pngHostSource", "cBytes"], { Buffer });
+    const input = {
+      base64: "AA==",
+      expectedSha256: "00".repeat(32),
+      expected: { rgbaHex: "00000000" },
+    };
+    const entry = { png: Buffer.from([1, 2, 3]) };
+    const fixture = {
+      accept: input,
+      malformed: input,
+      unsupported: input,
+      legacy: [entry],
+    };
+    const single = functions.pngHostSource(fixture);
+    expect(
+      functions.pngHostSource({
+        ...fixture,
+        legacy: [entry, { png: Buffer.from(entry.png) }, entry],
+      }),
+    ).toBe(single);
+    const distinct = functions.pngHostSource({
+      ...fixture,
+      legacy: [entry, { png: Buffer.from([1, 2, 4]) }],
+    });
+    expect(distinct).toContain("static const uint8_t legacy_png_1[]");
+    expect(distinct).not.toContain("static const uint8_t legacy_png_2[]");
   });
 });
 

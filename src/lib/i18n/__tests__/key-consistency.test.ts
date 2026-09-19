@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { useI18nStore } from "../../i18n";
 import { common as enCommon } from "../en/common";
 import { dialog as enDialog } from "../en/dialog";
 import { en } from "../en/index";
@@ -15,12 +16,6 @@ import { menu as jaMenu } from "../ja/menu";
 import { panel as jaPanel } from "../ja/panel";
 import { shortcut as jaShortcut } from "../ja/shortcut";
 import { timeline as jaTimeline } from "../ja/timeline";
-import {
-  detectPreferredLocale,
-  normalizeLocale,
-  resolveLocaleFromSources,
-  SUPPORTED_LOCALES,
-} from "../locale";
 import { common as koCommon } from "../ko-KR/common";
 import { dialog as koDialog } from "../ko-KR/dialog";
 import { koKR } from "../ko-KR/index";
@@ -29,6 +24,12 @@ import { menu as koMenu } from "../ko-KR/menu";
 import { panel as koPanel } from "../ko-KR/panel";
 import { shortcut as koShortcut } from "../ko-KR/shortcut";
 import { timeline as koTimeline } from "../ko-KR/timeline";
+import {
+  detectPreferredLocale,
+  normalizeLocale,
+  resolveLocaleFromSources,
+  SUPPORTED_LOCALES,
+} from "../locale";
 import { common as zhCommon } from "../zh-Hans/common";
 import { dialog as zhDialog } from "../zh-Hans/dialog";
 import { zhHans } from "../zh-Hans/index";
@@ -37,7 +38,6 @@ import { menu as zhMenu } from "../zh-Hans/menu";
 import { panel as zhPanel } from "../zh-Hans/panel";
 import { shortcut as zhShortcut } from "../zh-Hans/shortcut";
 import { timeline as zhTimeline } from "../zh-Hans/timeline";
-import { useI18nStore } from "../../i18n";
 
 type NamespaceBundle = Record<string, Record<string, string>>;
 
@@ -153,10 +153,7 @@ const editorShortcutSurfaceKeys = [
   "shortcut.action.tempPan",
 ] as const;
 
-const editorToolbarSurfaceKeys = [
-  "menu.undo",
-  "menu.redo",
-] as const;
+const editorToolbarSurfaceKeys = ["menu.undo", "menu.redo"] as const;
 
 const editorLoadedProjectPanelSurfaceKeys = [
   "prop.rigHealth.title",
@@ -208,84 +205,86 @@ function diff(
 }
 
 describe("editor i18n dictionaries", () => {
-  it.each(Object.entries(localeNamespaces))(
-    "keeps namespace keys aligned for %s",
-    (locale, namespaces) => {
-      for (const [name, englishNamespace] of Object.entries(englishNamespaces)) {
-        const { missing, extra } = diff(englishNamespace, namespaces[name] ?? {});
-        expect(missing, `${locale}/${name} is missing keys`).toEqual([]);
-        expect(extra, `${locale}/${name} has extra keys`).toEqual([]);
-      }
-    },
-  );
+  it.each(
+    Object.entries(localeNamespaces).filter(([locale]) => locale !== "en"),
+  )("keeps namespace keys aligned for %s", (locale, namespaces) => {
+    for (const [name, englishNamespace] of Object.entries(englishNamespaces)) {
+      const { missing, extra } = diff(englishNamespace, namespaces[name] ?? {});
+      expect(missing, `${locale}/${name} is missing keys`).toEqual([]);
+      expect(extra, `${locale}/${name} has extra keys`).toEqual([]);
+    }
+  });
 
-  it.each(Object.entries(mergedLocales))("keeps merged keys aligned for %s", (locale, dict) => {
+  it.each(
+    Object.entries(mergedLocales).filter(([locale]) => locale !== "en"),
+  )("keeps merged keys aligned for %s", (locale, dict) => {
     const { missing, extra } = diff(en, dict);
     expect(missing, `${locale} is missing merged keys`).toEqual([]);
     expect(extra, `${locale} has extra merged keys`).toEqual([]);
   });
 
-  it.each(Object.entries(localeNamespaces))(
-    "merged dictionary size equals namespace total for %s",
-    (locale, namespaces) => {
-      const namespaceTotal = Object.values(namespaces).reduce(
-        (sum, namespace) => sum + Object.keys(namespace).length,
-        0,
-      );
-      expect(Object.keys(mergedLocales[locale as keyof typeof mergedLocales]).length).toBe(
-        namespaceTotal,
-      );
-    },
-  );
+  it.each(
+    Object.entries(localeNamespaces),
+  )("merged dictionary size equals namespace total for %s", (locale, namespaces) => {
+    const namespaceTotal = Object.values(namespaces).reduce(
+      (sum, namespace) => sum + Object.keys(namespace).length,
+      0,
+    );
+    expect(Object.keys(mergedLocales[locale as keyof typeof mergedLocales]).length).toBe(
+      namespaceTotal,
+    );
+  });
 
-  it.each(Object.entries(mergedLocales))("does not contain empty values for %s", (locale, dict) => {
+  it.each(
+    Object.entries(mergedLocales),
+  )("does not contain empty values for %s", (locale, dict) => {
     const emptyEntries = Object.entries(dict).filter(([, value]) => value.length === 0);
     expect(emptyEntries, `${locale} has empty translations`).toEqual([]);
   });
 
-  it.each(["zh-Hans", "ko-KR"] as const)(
-    "does not fall back to English on the editor launch surface for %s",
-    (locale) => {
-      const dict = mergedLocales[locale];
-      for (const key of editorLaunchSurfaceKeys) {
-        expect(dict[key], `${locale}.${key} should be localized`).not.toBe(en[key]);
-      }
-    },
-  );
+  it.each([
+    "zh-Hans",
+    "ko-KR",
+  ] as const)("does not fall back to English on the editor launch surface for %s", (locale) => {
+    const dict = mergedLocales[locale];
+    for (const key of editorLaunchSurfaceKeys) {
+      expect(dict[key], `${locale}.${key} should be localized`).not.toBe(en[key]);
+    }
+  });
 
-  it.each(["zh-Hans", "ko-KR"] as const)(
-    "does not fall back to English on major dialog surfaces for %s",
-    (locale) => {
-      const dict = mergedLocales[locale];
-      for (const key of editorMajorDialogSurfaceKeys) {
-        expect(dict[key], `${locale}.${key} should be localized`).not.toBe(en[key]);
-      }
-    },
-  );
+  it.each([
+    "zh-Hans",
+    "ko-KR",
+  ] as const)("does not fall back to English on major dialog surfaces for %s", (locale) => {
+    const dict = mergedLocales[locale];
+    for (const key of editorMajorDialogSurfaceKeys) {
+      expect(dict[key], `${locale}.${key} should be localized`).not.toBe(en[key]);
+    }
+  });
 
-  it.each(["zh-Hans", "ko-KR"] as const)(
-    "does not fall back to English on shortcut action labels for %s",
-    (locale) => {
-      const dict = mergedLocales[locale];
-      for (const key of editorShortcutSurfaceKeys) {
-        expect(dict[key], `${locale}.${key} should be localized`).not.toBe(en[key]);
-      }
-    },
-  );
+  it.each([
+    "zh-Hans",
+    "ko-KR",
+  ] as const)("does not fall back to English on shortcut action labels for %s", (locale) => {
+    const dict = mergedLocales[locale];
+    for (const key of editorShortcutSurfaceKeys) {
+      expect(dict[key], `${locale}.${key} should be localized`).not.toBe(en[key]);
+    }
+  });
 
-  it.each(["zh-Hans", "ko-KR"] as const)(
-    "does not fall back to English on loaded project chrome for %s",
-    (locale) => {
-      const dict = mergedLocales[locale];
-      for (const key of [
-        ...editorToolbarSurfaceKeys,
-        ...editorLoadedProjectPanelSurfaceKeys,
-        ...editorTimelineChromeSurfaceKeys,
-      ]) {
-        expect(dict[key], `${locale}.${key} should be localized`).not.toBe(en[key]);
-      }
-    },
-  );
+  it.each([
+    "zh-Hans",
+    "ko-KR",
+  ] as const)("does not fall back to English on loaded project chrome for %s", (locale) => {
+    const dict = mergedLocales[locale];
+    for (const key of [
+      ...editorToolbarSurfaceKeys,
+      ...editorLoadedProjectPanelSurfaceKeys,
+      ...editorTimelineChromeSurfaceKeys,
+    ]) {
+      expect(dict[key], `${locale}.${key} should be localized`).not.toBe(en[key]);
+    }
+  });
 
   it("declares the expected supported locales", () => {
     expect(SUPPORTED_LOCALES).toEqual(["en", "ja", "zh-Hans", "ko-KR"]);

@@ -207,12 +207,29 @@ describe("useIK フック", () => {
     });
     useEditorStore.setState({ project });
 
-    renderHook(() => useIK());
-    useIKRuntimeStore.getState().setRuntimeTarget("dummy", 0, 0);
-    await flushRAF();
+    const solver = await import("@vivi2d/core/ik-solver");
+    const solve = vi.spyOn(solver, "solveIKController");
+    const { unmount } = renderHook(() => useIK());
+    try {
+      useIKRuntimeStore.getState().setRuntimeTarget("dummy", 0, 0);
+      await flushRAF();
+      expect(solve).toHaveBeenLastCalledWith(controller, expect.any(Map), expect.any(Map));
+      expect(useIKRuntimeStore.getState().solutions.has(controller.id)).toBe(true);
 
-    const solution = useIKRuntimeStore.getState().solutions.get(controller.id);
-    expect(solution).toBeDefined();
+      solve.mockClear();
+      useIKRuntimeStore.getState().setRuntimeTarget(controller.id, 65, 25);
+      await flushRAF();
+      expect(solve).toHaveBeenLastCalledWith(
+        { ...controller, targetX: 65, targetY: 25 },
+        expect.any(Map),
+        expect.any(Map),
+      );
+      expect(controller.targetX).toBe(90);
+      expect(controller.targetY).toBe(10);
+    } finally {
+      unmount();
+      solve.mockRestore();
+    }
   });
 
   it("parameterMappings があるとパラメータ値が更新される", async () => {
@@ -233,8 +250,8 @@ describe("useIK フック", () => {
         { boneId: bone0.id, minAngle: -Math.PI, maxAngle: Math.PI },
         { boneId: bone1.id, minAngle: -Math.PI, maxAngle: Math.PI },
       ],
-      targetX: 60,
-      targetY: 40,
+      targetX: 1000,
+      targetY: 0,
       influence: 1,
       parameterMappings: [
         {
@@ -261,14 +278,18 @@ describe("useIK フック", () => {
       ],
     });
     useEditorStore.setState({ project });
-    useParameterStore.setState({ parameterValues: { "param-arm-rot": 0 } });
+    useParameterStore.setState({ parameterValues: { "param-arm-rot": 0.75, untouched: 0.625 } });
 
-    renderHook(() => useIK());
-    useIKRuntimeStore.getState().setRuntimeTarget(controller.id, 60, 40);
+    const { unmount } = renderHook(() => useIK());
+    useIKRuntimeStore.getState().setRuntimeTarget(controller.id, 1000, 0);
     await flushRAF();
 
-    const paramValue = useParameterStore.getState().parameterValues["param-arm-rot"];
-    expect(paramValue).toBeDefined();
+    // Far target on +X solves the root angle to zero, the midpoint of [-PI, PI].
+    expect(useParameterStore.getState().parameterValues).toEqual({
+      "param-arm-rot": 0,
+      untouched: 0.625,
+    });
+    unmount();
   });
 
   it("アンマウント時に subscribe が解除される", async () => {

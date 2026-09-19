@@ -74,14 +74,23 @@ describe("parameterBindingStore — フォームコピー/ブレンド", () => {
   });
 
   it("pasteBindingPointsMirrored で反転貼り付けされる", () => {
+    const source = [
+      { paramValue: -20, targetValue: 0.25 },
+      { paramValue: 5, targetValue: -0.75 },
+      { paramValue: 30, targetValue: 0.5 },
+    ];
+    useEditorStore.setState((state) => {
+      state.project!.parameterBindings![0]!.bindingPoints = source;
+    });
     useParameterBindingStore.getState().copyBindingPoints("b1");
     useParameterBindingStore.getState().pasteBindingPointsMirrored("b2");
-
-    const project = useEditorStore.getState().project!;
-    const b2 = project.parameterBindings!.find((b) => b.id === "b2")!;
-    expect(b2.bindingPoints).toHaveLength(3);
-    expect(b2.bindingPoints[2]).toEqual({ paramValue: 30, targetValue: 0.5 });
-    expect(b2.bindingPoints[0]).toEqual({ paramValue: -30, targetValue: -0.5 });
+    const bindings = useEditorStore.getState().project!.parameterBindings!;
+    expect(bindings.find((binding) => binding.id === "b2")!.bindingPoints).toEqual([
+      { paramValue: -30, targetValue: -0.5 },
+      { paramValue: -5, targetValue: 0.75 },
+      { paramValue: 20, targetValue: -0.25 },
+    ]);
+    expect(bindings.find((binding) => binding.id === "b1")!.bindingPoints).toEqual(source);
   });
 
   it("blendBindingPoints でブレンドされる", () => {

@@ -1,7 +1,6 @@
 import { renderHook } from "@testing-library/react";
-import * as imageSeqUtils from "@vivi2d/core/image-sequence-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setTexture } from "@/lib/texture-store";
+import * as textureStore from "@/lib/texture-store";
 import { useClipStore } from "@/stores/clipStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useLipSyncStore } from "@/stores/lipsyncStore";
@@ -79,109 +78,45 @@ describe("usePlayback — 画像シーケンス評価分岐（lines 96-108）", 
     vi.restoreAllMocks();
   });
 
-  it("画像シーケンストラックがある場合、テクスチャが適用される", () => {
+  it("画像シーケンスは別 source だけを適用し、同一 ID と欠損 source の既存 texture を保持する", () => {
     setupProject();
-    const clipId = createAndActivateClip();
-    useClipStore.getState().addKeyframe(clipId, "p1", 0, 0);
-
+    createAndActivateClip();
     const project = useEditorStore.getState().project!;
     useEditorStore.setState({
       project: {
         ...project,
-        clips: [
-          {
-            ...project.clips[0]!,
-            imageSequenceTracks: [
-              {
-                targetMeshId: "mesh-target",
-                entries: [{ startFrame: 0, imageId: "img-source" }],
-              },
-            ],
-          },
-        ],
+        clips: [{
+          ...project.clips[0]!,
+          imageSequenceTracks: [
+            { targetMeshId: "mesh-target", entries: [{ startFrame: 0, imageId: "img-source" }] },
+            { targetMeshId: "same-target", entries: [{ startFrame: 0, imageId: "same-target" }] },
+            { targetMeshId: "missing-target", entries: [{ startFrame: 0, imageId: "missing-source" }] },
+          ],
+        }],
       },
     });
-
-    const mockCanvas = document.createElement("canvas");
-    setTexture("img-source", mockCanvas);
+    const source = document.createElement("canvas");
+    const same = document.createElement("canvas");
+    const missing = document.createElement("canvas");
+    textureStore.setTexture("img-source", source);
+    textureStore.setTexture("same-target", same);
+    textureStore.setTexture("missing-target", missing);
+    textureStore.deleteTexture("missing-source");
+    const set = vi.spyOn(textureStore, "setTexture");
 
     useTimelineStore.setState({ isPlaying: true, currentFrame: 0 });
     renderHook(() => usePlayback());
-
     const interval = 1000 / 30 + 1;
     vi.spyOn(performance, "now").mockReturnValue(interval);
-    expect(() => flushRaf(interval)).not.toThrow();
+    flushRaf(interval);
+
+    expect(set).toHaveBeenCalledExactlyOnceWith("mesh-target", source);
+    expect(textureStore.getTexture("mesh-target")).toBe(source);
+    expect(textureStore.getTexture("same-target")).toBe(same);
+    expect(textureStore.getTexture("missing-target")).toBe(missing);
   });
 
-  it("画像シーケンスで imageId === targetMeshId の場合はスキップされる", () => {
-    setupProject();
-    const clipId = createAndActivateClip();
-    useClipStore.getState().addKeyframe(clipId, "p1", 0, 0);
 
-    vi.spyOn(imageSeqUtils, "evaluateImageSequenceTracksAtFrame").mockReturnValue({
-      "mesh-target": "mesh-target", // imageId === targetMeshId
-    });
-
-    const project = useEditorStore.getState().project!;
-    useEditorStore.setState({
-      project: {
-        ...project,
-        clips: [
-          {
-            ...project.clips[0]!,
-            imageSequenceTracks: [
-              {
-                targetMeshId: "mesh-target",
-                entries: [{ startFrame: 0, imageId: "mesh-target" }],
-              },
-            ],
-          },
-        ],
-      },
-    });
-
-    useTimelineStore.setState({ isPlaying: true, currentFrame: 0 });
-    renderHook(() => usePlayback());
-
-    const interval = 1000 / 30 + 1;
-    vi.spyOn(performance, "now").mockReturnValue(interval);
-    expect(() => flushRaf(interval)).not.toThrow();
-  });
-
-  it("画像シーケンスでソースキャンバスが存在しない場合はスキップされる", () => {
-    setupProject();
-    const clipId = createAndActivateClip();
-    useClipStore.getState().addKeyframe(clipId, "p1", 0, 0);
-
-    vi.spyOn(imageSeqUtils, "evaluateImageSequenceTracksAtFrame").mockReturnValue({
-      "mesh-target": "nonexistent-image",
-    });
-
-    const project = useEditorStore.getState().project!;
-    useEditorStore.setState({
-      project: {
-        ...project,
-        clips: [
-          {
-            ...project.clips[0]!,
-            imageSequenceTracks: [
-              {
-                targetMeshId: "mesh-target",
-                entries: [{ startFrame: 0, imageId: "nonexistent-image" }],
-              },
-            ],
-          },
-        ],
-      },
-    });
-
-    useTimelineStore.setState({ isPlaying: true, currentFrame: 0 });
-    renderHook(() => usePlayback());
-
-    const interval = 1000 / 30 + 1;
-    vi.spyOn(performance, "now").mockReturnValue(interval);
-    expect(() => flushRaf(interval)).not.toThrow();
-  });
 
   it("activeClipId が null の場合 tick は早期リターンする", () => {
     setupProject();
@@ -263,7 +198,8 @@ describe("usePlayback — 画像シーケンス評価分岐（lines 96-108）", 
 
     const interval = 1000 / 30 + 1;
     vi.spyOn(performance, "now").mockReturnValue(interval);
-    expect(() => flushRaf(interval)).not.toThrow();
+    flushRaf(interval);
+    expect(useParameterStore.getState().parameterValues).toEqual({ p1: 0, p2: 0 });
   });
 
   it("ボーントラックで scaleY のみ指定された場合のフォールバック", () => {
@@ -289,7 +225,7 @@ describe("usePlayback — 画像シーケンス評価分岐（lines 96-108）", 
             children: [],
             blendMode: "normal" as const,
             expanded: true,
-            bone: { angle: 0, length: 50, scaleX: 1, scaleY: 1 },
+            bone: { angle: 0, length: 50, scaleX: 3, scaleY: 0.5 },
           },
         ],
         clips: [
@@ -301,7 +237,7 @@ describe("usePlayback — 画像シーケンス評価分岐（lines 96-108）", 
                 property: "scaleY" as const,
                 keyframes: [
                   { frame: 0, value: 1, interpolation: "linear" as const },
-                  { frame: 89, value: 2, interpolation: "linear" as const },
+                  { frame: 1, value: 2, interpolation: "linear" as const },
                 ],
               },
             ],
@@ -315,6 +251,10 @@ describe("usePlayback — 画像シーケンス評価分岐（lines 96-108）", 
 
     const interval = 1000 / 30 + 1;
     vi.spyOn(performance, "now").mockReturnValue(interval);
-    expect(() => flushRaf(interval)).not.toThrow();
+    flushRaf(interval);
+    const bone = useEditorStore.getState().project!.layers[0]!;
+    expect(bone.kind).toBe("bone");
+    if (bone.kind !== "bone") throw new Error("Expected bone fixture");
+    expect(bone.bone).toEqual({ angle: 0, length: 50, scaleX: 3, scaleY: 2 });
   });
 });

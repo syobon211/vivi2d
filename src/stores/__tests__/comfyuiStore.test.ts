@@ -104,10 +104,6 @@ describe("comfyuiStore", () => {
     expect(after.compatBaseUrl).toBe("http://localhost:8000");
   });
 
-  it("updates the connection flag", () => {
-    useComfyUIStore.getState().setConnected(true);
-    expect(useComfyUIStore.getState().connected).toBe(true);
-  });
 
   it("updates generation progress", () => {
     useComfyUIStore.getState().setGenerating(true);

@@ -6,7 +6,6 @@ import { useEditorStore } from "@/stores/editorStore";
 import { createEmptyProject } from "@/test/fixtures";
 import { resetEditorStore } from "@/test/store-reset";
 
-
 function setupProjectWithScenes() {
   const project = {
     ...createEmptyProject(),
@@ -55,24 +54,6 @@ describe("SceneBlendPanel", () => {
     expect(container.querySelector(".scene-blend-panel")).not.toBeInTheDocument();
   });
 
-  it("パネルヘッダーが表示される", () => {
-    setupProjectWithScenes();
-    render(<SceneBlendPanel />);
-    expect(screen.getByText("シーンブレンド")).toBeInTheDocument();
-  });
-
-  it("ブレンドなし時にメッセージが表示される", () => {
-    setupProjectWithScenes();
-    render(<SceneBlendPanel />);
-    expect(screen.getByText("ブレンドなし")).toBeInTheDocument();
-  });
-
-  it("追加ボタンが表示される", () => {
-    setupProjectWithScenes();
-    render(<SceneBlendPanel />);
-    expect(screen.getByText("+ ブレンド追加")).toBeInTheDocument();
-  });
-
   it("シーンが2つ未満のとき追加ボタンがdisabled", () => {
     useEditorStore.setState({
       project: {
@@ -83,15 +64,6 @@ describe("SceneBlendPanel", () => {
     });
     render(<SceneBlendPanel />);
     expect(screen.getByText("+ ブレンド追加")).toBeDisabled();
-  });
-
-  it("追加ボタンクリックでフォームが表示される", async () => {
-    const user = userEvent.setup();
-    setupProjectWithScenes();
-    render(<SceneBlendPanel />);
-    await user.click(screen.getByText("+ ブレンド追加"));
-    expect(screen.getByText(/OK|確認/)).toBeInTheDocument();
-    expect(screen.getByText("キャンセル")).toBeInTheDocument();
   });
 
   it("追加フォームでキャンセルするとフォームが閉じる", async () => {
@@ -107,8 +79,11 @@ describe("SceneBlendPanel", () => {
     const user = userEvent.setup();
     setupProjectWithScenes();
     render(<SceneBlendPanel />);
+    expect(screen.getByText("シーンブレンド")).toBeInTheDocument();
+    expect(screen.getByText("ブレンドなし")).toBeInTheDocument();
 
     await user.click(screen.getByText("+ ブレンド追加"));
+    expect(screen.getByText("キャンセル")).toBeInTheDocument();
     const selects = document.querySelectorAll(".scene-blend-select");
     fireEvent.change(selects[0]!, { target: { value: "scene-1" } });
     fireEvent.change(selects[1]!, { target: { value: "scene-2" } });
@@ -147,17 +122,12 @@ describe("SceneBlendPanel", () => {
     expect(project.sceneBlends ?? []).toHaveLength(0);
   });
 
-  it("既存ブレンドが表示される", () => {
-    setupProjectWithBlend();
-    render(<SceneBlendPanel />);
-    expect(screen.getByText("メインシーン → サブシーン")).toBeInTheDocument();
-  });
-
   it("ブレンド削除ボタンでブレンドが削除される", async () => {
     const user = userEvent.setup();
     setupProjectWithBlend();
     render(<SceneBlendPanel />);
 
+    expect(screen.getByText("メインシーン → サブシーン")).toBeInTheDocument();
     await user.click(screen.getByTitle("削除"));
 
     const project = useEditorStore.getState().project!;
@@ -184,6 +154,8 @@ describe("SceneBlendPanel", () => {
 
     const project = useEditorStore.getState().project!;
     expect(project.sceneBlends![0]!.transitionFrames).toBe(60);
+    fireEvent.change(frameInput, { target: { value: "0" } });
+    expect(useEditorStore.getState().project!.sceneBlends![0]!.transitionFrames).toBe(1);
   });
 
   it("イージングを変更できる", () => {
@@ -216,16 +188,5 @@ describe("SceneBlendPanel", () => {
     useEditorStore.setState({ project, projectVersion: 1 });
     render(<SceneBlendPanel />);
     expect(screen.getByText("? → ?")).toBeInTheDocument();
-  });
-
-  it("フレーム数を0以下にすると1にクランプされる", () => {
-    setupProjectWithBlend();
-    render(<SceneBlendPanel />);
-
-    const frameInput = screen.getByRole("spinbutton");
-    fireEvent.change(frameInput, { target: { value: "0" } });
-
-    const project = useEditorStore.getState().project!;
-    expect(project.sceneBlends![0]!.transitionFrames).toBe(1);
   });
 });

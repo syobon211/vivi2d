@@ -642,27 +642,6 @@ describe("ViewerRecorder", () => {
     }
   });
 
-  it("WebM録画のstop()でvideo/webm Blobが返される", async () => {
-    const canvas = createMockCanvas();
-    const recorder = new ViewerRecorder(canvas);
-    recorder.start({ format: "webm" });
-
-    const stopPromise = recorder.stop();
-
-    await new Promise((r) => setTimeout(r, 50));
-
-    const blob = await stopPromise;
-    expect(blob).toBeInstanceOf(Blob);
-  });
-
-  it("selectMimeType: mp4が未サポートの場合webmにフォールバック", () => {
-    const canvas = createMockCanvas();
-    const recorder = new ViewerRecorder(canvas);
-    recorder.start({ format: "mp4" });
-    expect(recorder.recordingState).toBe("recording");
-    recorder.cancel();
-  });
-
   it("maxDuration制限: 指定時間後に自動停止", async () => {
     vi.useFakeTimers();
     const canvas = createMockCanvas();
@@ -729,137 +708,59 @@ describe("ViewerRecorder", () => {
     expect(blob.type).toBe("video/webm");
   });
 
-  it("stopMediaRecorder: recorderがnullの場合は空Blobを返す", async () => {
-    let capturedOnstop: (() => void) | null = null;
-
-    vi.stubGlobal(
-      "MediaRecorder",
-      class MockMR {
-        mimeType = "video/webm";
-        state = "recording";
-        ondataavailable: ((e: { data: Blob }) => void) | null = null;
-        onstop: (() => void) | null = null;
-
-        start() {
-          /* noop */
-        }
-        stop() {
-          this.state = "inactive";
-          capturedOnstop = this.onstop;
-          setTimeout(() => {
-            if (capturedOnstop) capturedOnstop();
-          }, 0);
-        }
-        static isTypeSupported(type: string) {
-          return type === "video/webm;codecs=vp9";
-        }
+  it("passes the preferred supported MIME type, or fallback, to MediaRecorder", () => {
+    const mp4Types = ["video/mp4;codecs=h264", "video/mp4;codecs=avc1", "video/mp4"];
+    const rows = [
+      {
+        format: "mp4" as const,
+        supported: [...mp4Types, "video/webm;codecs=vp9"],
+        expected: mp4Types[0],
       },
-    );
-
-    const canvas = createMockCanvas();
-    const recorder = new ViewerRecorder(canvas);
-    recorder.start({ format: "webm" });
-
-    const stopPromise = recorder.stop();
-    await new Promise((r) => setTimeout(r, 50));
-    const blob = await stopPromise;
-
-    expect(blob).toBeInstanceOf(Blob);
-    expect(blob.type).toBe("video/webm");
-  });
-
-  it("selectMimeType: mp4がサポートされている場合はmp4のMIMEタイプが使用される", () => {
-    vi.stubGlobal(
-      "MediaRecorder",
-      class MockMR {
-        mimeType = "video/mp4;codecs=h264";
-        state = "recording";
-        ondataavailable: ((e: { data: Blob }) => void) | null = null;
-        onstop: (() => void) | null = null;
-
-        start() {
-          /* noop */
-        }
-        stop() {
-          this.state = "inactive";
-          setTimeout(() => {
-            if (this.onstop) this.onstop();
-          }, 0);
-        }
-        static isTypeSupported(type: string) {
-          return type === "video/mp4;codecs=h264" || type === "video/webm;codecs=vp9";
-        }
+      {
+        format: "mp4" as const,
+        supported: [...mp4Types.slice(1), "video/webm;codecs=vp9"],
+        expected: mp4Types[1],
       },
-    );
-
-    const canvas = createMockCanvas();
-    const recorder = new ViewerRecorder(canvas);
-
-    recorder.start({ format: "mp4" });
-    expect(recorder.recordingState).toBe("recording");
-    recorder.cancel();
-  });
-
-  it("selectMimeType: mp4の2番目のcodec(avc1)がサポートされている場合", () => {
-    vi.stubGlobal(
-      "MediaRecorder",
-      class MockMR {
-        mimeType = "video/mp4;codecs=avc1";
-        state = "recording";
-        ondataavailable: ((e: { data: Blob }) => void) | null = null;
-        onstop: (() => void) | null = null;
-
-        start() {
-          /* noop */
-        }
-        stop() {
-          this.state = "inactive";
-          setTimeout(() => {
-            if (this.onstop) this.onstop();
-          }, 0);
-        }
-        static isTypeSupported(type: string) {
-          return type === "video/mp4;codecs=avc1" || type === "video/webm;codecs=vp9";
-        }
+      {
+        format: "mp4" as const,
+        supported: [mp4Types[2], "video/webm;codecs=vp9"],
+        expected: mp4Types[2],
       },
-    );
-
-    const canvas = createMockCanvas();
-    const recorder = new ViewerRecorder(canvas);
-    recorder.start({ format: "mp4" });
-    expect(recorder.recordingState).toBe("recording");
-    recorder.cancel();
-  });
-
-  it("selectMimeType: video/mp4(codecs指定なし)がサポートされている場合", () => {
-    vi.stubGlobal(
-      "MediaRecorder",
-      class MockMR {
-        mimeType = "video/mp4";
-        state = "recording";
-        ondataavailable: ((e: { data: Blob }) => void) | null = null;
-        onstop: (() => void) | null = null;
-
-        start() {
-          /* noop */
-        }
-        stop() {
-          this.state = "inactive";
-          setTimeout(() => {
-            if (this.onstop) this.onstop();
-          }, 0);
-        }
-        static isTypeSupported(type: string) {
-          return type === "video/mp4" || type === "video/webm;codecs=vp9";
-        }
-      },
-    );
-
-    const canvas = createMockCanvas();
-    const recorder = new ViewerRecorder(canvas);
-    recorder.start({ format: "mp4" });
-    expect(recorder.recordingState).toBe("recording");
-    recorder.cancel();
+      { format: "webm" as const, supported: [], expected: "video/webm" },
+    ];
+    for (const { format, supported, expected } of rows) {
+      const constructed = vi.fn();
+      vi.stubGlobal(
+        "MediaRecorder",
+        class {
+          mimeType: string;
+          state = "inactive";
+          ondataavailable: ((event: { data: Blob }) => void) | null = null;
+          onstop: (() => void) | null = null;
+          constructor(stream: MediaStream, options: MediaRecorderOptions) {
+            constructed(stream, options);
+            this.mimeType = options.mimeType!;
+          }
+          start() {
+            this.state = "recording";
+          }
+          stop() {
+            this.state = "inactive";
+          }
+          static isTypeSupported(type: string) {
+            return supported.includes(type);
+          }
+        },
+      );
+      const recorder = new ViewerRecorder(createMockCanvas());
+      recorder.start({ format });
+      expect(constructed, expected).toHaveBeenCalledExactlyOnceWith(
+        expect.anything(),
+        expect.objectContaining({ mimeType: expected }),
+      );
+      expect(recorder.recordingState).toBe("recording");
+      recorder.cancel();
+    }
   });
 
   it("GIF with no captured frame fails without returning an empty download", async () => {
@@ -1170,37 +1071,6 @@ describe("ViewerRecorder", () => {
     expect(blob.type).toBe("video/webm;codecs=vp9");
   });
 
-  it("selectMimeType: 全MIMEタイプが未サポートの場合フォールバックでvideo/webmが返される", () => {
-    vi.stubGlobal(
-      "MediaRecorder",
-      class MockMR {
-        mimeType = "video/webm";
-        state = "recording";
-        ondataavailable: ((e: { data: Blob }) => void) | null = null;
-        onstop: (() => void) | null = null;
-
-        start() {
-          /* noop */
-        }
-        stop() {
-          this.state = "inactive";
-          setTimeout(() => {
-            if (this.onstop) this.onstop();
-          }, 0);
-        }
-        static isTypeSupported(_type: string) {
-          return false;
-        }
-      },
-    );
-
-    const canvas = createMockCanvas();
-    const recorder = new ViewerRecorder(canvas);
-    recorder.start({ format: "webm" });
-    expect(recorder.recordingState).toBe("recording");
-    recorder.cancel();
-  });
-
   it("native stop without data returns an empty Blob for the host to reject", async () => {
     vi.stubGlobal(
       "MediaRecorder",
@@ -1232,6 +1102,7 @@ describe("ViewerRecorder", () => {
     const blob = await recorder.stop();
     expect(blob).toBeInstanceOf(Blob);
     expect(blob.size).toBe(0);
+    expect(blob.type).toBe("video/webm");
   });
 
   it("findNearestColor: 256色超のユニーク色でパレット外の色が最近傍探索される", async () => {

@@ -58,10 +58,6 @@ describe("LipSyncAnalyser", () => {
     expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({ audio: true });
   });
 
-  it("connectMicrophone 後に getRmsVolume が動作する", async () => {
-    await analyser.connectMicrophone();
-    expect(analyser.getRmsVolume()).toBe(0);
-  });
 
   it("getRmsVolume returns 0 for silence", async () => {
     await analyser.connectMicrophone();

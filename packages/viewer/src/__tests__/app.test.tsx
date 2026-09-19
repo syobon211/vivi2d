@@ -210,7 +210,6 @@ describe("App (viewer root) smoke", () => {
   });
 });
 
-
 function resetMockInstances() {
   for (const fn of [
     particleInstance.destroy,
@@ -402,20 +401,6 @@ describe("App (viewer root) loaded=true 系", () => {
     rafSpy.mockRestore();
   });
 
-  it("サムネイル保存ボタンで generateThumbnail と <a> click が走る", async () => {
-    const rafSpy = vi.spyOn(global, "requestAnimationFrame");
-    rafSpy.mockImplementation(() => 1 as unknown as number);
-
-    const { container } = render(<App />);
-    await loadModelAndWait(container);
-    fireEvent.click(screen.getByTestId("settings-toggle"));
-
-    fireEvent.click(screen.getByText(t("saveThumbnail")));
-    expect(true).toBe(true);
-
-    rafSpy.mockRestore();
-  });
-
   it("エクスポート設定ボタンで downloadConfig が呼ばれる", async () => {
     const rafSpy = vi.spyOn(global, "requestAnimationFrame");
     rafSpy.mockImplementation(() => 1 as unknown as number);
@@ -573,7 +558,6 @@ describe("App (viewer root) loaded=true 系", () => {
     rafSpy.mockRestore();
   });
 });
-
 
 function installMultiRafSpy(maxCalls: number) {
   const rafSpy = vi.spyOn(global, "requestAnimationFrame");
@@ -740,7 +724,9 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
     fireEvent.click(aotBtn);
 
     await waitFor(() => {
-      expect(toggleAOT).toHaveBeenCalled();
+      expect(toggleAOT).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(t("alwaysOnTopOn"))).toBeInTheDocument();
+      expect(updateSettingsMock).toHaveBeenCalledWith({ alwaysOnTop: true });
     });
 
     rafSpy.mockRestore();
@@ -761,6 +747,8 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
     const select = screen.getByDisplayValue(t("bgTransparent")) as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "green" } });
     expect(setBgMode).toHaveBeenCalledWith("green");
+    expect(select.value).toBe("green");
+    expect(updateSettingsMock).toHaveBeenCalledWith({ bgMode: "green" });
 
     rafSpy.mockRestore();
   });
@@ -779,7 +767,6 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
     rafSpy.mockRestore();
   });
 });
-
 
 describe("App (viewer root) loaded=true + lipSync=true", () => {
   beforeEach(() => {

@@ -337,14 +337,6 @@ describe("runScript", () => {
     expect(api.update).not.toHaveBeenCalled();
   });
 
-  it("stateを渡さなくても正常に実行される", async () => {
-    const api = createMockAPI();
-    const script = parseScript("reset");
-    await runScript(script, api);
-
-    expect(api.resetParameters).toHaveBeenCalledTimes(1);
-    expect(api.update).toHaveBeenCalledTimes(1);
-  });
 
   it("presetコマンドがapplyExpressionPreset + updateを直接呼ぶ", async () => {
     const api = createMockAPI();
@@ -483,7 +475,6 @@ describe("sandbox escape 試行 (P7-17)", () => {
     const close = "}".repeat(depth);
     const inner = "smile";
 
-    expect(() => parseScript(`${open} ${inner} ${close}`)).not.toThrow();
 
     const result = parseScript(`${open} ${inner} ${close}`);
     expect(result.commands).toHaveLength(1);

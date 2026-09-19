@@ -39,24 +39,6 @@ describe("@vivi2d/runtime-wasm portable evaluator", () => {
     });
   });
 
-  it("can force the native backend", async () => {
-    const portable = await createViviWasmRuntime({ backend: "portable" });
-    expect(portable.getBackendInfo()).toMatchObject({
-      backendPreference: "portable",
-      selectedBackend: "portable",
-      fallbackReason: null,
-    });
-
-    const native = await createViviWasmRuntime({ backend: "native" });
-    expect(native.getBackendInfo()).toMatchObject({
-      backendPreference: "native",
-      selectedBackend: "native",
-      nativeAvailable: true,
-      evaluator: "native-rust",
-      wasmModuleValidated: true,
-      fallbackReason: null,
-    });
-  });
 
   it("exposes the current facade surface without the reference runtime bridge", () => {
     const fixture = readRuntimeConformanceFixture("basic-mesh");

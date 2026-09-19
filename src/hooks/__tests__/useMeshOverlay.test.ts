@@ -86,29 +86,6 @@ describe("useMeshOverlay", () => {
     expect(result.current.visualModel).toBeNull();
   });
 
-  it("builds edge and vertex visuals for a selected ViviMesh", () => {
-    const layer = createViviMesh({ id: "mesh-a" });
-    useEditorStore.setState({ project: createProject({ layers: [layer] }) });
-    useSelectionStore.setState({
-      selectedLayerId: layer.id,
-      selectedLayerIds: [layer.id],
-    });
-    useViewportStore.setState({ activeTool: "meshEdit" });
-
-    const { result } = renderHook(() => useMeshOverlay(createMinimalPixiRefs()));
-
-    act(() => {
-      flushRaf();
-    });
-
-    expect(result.current.visualModel).not.toBeNull();
-    expect(result.current.visualModel?.layerId).toBe(layer.id);
-    expect(result.current.visualModel?.mode).toBe("vertex");
-    expect(result.current.visualModel?.edges.length).toBeGreaterThan(0);
-    expect(result.current.visualModel?.vertices).toHaveLength(
-      layer.mesh.vertices.length / 2,
-    );
-  });
 
   it("builds mesh edge and vertex data immediately for the active mesh edit target", () => {
     const layer = createViviMesh({ id: "mesh-a-deferred" });
@@ -122,6 +99,8 @@ describe("useMeshOverlay", () => {
     const { result } = renderHook(() => useMeshOverlay(createMinimalPixiRefs()));
 
     expect(result.current.visualModel).not.toBeNull();
+    expect(result.current.visualModel?.layerId).toBe(layer.id);
+    expect(result.current.visualModel?.mode).toBe("vertex");
     expect(result.current.visualModel?.edges.length).toBeGreaterThan(0);
     expect(result.current.visualModel?.vertices).toHaveLength(
       layer.mesh.vertices.length / 2,

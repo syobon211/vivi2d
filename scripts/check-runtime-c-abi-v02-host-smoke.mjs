@@ -94,10 +94,10 @@ try {
   );
   copyRuntimeArtifacts(v02Artifacts, tmpDir);
 
-  const { basicPayloadPath, maskedPayloadPath } = writePayloads();
+  const { basicPayloadPath, maskedPayloadPath, emptyPayloadPath } = writePayloads();
   assertAbiV01ObservationParity(basicPayloadPath, defaultLibraryDir, tmpDir);
   writeGeneratedHeader();
-  runRustConformanceHost(basicPayloadPath, maskedPayloadPath);
+  runRustConformanceHost(basicPayloadPath, maskedPayloadPath, emptyPayloadPath);
   runOptionalCAndCppHosts();
 
   console.log("[runtime-c-abi-v02-host-smoke] passed (implementation subset)");
@@ -113,6 +113,13 @@ function writePayloads() {
 
   const basicPayloadPath = path.join(tmpDir, "basic-mesh.runtime.json");
   writeFileSync(basicPayloadPath, `${JSON.stringify(fixture.fileData)}\n`);
+
+  const empty = structuredClone(fixture.fileData);
+  empty.project.layers = [];
+  empty.project.colliders = [];
+  empty.atlases = [];
+  const emptyPayloadPath = path.join(tmpDir, "empty.runtime.json");
+  writeFileSync(emptyPayloadPath, `${JSON.stringify(empty)}\n`);
 
   const masked = structuredClone(fixture.fileData);
   const sourceLayer = structuredClone(masked.project.layers[0]);
@@ -140,7 +147,7 @@ function writePayloads() {
 
   const maskedPayloadPath = path.join(tmpDir, "masked.runtime.json");
   writeFileSync(maskedPayloadPath, `${JSON.stringify(masked)}\n`);
-  return { basicPayloadPath, maskedPayloadPath };
+  return { basicPayloadPath, maskedPayloadPath, emptyPayloadPath };
 }
 
 function assertAbiV01ObservationParity(
@@ -191,7 +198,7 @@ function assertAbiV01ObservationParity(
   }
 }
 
-function runRustConformanceHost(basicPayloadPath, maskedPayloadPath) {
+function runRustConformanceHost(basicPayloadPath, maskedPayloadPath, emptyPayloadPath) {
   const hostPath = path.join(tmpDir, "rust-v02-host-smoke.rs");
   const exePath = path.join(tmpDir, executableName("rust-v02-host-smoke"));
   writeFileSync(hostPath, rustConformanceHostSource());
@@ -208,7 +215,7 @@ function runRustConformanceHost(basicPayloadPath, maskedPayloadPath) {
   const cargoBuildTarget = process.env.CARGO_BUILD_TARGET?.trim();
   if (cargoBuildTarget) rustcArgs.unshift("--target", cargoBuildTarget);
   run("rustc", rustcArgs);
-  runHost(exePath, [basicPayloadPath, maskedPayloadPath]);
+  runHost(exePath, [basicPayloadPath, maskedPayloadPath, emptyPayloadPath]);
 }
 
 function writeGeneratedHeader() {
@@ -983,7 +990,7 @@ fn main() {
     assert_eq!(size_of::<ViviMeshSnapshot>(), 128);
 
     let paths: Vec<_> = std::env::args_os().skip(1).collect();
-    assert_eq!(paths.len(), 2, "expected basic and masked payload paths");
+    assert_eq!(paths.len(), 3, "expected basic, masked and empty payload paths");
     let mut runtime = ptr::null_mut();
     expect(
         unsafe { vivi_runtime_create(ptr::null(), ptr::null_mut(), &mut runtime) },
@@ -999,6 +1006,13 @@ fn main() {
     let masked = load(runtime, &paths[1]);
     verify_masked(masked);
     unsafe { vivi_model_destroy(masked) };
+
+    let empty = load(runtime, &paths[2]);
+    assert_eq!(mesh_count_v2(empty), 0, "empty model mesh count");
+    assert!(draw_commands(empty).is_empty(), "empty model draw commands");
+    expect(unsafe { vivi_model_update(empty, 0.0) }, OK, "empty model update");
+    assert!(draw_commands(empty).is_empty(), "empty model draw commands after update");
+    unsafe { vivi_model_destroy(empty) };
     unsafe { vivi_runtime_destroy(runtime) };
 }
 
@@ -1170,7 +1184,11 @@ fn draw_commands(model: *const c_void) -> Vec<ViviDrawCommandV2> {
         OK,
         "draw_commands",
     );
-    assert!(count == 0 || !commands_ptr.is_null());
+    if count == 0 {
+        // The C ABI permits null for an empty array; a Rust slice never does.
+        return Vec::new();
+    }
+    assert!(!commands_ptr.is_null());
     unsafe { slice::from_raw_parts(commands_ptr, count as usize) }.to_vec()
 }
 

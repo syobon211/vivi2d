@@ -43,17 +43,8 @@ describe("LayerPanel", () => {
 
   it("プロジェクト未読み込み時にプレースホルダーを表示する", () => {
     render(<LayerPanel />);
+    expect(screen.getByText("レイヤー")).toBeInTheDocument();
     expect(screen.getByText("PSD ファイルを開いてください")).toBeInTheDocument();
-  });
-
-  it("レイヤー一覧を表示する", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<LayerPanel />);
-
-    expect(screen.getByText("背景")).toBeInTheDocument();
-    expect(screen.getByText("キャラグループ")).toBeInTheDocument();
-    expect(screen.getByText("体")).toBeInTheDocument();
-    expect(screen.getByText("顔")).toBeInTheDocument();
   });
 
   it("レイヤーをクリックして選択できる", async () => {
@@ -61,27 +52,22 @@ describe("LayerPanel", () => {
     loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
     render(<LayerPanel />);
 
+    expect(screen.getByText("キャラグループ")).toBeInTheDocument();
+    expect(screen.getByText("体")).toBeInTheDocument();
+    expect(screen.getByText("顔")).toBeInTheDocument();
+    expect(screen.getByText("78%")).toBeInTheDocument();
+    expect(screen.getByRole("tree")).toHaveAttribute("aria-label", "レイヤー");
+    expect(screen.getAllByRole("treeitem").length).toBeGreaterThanOrEqual(4);
+    const bg = screen.getByText("背景").closest('[role="treeitem"]');
+    const face = screen.getByText("顔").closest('[role="treeitem"]');
+    expect(bg).toHaveAttribute("aria-level", "1");
+    expect(face).toHaveAttribute("aria-level", "2");
+    expect(face).toHaveClass("hidden-layer");
     await user.click(screen.getByText("背景"));
+    expect(bg).toHaveClass("selected");
+    expect(bg).toHaveAttribute("aria-selected", "true");
     const layerId = useEditorStore.getState().project!.layers[0]!.id;
     expect(useSelectionStore.getState().selectedLayerId).toBe(layerId);
-  });
-
-  it("選択中のレイヤーに selected クラスが付く", async () => {
-    const user = userEvent.setup();
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<LayerPanel />);
-
-    await user.click(screen.getByText("背景"));
-    const layerItem = screen.getByText("背景").closest(".layer-item");
-    expect(layerItem).toHaveClass("selected");
-  });
-
-  it("非表示レイヤーに hidden-layer クラスが付く", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<LayerPanel />);
-
-    const hiddenItem = screen.getByText("顔").closest(".layer-item");
-    expect(hiddenItem).toHaveClass("hidden-layer");
   });
 
   it("表示/非表示ボタンで visibility を切り替えられる", async () => {
@@ -104,60 +90,17 @@ describe("LayerPanel", () => {
 
     expect(screen.getByText("体")).toBeInTheDocument();
 
+    expect(
+      screen.getByText("キャラグループ").closest('[role="treeitem"]'),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("背景").closest('[role="treeitem"]')).not.toHaveAttribute(
+      "aria-expanded",
+    );
     const expandBtn = screen.getByRole("button", { name: "折りたたみ" });
     await user.click(expandBtn);
 
     expect(screen.queryByText("体")).not.toBeInTheDocument();
     expect(screen.queryByText("顔")).not.toBeInTheDocument();
-  });
-
-  it("パネルヘッダーに「レイヤー」と表示する", () => {
-    render(<LayerPanel />);
-    expect(screen.getByText("レイヤー")).toBeInTheDocument();
-  });
-
-  it("不透明度が100%未満のレイヤーにパーセント表記を表示する", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<LayerPanel />);
-
-    expect(screen.getByText("78%")).toBeInTheDocument();
-  });
-
-
-  it("panel-content に role=tree と aria-label が付く", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<LayerPanel />);
-    const tree = screen.getByRole("tree");
-    expect(tree).toHaveAttribute("aria-label", "レイヤー");
-  });
-
-  it("各レイヤーに role=treeitem と aria-level が付く", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<LayerPanel />);
-    const items = screen.getAllByRole("treeitem");
-    expect(items.length).toBeGreaterThanOrEqual(4);
-    const bg = screen.getByText("背景").closest('[role="treeitem"]');
-    expect(bg).toHaveAttribute("aria-level", "1");
-    const kao = screen.getByText("顔").closest('[role="treeitem"]');
-    expect(kao).toHaveAttribute("aria-level", "2");
-  });
-
-  it("グループに aria-expanded=true、子なしレイヤーには aria-expanded なし", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<LayerPanel />);
-    const group = screen.getByText("キャラグループ").closest('[role="treeitem"]');
-    expect(group).toHaveAttribute("aria-expanded", "true");
-    const bg = screen.getByText("背景").closest('[role="treeitem"]');
-    expect(bg).not.toHaveAttribute("aria-expanded");
-  });
-
-  it("選択レイヤーに aria-selected=true が付く", async () => {
-    const user = userEvent.setup();
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<LayerPanel />);
-    await user.click(screen.getByText("背景"));
-    const bg = screen.getByText("背景").closest('[role="treeitem"]');
-    expect(bg).toHaveAttribute("aria-selected", "true");
   });
 
   it("Enter キーで選択できる", async () => {

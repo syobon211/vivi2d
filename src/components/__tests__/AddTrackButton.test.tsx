@@ -8,7 +8,7 @@ import { useClipStore } from "@/stores/clipStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useTimelineStore } from "@/stores/timelineStore";
-import { createViviMesh, createBoneNode, createEmptyProject } from "@/test/fixtures";
+import { createBoneNode, createEmptyProject, createViviMesh } from "@/test/fixtures";
 import { TEST_AUDIO_BROKEN_PATH, TEST_AUDIO_PATH } from "@/test/path-fixtures";
 import { resetEditorStore, resetTimelineStore } from "@/test/store-reset";
 import { AddTrackButton } from "../timeline/AddTrackButton";
@@ -39,7 +39,9 @@ describe("AddTrackButton", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders available track groups for the active clip", () => {
+  it("shows all track groups together and dispatches parameter-track addition", async () => {
+    const user = userEvent.setup();
+    const addTrackSpy = vi.spyOn(useClipStore.getState(), "addTrack");
     const bone = createBoneNode({ id: "bone-1", name: "Arm" });
     const mesh = createViviMesh({ id: "mesh-1", name: "Face" });
     const clip = createBasicClip();
@@ -86,27 +88,7 @@ describe("AddTrackButton", () => {
     expect(options).toContain("Face");
     expect(options).toContain("Add audio track...");
     expect(options).toContain("Bake from voice.wav");
-  });
-
-  it("adds a parameter track", async () => {
-    const user = userEvent.setup();
-    const addTrackSpy = vi.spyOn(useClipStore.getState(), "addTrack");
-    const clip = createBasicClip();
-    const project = {
-      ...createEmptyProject(),
-      clips: [clip],
-      parameters: [
-        { id: "p1", name: "Angle X", minValue: -30, maxValue: 30, defaultValue: 0 },
-      ],
-    };
-    useEditorStore.setState({ project, projectVersion: 1 });
-
-    render(
-      <AddTrackButton clipId={clipId} clip={clip} parameters={project.parameters} />,
-    );
-
     await user.selectOptions(screen.getByRole("combobox"), "p1");
-
     expect(addTrackSpy).toHaveBeenCalledWith(clipId, "p1");
   });
 

@@ -9,7 +9,6 @@ import {
 import type { IKController } from "@vivi2d/core/types";
 import { describe, expect, it } from "vitest";
 
-
 function makeBone(
   id: string,
   x: number,
@@ -61,16 +60,8 @@ function makeIKController(overrides: Partial<IKController> = {}): IKController {
 }
 
 describe("solveTwoBoneIK: ターゲットがルートと同一位置", () => {
-  it("距離0でクラッシュせずに結果を返す", () => {
-    const [a1, a2] = solveTwoBoneIK(0, 0, 100, 100, 0, 0);
-    expect(Number.isFinite(a1)).toBe(true);
-    expect(Number.isFinite(a2)).toBe(true);
-  });
-
-  it("ターゲット=ルートで折り畳みモードに入る", () => {
-    const [a1, a2] = solveTwoBoneIK(50, 50, 100, 100, 50, 50);
-    expect(Number.isFinite(a1)).toBe(true);
-    expect(Number.isFinite(a2)).toBe(true);
+  it("平行移動したルート位置のターゲットへ折り畳む", () => {
+    expect(solveTwoBoneIK(50, 50, 100, 100, 50, 50)).toEqual([0, Math.PI]);
   });
 });
 
@@ -130,19 +121,12 @@ describe("solveCCDIK: maxIterations=0", () => {
 });
 
 describe("solveCCDIK: tolerance=0", () => {
-  it("tolerance=0 で到達可能ターゲットに対して高精度な結果", () => {
-    const bones = [makeBone("b1", 0, 0, 0, 100), makeBone("b2", 100, 0, 0, 100)];
-    const result = solveCCDIK(bones, 100, 0, 30, 0);
-    expect(result.solvedAngles.size).toBe(2);
-  });
-
-  it("tolerance=0 でも無限ループにならない", () => {
+  it("tolerance=0 は到達フラグを立てず有限反復で終了する", () => {
     const bones = [makeBone("b1", 0, 0, 0, 100)];
-    const start = performance.now();
-    const result = solveCCDIK(bones, 50, 50, 100, 0);
-    const elapsed = performance.now() - start;
-    expect(elapsed).toBeLessThan(1000);
+    const result = solveCCDIK(bones, 0, 100, 10, 0);
     expect(result.solvedAngles.size).toBe(1);
+    expect(result.solvedAngles.get("b1")).toBeCloseTo(Math.PI / 2, 12);
+    expect(result.reached).toBe(false);
   });
 });
 
@@ -358,98 +342,21 @@ describe("mapIKToParameters: 複数マッピング同時評価", () => {
       reached: true,
     };
     const params = mapIKToParameters(controller, solution);
-    expect(params.param_a).toBeDefined();
-    expect(params.param_b).toBeDefined();
+    expect(params.param_a).toBe(75);
+    expect(params.param_b).toBe(12.5);
   });
 });
 
 describe("normalizeAngle の境界（solveCCDIK 経由）", () => {
-  it("初期角度が π のボーンでも正常に解く", () => {
-    const bones = [makeBone("b1", 0, 0, Math.PI, 100)];
-    const result = solveCCDIK(bones, -50, 50, 10);
+  it.each([1, -1])("初期角度 %s × 3π を正規化して軸上ターゲットへ向ける", (sign) => {
+    const bones = [makeBone("b1", 0, 0, sign * 3 * Math.PI, 100)];
+    const result = solveCCDIK(bones, 0, sign * 100, 10);
     expect(result.solvedAngles.size).toBe(1);
-    expect(Number.isFinite(result.solvedAngles.get("b1")!)).toBe(true);
-  });
-
-  it("初期角度が -π のボーンでも正常に解く", () => {
-    const bones = [makeBone("b1", 0, 0, -Math.PI, 100)];
-    const result = solveCCDIK(bones, -50, -50, 10);
-    expect(result.solvedAngles.size).toBe(1);
-    expect(Number.isFinite(result.solvedAngles.get("b1")!)).toBe(true);
-  });
-
-  it("初期角度が 2π のボーンでも正常に解く", () => {
-    const bones = [makeBone("b1", 0, 0, 2 * Math.PI, 100)];
-    const result = solveCCDIK(bones, 100, 0, 10);
-    expect(result.solvedAngles.size).toBe(1);
-  });
-
-  it("初期角度が -2π のボーンでも正常に解く", () => {
-    const bones = [makeBone("b1", 0, 0, -2 * Math.PI, 100)];
-    const result = solveCCDIK(bones, 100, 0, 10);
-    expect(result.solvedAngles.size).toBe(1);
-  });
-
-  it("初期角度が 3π のボーンでも正常に解く", () => {
-    const bones = [makeBone("b1", 0, 0, 3 * Math.PI, 100)];
-    const result = solveCCDIK(bones, 0, 100, 10);
-    expect(result.solvedAngles.size).toBe(1);
-    expect(Number.isFinite(result.solvedAngles.get("b1")!)).toBe(true);
-  });
-
-  it("初期角度が -3π のボーンでも正常に解く", () => {
-    const bones = [makeBone("b1", 0, 0, -3 * Math.PI, 100)];
-    const result = solveCCDIK(bones, 0, -100, 10);
-    expect(result.solvedAngles.size).toBe(1);
-    expect(Number.isFinite(result.solvedAngles.get("b1")!)).toBe(true);
-  });
-});
-
-describe("solveIKController: CCD IK で influence < 1", () => {
-  it("CCD ソルバーで influence=0.5 のとき FK と IK がブレンドされる", () => {
-    const wt = makeWorldTransforms();
-    wt.set("b3", [1, 0, 0, 1, 200, 0]);
-    const bl = makeBoneLengths();
-    bl.set("b3", 100);
-
-    const controller = makeIKController({
-      solverType: "ccd",
-      boneChain: [
-        { boneId: "b1", minAngle: -Math.PI, maxAngle: Math.PI },
-        { boneId: "b2", minAngle: -Math.PI, maxAngle: Math.PI },
-        { boneId: "b3", minAngle: -Math.PI, maxAngle: Math.PI },
-      ],
-      targetX: 0,
-      targetY: 200,
-      influence: 0.5,
-      maxIterations: 15,
-    });
-    const result = solveIKController(controller, wt, bl);
-    expect(result.solvedAngles.size).toBe(3);
-
-    const fullResult = solveIKController({ ...controller, influence: 1 }, wt, bl);
-    for (const [boneId, halfAngle] of result.solvedAngles) {
-      const fullAngle = fullResult.solvedAngles.get(boneId)!;
-      expect(Math.abs(halfAngle)).toBeLessThanOrEqual(Math.abs(fullAngle) + 0.01);
-    }
-  });
-
-  it("CCD ソルバーで influence=1 のとき FK ブレンドなし", () => {
-    const wt = makeWorldTransforms();
-    const bl = makeBoneLengths();
-
-    const controller = makeIKController({
-      solverType: "ccd",
-      boneChain: [
-        { boneId: "b1", minAngle: -Math.PI, maxAngle: Math.PI },
-        { boneId: "b2", minAngle: -Math.PI, maxAngle: Math.PI },
-      ],
-      targetX: 50,
-      targetY: 50,
-      influence: 1,
-    });
-    const result = solveIKController(controller, wt, bl);
-    expect(result.solvedAngles.size).toBe(2);
+    const angle = result.solvedAngles.get("b1")!;
+    expect(angle).toBeCloseTo((sign * Math.PI) / 2, 12);
+    expect(angle).toBeGreaterThanOrEqual(-Math.PI);
+    expect(angle).toBeLessThan(Math.PI);
+    expect(result.reached).toBe(true);
   });
 });
 
@@ -489,8 +396,6 @@ describe("mapIKToParameters: 角度がクランプされるケース", () => {
     };
     const params = mapIKToParameters(controller, solution);
     // t = (normalized(2) - (-1)) / 2, clamped to [0,1]
-    expect(params.param1).toBeDefined();
-    expect(params.param1!).toBeGreaterThanOrEqual(0);
-    expect(params.param1!).toBeLessThanOrEqual(100);
+    expect(params.param1).toBe(100);
   });
 });

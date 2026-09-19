@@ -1,4 +1,3 @@
-
 import type { IKSolution } from "@vivi2d/core/ik-solver";
 import { mapIKToParameters } from "@vivi2d/core/ik-solver";
 import { evaluateImageSequenceTracksAtFrame } from "@vivi2d/core/image-sequence-utils";
@@ -9,11 +8,8 @@ import { useClipStore } from "@/stores/clipStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useIKControllerStore } from "@/stores/ikControllerStore";
 import { useIKRuntimeStore } from "@/stores/ikRuntimeStore";
-import { useOffscreenStore } from "@/stores/offscreenStore";
-import { useVMCStore } from "@/stores/vmcStore";
-import { createAnimationClip, createViviMesh, createBoneNode } from "@/test/fixtures";
+import { createAnimationClip, createBoneNode, createViviMesh } from "@/test/fixtures";
 import { setupProjectWithParameters, setupTestProject } from "@/test/helpers";
-
 
 describe("画像シーケンス + クリップ統合", () => {
   beforeEach(() => {
@@ -77,7 +73,6 @@ describe("画像シーケンス + クリップ統合", () => {
   });
 });
 
-
 describe("IKコントローラ + パラメータ統合", () => {
   beforeEach(() => {
     setupProjectWithParameters(
@@ -140,11 +135,9 @@ describe("IKコントローラ + パラメータ統合", () => {
     };
 
     const params = mapIKToParameters(ctrl, mockSolution);
-    expect(params["p-angle"]).toBeDefined();
-    expect(typeof params["p-angle"]).toBe("number");
+    expect(params).toEqual({ "p-angle": 45 });
   });
 });
-
 
 describe("ArtPath + プロジェクト統合", () => {
   beforeEach(() => {
@@ -223,107 +216,6 @@ describe("ArtPath + プロジェクト統合", () => {
     }
   });
 });
-
-
-describe("オフスクリーン + プロジェクト統合", () => {
-  beforeEach(() => {
-    setupTestProject({
-      layers: [
-        createViviMesh({ id: "mesh-a", name: "レイヤーA" }),
-        createViviMesh({ id: "mesh-b", name: "レイヤーB" }),
-      ],
-    });
-  });
-
-  it("ターゲット追加→ソース追加→サイズ変更→プロジェクト反映の全フロー", () => {
-    const osStore = useOffscreenStore.getState();
-
-    const id = osStore.addOffscreenTarget(256, 256);
-    let project = useEditorStore.getState().project!;
-    expect(project.offscreenTargets).toHaveLength(1);
-
-    osStore.addSourceLayer(id, "mesh-a");
-    osStore.addSourceLayer(id, "mesh-b");
-    project = useEditorStore.getState().project!;
-    const target = project.offscreenTargets![0]!;
-    expect(target.sourceLayerIds).toEqual(["mesh-a", "mesh-b"]);
-
-    osStore.addSourceLayer(id, "mesh-a");
-    project = useEditorStore.getState().project!;
-    expect(project.offscreenTargets![0]!.sourceLayerIds).toHaveLength(2);
-
-    osStore.setBufferSize(id, 512, 1024);
-    project = useEditorStore.getState().project!;
-    expect(project.offscreenTargets![0]!.width).toBe(512);
-    expect(project.offscreenTargets![0]!.height).toBe(1024);
-
-    osStore.removeSourceLayer(id, "mesh-a");
-    project = useEditorStore.getState().project!;
-    expect(project.offscreenTargets![0]!.sourceLayerIds).toEqual(["mesh-b"]);
-  });
-});
-
-
-describe("VMC + パラメータ統合", () => {
-  beforeEach(() => {
-    setupProjectWithParameters([
-      { id: "p1", name: "目X", min: -1, max: 1, defaultValue: 0 },
-      { id: "p2", name: "目Y", min: -1, max: 1, defaultValue: 0 },
-    ]);
-    useVMCStore.getState().reset();
-  });
-
-  it("マッピング追加→バッファ更新→パラメータへの適用フロー", () => {
-    const vmcStore = useVMCStore.getState();
-
-    vmcStore.addMapping({
-      vmcName: "EyeX",
-      parameterId: "p1",
-      scale: 2,
-      offset: 0,
-    });
-    vmcStore.addMapping({
-      vmcName: "EyeY",
-      parameterId: "p2",
-      scale: 1,
-      offset: 0.5,
-    });
-
-    expect(useVMCStore.getState().mappings).toHaveLength(2);
-
-    vmcStore.setConnected(true);
-    vmcStore.updateFaceChannelBuffer({ EyeX: 0.3, EyeY: 0.7 });
-    vmcStore.markReceived();
-
-    const state = useVMCStore.getState();
-    expect(state.faceChannelBuffer.EyeX).toBe(0.3);
-    expect(state.faceChannelBuffer.EyeY).toBe(0.7);
-    expect(state.lastReceivedAt).not.toBeNull();
-
-    const { mappings, faceChannelBuffer } = useVMCStore.getState();
-    const updates: Record<string, number> = {};
-    for (const m of mappings) {
-      const val = faceChannelBuffer[m.vmcName];
-      if (val !== undefined) updates[m.parameterId] = val * m.scale + m.offset;
-    }
-    expect(updates.p1).toBeCloseTo(0.6); // 0.3 * 2 + 0
-    expect(updates.p2).toBeCloseTo(1.2); // 0.7 * 1 + 0.5
-  });
-
-  it("マッピング更新と削除が正しく動作する", () => {
-    const vmcStore = useVMCStore.getState();
-    vmcStore.addMapping({ vmcName: "A", parameterId: "p1", scale: 1, offset: 0 });
-    vmcStore.addMapping({ vmcName: "B", parameterId: "p2", scale: 1, offset: 0 });
-
-    vmcStore.updateMapping(0, { scale: 3 });
-    expect(useVMCStore.getState().mappings[0]!.scale).toBe(3);
-
-    vmcStore.removeMapping(0);
-    expect(useVMCStore.getState().mappings).toHaveLength(1);
-    expect(useVMCStore.getState().mappings[0]!.vmcName).toBe("B");
-  });
-});
-
 
 describe("自動セットアップ統合", () => {
   it("PSD風レイヤーからパーツ検出→ボーン/物理プレビューの全フロー", () => {

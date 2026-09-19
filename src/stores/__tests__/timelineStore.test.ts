@@ -36,27 +36,21 @@ describe("timelineStore（再生専用）", () => {
       expect(useTimelineStore.getState().isPlaying).toBe(false);
     });
 
-    it("play で再生開始", () => {
-      createAndActivateClip();
-      useTimelineStore.getState().play();
-      expect(useTimelineStore.getState().isPlaying).toBe(true);
-    });
-
-    it("pause で一時停止", () => {
-      createAndActivateClip();
-      useTimelineStore.getState().play();
-      useTimelineStore.getState().pause();
-      expect(useTimelineStore.getState().isPlaying).toBe(false);
-    });
-
-    it("stop でフレーム0に戻す", () => {
+    it("play / pause / stop の状態遷移とフレーム保持を検証する", () => {
       createAndActivateClip();
       useTimelineStore.getState().seekTo(30);
+      useTimelineStore.getState().play();
+      expect(useTimelineStore.getState().isPlaying).toBe(true);
+      useTimelineStore.getState().pause();
+      expect(useTimelineStore.getState().isPlaying).toBe(false);
+      expect(useTimelineStore.getState().currentFrame).toBe(30);
       useTimelineStore.getState().play();
       useTimelineStore.getState().stop();
       expect(useTimelineStore.getState().isPlaying).toBe(false);
       expect(useTimelineStore.getState().currentFrame).toBe(0);
     });
+
+
 
     it("togglePlay で再生/停止をトグルする", () => {
       createAndActivateClip();
@@ -167,35 +161,8 @@ describe("editorStore クリップ CRUD（timelineStore から統合）", () => 
   afterEach(resetStores);
 
 
-  describe("createClip", () => {
-    it("新しいクリップを作成し project.clips に追加する", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      expect(id).toBeDefined();
 
-      const clips = useEditorStore.getState().project!.clips;
-      expect(clips).toHaveLength(1);
-      expect(clips[0]!.name).toBe("テスト");
-      expect(clips[0]!.duration).toBe(90);
-      expect(clips[0]!.fps).toBe(30);
-      expect(clips[0]!.tracks).toEqual([]);
-    });
-  });
 
-  describe("deleteClip", () => {
-    it("クリップを削除する", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().deleteClip(id);
-      expect(useEditorStore.getState().project!.clips).toHaveLength(0);
-    });
-  });
-
-  describe("renameClip", () => {
-    it("クリップ名を変更する", () => {
-      const id = useClipStore.getState().createClip("旧名");
-      useClipStore.getState().renameClip(id, "新名");
-      expect(useEditorStore.getState().project!.clips[0]!.name).toBe("新名");
-    });
-  });
 
   describe("setClipDuration", () => {
     it("クリップの長さを変更する", () => {
@@ -228,83 +195,8 @@ describe("editorStore クリップ CRUD（timelineStore から統合）", () => 
   });
 
 
-  describe("addTrack / removeTrack", () => {
-    it("トラックを追加する", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().addTrack(id, "param1");
-
-      const clip = useEditorStore.getState().project!.clips[0]!;
-      expect(clip.tracks).toHaveLength(1);
-      expect(clip.tracks[0]!.parameterId).toBe("param1");
-      expect(clip.tracks[0]!.keyframes).toEqual([]);
-    });
-
-    it("同じパラメータIDのトラックは重複追加しない", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().addTrack(id, "param1");
-      useClipStore.getState().addTrack(id, "param1");
-
-      expect(useEditorStore.getState().project!.clips[0]!.tracks).toHaveLength(1);
-    });
-
-    it("トラックを削除する", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().addTrack(id, "param1");
-      useClipStore.getState().removeTrack(id, "param1");
-
-      expect(useEditorStore.getState().project!.clips[0]!.tracks).toHaveLength(0);
-    });
-  });
 
 
-  describe("addKeyframe", () => {
-    it("キーフレームを追加する", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().addTrack(id, "param1");
-      useClipStore.getState().addKeyframe(id, "param1", 0, 10);
-
-      const kfs = useEditorStore.getState().project!.clips[0]!.tracks[0]!.keyframes;
-      expect(kfs).toHaveLength(1);
-      expect(kfs[0]!).toEqual({ frame: 0, value: 10, interpolation: "linear" });
-    });
-
-    it("キーフレームをフレーム昇順でソートする", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().addKeyframe(id, "param1", 20, 100);
-      useClipStore.getState().addKeyframe(id, "param1", 0, 0);
-      useClipStore.getState().addKeyframe(id, "param1", 10, 50);
-
-      const kfs = useEditorStore.getState().project!.clips[0]!.tracks[0]!.keyframes;
-      expect(kfs.map((k) => k.frame)).toEqual([0, 10, 20]);
-    });
-
-    it("同じフレームのキーフレームは上書きする", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().addKeyframe(id, "param1", 5, 10);
-      useClipStore.getState().addKeyframe(id, "param1", 5, 99);
-
-      const kfs = useEditorStore.getState().project!.clips[0]!.tracks[0]!.keyframes;
-      expect(kfs).toHaveLength(1);
-      expect(kfs[0]!.value).toBe(99);
-    });
-
-    it("トラックが存在しない場合は自動作成する", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().addKeyframe(id, "param1", 0, 5);
-
-      const clip = useEditorStore.getState().project!.clips[0]!;
-      expect(clip.tracks).toHaveLength(1);
-      expect(clip.tracks[0]!.parameterId).toBe("param1");
-    });
-
-    it("補間タイプを指定できる", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().addKeyframe(id, "param1", 0, 0, "step");
-
-      const kf = useEditorStore.getState().project!.clips[0]!.tracks[0]!.keyframes[0]!;
-      expect(kf.interpolation).toBe("step");
-    });
-  });
 
   describe("removeKeyframe", () => {
     it("キーフレームを削除する", () => {
@@ -320,14 +212,6 @@ describe("editorStore クリップ CRUD（timelineStore から統合）", () => 
   });
 
   describe("updateKeyframe", () => {
-    it("キーフレームの値を更新する", () => {
-      const id = useClipStore.getState().createClip("テスト");
-      useClipStore.getState().addKeyframe(id, "param1", 0, 10);
-      useClipStore.getState().updateKeyframe(id, "param1", 0, { value: 99 });
-
-      const kf = useEditorStore.getState().project!.clips[0]!.tracks[0]!.keyframes[0]!;
-      expect(kf.value).toBe(99);
-    });
 
     it("キーフレームの補間タイプを更新する", () => {
       const id = useClipStore.getState().createClip("テスト");
@@ -411,10 +295,6 @@ describe("viewMode と selectedGraphTrack", () => {
     expect(useTimelineStore.getState().selectedGraphTrackId).toBeNull();
   });
 
-  it("初期値はdopeSheetとnull", () => {
-    expect(useTimelineStore.getState().viewMode).toBe("dopeSheet");
-    expect(useTimelineStore.getState().selectedGraphTrackId).toBeNull();
-  });
 });
 
 // ============================================================

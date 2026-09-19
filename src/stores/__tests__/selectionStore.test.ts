@@ -7,72 +7,35 @@ import { resetAllStores } from "@/test/store-reset";
 describe("selectionStore", () => {
   beforeEach(() => resetAllStores());
 
-  describe("初期状態", () => {
-    it("デフォルト値が正しい", () => {
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerId).toBeNull();
-      expect(state.selectedLayerIds).toEqual([]);
-    });
-  });
 
   describe("selectLayer", () => {
-    it("レイヤーを単一選択する", () => {
-      useSelectionStore.getState().selectLayer("layer-1");
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerId).toBe("layer-1");
-      expect(state.selectedLayerIds).toEqual(["layer-1"]);
+    it("単一選択・置換・トグル追加と最後の解除を一連で検証する", () => {
+      const { selectLayer, toggleLayerSelection } = useSelectionStore.getState();
+      const assertSelection = (ids: string[], primary: string | null) => {
+        expect(useSelectionStore.getState().selectedLayerIds).toEqual(ids);
+        expect(useSelectionStore.getState().selectedLayerId).toBe(primary);
+      };
+      selectLayer("layer-1");
+      assertSelection(["layer-1"], "layer-1");
+      selectLayer("layer-2");
+      assertSelection(["layer-2"], "layer-2");
+      selectLayer(null);
+      assertSelection([], null);
+      toggleLayerSelection("layer-1");
+      assertSelection(["layer-1"], "layer-1");
+      toggleLayerSelection("layer-2");
+      assertSelection(["layer-1", "layer-2"], "layer-2");
+      toggleLayerSelection("layer-1");
+      assertSelection(["layer-2"], "layer-2");
+      toggleLayerSelection("layer-2");
+      assertSelection([], null);
     });
 
-    it("nullで選択を解除する", () => {
-      useSelectionStore.getState().selectLayer("layer-1");
-      useSelectionStore.getState().selectLayer(null);
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerId).toBeNull();
-      expect(state.selectedLayerIds).toEqual([]);
-    });
 
-    it("別のレイヤーを選択すると前の選択が上書きされる", () => {
-      useSelectionStore.getState().selectLayer("layer-1");
-      useSelectionStore.getState().selectLayer("layer-2");
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerId).toBe("layer-2");
-      expect(state.selectedLayerIds).toEqual(["layer-2"]);
-    });
+
+
   });
 
-  describe("toggleLayerSelection", () => {
-    it("未選択のレイヤーをトグルすると追加される", () => {
-      useSelectionStore.getState().selectLayer("layer-1");
-      useSelectionStore.getState().toggleLayerSelection("layer-2");
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toEqual(["layer-1", "layer-2"]);
-      expect(state.selectedLayerId).toBe("layer-2");
-    });
-
-    it("選択済みのレイヤーをトグルすると除外される", () => {
-      useSelectionStore.getState().selectLayer("layer-1");
-      useSelectionStore.getState().toggleLayerSelection("layer-2");
-      useSelectionStore.getState().toggleLayerSelection("layer-1");
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toEqual(["layer-2"]);
-      expect(state.selectedLayerId).toBe("layer-2");
-    });
-
-    it("最後の1つを除外するとselectedLayerIdがnullになる", () => {
-      useSelectionStore.getState().selectLayer("layer-1");
-      useSelectionStore.getState().toggleLayerSelection("layer-1");
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toEqual([]);
-      expect(state.selectedLayerId).toBeNull();
-    });
-
-    it("空の状態からトグルすると1件追加される", () => {
-      useSelectionStore.getState().toggleLayerSelection("layer-1");
-      const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toEqual(["layer-1"]);
-      expect(state.selectedLayerId).toBe("layer-1");
-    });
-  });
 
   describe("rangeSelectLayer", () => {
     function setupProjectWithLayers() {
@@ -127,9 +90,9 @@ describe("selectionStore", () => {
       useSelectionStore.getState().selectLayer(ids.group);
       useSelectionStore.getState().rangeSelectLayer(ids.standalone);
       const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toHaveLength(6);
-      expect(state.selectedLayerIds).toContain(ids.group);
-      expect(state.selectedLayerIds).toContain(ids.standalone);
+      expect(state.selectedLayerIds).toEqual([
+        ids.group, ids.childA, ids.childB, ids.nested, ids.nestedChild, ids.standalone,
+      ]);
     });
 
     it("起点が未設定の場合は単一選択になる", () => {
@@ -176,7 +139,9 @@ describe("selectionStore", () => {
       });
       useSelectionStore.getState().selectAllLayers();
       const state = useSelectionStore.getState();
-      expect(state.selectedLayerIds).toHaveLength(6);
+      expect(state.selectedLayerIds).toEqual([
+        ids.group, ids.childA, ids.childB, ids.nested, ids.nestedChild, ids.standalone,
+      ]);
       expect(state.selectedLayerId).toBe(ids.group);
     });
 
@@ -230,57 +195,34 @@ describe("selectionStore", () => {
   });
 
   describe("ソロ表示", () => {
-    it("初期状態でsoloLayerIdsが空", () => {
-      expect(useSelectionStore.getState().soloLayerIds).toEqual([]);
-    });
 
     describe("toggleSolo", () => {
-      it("レイヤーをソロにする", () => {
-        useSelectionStore.getState().toggleSolo("layer-1");
+      it("ソロの切替・追加・除外・全解除を一連で検証する", () => {
+        const { toggleSolo, addToSolo, clearSolo } = useSelectionStore.getState();
+        toggleSolo("layer-1");
         expect(useSelectionStore.getState().soloLayerIds).toEqual(["layer-1"]);
-      });
-
-      it("同じレイヤーを再度トグルするとソロ解除", () => {
-        useSelectionStore.getState().toggleSolo("layer-1");
-        useSelectionStore.getState().toggleSolo("layer-1");
+        toggleSolo("layer-1");
         expect(useSelectionStore.getState().soloLayerIds).toEqual([]);
-      });
-
-      it("別のレイヤーをトグルすると切り替わる", () => {
-        useSelectionStore.getState().toggleSolo("layer-1");
-        useSelectionStore.getState().toggleSolo("layer-2");
+        toggleSolo("layer-1");
+        toggleSolo("layer-2");
         expect(useSelectionStore.getState().soloLayerIds).toEqual(["layer-2"]);
-      });
-    });
-
-    describe("addToSolo", () => {
-      it("ソロ群にレイヤーを追加する", () => {
-        useSelectionStore.getState().toggleSolo("layer-1");
-        useSelectionStore.getState().addToSolo("layer-2");
-        expect(useSelectionStore.getState().soloLayerIds).toEqual(["layer-1", "layer-2"]);
-      });
-
-      it("既にソロ中のレイヤーを追加すると除外される", () => {
-        useSelectionStore.getState().toggleSolo("layer-1");
-        useSelectionStore.getState().addToSolo("layer-2");
-        useSelectionStore.getState().addToSolo("layer-1");
-        expect(useSelectionStore.getState().soloLayerIds).toEqual(["layer-2"]);
-      });
-
-      it("最後の1つを除外すると空になる", () => {
-        useSelectionStore.getState().toggleSolo("layer-1");
-        useSelectionStore.getState().addToSolo("layer-1");
+        addToSolo("layer-1");
+        expect(useSelectionStore.getState().soloLayerIds).toEqual(["layer-2", "layer-1"]);
+        addToSolo("layer-2");
+        expect(useSelectionStore.getState().soloLayerIds).toEqual(["layer-1"]);
+        addToSolo("layer-1");
+        expect(useSelectionStore.getState().soloLayerIds).toEqual([]);
+        toggleSolo("layer-1");
+        addToSolo("layer-2");
+        clearSolo();
         expect(useSelectionStore.getState().soloLayerIds).toEqual([]);
       });
+
+
+
+
     });
 
-    describe("clearSolo", () => {
-      it("ソロ表示を全解除する", () => {
-        useSelectionStore.getState().toggleSolo("layer-1");
-        useSelectionStore.getState().addToSolo("layer-2");
-        useSelectionStore.getState().clearSolo();
-        expect(useSelectionStore.getState().soloLayerIds).toEqual([]);
-      });
-    });
+
   });
 });

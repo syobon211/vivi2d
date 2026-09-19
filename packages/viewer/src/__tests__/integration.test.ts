@@ -1,7 +1,6 @@
 import type { ParameterDefinition } from "@vivi2d/core/types";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TRACKING_COUNTS, VIEWER_DEFAULTS } from "../constants";
-import { applyLocalePreference, createT, detectLocale } from "../i18n";
+import { describe, expect, it } from "vitest";
+import { TRACKING_COUNTS } from "../constants";
 import {
   autoDetectHandMapping,
   autoDetectMapping,
@@ -17,7 +16,6 @@ import {
   mapPoseLandmarksToParams,
   poseTrackingResultToParams,
 } from "../tracking/pose-mapper";
-
 
 describe("i18n + constants 統合", () => {
   it("定数のTRACKING_COUNTSとauto-mapper結果の最大値が一致する", () => {
@@ -62,20 +60,6 @@ describe("i18n + constants 統合", () => {
     const mapping = autoDetectPoseMapping(params);
     const mappedCount = Object.values(mapping).filter(Boolean).length;
     expect(mappedCount).toBe(TRACKING_COUNTS.POSE);
-  });
-
-  it("i18nのスムージングラベルがja/enどちらでも非空", () => {
-    const ja = createT("ja");
-    const en = createT("en");
-    expect(ja("smoothing").length).toBeGreaterThan(0);
-    expect(en("smoothing").length).toBeGreaterThan(0);
-  });
-
-  it("VIEWER_DEFAULTS.SMOOTHINGがスライダーの範囲内", () => {
-    expect(VIEWER_DEFAULTS.SMOOTHING).toBeGreaterThanOrEqual(
-      VIEWER_DEFAULTS.SMOOTHING_MIN,
-    );
-    expect(VIEWER_DEFAULTS.SMOOTHING).toBeLessThanOrEqual(VIEWER_DEFAULTS.SMOOTHING_MAX);
   });
 });
 
@@ -131,51 +115,5 @@ describe("pose-mapper → poseTrackingResultToParams 連携", () => {
     expect("ParamBodyRotZ" in params).toBe(true);
     expect("ParamArmLRaise" in params).toBe(true);
     expect(Number.isFinite(params.ParamBodyRotZ)).toBe(true);
-  });
-});
-
-describe("i18n ロケール切替 統合", () => {
-  beforeEach(() => localStorage.clear());
-  afterEach(() => vi.restoreAllMocks());
-
-  it("setLocale → detectLocale のラウンドトリップ", () => {
-    applyLocalePreference("en", { persist: true });
-    expect(detectLocale()).toBe("en");
-
-    applyLocalePreference("ja", { persist: true });
-    expect(detectLocale()).toBe("ja");
-  });
-
-  it("createTで生成した翻訳関数が全キーで値を返す", () => {
-    for (const locale of ["ja", "en"] as const) {
-      const t = createT(locale);
-      const keys = [
-        "openModel",
-        "faceTrackingStart",
-        "faceTrackingStop",
-        "handTrackingStart",
-        "handTrackingStop",
-        "lipSyncStart",
-        "lipSyncStop",
-        "poseStart",
-        "poseStop",
-        "confetti",
-        "hearts",
-        "stars",
-        "sparkles",
-        "bgTransparent",
-        "bgGreen",
-        "bgBlue",
-        "errFileLoad",
-        "errCameraInit",
-        "errHandInit",
-        "errMicInit",
-        "errPoseInit",
-      ] as const;
-      for (const key of keys) {
-        const val = t(key);
-        expect(val.length).toBeGreaterThan(0);
-      }
-    }
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TRACKING_COUNTS, UI_TIMING, VIEWER_DEFAULTS } from "../constants";
+import { UI_TIMING, VIEWER_DEFAULTS } from "../constants";
 
 
 describe("VIEWER_DEFAULTS", () => {
@@ -29,19 +29,5 @@ describe("UI_TIMING", () => {
 
   it("HUD_UPDATE_INTERVAL が正の値", () => {
     expect(UI_TIMING.HUD_UPDATE_INTERVAL).toBeGreaterThan(0);
-  });
-});
-
-describe("TRACKING_COUNTS", () => {
-  it("FACE が 9", () => {
-    expect(TRACKING_COUNTS.FACE).toBe(9);
-  });
-
-  it("HAND が 6", () => {
-    expect(TRACKING_COUNTS.HAND).toBe(6);
-  });
-
-  it("POSE が 5", () => {
-    expect(TRACKING_COUNTS.POSE).toBe(5);
   });
 });

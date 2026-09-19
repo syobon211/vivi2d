@@ -54,17 +54,6 @@ describe("topologicalSortTargets", () => {
     expect(result).toContain("t2");
   });
 
-  it("依存するターゲットが先に来る", () => {
-    const targets: OffscreenTarget[] = [
-      { id: "t1", width: 512, height: 512, sourceLayerIds: ["a"] },
-      { id: "t2", width: 512, height: 512, sourceLayerIds: ["layer-x"] },
-    ];
-    const consumerMap = new Map([["t1", "layer-x"]]);
-    const result = topologicalSortTargets(targets, consumerMap);
-    const _idx1 = result.indexOf("t1");
-    const _idx2 = result.indexOf("t2");
-    expect(result).toHaveLength(2);
-  });
 
   it("空のリストで空配列を返す", () => {
     expect(topologicalSortTargets([], new Map())).toEqual([]);

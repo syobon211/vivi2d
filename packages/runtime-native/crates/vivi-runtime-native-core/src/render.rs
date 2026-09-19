@@ -277,37 +277,60 @@ mod tests {
         validate_draw_commands(&valid, 1).unwrap();
 
         let invalid = [
-            DrawCommand {
-                struct_size: 23,
-                ..valid[1]
-            },
-            DrawCommand {
-                command_type: 0,
-                ..valid[1]
-            },
-            DrawCommand {
-                mesh_index: 1,
-                ..valid[1]
-            },
-            DrawCommand {
-                flags: 1,
-                ..valid[1]
-            },
-            DrawCommand {
-                mesh_index: 1,
-                ..valid[2]
-            },
-            DrawCommand {
-                flags: 2,
-                ..valid[0]
-            },
-            DrawCommand {
-                reserved: 1,
-                ..valid[1]
-            },
+            (
+                1,
+                DrawCommand {
+                    struct_size: 23,
+                    ..valid[1]
+                },
+            ),
+            (
+                1,
+                DrawCommand {
+                    command_type: 0,
+                    ..valid[1]
+                },
+            ),
+            (
+                1,
+                DrawCommand {
+                    mesh_index: 1,
+                    ..valid[1]
+                },
+            ),
+            (
+                1,
+                DrawCommand {
+                    flags: 1,
+                    ..valid[1]
+                },
+            ),
+            (
+                2,
+                DrawCommand {
+                    mesh_index: 1,
+                    ..valid[2]
+                },
+            ),
+            (
+                0,
+                DrawCommand {
+                    flags: 2,
+                    ..valid[0]
+                },
+            ),
+            (
+                1,
+                DrawCommand {
+                    reserved: 1,
+                    ..valid[1]
+                },
+            ),
         ];
-        for command in invalid {
-            let error = validate_draw_commands(&[command], 1).unwrap_err();
+        for (index, command) in invalid {
+            let mut commands = valid;
+            commands[index] = command;
+            let error = validate_draw_commands(&commands, 1).unwrap_err();
             assert_eq!(error.status(), status::DRAW_COMMANDS_INVALID);
         }
     }
@@ -320,6 +343,11 @@ mod tests {
 
         let commands = (1..=MAX_MASK_DEPTH + 1)
             .map(|depth| command(DrawCommandType::BeginMask, 0, depth))
+            .chain(
+                (0..=MAX_MASK_DEPTH)
+                    .rev()
+                    .map(|depth| command(DrawCommandType::EndMask, 0, depth)),
+            )
             .collect::<Vec<_>>();
         let error = validate_draw_commands(&commands, 1).unwrap_err();
         assert_eq!(error.status(), status::DRAW_COMMANDS_INVALID);

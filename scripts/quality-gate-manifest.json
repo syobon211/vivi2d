@@ -518,8 +518,16 @@
       "escalatable": true
     },
     {
-      "npmScript": "check:viewer-tests",
-      "command": "npm run check:viewer-tests",
+      "npmScript": "check:viewer-types",
+      "command": "npm run check:viewer-types",
+      "requiredWorkflows": [
+        ".github/workflows/quality-gates.yml"
+      ],
+      "escalatable": true
+    },
+    {
+      "npmScript": "check:viewer-test-text",
+      "command": "npm run check:viewer-test-text",
       "requiredWorkflows": [
         ".github/workflows/quality-gates.yml"
       ],

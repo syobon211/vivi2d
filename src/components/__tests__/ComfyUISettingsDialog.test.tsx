@@ -39,21 +39,6 @@ describe("ComfyUISettingsDialog", () => {
     });
   });
 
-  it("renders the dialog title", () => {
-    render(<ComfyUISettingsDialog onClose={onClose} />);
-    expect(screen.getByText(/ComfyUI.*Connection Settings/i)).toBeInTheDocument();
-  });
-
-  it("shows the current base URL", () => {
-    render(<ComfyUISettingsDialog onClose={onClose} />);
-    expect(screen.getByDisplayValue("http://127.0.0.1:8188")).toBeInTheDocument();
-  });
-
-  it("shows the test connection action", () => {
-    render(<ComfyUISettingsDialog onClose={onClose} />);
-    expect(screen.getByText(/Test Connection/i)).toBeInTheDocument();
-  });
-
   it("saves the edited URL and closes the dialog", () => {
     render(<ComfyUISettingsDialog onClose={onClose} />);
     const input = screen.getByDisplayValue("http://127.0.0.1:8188");
@@ -73,11 +58,6 @@ describe("ComfyUISettingsDialog", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the ComfyUI setup notice", () => {
-    render(<ComfyUISettingsDialog onClose={onClose} />);
-    expect(screen.getByText(/ComfyUI.*running/i)).toBeInTheDocument();
-  });
-
   it("closes when the overlay is clicked", () => {
     render(<ComfyUISettingsDialog onClose={onClose} />);
     const overlay = document.querySelector(".modal-overlay");
@@ -87,13 +67,23 @@ describe("ComfyUISettingsDialog", () => {
 
   it("shows a success state and caches compat-ready details when the connection test passes", async () => {
     const originalAPI = window.electronAPI;
+    let resolvePing!: (value: { ok: boolean }) => void;
+    const pendingPing = new Promise<{ ok: boolean }>((resolve) => {
+      resolvePing = resolve;
+    });
     window.electronAPI = {
       ...originalAPI,
-      comfyuiPing: vi.fn().mockResolvedValue({ ok: true }),
+      comfyuiPing: vi.fn().mockReturnValue(pendingPing),
     } as any;
 
     render(<ComfyUISettingsDialog onClose={onClose} />);
-    fireEvent.click(screen.getByText(/Test Connection/i));
+    expect(screen.getByText(/ComfyUI.*Connection Settings/i)).toBeInTheDocument();
+    expect(screen.getByText(/ComfyUI.*running/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue("http://127.0.0.1:8188")).toBeInTheDocument();
+    const testButton = screen.getByText(/Test Connection/i).closest("button")!;
+    fireEvent.click(testButton);
+    await vi.waitFor(() => expect(testButton).toBeDisabled());
+    resolvePing({ ok: true });
 
     await vi.waitFor(() => {
       expect(screen.getByText(/Success|Connected/i)).toBeInTheDocument();
@@ -106,6 +96,7 @@ describe("ComfyUISettingsDialog", () => {
       ).toBeInTheDocument();
     });
 
+    expect(testButton).not.toBeDisabled();
     expect(screen.getByText(/Manifest schema/i)).toBeInTheDocument();
     expect(screen.getByText(/1\.0\.0/)).toBeInTheDocument();
     expect(screen.getByText(/Plugin version/i)).toBeInTheDocument();
@@ -205,35 +196,6 @@ describe("ComfyUISettingsDialog", () => {
     });
     expect(useComfyUIStore.getState().connected).toBe(false);
     expect(useComfyUIStore.getState().compatStatus).toBe("unknown");
-
-    window.electronAPI = originalAPI;
-  });
-
-  it("disables the test button while the ping is pending", async () => {
-    const originalAPI = window.electronAPI;
-    let resolvePing: ((value: { ok: boolean }) => void) | undefined;
-    const pendingPing = new Promise<{ ok: boolean }>((resolve) => {
-      resolvePing = resolve;
-    });
-    window.electronAPI = {
-      ...originalAPI,
-      comfyuiPing: vi.fn().mockReturnValue(pendingPing),
-    } as any;
-
-    render(<ComfyUISettingsDialog onClose={onClose} />);
-    const testLabel = screen.getByText(/Test Connection/i);
-    const testButton = testLabel.closest("button");
-    fireEvent.click(testLabel);
-
-    await vi.waitFor(() => {
-      expect(testButton).toBeDisabled();
-    });
-
-    resolvePing?.({ ok: true });
-
-    await vi.waitFor(() => {
-      expect(testButton).not.toBeDisabled();
-    });
 
     window.electronAPI = originalAPI;
   });

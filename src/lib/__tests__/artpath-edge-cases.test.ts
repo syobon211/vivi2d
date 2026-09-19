@@ -7,7 +7,6 @@ import {
 import type { ArtPathControlPoint, ArtPathStyle } from "@vivi2d/core/types";
 import { describe, expect, it } from "vitest";
 
-
 function makePoint(
   x: number,
   y: number,
@@ -53,14 +52,6 @@ describe("artpath-utils: 全制御点が同一座標", () => {
       expect(p.x).toBeCloseTo(0, 5);
       expect(p.y).toBeCloseTo(0, 5);
     });
-  });
-
-  it("buildStrokeMesh: 同一座標の点列でもクラッシュしない", () => {
-    const cps = [makePoint(10, 20), makePoint(10, 20)];
-    const points = tessellateArtPath(cps, false, 4);
-    const mesh = buildStrokeMesh(points, defaultStyle);
-    expect(mesh.vertices.length).toBeGreaterThan(0);
-    expect(mesh.indices.length).toBeGreaterThan(0);
   });
 });
 
@@ -125,19 +116,16 @@ describe("artpath-utils: opacity=0", () => {
 
 describe("artpath-utils: 閉じたパスで制御点2つ", () => {
   it("2点の閉じたパスは2セグメント（往復）を生成する", () => {
-    const cps = [makePoint(0, 0), makePoint(100, 0)];
+    const cps = [makePoint(0, 0), makePoint(100, 50)];
     const openPoints = tessellateArtPath(cps, false, 4);
     const closedPoints = tessellateArtPath(cps, true, 4);
     expect(openPoints).toHaveLength(5);
     expect(closedPoints).toHaveLength(9);
-  });
-
-  it("閉じたパスの最終点が始点に戻る", () => {
-    const cps = [makePoint(0, 0), makePoint(100, 50)];
-    const points = tessellateArtPath(cps, true, 4);
-    const last = points[points.length - 1];
-    expect(last!.x).toBeCloseTo(0, 3);
-    expect(last!.y).toBeCloseTo(0, 3);
+    expect(closedPoints.at(-1)!.x).toBeCloseTo(0, 3);
+    expect(closedPoints.at(-1)!.y).toBeCloseTo(0, 3);
+    const mesh = artPathToMesh(cps, true, defaultStyle, 4);
+    expect(mesh.vertices).toHaveLength(36);
+    expect(mesh.indices).toHaveLength(48);
   });
 });
 
@@ -148,13 +136,9 @@ describe("artpath-utils: segmentsPerCurve=1", () => {
     expect(points).toHaveLength(2);
     expect(points[0]!.x).toBeCloseTo(0, 5);
     expect(points[1]!.x).toBeCloseTo(100, 5);
-  });
-
-  it("分割数1でメッシュ生成が可能", () => {
-    const cps = [makePoint(0, 0), makePoint(100, 0)];
     const mesh = artPathToMesh(cps, false, defaultStyle, 1);
-    expect(mesh.vertices.length).toBeGreaterThan(0);
-    expect(mesh.indices.length).toBeGreaterThan(0);
+    expect(mesh.vertices).toHaveLength(8);
+    expect(mesh.indices).toHaveLength(6);
   });
 });
 
@@ -163,13 +147,9 @@ describe("artpath-utils: segmentsPerCurve=100", () => {
     const cps = [makePoint(0, 0), makePoint(100, 0)];
     const points = tessellateArtPath(cps, false, 100);
     expect(points).toHaveLength(101);
-  });
-
-  it("高分割でメッシュの頂点数が正しい", () => {
-    const cps = [makePoint(0, 0), makePoint(100, 0)];
     const mesh = artPathToMesh(cps, false, defaultStyle, 100);
-    expect(mesh.vertices.length).toBe(404);
-    expect(mesh.indices.length).toBe(600);
+    expect(mesh.vertices).toHaveLength(404);
+    expect(mesh.indices).toHaveLength(600);
   });
 });
 
@@ -182,18 +162,9 @@ describe("artpath-utils: 制御点100個のパス", () => {
     const points = tessellateArtPath(cps, false, 4);
     // 98*4 + 5 = 397
     expect(points).toHaveLength(397);
-  });
-
-  it("100個の制御点でメッシュ生成が合理的時間で完了する", () => {
-    const cps: ArtPathControlPoint[] = [];
-    for (let i = 0; i < 100; i++) {
-      cps.push(makePoint(i * 10, Math.sin(i * 0.1) * 50));
-    }
-    const start = performance.now();
-    const mesh = artPathToMesh(cps, false, defaultStyle, 16);
-    const elapsed = performance.now() - start;
-    expect(elapsed).toBeLessThan(500);
-    expect(mesh.vertices.length).toBeGreaterThan(0);
+    const mesh = artPathToMesh(cps, false, defaultStyle, 4);
+    expect(mesh.vertices).toHaveLength(1588);
+    expect(mesh.indices).toHaveLength(2376);
   });
 
   it("100個の制御点で閉じたパスも正常に動作する", () => {
@@ -240,6 +211,7 @@ describe("artpath-utils: 連続する同一制御点", () => {
     const cps = [makePoint(0, 0), makePoint(0, 0), makePoint(0, 0), makePoint(0, 0)];
     const mesh = artPathToMesh(cps, false, defaultStyle, 4);
     expect(mesh.vertices.length).toBeGreaterThan(0);
+    expect(mesh.indices.length).toBeGreaterThan(0);
     for (let i = 0; i < mesh.vertices.length; i++) {
       expect(Number.isFinite(mesh.vertices[i])).toBe(true);
     }

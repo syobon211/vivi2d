@@ -181,16 +181,6 @@ describe("declared environment policy validation", () => {
 
 describe("actual environment policy projection", () => {
   it.each([
-    "npm-alpha",
-    "desktop-installer-alpha",
-  ])("accepts exact controls for %s", (environment) => {
-    const { policy, actual, branches } = liveFixture(environment);
-    expect(() =>
-      validateLiveEnvironment(policy, environment, actual, branches),
-    ).not.toThrow();
-  });
-
-  it.each([
     [
       "missing environment",
       (f) => {

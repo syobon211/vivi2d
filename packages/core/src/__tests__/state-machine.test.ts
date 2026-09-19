@@ -13,7 +13,6 @@ import type {
   TransitionCondition,
 } from "../types";
 
-
 function createTestMachine(): AnimationStateMachine {
   return {
     id: "sm-1",
@@ -69,7 +68,6 @@ function createTestClips(): ReadonlyMap<string, AnimationClip> {
     ["talkClip", createTestClip("talkClip", "talkParam")],
   ]);
 }
-
 
 describe("evaluateConditions", () => {
   it("空条件 → true（無条件遷移）", () => {
@@ -184,7 +182,6 @@ describe("evaluateConditions", () => {
     expect(evaluateConditions(conditions, {})).toBe(false);
   });
 });
-
 
 describe("findTriggeredTransition", () => {
   it("条件成立 → 遷移を返す", () => {
@@ -312,7 +309,6 @@ describe("findTriggeredTransition", () => {
   });
 });
 
-
 describe("stepStateMachine", () => {
   it("アイドル→トーク遷移（mouthOpen > 0.3）", () => {
     const machine = createTestMachine();
@@ -408,7 +404,6 @@ describe("stepStateMachine", () => {
   });
 });
 
-
 describe("createStateMachineRuntime", () => {
   it("初期状態が正しく設定される", () => {
     const machine = createTestMachine();
@@ -429,7 +424,6 @@ describe("createStateMachineRuntime", () => {
     expect(runtime.activeTransition).toBeNull();
   });
 });
-
 
 describe("evaluateBlendTree", () => {
   const walkClip: AnimationClip = {
@@ -666,8 +660,9 @@ describe("stepStateMachine ブレンドツリー遷移", () => {
 
     const runtime = createStateMachineRuntime(machine);
 
-    stepStateMachine(machine, runtime, { speed: 0.5 }, clips, 1.0);
-    expect(runtime.currentFrame).toBeCloseTo(0, 5);
+    // At a non-wrapping instant, 60 fps yields 15 frames; 30 fps would yield 7.5.
+    stepStateMachine(machine, runtime, { speed: 0.5 }, clips, 0.25);
+    expect(runtime.currentFrame).toBeCloseTo(15, 5);
   });
 
   it("blendTreeとclipId両方指定時、blendTreeが優先される", () => {
@@ -714,43 +709,6 @@ describe("stepStateMachine ブレンドツリー遷移", () => {
     const out = stepStateMachine(machine, runtime, { speed: 0 }, clips, 0.016);
     expect(out.pA).toBe(10);
     expect(out.pB).toBeUndefined();
-  });
-
-  it("additiveブレンドモードのステートマシンが定義可能であること", () => {
-    const machine: AnimationStateMachine = {
-      id: "additive-test",
-      name: "Additive",
-      states: [{ id: "s1", name: "S1", clipId: "idleClip", loop: true }],
-      transitions: [],
-      initialStateId: "s1",
-      enabled: true,
-      blendMode: "additive",
-    };
-    expect(machine.blendMode).toBe("additive");
-
-    const runtime = createStateMachineRuntime(machine);
-    const clips = createTestClips();
-    const out = stepStateMachine(machine, runtime, {}, clips, 0.5);
-    expect(out.idleParam).toBeCloseTo(0.5, 5);
-  });
-
-  it("weight=0.5のoverrideステートマシンが定義可能であること", () => {
-    const machine: AnimationStateMachine = {
-      id: "weight-test",
-      name: "Weight",
-      states: [{ id: "s1", name: "S1", clipId: "idleClip", loop: true }],
-      transitions: [],
-      initialStateId: "s1",
-      enabled: true,
-      blendMode: "override",
-      weight: 0.5,
-    };
-    expect(machine.weight).toBe(0.5);
-
-    const runtime = createStateMachineRuntime(machine);
-    const clips = createTestClips();
-    const out = stepStateMachine(machine, runtime, {}, clips, 0.5);
-    expect(out.idleParam).toBeCloseTo(0.5, 5);
   });
 
   it("blendTree遷移中にパラメータ値が変化するケース", () => {
@@ -900,27 +858,12 @@ describe("stepStateMachine ブレンドツリー遷移", () => {
   });
 });
 
-
 describe("evaluateConditions '!=' 分岐カバレッジ", () => {
   it("'!=' 演算子: 微小差（1e-7）は等しいと判定されfalseを返す", () => {
     const conditions: TransitionCondition[] = [
       { parameterId: "state", operator: "!=", threshold: 1.0 },
     ];
     expect(evaluateConditions(conditions, { state: 1.0 + 1e-7 })).toBe(false);
-  });
-
-  it("'!=' 演算子: 十分な差がある場合trueを返す", () => {
-    const conditions: TransitionCondition[] = [
-      { parameterId: "val", operator: "!=", threshold: 0 },
-    ];
-    expect(evaluateConditions(conditions, { val: 0.5 })).toBe(true);
-  });
-
-  it("'!=' 演算子: 完全に同じ値でfalseを返す", () => {
-    const conditions: TransitionCondition[] = [
-      { parameterId: "val", operator: "!=", threshold: 5.0 },
-    ];
-    expect(evaluateConditions(conditions, { val: 5.0 })).toBe(false);
   });
 
   it("'>=' 演算子: 境界値（等しい場合）→ true", () => {
@@ -1014,7 +957,6 @@ describe("stepStateMachine — 非ループクリップのフレームクラン�
     expect(runtime.currentFrame).toBe(10);
     expect(result.val).toBe(100);
   });
-
 
   it("遷移先状態が存在しない場合でもクラッシュしない", () => {
     const machine: AnimationStateMachine = {

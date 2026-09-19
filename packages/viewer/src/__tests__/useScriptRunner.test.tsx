@@ -55,26 +55,11 @@ describe("useScriptRunner", () => {
     vi.restoreAllMocks();
   });
 
-  it("初期 scriptInput は空文字", () => {
-    const { result } = renderUseScriptRunner();
-    expect(result.current.scriptInput).toBe("");
-  });
-
-  it("初期 scriptRunning は false", () => {
-    const { result } = renderUseScriptRunner();
-    expect(result.current.scriptRunning).toBe(false);
-  });
-
-  it("setScriptInput で scriptInput が更新される", () => {
-    const { result } = renderUseScriptRunner();
-    act(() => {
-      result.current.setScriptInput("smile → wait(500)");
-    });
-    expect(result.current.scriptInput).toBe("smile → wait(500)");
-  });
 
   it("scriptInput が空のとき runScript は no-op（parseScript 呼ばれず）", async () => {
     const { result } = renderUseScriptRunner(createDummyModel());
+    expect(result.current.scriptInput).toBe("");
+    expect(result.current.scriptRunning).toBe(false);
     await act(async () => {
       await result.current.runScript();
     });
@@ -113,24 +98,15 @@ describe("useScriptRunner", () => {
     act(() => {
       result.current.setScriptInput("smile → wait(500)");
     });
+    expect(result.current.scriptInput).toBe("smile → wait(500)");
     await act(async () => {
       await result.current.runScript();
     });
     expect(mockParseScript).toHaveBeenCalledWith("smile → wait(500)");
     expect(mockRunScript).toHaveBeenCalledTimes(1);
-  });
-
-  it("実行完了後 scriptRunning は false に戻る", async () => {
-    const model = createDummyModel();
-    const { result } = renderUseScriptRunner(model);
-    act(() => {
-      result.current.setScriptInput("smile");
-    });
-    await act(async () => {
-      await result.current.runScript();
-    });
     expect(result.current.scriptRunning).toBe(false);
   });
+
 
   it("実行中の再呼出しで cancelScript が呼ばれる", async () => {
     const model = createDummyModel();
@@ -163,7 +139,7 @@ describe("useScriptRunner", () => {
     });
   });
 
-  it("ScriptModelAPI: setParameter が ViviModel に委譲される", async () => {
+  it("ScriptModelAPI の全委譲と name/id lookup を保持する", async () => {
     const model = createDummyModel();
     let capturedApi: {
       setParameter: (id: string, v: number) => void;
@@ -187,84 +163,21 @@ describe("useScriptRunner", () => {
     expect(capturedApi).not.toBeNull();
     capturedApi!.setParameter("p1", 0.5);
     expect(model.setParameter).toHaveBeenCalledWith("p1", 0.5);
-  });
-
-  it("ScriptModelAPI: setParameters が委譲される", async () => {
-    const model = createDummyModel();
-    let capturedApi: { setParameters: (v: Record<string, number>) => void } | null = null;
-    mockRunScript.mockImplementation(async (_s, api) => {
-      capturedApi = api;
-    });
-    const { result } = renderUseScriptRunner(model);
-    act(() => {
-      result.current.setScriptInput("smile");
-    });
-    await act(async () => {
-      await result.current.runScript();
-    });
     capturedApi!.setParameters({ p1: 0.1, p2: 0.2 });
     expect(model.setParameters).toHaveBeenCalledWith({ p1: 0.1, p2: 0.2 });
-  });
-
-  it("ScriptModelAPI: resetParameters / applyExpressionPreset / update が委譲される", async () => {
-    const model = createDummyModel();
-    let capturedApi: {
-      resetParameters: () => void;
-      applyExpressionPreset: (id: string) => void;
-      update: () => void;
-    } | null = null;
-    mockRunScript.mockImplementation(async (_s, api) => {
-      capturedApi = api;
-    });
-    const { result } = renderUseScriptRunner(model);
-    act(() => {
-      result.current.setScriptInput("smile");
-    });
-    await act(async () => {
-      await result.current.runScript();
-    });
     capturedApi!.resetParameters();
     capturedApi!.applyExpressionPreset("preset-smile");
     capturedApi!.update();
     expect(model.resetParameters).toHaveBeenCalled();
     expect(model.applyExpressionPreset).toHaveBeenCalledWith("preset-smile");
     expect(model.update).toHaveBeenCalled();
-  });
-
-  it("ScriptModelAPI: getPresetByName が name から id を返す", async () => {
-    const model = createDummyModel();
-    let capturedApi: { getPresetByName: (n: string) => string | null } | null = null;
-    mockRunScript.mockImplementation(async (_s, api) => {
-      capturedApi = api;
-    });
-    const { result } = renderUseScriptRunner(model);
-    act(() => {
-      result.current.setScriptInput("smile");
-    });
-    await act(async () => {
-      await result.current.runScript();
-    });
     expect(capturedApi!.getPresetByName("smile")).toBe("preset-smile");
     expect(capturedApi!.getPresetByName("unknown")).toBeNull();
-  });
-
-  it("ScriptModelAPI: getParameterId が name または id から id を返す", async () => {
-    const model = createDummyModel();
-    let capturedApi: { getParameterId: (n: string) => string | null } | null = null;
-    mockRunScript.mockImplementation(async (_s, api) => {
-      capturedApi = api;
-    });
-    const { result } = renderUseScriptRunner(model);
-    act(() => {
-      result.current.setScriptInput("smile");
-    });
-    await act(async () => {
-      await result.current.runScript();
-    });
     expect(capturedApi!.getParameterId("param1")).toBe("p1");
     expect(capturedApi!.getParameterId("p2")).toBe("p2");
     expect(capturedApi!.getParameterId("missing")).toBeNull();
   });
+
 
   it("runScript が throw しても scriptRunning は false に戻る（finally 動作）", async () => {
     const model = createDummyModel();

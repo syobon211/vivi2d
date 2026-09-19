@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as autoMesh from "@/lib/auto-mesh";
 import * as textureStore from "@/lib/texture-store";
 import { useEditorStore } from "@/stores/editorStore";
+import { usePuppetWarpStore } from "@/stores/puppetWarpStore";
 import { createViviMesh, createEmptyProject, createGroup } from "@/test/fixtures";
 import { resetEditorStore } from "@/test/store-reset";
 
@@ -66,12 +67,11 @@ describe("setAutoMesh", () => {
     const { artAId } = setupProject();
     mockTexture();
     vi.spyOn(autoMesh, "generateAutoMesh").mockReturnValue(null);
-
-    const oldMesh = (getLayer(artAId) as ViviMeshNode).mesh;
+    const invalidate = vi.spyOn(usePuppetWarpStore.getState(), "invalidateMesh");
+    const oldMesh = structuredClone((getLayer(artAId) as ViviMeshNode).mesh);
     useEditorStore.getState().setAutoMesh(artAId, "standard");
-    const newMesh = (getLayer(artAId) as ViviMeshNode).mesh;
-
-    expect(newMesh.divisionsX).toBe(oldMesh.divisionsX);
+    expect((getLayer(artAId) as ViviMeshNode).mesh).toEqual(oldMesh);
+    expect(invalidate).not.toHaveBeenCalled();
   });
 
   it("keeps the old mesh when there is no texture", () => {
@@ -99,57 +99,38 @@ describe("setAutoMeshBatch", () => {
   beforeEach(resetEditorStore);
   afterEach(resetEditorStore);
 
-  it("applies auto mesh to every selected ViviMesh", () => {
-    const { artAId, artBId } = setupProject();
-    mockTexture();
-    vi.spyOn(autoMesh, "generateAutoMesh").mockReturnValue(MOCK_AUTO_MESH);
+  it("batches exact per-mesh inputs and results while leaving non-mesh nodes untouched", () => {
+    const artA = createViviMesh({ width: 80, height: 120 });
+    const artB = createViviMesh({ width: 160, height: 90 });
+    const group = createGroup({ name: "Unchanged group" });
+    useEditorStore.setState({
+      project: { ...createEmptyProject(), layers: [artA, group, artB] },
+    });
+    const canvasA = mockTexture();
+    const canvasB = { ...canvasA, width: 200 } as HTMLCanvasElement;
+    const texture = vi.spyOn(textureStore, "getTexture").mockImplementation(
+      (id) => id === artA.id ? canvasA : id === artB.id ? canvasB : undefined,
+    );
+    const meshB: MeshData = { ...MOCK_AUTO_MESH, vertices: [0, 0, 60, 0, 60, 40, 0, 40] };
+    const generate = vi.spyOn(autoMesh, "generateAutoMesh")
+      .mockReturnValueOnce(MOCK_AUTO_MESH).mockReturnValueOnce(meshB);
 
-    useEditorStore.getState().setAutoMeshBatch([artAId, artBId], "coarse");
-
-    const meshA = (getLayer(artAId) as ViviMeshNode).mesh;
-    const meshB = (getLayer(artBId) as ViviMeshNode).mesh;
-    expect(meshA.divisionsX).toBe(0);
-    expect(meshB.divisionsX).toBe(0);
-  });
-
-  it("ignores non-ViviMesh ids in the batch", () => {
-    const { artAId, groupId } = setupProject();
-    mockTexture();
-    vi.spyOn(autoMesh, "generateAutoMesh").mockReturnValue(MOCK_AUTO_MESH);
-
-    expect(() =>
-      useEditorStore.getState().setAutoMeshBatch([artAId, groupId], "standard"),
-    ).not.toThrow();
-
-    const meshA = (getLayer(artAId) as ViviMeshNode).mesh;
-    expect(meshA.divisionsX).toBe(0);
-  });
-
-  it("uses per-layer preset overrides when they are provided", () => {
-    const { artAId, artBId } = setupProject();
-    mockTexture();
-    const spy = vi.spyOn(autoMesh, "generateAutoMesh").mockReturnValue(MOCK_AUTO_MESH);
-
-    useEditorStore.getState().setAutoMeshBatch([artAId, artBId], "standard", {
-      [artAId]: "fine",
-      [artBId]: "coarse",
+    useEditorStore.getState().setAutoMeshBatch([artA.id, group.id, artB.id], "standard", {
+      [artA.id]: "fine",
+      [artB.id]: "coarse",
     });
 
-    expect(spy).toHaveBeenNthCalledWith(
-      1,
-      expect.anything(),
-      expect.any(Number),
-      expect.any(Number),
-      "fine",
-    );
-    expect(spy).toHaveBeenNthCalledWith(
-      2,
-      expect.anything(),
-      expect.any(Number),
-      expect.any(Number),
-      "coarse",
-    );
+    expect(texture.mock.calls).toEqual([[artA.id], [artB.id]]);
+    expect(generate.mock.calls).toEqual([
+      [canvasA, 80, 120, "fine"],
+      [canvasB, 160, 90, "coarse"],
+    ]);
+    expect((getLayer(artA.id) as ViviMeshNode).mesh).toEqual(MOCK_AUTO_MESH);
+    expect((getLayer(artB.id) as ViviMeshNode).mesh).toEqual(meshB);
+    expect(getLayer(group.id)).toEqual(group);
   });
+
+
 
   it("does not throw when the batch is empty", () => {
     setupProject();

@@ -1,4 +1,3 @@
-
 import { describe, expect, it, vi } from "vitest";
 import type { GeneratedBone } from "@/lib/ai-bone-generator";
 import type { MeshGenerationResult } from "@/lib/auto-setup";
@@ -10,7 +9,7 @@ import {
 } from "@/lib/auto-setup";
 import { createAutoSetupAcceptedManualMasks } from "@/lib/auto-setup-accepted-masks";
 import * as autoMeshClient from "@/lib/workers/auto-mesh-client";
-import { createViviMesh, createEmptyProject } from "@/test/fixtures";
+import { createEmptyProject, createViviMesh } from "@/test/fixtures";
 
 const VALID_SOURCE_FINGERPRINT =
   "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -73,9 +72,7 @@ describe("previewAutoSetup", () => {
   it("creates controller-rig bindings without mesh delta targets", () => {
     const project = {
       ...createEmptyProject(),
-      layers: [
-        createViviMesh({ name: "head", x: 300, y: 100, width: 200, height: 160 }),
-      ],
+      layers: [createViviMesh({ name: "head", x: 300, y: 100, width: 200, height: 160 })],
     };
 
     const result = previewAutoSetup(project, {
@@ -99,9 +96,9 @@ describe("previewAutoSetup", () => {
         }),
       }),
     );
-    expect(
-      bindingOperations.every((operation) => operation.target.type === "bone"),
-    ).toBe(true);
+    expect(bindingOperations.every((operation) => operation.target.type === "bone")).toBe(
+      true,
+    );
   });
 
   it("keeps split-layer pseudo-mask motion suggestions in review before compiling skins", () => {
@@ -234,14 +231,13 @@ describe("previewAutoSetup", () => {
 
     const masks = createAutoSetupAcceptedManualMasks(
       { ...createEmptyProject(), layers: [hair] },
-      (layerId) => (layerId === "hair-front" || layerId === "source-png" ? canvas : undefined),
+      (layerId) =>
+        layerId === "hair-front" || layerId === "source-png" ? canvas : undefined,
     );
 
     expect(masks["hair-front"]?.alpha[0]).toBe(255);
     expect(masks["mask-hair-front"]?.alpha[1]).toBe(128);
-    expect(masks["hair-front"]?.fingerprint).toMatch(
-      /^maskAlpha:v1:[a-f0-9]{16}$/,
-    );
+    expect(masks["hair-front"]?.fingerprint).toMatch(/^maskAlpha:v1:[a-f0-9]{16}$/);
     expect(masks["hair-front"]?.acceptedMaskAlphaHash).toMatch(
       /^sha256:v1:maskAlphaCanonical.v2:[a-f0-9]{64}$/,
     );
@@ -331,13 +327,25 @@ describe("previewAutoSetup", () => {
       }) as unknown as HTMLCanvasElement;
     const masks = createAutoSetupAcceptedManualMasks(project, (layerId) => {
       if (layerId === "head") {
-        return canvasFor(24, 12, alphaMask(24, 12, [{ x: 4, y: 2, width: 16, height: 8 }]));
+        return canvasFor(
+          24,
+          12,
+          alphaMask(24, 12, [{ x: 4, y: 2, width: 16, height: 8 }]),
+        );
       }
       if (layerId === "hair-front") {
-        return canvasFor(24, 32, alphaMask(24, 32, [{ x: 10, y: 8, width: 4, height: 16 }]));
+        return canvasFor(
+          24,
+          32,
+          alphaMask(24, 32, [{ x: 10, y: 8, width: 4, height: 16 }]),
+        );
       }
       if (layerId === "source-png") {
-        return canvasFor(96, 96, alphaMask(96, 96, [{ x: 0, y: 0, width: 96, height: 96 }]));
+        return canvasFor(
+          96,
+          96,
+          alphaMask(96, 96, [{ x: 0, y: 0, width: 96, height: 96 }]),
+        );
       }
       return undefined;
     });
@@ -379,11 +387,24 @@ describe("previewAutoSetup", () => {
     const project = {
       ...createEmptyProject(),
       layers: [
-        createViviMesh({ name: "左目", x: 350, y: 200, width: 50, height: 30 }),
-        createViviMesh({ name: "パーツX", x: 0, y: 0, width: 100, height: 100 }),
+        createViviMesh({
+          id: "eye",
+          name: "左目",
+          x: 350,
+          y: 200,
+          width: 50,
+          height: 30,
+        }),
+        createViviMesh({
+          id: "positional-head",
+          name: "パーツX",
+          x: 0,
+          y: 0,
+          width: 100,
+          height: 100,
+        }),
       ],
     };
-
     const lowThreshold = previewAutoSetup(project, {
       generateBones: false,
       generatePhysics: false,
@@ -394,10 +415,15 @@ describe("previewAutoSetup", () => {
       generatePhysics: false,
       minConfidence: 0.9,
     });
-
-    expect(lowThreshold.detectedParts.length).toBeGreaterThanOrEqual(
-      highThreshold.detectedParts.length,
-    );
+    expect(
+      lowThreshold.detectedParts.map((part) => [part.layerId, part.category]),
+    ).toEqual([
+      ["eye", "eyeLeft"],
+      ["positional-head", "head"],
+    ]);
+    expect(
+      highThreshold.detectedParts.map((part) => [part.layerId, part.category]),
+    ).toEqual([["eye", "eyeLeft"]]);
   });
 
   it("空プロジェクトでは検出結果が空", () => {
@@ -412,27 +438,6 @@ describe("previewAutoSetup", () => {
     expect(result.boneResult).not.toBeNull();
     expect(result.boneResult!.bones.length).toBeGreaterThanOrEqual(0);
     expect(result.physicsGroups).toHaveLength(0);
-  });
-
-
-  it("物理のみ生成（generateBones=false, generatePhysics=true）で boneResult が null", () => {
-    const project = {
-      ...createEmptyProject(),
-      layers: [
-        createViviMesh({ name: "前髪", x: 300, y: 50, width: 200, height: 120 }),
-        createViviMesh({ name: "左目", x: 350, y: 200, width: 50, height: 30 }),
-      ],
-    };
-
-    const result = previewAutoSetup(project, {
-      generateBones: false,
-      generatePhysics: true,
-      minConfidence: 0.3,
-    });
-
-    expect(result.boneResult).toBeNull();
-    expect(result.physicsGroups.length).toBeGreaterThanOrEqual(0);
-    expect(result.detectedParts.length).toBeGreaterThan(0);
   });
 
   it("両方無効（generateBones=false, generatePhysics=false）で bone=null, physics=[]", () => {
@@ -531,7 +536,6 @@ describe("previewAutoSetup", () => {
   });
 });
 
-
 describe("generateAutoWeights", () => {
   function createTestMeshResult(layerId = "mesh-1"): MeshGenerationResult {
     const vertices: number[] = [];
@@ -600,30 +604,26 @@ describe("generateAutoWeights", () => {
     expect(result).toEqual([]);
   });
 
-  it("有効なメッシュとボーンでウェイトが生成される", async () => {
-    const meshResults = [createTestMeshResult()];
-    const bones = createTestBones();
-    const result = await generateAutoWeights(meshResults, bones);
-
-    expect(result).toHaveLength(1);
-    expect(result[0]!.layerId).toBe("mesh-1");
-    expect(result[0]!.boneIds).toEqual(["bone_head", "bone_body"]);
-    expect(result[0]!.weights).toHaveLength(25);
-
-    for (const vw of result[0]!.weights) {
-      const total = vw.reduce((sum, w) => sum + w.weight, 0);
-      expect(total).toBeCloseTo(1.0, 2);
-    }
-  });
-
   it("複数メッシュで各メッシュにウェイトが生成される", async () => {
     const meshResults = [createTestMeshResult("mesh-1"), createTestMeshResult("mesh-2")];
     const bones = createTestBones();
     const result = await generateAutoWeights(meshResults, bones);
 
     expect(result).toHaveLength(2);
-    expect(result[0]!.layerId).toBe("mesh-1");
-    expect(result[1]!.layerId).toBe("mesh-2");
+    expect(result.map((mesh) => mesh.layerId)).toEqual(["mesh-1", "mesh-2"]);
+    for (const mesh of result) {
+      expect(mesh.boneIds).toEqual(["bone_head", "bone_body"]);
+      expect(mesh.weights).toHaveLength(25);
+      for (const vertex of mesh.weights) {
+        expect(vertex.length).toBeGreaterThan(0);
+        expect(vertex.reduce((sum, weight) => sum + weight.weight, 0)).toBeCloseTo(1, 2);
+        for (const weight of vertex) {
+          expect(["bone_head", "bone_body"]).toContain(weight.boneId);
+          expect(weight.weight).toBeGreaterThanOrEqual(0);
+          expect(weight.weight).toBeLessThanOrEqual(1);
+        }
+      }
+    }
   });
 
   it("インデックスが3未満のメッシュはスキップされる", async () => {
@@ -677,75 +677,14 @@ describe("generateAutoWeights", () => {
     expect(result[0]!.weights).toHaveLength(25);
 
     for (const vw of result[0]!.weights) {
+      expect(vw.length).toBeGreaterThan(0);
+      for (const weight of vw) {
+        expect(["bone_body", "bone_head", "bone_eye"]).toContain(weight.boneId);
+        expect(weight.weight).toBeGreaterThanOrEqual(0);
+        expect(weight.weight).toBeLessThanOrEqual(1);
+      }
       const total = vw.reduce((sum, w) => sum + w.weight, 0);
       expect(total).toBeCloseTo(1.0, 2);
-    }
-  });
-
-  it("3段階層ボーンで全ボーンIDがboneIdsに含まれる", async () => {
-    const meshResults = [createTestMeshResult()];
-    const bones: GeneratedBone[] = [
-      {
-        tempId: "root",
-        name: "ルート",
-        parentTempId: null,
-        x: 50,
-        y: 90,
-        partCategory: "body",
-      },
-      {
-        tempId: "mid",
-        name: "中間",
-        parentTempId: "root",
-        x: 50,
-        y: 50,
-        partCategory: "head",
-      },
-      {
-        tempId: "leaf",
-        name: "リーフ",
-        parentTempId: "mid",
-        x: 50,
-        y: 10,
-        partCategory: "eyeLeft",
-      },
-    ];
-    const result = await generateAutoWeights(meshResults, bones);
-
-    expect(result[0]!.boneIds).toHaveLength(3);
-    expect(result[0]!.boneIds).toContain("root");
-    expect(result[0]!.boneIds).toContain("mid");
-    expect(result[0]!.boneIds).toContain("leaf");
-  });
-
-  it("親子階層ボーンの各頂点ウェイトが全てのボーンを参照する", async () => {
-    const meshResults = [createTestMeshResult()];
-    const bones: GeneratedBone[] = [
-      {
-        tempId: "bone_a",
-        name: "A",
-        parentTempId: null,
-        x: 0,
-        y: 50,
-        partCategory: "body",
-      },
-      {
-        tempId: "bone_b",
-        name: "B",
-        parentTempId: "bone_a",
-        x: 100,
-        y: 50,
-        partCategory: "head",
-      },
-    ];
-    const result = await generateAutoWeights(meshResults, bones);
-
-    for (const vw of result[0]!.weights) {
-      const boneIdsInWeight = vw.map((w) => w.boneId);
-      expect(boneIdsInWeight.length).toBeGreaterThan(0);
-      for (const id of boneIdsInWeight) {
-        expect(["bone_a", "bone_b"]).toContain(id);
-      }
     }
   });
 
@@ -837,36 +776,6 @@ describe("generateAutoWeights", () => {
     for (const vw of result[0]!.weights) {
       const total = vw.reduce((sum, w) => sum + w.weight, 0);
       expect(total).toBeCloseTo(1.0, 1);
-    }
-  });
-
-  it("ウェイト値が全て0以上1以下である", async () => {
-    const meshResults = [createTestMeshResult()];
-    const bones: GeneratedBone[] = [
-      {
-        tempId: "body",
-        name: "体",
-        parentTempId: null,
-        x: 50,
-        y: 80,
-        partCategory: "body",
-      },
-      {
-        tempId: "head",
-        name: "頭",
-        parentTempId: "body",
-        x: 50,
-        y: 20,
-        partCategory: "head",
-      },
-    ];
-    const result = await generateAutoWeights(meshResults, bones);
-
-    for (const vw of result[0]!.weights) {
-      for (const w of vw) {
-        expect(w.weight).toBeGreaterThanOrEqual(0);
-        expect(w.weight).toBeLessThanOrEqual(1);
-      }
     }
   });
 
@@ -989,7 +898,6 @@ describe("generateAutoWeights", () => {
   });
 });
 
-
 describe("generateAutoMeshes", () => {
   it("テクスチャがない場合はスキップされる", async () => {
     const project = {
@@ -1020,8 +928,10 @@ describe("generateAutoMeshes", () => {
         },
       ],
     };
-    const result = await generateAutoMeshes(project, () => undefined, "standard");
+    const texture = vi.fn(() => document.createElement("canvas"));
+    const result = await generateAutoMeshes(project, texture, "standard");
     expect(result).toEqual([]);
+    expect(texture).not.toHaveBeenCalled();
   });
 
   it("カスタムメッシュ（divisionsX=0かつ頂点>8）はスキップされる", async () => {

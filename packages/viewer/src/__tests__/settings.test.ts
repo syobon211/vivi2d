@@ -176,6 +176,7 @@ describe("settings", () => {
       } as unknown as ViewerSettings);
       const parsed = JSON.parse(json);
 
+      expect(parsed.tracking).toBeUndefined();
       expect(parsed.version).toBe(1);
       expect(parsed.settings).toEqual({
         bgMode: DEFAULT_SETTINGS.bgMode,
@@ -191,12 +192,6 @@ describe("settings", () => {
       expect(json).not.toContain("secret");
     });
 
-    it("exports tracking config when provided", () => {
-      const tracking = { face: { eyeOpenLeft: "ParamEyeLOpen" } };
-      const parsed = JSON.parse(exportConfig(DEFAULT_SETTINGS, tracking));
-
-      expect(parsed.tracking).toEqual(tracking);
-    });
 
     it("sanitizes tracking config keys before export", () => {
       const parsed = JSON.parse(
@@ -214,11 +209,7 @@ describe("settings", () => {
       expect(JSON.stringify(parsed)).not.toContain("ParamLeak");
     });
 
-    it("omits tracking when not provided", () => {
-      const parsed = JSON.parse(exportConfig(DEFAULT_SETTINGS));
 
-      expect(parsed.tracking).toBeUndefined();
-    });
   });
 
   describe("importConfig", () => {

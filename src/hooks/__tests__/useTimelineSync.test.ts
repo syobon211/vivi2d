@@ -47,76 +47,32 @@ describe("useTimelineSync (フック版)", () => {
   beforeEach(resetStores);
   afterEach(resetStores);
 
-  it("syncParametersAtFrame を返す", () => {
-    const { result } = renderHook(() => useTimelineSync());
-    expect(typeof result.current.syncParametersAtFrame).toBe("function");
-  });
-
-  it("クリップが null の場合は何もしない", () => {
-    setupProject();
-    const { result } = renderHook(() => useTimelineSync());
-    result.current.syncParametersAtFrame(null, 0);
-    expect(useParameterStore.getState().parameterValues).toEqual({});
-  });
-
-  it("クリップが undefined の場合は何もしない", () => {
-    setupProject();
-    const { result } = renderHook(() => useTimelineSync());
-    result.current.syncParametersAtFrame(undefined, 0);
-    expect(useParameterStore.getState().parameterValues).toEqual({});
-  });
-
-  it("トラックなしクリップではデフォルト値を設定する", () => {
-    setupProject();
-    const clip = createClip();
-    const { result } = renderHook(() => useTimelineSync());
-
-    result.current.syncParametersAtFrame(clip, 0);
-
-    const values = useParameterStore.getState().parameterValues;
-    expect(values.p1).toBe(0); // defaultValue
-    expect(values.p2).toBe(5); // defaultValue
-  });
-
-  it("キーフレーム値でデフォルト値を上書きする", () => {
+  it("安定した hook callback が clip と非ゼロ frame を転送して複数 parameter を同期する", () => {
     setupProject();
     const clip = createClip({
       tracks: [
-        {
-          parameterId: "p1",
-          keyframes: [
-            { frame: 0, value: -30, interpolation: "linear" },
-            { frame: 89, value: 30, interpolation: "linear" },
-          ],
-        },
+        { parameterId: "p1", keyframes: [
+          { frame: 0, value: 0, interpolation: "linear" },
+          { frame: 60, value: 30, interpolation: "linear" },
+        ] },
+        { parameterId: "p2", keyframes: [
+          { frame: 0, value: 0, interpolation: "linear" },
+          { frame: 60, value: -20, interpolation: "linear" },
+        ] },
       ],
     });
-    const { result } = renderHook(() => useTimelineSync());
-
-    result.current.syncParametersAtFrame(clip, 0);
-    expect(useParameterStore.getState().parameterValues.p1).toBe(-30);
-    expect(useParameterStore.getState().parameterValues.p2).toBe(5);
+    const { result, rerender } = renderHook(() => useTimelineSync());
+    const sync = result.current.syncParametersAtFrame;
+    rerender();
+    expect(result.current.syncParametersAtFrame).toBe(sync);
+    sync(clip, 30);
+    expect(useParameterStore.getState().parameterValues).toEqual({ p1: 15, p2: -10 });
   });
 
-  it("中間フレームで補間値を反映する", () => {
-    setupProject();
-    const clip = createClip({
-      tracks: [
-        {
-          parameterId: "p1",
-          keyframes: [
-            { frame: 0, value: 0, interpolation: "linear" },
-            { frame: 89, value: 30, interpolation: "linear" },
-          ],
-        },
-      ],
-    });
-    const { result } = renderHook(() => useTimelineSync());
 
-    result.current.syncParametersAtFrame(clip, 44);
-    const v = useParameterStore.getState().parameterValues.p1;
-    expect(v).toBeCloseTo(30 * (44 / 89), 1);
-  });
+
+
+
 });
 
 describe("syncParametersAtFrame (非フック版)", () => {
@@ -125,8 +81,11 @@ describe("syncParametersAtFrame (非フック版)", () => {
 
   it("クリップが null の場合は何もしない", () => {
     setupProject();
-    syncParametersAtFrame(null, 0);
-    expect(useParameterStore.getState().parameterValues).toEqual({});
+    useParameterStore.setState({ parameterValues: { p1: 17 } });
+    for (const clip of [null, undefined]) {
+      syncParametersAtFrame(clip, 7);
+      expect(useParameterStore.getState().parameterValues).toEqual({ p1: 17 });
+    }
   });
 
   it("トラックなしクリップではデフォルト値を設定する", () => {
@@ -146,7 +105,7 @@ describe("syncParametersAtFrame (非フック版)", () => {
           parameterId: "p1",
           keyframes: [
             { frame: 0, value: 10, interpolation: "linear" },
-            { frame: 89, value: 20, interpolation: "linear" },
+            { frame: 88, value: 20, interpolation: "linear" },
           ],
         },
       ],
@@ -155,6 +114,8 @@ describe("syncParametersAtFrame (非フック版)", () => {
     syncParametersAtFrame(clip, 0);
     expect(useParameterStore.getState().parameterValues.p1).toBe(10);
     expect(useParameterStore.getState().parameterValues.p2).toBe(5);
+    syncParametersAtFrame(clip, 44);
+    expect(useParameterStore.getState().parameterValues).toEqual({ p1: 15, p2: 5 });
   });
 
   it("複数トラックを同時に評価する", () => {

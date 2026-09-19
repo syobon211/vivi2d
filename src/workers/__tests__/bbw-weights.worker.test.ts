@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { handleBBWRequest } from "../bbw-weights.worker";
 
-
 describe("handleBBWRequest", () => {
   it("正常な単純メッシュでは result を返す", () => {
     const response = handleBBWRequest({
@@ -19,11 +18,14 @@ describe("handleBBWRequest", () => {
     if (response.type !== "result") {
       throw new Error(`unexpected response type: ${response.type}`);
     }
-    expect(Array.isArray(response.result)).toBe(true);
-    expect(response.result.length).toBe(3);
+    expect(response.result).toEqual([
+      [{ boneId: "b1", weight: 1 }],
+      [{ boneId: "b1", weight: 1 }],
+      [{ boneId: "b1", weight: 1 }],
+    ]);
   });
 
-  it("空の頂点列でも型の整合性は保たれる", () => {
+  it("空の頂点列には空のweightsを返す", () => {
     const response = handleBBWRequest({
       vertices: [],
       indices: [],
@@ -36,21 +38,15 @@ describe("handleBBWRequest", () => {
         },
       ],
     });
-    expect(["result", "error"]).toContain(response.type);
+    expect(response).toEqual({ type: "result", result: [] });
   });
 
-  it("ボーンが空のときは error を返す（computeBBWWeights が弾く想定）", () => {
+  it("ボーンが空のときは各頂点に空のweightsを返す", () => {
     const response = handleBBWRequest({
       vertices: [0, 0, 1, 0, 0, 1],
       indices: [0, 1, 2],
       bones: [],
     });
-    if (response.type === "error") {
-      expect(typeof response.message).toBe("string");
-    } else if (response.type === "result") {
-      expect(Array.isArray(response.result)).toBe(true);
-    } else {
-      throw new Error(`unexpected progress-only response`);
-    }
+    expect(response).toEqual({ type: "result", result: [[], [], []] });
   });
 });

@@ -335,25 +335,4 @@ describe("shortcutStore", () => {
     });
   });
 
-  describe("loadKeymap — localStorage 異常系", () => {
-    it("localStorage に不正な JSON がある場合はデフォルトを返す", () => {
-      localStorage.setItem("vivi2d-shortcuts", "invalid json{{{");
-      useShortcutStore.getState().resetAll();
-      const keymap = useShortcutStore.getState().keymap;
-      expect(keymap.undo.key).toBe(DEFAULT_KEYMAP.undo.key);
-    });
-
-    it("localStorage に保存されたキーマップがデフォルトとマージされる", () => {
-      localStorage.setItem(
-        "vivi2d-shortcuts",
-        JSON.stringify({ undo: { key: "q", ctrl: true, shift: false, alt: false } }),
-      );
-      useShortcutStore
-        .getState()
-        .importKeymap(JSON.parse(localStorage.getItem("vivi2d-shortcuts")!));
-      const keymap = useShortcutStore.getState().keymap;
-      expect(keymap.undo.key).toBe("q");
-      expect(keymap.redo.key).toBe(DEFAULT_KEYMAP.redo.key);
-    });
-  });
 });

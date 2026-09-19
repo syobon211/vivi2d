@@ -632,13 +632,14 @@ mod tests {
     }
 
     #[test]
-    fn rejects_private_marker_before_allocation_heavy_hydration() {
-        let mut payload =
+    fn rejects_private_marker_before_malformed_tail() {
+        // The unclosed string proves early profile rejection without allocating
+        // a multi-megabyte tail that the scanner must never inspect.
+        let payload =
             br#"{"profile":"publicProfileV1","version":10,"project":{"blendShapes":[]},"huge":""#
-                .to_vec();
-        payload.extend(std::iter::repeat_n(b'x', 2 * 1024 * 1024));
+                .as_slice();
 
-        let error = parse_runtime_payload(&payload, RuntimeLimits::default()).unwrap_err();
+        let error = parse_runtime_payload(payload, RuntimeLimits::default()).unwrap_err();
         assert_eq!(error.status(), status::PRIVATE_PROFILE);
     }
 

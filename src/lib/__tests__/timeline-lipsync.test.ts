@@ -55,19 +55,15 @@ describe("timeline lip-sync baking and evaluation", () => {
     );
   });
 
-  it("computes thresholded and smoothed RMS samples in normalized range", () => {
-    const samples = computeRmsLipSyncSamples(
-      new Float32Array([0, 0, 1, 1, 0, 0, 0.5, 0.5]),
-      4,
-      2,
-      2,
-      0.2,
-      0,
-    );
-
-    expect(samples).toHaveLength(4);
-    expect(samples.every((value) => value >= 0 && value <= 1)).toBe(true);
-    expect(samples.some((value) => value > 0)).toBe(true);
+  it("computes exact RMS windows, thresholding and nonzero smoothing", () => {
+    // sqrt(((1/8)^2 + (7/8)^2)/2) = 5/8 in each two-sample window.
+    expect(computeRmsLipSyncSamples(
+      new Float32Array([0.125, 0.875, 0.125, 0.875]), 4, 2, 1, 0, 0,
+    )).toEqual([0.625, 0.625]);
+    const mono = new Float32Array([0, 0.25, 0.5, 1]);
+    // One-sample RMS = abs(sample); gain 2 is capped at 1 before threshold .75.
+    expect(computeRmsLipSyncSamples(mono, 1, 1, 2, 0.75, 0)).toEqual([0, 0, 1, 1]);
+    expect(computeRmsLipSyncSamples(mono, 1, 1, 2, 0.75, 0.5)).toEqual([0, 0, 0.5, 0.75]);
   });
 
   it("mixes decoded audio channels to mono and tolerates uneven channel lengths", () => {

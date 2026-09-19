@@ -2,12 +2,14 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const ignoreText = fs.readFileSync(path.resolve(".gitignore"), "utf8");
 const tempRoots = [];
+let emptyConfig;
+let options;
 
-afterEach(() => {
+afterAll(() => {
   for (const root of tempRoots.splice(0)) {
     const base = fs.realpathSync(os.tmpdir());
     if (
@@ -21,10 +23,10 @@ afterEach(() => {
   }
 });
 
-function checkIgnored(relativePath) {
+beforeAll(() => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "vivi-env-ignore-"));
   tempRoots.push(root);
-  const emptyConfig = path.join(root, "empty-git-config");
+  emptyConfig = path.join(root, "empty-git-config");
   fs.writeFileSync(emptyConfig, "");
   fs.writeFileSync(path.join(root, ".gitignore"), ignoreText);
   const env = Object.fromEntries(
@@ -32,9 +34,12 @@ function checkIgnored(relativePath) {
   );
   env.GIT_CONFIG_NOSYSTEM = "1";
   env.GIT_CONFIG_GLOBAL = emptyConfig;
-  const options = { cwd: root, encoding: "utf8", env, timeout: 10_000 };
+  options = { cwd: root, encoding: "utf8", env, timeout: 10_000 };
   const init = spawnSync("git", ["init", "--quiet", "--template="], options);
   if (init.status !== 0) throw new Error("Unable to initialize env-ignore fixture.");
+});
+
+function checkIgnored(relativePath) {
   return spawnSync(
     "git",
     [

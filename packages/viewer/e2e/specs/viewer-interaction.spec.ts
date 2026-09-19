@@ -36,25 +36,6 @@ async function loadModel(
   await expect(window.locator("canvas")).toBeVisible({ timeout: 10_000 });
 }
 
-test("モデル読み込み後にマッピングバッジが表示される", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-  await loadModel(window);
-
-  await expect(
-    window.locator("span", { hasText: /Test Model/ }),
-  ).toBeVisible({ timeout: 5_000 });
-
-  await app.close();
-});
 
 test("キャンバスクリックでヒットテストが動作する", async () => {
   const app = await electron.launch({
@@ -146,21 +127,15 @@ test("スムージングスライダーの操作で値が更新される", async
   const slider = window.locator('input[type="range"]');
   await expect(slider).toBeVisible({ timeout: 5_000 });
 
-  await slider.fill("0.3");
-
-  await expect(
-    window.locator("span", { hasText: "30%" }),
-  ).toBeVisible({ timeout: 2_000 });
-
-  await slider.fill("0.9");
-  await expect(
-    window.locator("span", { hasText: "90%" }),
-  ).toBeVisible({ timeout: 2_000 });
+  for (const [value, label] of [["0.3", "30%"], ["0.9", "90%"], ["0", "0%"], ["0.95", "95%"]]) {
+    await slider.fill(value!);
+    await expect(window.locator("span", { hasText: new RegExp("^" + label + "$") })).toBeVisible({ timeout: 2_000 });
+  }
 
   await app.close();
 });
 
-test("モデル読み込み前後でトラッキングボタン状態が変わる", async () => {
+test("モデル読み込み前後で顔・手・ポーズ・リップシンクの全ボタン状態が変わる", async () => {
   const app = await electron.launch({
     args: [path.join(viewerRoot, "electron/main.cjs")],
     cwd: viewerRoot,
@@ -173,13 +148,14 @@ test("モデル読み込み前後でトラッキングボタン状態が変わ�
   await window.waitForLoadState("domcontentloaded");
 
   await openSettingsPanel(window, "input-effects");
-  const trackBtn = window.locator('[data-testid="viewer-toggle-face-tracking"]');
-
-  await expect(trackBtn).toBeDisabled();
+  const buttons = ["face-tracking", "hand-tracking", "pose-tracking", "lip-sync"].map(
+    (name) => window.locator(`[data-testid="viewer-toggle-${name}"]`),
+  );
+  for (const button of buttons) await expect(button).toBeDisabled();
 
   await loadModel(window);
 
-  await expect(trackBtn).toBeEnabled({ timeout: 5_000 });
+  for (const button of buttons) await expect(button).toBeEnabled({ timeout: 5_000 });
 
   await app.close();
 });
@@ -294,71 +270,6 @@ test("修飾キー付きではホットキーが発火しない", async () => {
   await app.close();
 });
 
-test("ハンドトラッキングボタンが読み込み前はdisabled、読み込み後はenabled", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-
-  await openSettingsPanel(window, "input-effects");
-  const handBtn = window.locator('[data-testid="viewer-toggle-hand-tracking"]');
-  await expect(handBtn).toBeDisabled();
-
-  await loadModel(window);
-  await expect(handBtn).toBeEnabled({ timeout: 5_000 });
-
-  await app.close();
-});
-
-test("ポーズボタンが読み込み前はdisabled、読み込み後はenabled", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-
-  await openSettingsPanel(window, "input-effects");
-  const poseBtn = window.locator('[data-testid="viewer-toggle-pose-tracking"]');
-  await expect(poseBtn).toBeDisabled();
-
-  await loadModel(window);
-  await expect(poseBtn).toBeEnabled({ timeout: 5_000 });
-
-  await app.close();
-});
-
-test("リップシンクボタンが読み込み前はdisabled、読み込み後はenabled", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-
-  await openSettingsPanel(window, "input-effects");
-  const lipBtn = window.locator('[data-testid="viewer-toggle-lip-sync"]');
-  await expect(lipBtn).toBeDisabled();
-
-  await loadModel(window);
-  await expect(lipBtn).toBeEnabled({ timeout: 5_000 });
-
-  await app.close();
-});
 
 test("モデル読み込み後にエフェクトボタンが表示される", async () => {
   const app = await electron.launch({
@@ -479,51 +390,6 @@ test(".vivi以外の拡張子ファイルをドロップするとエラーが表
   await app.close();
 });
 
-test("不正JSONの.viviファイルを読み込むとエラーが表示される", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-
-  await window.locator('input[accept=".vivi"]').setInputFiles({
-    name: "broken.vivi",
-    mimeType: "application/json",
-    buffer: Buffer.from("{ invalid json content !!!"),
-  });
-
-  const errorSpan = window.locator('[data-testid="viewer-error"]');
-  await expect(errorSpan).toBeVisible({ timeout: 5_000 });
-
-  await expect(window.locator("canvas")).not.toBeVisible();
-
-  await app.close();
-});
-
-test("モデル読み込み後にモデル名がツールバーに表示される", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-  await loadModel(window);
-
-  await expect(
-    window.locator("span", { hasText: "Test Model" }),
-  ).toBeVisible({ timeout: 5_000 });
-
-  await app.close();
-});
 
 test("モデル読込前にプレースホルダーが表示され、読込後に消失する", async () => {
   const app = await electron.launch({
@@ -547,85 +413,6 @@ test("モデル読込前にプレースホルダーが表示され、読込後�
   await app.close();
 });
 
-test("背景色greenを選択するとcanvasのbackgroundColorが#00ff00になる", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-  await loadModel(window);
-
-  await openSettingsPanel(window);
-
-  const bgSelect = window.locator("select").filter({ hasText: /透明|グリーン/ });
-  await bgSelect.selectOption("green");
-  await window.waitForTimeout(300);
-
-  const bgColor = await window.locator("canvas").evaluate(
-    (el) => getComputedStyle(el).backgroundColor,
-  );
-  // #00ff00 = rgb(0, 255, 0)
-  expect(bgColor).toBe("rgb(0, 255, 0)");
-
-  await app.close();
-});
-
-test("スムージングスライダーを0に設定すると0%が表示される", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-
-  await openSettingsPanel(window);
-
-  const slider = window.locator('input[type="range"]');
-  await expect(slider).toBeVisible({ timeout: 5_000 });
-
-  await slider.fill("0");
-
-  await expect(
-    window.locator("span", { hasText: "0%" }),
-  ).toBeVisible({ timeout: 2_000 });
-
-  await app.close();
-});
-
-test("スムージングスライダーを0.95に設定すると95%が表示される", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-
-  await openSettingsPanel(window);
-
-  const slider = window.locator('input[type="range"]');
-  await expect(slider).toBeVisible({ timeout: 5_000 });
-
-  await slider.fill("0.95");
-
-  await expect(
-    window.locator("span", { hasText: "95%" }),
-  ).toBeVisible({ timeout: 2_000 });
-
-  await app.close();
-});
 
 test("ホットキー3-9（未割当）を押してもプリセットトーストが表示されない", async () => {
   const app = await electron.launch({
@@ -744,48 +531,6 @@ test("モデルを2回読み込んでもクラッシュしない", async () => {
   await app.close();
 });
 
-test("読込前に顔/手/ポーズ/リップシンク全ボタンがdisabledである", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-
-  await openSettingsPanel(window, "input-effects");
-  await expect(window.locator('[data-testid="viewer-toggle-face-tracking"]')).toBeDisabled();
-  await expect(window.locator('[data-testid="viewer-toggle-hand-tracking"]')).toBeDisabled();
-  await expect(window.locator('[data-testid="viewer-toggle-pose-tracking"]')).toBeDisabled();
-  await expect(window.locator('[data-testid="viewer-toggle-lip-sync"]')).toBeDisabled();
-
-  await app.close();
-});
-
-test("読込後に顔/手/ポーズ/リップシンク全ボタンがenabledになる", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-  await window.reload();
-  await window.waitForLoadState("domcontentloaded");
-  await loadModel(window);
-
-  await openSettingsPanel(window, "input-effects");
-  await expect(window.locator('[data-testid="viewer-toggle-face-tracking"]')).toBeEnabled({ timeout: 5_000 });
-  await expect(window.locator('[data-testid="viewer-toggle-hand-tracking"]')).toBeEnabled();
-  await expect(window.locator('[data-testid="viewer-toggle-pose-tracking"]')).toBeEnabled();
-  await expect(window.locator('[data-testid="viewer-toggle-lip-sync"]')).toBeEnabled();
-
-  await app.close();
-});
 
 test("背景モードをtransparent→green→blue→transparentの順に切替えてエラーなし", async () => {
   const app = await electron.launch({

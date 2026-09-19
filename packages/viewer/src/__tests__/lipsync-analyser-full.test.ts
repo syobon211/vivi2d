@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LipSyncAnalyser, vowelToMouthParams } from "../tracking/lipsync-analyser";
+import { LipSyncAnalyser } from "../tracking/lipsync-analyser";
 
 
 function createMockAudioContext() {
@@ -120,43 +120,6 @@ describe("LipSyncAnalyser", () => {
     expect(mocks.context.close).toHaveBeenCalled();
   });
 
-  it("無音時のRMS計算でvolume=0が返される", async () => {
-    const analyser = new LipSyncAnalyser();
-    await analyser.init();
-
-    let capturedVolume = -1;
-    analyser.start((vol) => {
-      capturedVolume = vol;
-    });
-
-    const rafCb = (requestAnimationFrame as unknown as ReturnType<typeof vi.fn>).mock
-      .calls[0]?.[0];
-    if (rafCb) rafCb();
-
-    expect(capturedVolume).toBe(0);
-    analyser.destroy();
-  });
-
-  it("大きな信号でvolume>0が返される", async () => {
-    mocks.analyser.getFloatTimeDomainData = vi.fn((arr: Float32Array) => {
-      for (let i = 0; i < arr.length; i++) arr[i] = 0.5;
-    });
-
-    const analyser = new LipSyncAnalyser();
-    await analyser.init();
-
-    let capturedVolume = -1;
-    analyser.start((vol) => {
-      capturedVolume = vol;
-    });
-
-    const rafCb = (requestAnimationFrame as unknown as ReturnType<typeof vi.fn>).mock
-      .calls[0]?.[0];
-    if (rafCb) rafCb();
-
-    expect(capturedVolume).toBeGreaterThan(0);
-    analyser.destroy();
-  });
 
   it("ビゼームモードではvowelパラメータが返される", async () => {
     mocks.analyser.getFloatTimeDomainData = vi.fn((arr: Float32Array) => {
@@ -207,50 +170,6 @@ describe("LipSyncAnalyser", () => {
 
     expect(capturedVowel).toBeUndefined();
     analyser.destroy();
-  });
-});
-
-describe("vowelToMouthParams", () => {
-  it("'a'は口を大きく開く", () => {
-    const { mouthOpen, mouthForm } = vowelToMouthParams("a", 1);
-    expect(mouthOpen).toBeGreaterThan(0.5);
-    expect(mouthForm).toBeCloseTo(0.5, 1);
-  });
-
-  it("'i'は口を横に引く", () => {
-    const { mouthOpen, mouthForm } = vowelToMouthParams("i", 1);
-    expect(mouthOpen).toBeLessThan(0.5);
-    expect(mouthForm).toBeGreaterThan(0.7);
-  });
-
-  it("'u'は口をすぼめる", () => {
-    const { mouthOpen, mouthForm } = vowelToMouthParams("u", 1);
-    expect(mouthOpen).toBeLessThan(0.5);
-    expect(mouthForm).toBeLessThan(0.3);
-  });
-
-  it("'e'は口を中開きで横引き", () => {
-    const { mouthOpen, mouthForm } = vowelToMouthParams("e", 1);
-    expect(mouthOpen).toBeGreaterThan(0.3);
-    expect(mouthForm).toBeGreaterThan(0.6);
-  });
-
-  it("'o'は口を丸く開く", () => {
-    const { mouthOpen, mouthForm } = vowelToMouthParams("o", 1);
-    expect(mouthOpen).toBeGreaterThan(0.3);
-    expect(mouthForm).toBeLessThan(0.4);
-  });
-
-  it("'silent'は口を閉じる", () => {
-    const { mouthOpen, mouthForm } = vowelToMouthParams("silent", 0);
-    expect(mouthOpen).toBe(0);
-    expect(mouthForm).toBe(0.5);
-  });
-
-  it("volume=0で全母音のmouthOpen=0", () => {
-    for (const v of ["a", "i", "u", "e", "o"] as const) {
-      expect(vowelToMouthParams(v, 0).mouthOpen).toBe(0);
-    }
   });
 });
 

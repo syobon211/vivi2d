@@ -24,31 +24,17 @@ describe("ColliderPanel", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("プロジェクトありでパネルヘッダーが表示される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ColliderPanel />);
-    expect(screen.getByText("コライダー")).toBeInTheDocument();
-  });
-
-  it("コライダーなしで空メッセージが表示される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ColliderPanel />);
-    expect(screen.getByText("コライダーなし")).toBeInTheDocument();
-  });
-
-  it("矩形追加ボタンでフォームが表示される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ColliderPanel />);
-
-    fireEvent.click(screen.getByText("矩形追加"));
-    expect(screen.getByPlaceholderText("コライダー名")).toBeInTheDocument();
-  });
-
   it("矩形コライダーを追加できる", async () => {
     loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
     render(<ColliderPanel />);
 
+    expect(screen.getByText("コライダー")).toBeInTheDocument();
+    expect(screen.getByText("コライダーなし")).toBeInTheDocument();
+    expect(screen.getByText("メッシュから追加")).toBeDisabled();
     fireEvent.click(screen.getByText("矩形追加"));
+    expect(screen.getByText("矩形追加")).toBeDisabled();
+    expect(screen.getByText("円追加")).toBeDisabled();
+    expect(screen.getByText(/OK|確認/)).toBeDisabled();
     const input = screen.getByPlaceholderText("コライダー名");
     fireEvent.change(input, { target: { value: "頭" } });
     fireEvent.click(screen.getByText(/OK|確認/));
@@ -98,15 +84,6 @@ describe("ColliderPanel", () => {
     });
   });
 
-  it("空名でOKボタンが無効になる", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ColliderPanel />);
-
-    fireEvent.click(screen.getByText("矩形追加"));
-    const okBtn = screen.getByText(/OK|確認/);
-    expect(okBtn).toBeDisabled();
-  });
-
   it("コライダー削除ボタンで削除できる", async () => {
     loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
     useColliderStore.getState().addRectCollider("削除対象", 0, 0, 100, 100);
@@ -142,52 +119,10 @@ describe("ColliderPanel", () => {
     fireEvent.click(item);
 
     expect(useColliderStore.getState().selectedColliderId).toBe(id);
-  });
-
-  it("選択中コライダーにcollider-selectedクラスが付与される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    const id = useColliderStore.getState().addRectCollider("選択", 0, 0, 100, 100);
-    useColliderStore.setState({ selectedColliderId: id });
-
-    render(<ColliderPanel />);
-    const item = screen.getByText("選択").closest(".collider-item")!;
-    expect(item.className).toContain("collider-selected");
-  });
-
-  it("メッシュから追加ボタンはメッシュ未選択で無効", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ColliderPanel />);
-    const meshBtn = screen.getByText("メッシュから追加");
-    expect(meshBtn).toBeDisabled();
-  });
-
-  it("フォーム表示中は追加ボタンが無効になる", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ColliderPanel />);
-
-    fireEvent.click(screen.getByText("矩形追加"));
-
-    expect(screen.getByText("矩形追加")).toBeDisabled();
-    expect(screen.getByText("円追加")).toBeDisabled();
-  });
-
-
-  it("コライダー一覧に role=listbox が付く", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    useColliderStore.getState().addRectCollider("A", 0, 0, 50, 50);
-    render(<ColliderPanel />);
+    expect(item).toHaveClass("collider-selected");
     expect(screen.getByRole("listbox", { name: "コライダー" })).toBeInTheDocument();
-  });
-
-  it("各コライダーに role=option と aria-selected が付く", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    const id = useColliderStore.getState().addRectCollider("A", 0, 0, 50, 50);
-    useColliderStore.setState({ selectedColliderId: id });
-    render(<ColliderPanel />);
-
-    const options = screen.getAllByRole("option");
-    expect(options).toHaveLength(1);
-    expect(options[0]).toHaveAttribute("aria-selected", "true");
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+    expect(item).toHaveAttribute("aria-selected", "true");
   });
 
   it("ArrowDown で次の option にフォーカス", () => {

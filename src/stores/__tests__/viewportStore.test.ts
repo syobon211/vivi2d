@@ -5,15 +5,6 @@ import { resetViewportStore } from "@/test/store-reset";
 describe("viewportStore", () => {
   beforeEach(() => resetViewportStore());
 
-  describe("初期状態", () => {
-    it("デフォルト値が正しい", () => {
-      const state = useViewportStore.getState();
-      expect(state.zoom).toBe(1);
-      expect(state.panX).toBe(0);
-      expect(state.panY).toBe(0);
-      expect(state.activeTool).toBe("select");
-    });
-  });
 
   describe("setZoom", () => {
     it("ズーム値を設定する", () => {

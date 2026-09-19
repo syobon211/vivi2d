@@ -137,18 +137,6 @@ describe("check-docs-architecture reviewer ownership coverage", () => {
     );
   });
 
-  it("accepts explicit locale and media CODEOWNERS coverage", () => {
-    const root = makeTempRepo();
-    writeRequiredDocs(
-      root,
-      "/docs/user/ja/ @xltt\n/docs/user/zh-Hans/ @xltt\n/docs/user/ko-KR/ @xltt\n/docs/user/assets/ @xltt\n",
-    );
-
-    const result = runChecker(root);
-
-    expect(result.status).toBe(0);
-  });
-
   it("rejects reviewed locale pages when base ref lacked reviewer ownership controls", () => {
     const root = makeTempRepo();
     writeRequiredDocs(root);
@@ -205,6 +193,7 @@ describe("check-docs-architecture planning document placement", () => {
   it("accepts the exact owner-approved tracked roadmap path", () => {
     const root = makeTempRepo();
     writeRequiredDocs(root, approvedCodeowners);
+    expect(runChecker(root).status).toBe(0);
     writeFile(
       root,
       "docs/developer/architecture/multiplatform-roadmap.md",
@@ -219,11 +208,7 @@ describe("check-docs-architecture planning document placement", () => {
   it("rejects another roadmap in the same directory", () => {
     const root = makeTempRepo();
     writeRequiredDocs(root, approvedCodeowners);
-    writeFile(
-      root,
-      "docs/developer/architecture/other-roadmap.md",
-      "# Other Roadmap\n",
-    );
+    writeFile(root, "docs/developer/architecture/other-roadmap.md", "# Other Roadmap\n");
 
     const result = runChecker(root);
 

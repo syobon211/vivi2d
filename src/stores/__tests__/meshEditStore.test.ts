@@ -30,22 +30,26 @@ describe("meshEditStore", () => {
       expect(useMeshEditStore.getState().selectedVertices).toEqual([3]);
     });
 
-    it("selectVertices で複数選択", () => {
-      useMeshEditStore.getState().selectVertices([0, 2, 4]);
+    it("複数選択の完全置換・空入力・clearと最後の頂点のトグル解除", () => {
+      const { selectVertices, clearSelection, toggleVertex } = useMeshEditStore.getState();
+      selectVertices([0, 2, 4]);
       expect(useMeshEditStore.getState().selectedVertices).toEqual([0, 2, 4]);
-    });
-
-    it("clearSelection で選択をクリア", () => {
-      useMeshEditStore.getState().selectVertices([1, 2, 3]);
-      useMeshEditStore.getState().clearSelection();
+      selectVertices([5]);
+      expect(useMeshEditStore.getState().selectedVertices).toEqual([5]);
+      selectVertices([]);
+      expect(useMeshEditStore.getState().selectedVertices).toEqual([]);
+      toggleVertex(2);
+      expect(useMeshEditStore.getState().selectedVertices).toEqual([2]);
+      toggleVertex(2);
+      expect(useMeshEditStore.getState().selectedVertices).toEqual([]);
+      selectVertices([1, 2, 3]);
+      clearSelection();
       expect(useMeshEditStore.getState().selectedVertices).toEqual([]);
     });
 
-    it("同一頂点を toggleVertex しても重複しない", () => {
-      useMeshEditStore.getState().toggleVertex(2);
-      useMeshEditStore.getState().toggleVertex(2);
-      expect(useMeshEditStore.getState().selectedVertices).toEqual([]);
-    });
+
+
+
 
     it("selectVertex 後に toggleVertex で追加できる", () => {
       useMeshEditStore.getState().selectVertex(0);
@@ -53,17 +57,9 @@ describe("meshEditStore", () => {
       expect(useMeshEditStore.getState().selectedVertices).toEqual([0, 3]);
     });
 
-    it("selectVertices は既存選択を完全に上書きする", () => {
-      useMeshEditStore.getState().selectVertices([0, 1, 2]);
-      useMeshEditStore.getState().selectVertices([5]);
-      expect(useMeshEditStore.getState().selectedVertices).toEqual([5]);
-    });
 
-    it("空配列で selectVertices すると選択がクリアされる", () => {
-      useMeshEditStore.getState().selectVertices([1, 2]);
-      useMeshEditStore.getState().selectVertices([]);
-      expect(useMeshEditStore.getState().selectedVertices).toEqual([]);
-    });
+
+
   });
 
   describe("投げ縄", () => {
@@ -81,12 +77,6 @@ describe("meshEditStore", () => {
       expect(useMeshEditStore.getState().lassoPoints).toEqual([]);
     });
 
-    it("endLasso 後に addLassoPoint しても蓄積されない", () => {
-      useMeshEditStore.getState().startLasso();
-      useMeshEditStore.getState().endLasso();
-      useMeshEditStore.getState().addLassoPoint(5, 5);
-      expect(useMeshEditStore.getState().lassoActive).toBe(false);
-    });
 
     it("浮動小数点座標が正確に保存される", () => {
       useMeshEditStore.getState().startLasso();
@@ -96,12 +86,5 @@ describe("meshEditStore", () => {
       expect(pts[1]).toBe(20.333);
     });
 
-    it("大量のポイントを蓄積できる", () => {
-      useMeshEditStore.getState().startLasso();
-      for (let i = 0; i < 500; i++) {
-        useMeshEditStore.getState().addLassoPoint(i, i * 2);
-      }
-      expect(useMeshEditStore.getState().lassoPoints).toHaveLength(1000);
-    });
   });
 });

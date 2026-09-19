@@ -99,11 +99,21 @@ describe("parameterBindingStore", () => {
       expect(useEditorStore.getState().project!.parameterBindings).toHaveLength(0);
     });
 
-    it("存在しないIDは無視される", () => {
-      setupProject();
+    it("不在IDへの削除・点設定・点削除は既存バインディングを保持する", () => {
+      const { boneId } = setupProject();
       const store = useParameterBindingStore.getState();
-
+      const id = store.addBinding("param-x", boneAngleTarget(boneId));
+      store.setBindingPoint(id, -30, -0.5);
+      store.setBindingPoint(id, 30, 0.5);
+      const before = structuredClone(useEditorStore.getState().project!.parameterBindings!);
+      expect(before).toHaveLength(1);
+      expect(before[0]!.bindingPoints).toHaveLength(2);
       store.removeBinding("non-existent");
+      expect(useEditorStore.getState().project!.parameterBindings).toEqual(before);
+      store.setBindingPoint("non-existent", 0, 0);
+      expect(useEditorStore.getState().project!.parameterBindings).toEqual(before);
+      store.removeBindingPoint("non-existent", 0);
+      expect(useEditorStore.getState().project!.parameterBindings).toEqual(before);
     });
   });
 
@@ -151,12 +161,7 @@ describe("parameterBindingStore", () => {
       expect(binding.bindingPoints[0]!.targetValue).toBe(0.9);
     });
 
-    it("存在しないバインディングIDは無視される", () => {
-      setupProject();
-      const store = useParameterBindingStore.getState();
 
-      store.setBindingPoint("non-existent", 0, 0);
-    });
   });
 
   describe("removeBindingPoint", () => {
@@ -174,12 +179,7 @@ describe("parameterBindingStore", () => {
       expect(binding.bindingPoints[0]!.paramValue).toBe(30);
     });
 
-    it("存在しないバインディングIDは無視される", () => {
-      setupProject();
-      const store = useParameterBindingStore.getState();
 
-      store.removeBindingPoint("non-existent", 0);
-    });
 
     it("存在しないparamValueは無視される", () => {
       const { boneId } = setupProject();
@@ -308,30 +308,6 @@ describe("evaluateBindingsAdditive", () => {
     expect(result).toBeCloseTo(0.25);
   });
 
-  it("2つのバインディングを加算合成する（四隅）", () => {
-    const bindings: ParameterBinding[] = [
-      {
-        id: "bx",
-        parameterId: "px",
-        target: { type: "bone", boneId: "bone1", property: "angle" },
-        bindingPoints: [
-          { paramValue: 0, targetValue: 0 },
-          { paramValue: 30, targetValue: 0.5 },
-        ],
-      },
-      {
-        id: "by",
-        parameterId: "py",
-        target: { type: "bone", boneId: "bone1", property: "angle" },
-        bindingPoints: [
-          { paramValue: 0, targetValue: 0 },
-          { paramValue: 30, targetValue: 0.3 },
-        ],
-      },
-    ];
-    const result = evaluateBindingsAdditive(bindings, { px: 30, py: 30 }, 0);
-    expect(result).toBeCloseTo(0.8);
-  });
 
   it("デフォルト以外の基準値でも正しく合成される", () => {
     // 1 + (1.5-1) + (1.2-1) = 1.7

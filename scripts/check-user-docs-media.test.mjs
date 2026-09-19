@@ -144,7 +144,12 @@ function webpWithChunk(type) {
   const body = Buffer.concat([Buffer.from(type, "ascii"), chunkSize, payload]);
   const riffSize = Buffer.alloc(4);
   riffSize.writeUInt32LE(4 + body.length);
-  return Buffer.concat([Buffer.from("RIFF", "ascii"), riffSize, Buffer.from("WEBP", "ascii"), body]);
+  return Buffer.concat([
+    Buffer.from("RIFF", "ascii"),
+    riffSize,
+    Buffer.from("WEBP", "ascii"),
+    body,
+  ]);
 }
 
 function webpVp8WithDimensions(width, height) {
@@ -159,7 +164,12 @@ function webpVp8WithDimensions(width, height) {
   const body = Buffer.concat([Buffer.from("VP8 ", "ascii"), chunkSize, payload]);
   const riffSize = Buffer.alloc(4);
   riffSize.writeUInt32LE(4 + body.length);
-  return Buffer.concat([Buffer.from("RIFF", "ascii"), riffSize, Buffer.from("WEBP", "ascii"), body]);
+  return Buffer.concat([
+    Buffer.from("RIFF", "ascii"),
+    riffSize,
+    Buffer.from("WEBP", "ascii"),
+    body,
+  ]);
 }
 
 function webpVp8lWithDimensions(width, height) {
@@ -170,15 +180,15 @@ function webpVp8lWithDimensions(width, height) {
   const chunkSize = Buffer.alloc(4);
   chunkSize.writeUInt32LE(payload.length);
   const padding = payload.length % 2 === 1 ? Buffer.alloc(1) : Buffer.alloc(0);
-  const body = Buffer.concat([
-    Buffer.from("VP8L", "ascii"),
-    chunkSize,
-    payload,
-    padding,
-  ]);
+  const body = Buffer.concat([Buffer.from("VP8L", "ascii"), chunkSize, payload, padding]);
   const riffSize = Buffer.alloc(4);
   riffSize.writeUInt32LE(4 + body.length);
-  return Buffer.concat([Buffer.from("RIFF", "ascii"), riffSize, Buffer.from("WEBP", "ascii"), body]);
+  return Buffer.concat([
+    Buffer.from("RIFF", "ascii"),
+    riffSize,
+    Buffer.from("WEBP", "ascii"),
+    body,
+  ]);
 }
 
 function ebmlElement(id, data) {
@@ -339,7 +349,10 @@ describe("check-user-docs-media", () => {
     writeFile(
       root,
       "docs/user/assets/images/with-time.png",
-      pngWithMetadataChunk("tIME", Buffer.from([0x07, 0xe5, 0x01, 0x01, 0x00, 0x00, 0x00])),
+      pngWithMetadataChunk(
+        "tIME",
+        Buffer.from([0x07, 0xe5, 0x01, 0x01, 0x00, 0x00, 0x00]),
+      ),
     );
     writeManifest(root, {
       variants: {
@@ -415,12 +428,12 @@ describe("check-user-docs-media", () => {
     expect(outputOf(result)).toContain("SVG contains unsafe markup");
   });
 
-  it("rejects SVG event handlers and external hrefs", () => {
+  it("rejects SVG event handlers without relying on an unsafe URL", () => {
     const root = makeTempRepo();
     writeFile(
       root,
       "docs/user/assets/images/first-project.neutral.svg",
-      '<svg><a href="javascript:alert(1)" onclick="alert(1)">bad</a></svg>\n',
+      '<svg><a onclick="alert(1)">bad</a></svg>\n',
     );
     writeManifest(root);
 
@@ -483,7 +496,7 @@ describe("check-user-docs-media", () => {
   });
 
   it("rejects SVG hrefs with leading whitespace or protocol-relative URLs", () => {
-    for (const href of [' javascript:alert(1)', "//example.com/asset.svg"]) {
+    for (const href of [" javascript:alert(1)", "//example.com/asset.svg"]) {
       const root = makeTempRepo();
       writeFile(
         root,
@@ -856,7 +869,7 @@ describe("check-user-docs-media", () => {
     expect(outputOf(result)).toContain("media file exceeds byte limit");
   });
 
-  it("rejects directories and symlinks as media assets", () => {
+  it("rejects directories as media assets", () => {
     const directoryRoot = makeTempRepo();
     fs.mkdirSync(path.join(directoryRoot, "docs/user/assets/images/not-a-file.svg"), {
       recursive: true,
@@ -873,7 +886,9 @@ describe("check-user-docs-media", () => {
 
     expect(directoryResult.status).not.toBe(0);
     expect(outputOf(directoryResult)).toContain("media asset must be a regular file");
+  });
 
+  it("rejects symlinks as media assets", ({ skip }) => {
     const symlinkRoot = makeTempRepo();
     writeFile(symlinkRoot, "outside.svg", "<svg />\n");
     fs.mkdirSync(path.join(symlinkRoot, "docs/user/assets/images"), { recursive: true });
@@ -882,8 +897,11 @@ describe("check-user-docs-media", () => {
         path.join(symlinkRoot, "outside.svg"),
         path.join(symlinkRoot, "docs/user/assets/images/link.svg"),
       );
-    } catch {
-      return;
+    } catch (error) {
+      if (["EPERM", "EACCES", "ENOSYS", "ENOTSUP"].includes(error.code)) {
+        skip("Creating symlinks is unavailable in this environment.");
+      }
+      throw error;
     }
     writeManifest(symlinkRoot, {
       variants: {

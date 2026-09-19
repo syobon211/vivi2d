@@ -98,6 +98,22 @@ class NodesContractTests(unittest.TestCase):
             layers=layers,
         )
 
+    def _decompose(self, *, image):
+        return ViviSeeThroughDecompose().decompose(
+            image=image,
+            seed=42,
+            resolution=1280,
+            num_inference_steps=30,
+            tblr_split=True,
+            use_lama=True,
+            quant_mode="none",
+            group_offload=False,
+            filename_prefix="test",
+            schema_version="1.0.0",
+            plugin_version="0.1.0",
+            capability="vivi2d.seethrough.v1",
+        )
+
     def test_terminal_nodes_are_marked_as_output_nodes(self):
         self.assertTrue(ViviSeeThroughDecompose.OUTPUT_NODE)
         self.assertTrue(ViviSeeThroughExportPSD.OUTPUT_NODE)
@@ -114,60 +130,21 @@ class NodesContractTests(unittest.TestCase):
         self._install_backend_that_must_not_run()
 
         with self.assertRaisesRegex(RuntimeError, "Input image exceeds"):
-            ViviSeeThroughDecompose().decompose(
-                image=_ArrayBomb((3, 3, 4)),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
+            self._decompose(image=_ArrayBomb((3, 3, 4)))
 
     def test_decompose_rejects_input_image_side_over_limit_before_backend_call(self):
         nodes.MAX_IMAGE_SIDE = 2
         self._install_backend_that_must_not_run()
 
         with self.assertRaisesRegex(RuntimeError, "Input image exceeds"):
-            ViviSeeThroughDecompose().decompose(
-                image=_ArrayBomb((1, 3, 4)),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
+            self._decompose(image=_ArrayBomb((1, 3, 4)))
 
     def test_decompose_rejects_preview_image_over_pixel_limit(self):
         nodes.MAX_PREVIEW_PIXELS = 4
         self._install_fake_backend(self._result_with_images(preview_shape=(3, 3, 4)))
 
         with self.assertRaisesRegex(RuntimeError, "Preview image exceeds"):
-            ViviSeeThroughDecompose().decompose(
-                image=object(),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
+            self._decompose(image=object())
 
     def test_decompose_rejects_too_many_layers_before_writing_images(self):
         self._install_fake_backend(
@@ -178,20 +155,7 @@ class NodesContractTests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(RuntimeError, "too many layers"):
-            ViviSeeThroughDecompose().decompose(
-                image=object(),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
+            self._decompose(image=object())
 
     def test_decompose_rejects_layer_png_over_encoded_byte_limit(self):
         nodes.MAX_LAYER_IMAGE_BYTES = 1
@@ -203,20 +167,7 @@ class NodesContractTests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(RuntimeError, "maximum encoded size"):
-            ViviSeeThroughDecompose().decompose(
-                image=object(),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
+            self._decompose(image=object())
 
     def test_decompose_rejects_layer_pngs_over_total_encoded_byte_limit(self):
         nodes.MAX_LAYER_IMAGE_BYTES = 1024
@@ -229,20 +180,7 @@ class NodesContractTests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(RuntimeError, "maximum total encoded size"):
-            ViviSeeThroughDecompose().decompose(
-                image=object(),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
+            self._decompose(image=object())
 
     def test_decompose_rejects_preview_tensor_shape_before_cpu_copy(self):
         nodes.MAX_PREVIEW_PIXELS = 4
@@ -251,20 +189,7 @@ class NodesContractTests(unittest.TestCase):
         self._install_fake_backend(result)
 
         with self.assertRaisesRegex(RuntimeError, "Preview image exceeds"):
-            ViviSeeThroughDecompose().decompose(
-                image=object(),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
+            self._decompose(image=object())
 
     def test_decompose_rejects_layer_image_over_pixel_limit(self):
         nodes.MAX_LAYER_PIXELS = 4
@@ -273,46 +198,7 @@ class NodesContractTests(unittest.TestCase):
         )
 
         with self.assertRaisesRegex(RuntimeError, "Layer image 0 exceeds"):
-            ViviSeeThroughDecompose().decompose(
-                image=object(),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
-
-    def test_decompose_rejects_total_layer_pixels_over_budget(self):
-        nodes.MAX_LAYER_PIXELS = 16
-        nodes.MAX_TOTAL_LAYER_PIXELS = 4
-        self._install_fake_backend(
-            self._result_with_images(
-                preview_shape=(2, 2, 4),
-                layer_shapes=[(2, 2, 4), (2, 2, 4)],
-            )
-        )
-
-        with self.assertRaisesRegex(RuntimeError, "maximum total pixel count"):
-            ViviSeeThroughDecompose().decompose(
-                image=object(),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
+            self._decompose(image=object())
 
     def test_decompose_rejects_total_layer_pixels_before_materializing_over_budget_layer(self):
         nodes.MAX_LAYER_PIXELS = 16
@@ -326,20 +212,7 @@ class NodesContractTests(unittest.TestCase):
         self._install_fake_backend(result)
 
         with self.assertRaisesRegex(RuntimeError, "maximum total pixel count"):
-            ViviSeeThroughDecompose().decompose(
-                image=object(),
-                seed=42,
-                resolution=1280,
-                num_inference_steps=30,
-                tblr_split=True,
-                use_lama=True,
-                quant_mode="none",
-                group_offload=False,
-                filename_prefix="test",
-                schema_version="1.0.0",
-                plugin_version="0.1.0",
-                capability="vivi2d.seethrough.v1",
-            )
+            self._decompose(image=object())
 
     def test_decompose_rejects_layer_dimensions_that_do_not_match_bbox_and_cleans_job(self):
         result = self._result_with_images(
@@ -353,20 +226,7 @@ class NodesContractTests(unittest.TestCase):
             job_dir = Path(temp_dir) / "decompose" / "job"
             self._use_fixed_job_dir(job_dir)
             with self.assertRaisesRegex(RuntimeError, "dimensions do not match"):
-                ViviSeeThroughDecompose().decompose(
-                    image=object(),
-                    seed=42,
-                    resolution=1280,
-                    num_inference_steps=30,
-                    tblr_split=True,
-                    use_lama=True,
-                    quant_mode="none",
-                    group_offload=False,
-                    filename_prefix="test",
-                    schema_version="1.0.0",
-                    plugin_version="0.1.0",
-                    capability="vivi2d.seethrough.v1",
-                )
+                self._decompose(image=object())
             self.assertFalse(job_dir.exists())
 
     def test_decompose_rejects_bbox_outside_canvas_and_cleans_job(self):
@@ -381,20 +241,7 @@ class NodesContractTests(unittest.TestCase):
             job_dir = Path(temp_dir) / "decompose" / "job"
             self._use_fixed_job_dir(job_dir)
             with self.assertRaisesRegex(RuntimeError, "bbox is outside the canvas"):
-                ViviSeeThroughDecompose().decompose(
-                    image=object(),
-                    seed=42,
-                    resolution=1280,
-                    num_inference_steps=30,
-                    tblr_split=True,
-                    use_lama=True,
-                    quant_mode="none",
-                    group_offload=False,
-                    filename_prefix="test",
-                    schema_version="1.0.0",
-                    plugin_version="0.1.0",
-                    capability="vivi2d.seethrough.v1",
-                )
+                self._decompose(image=object())
             self.assertFalse(job_dir.exists())
 
     def test_decompose_cleans_job_when_backend_fails_after_writing(self):
@@ -408,20 +255,7 @@ class NodesContractTests(unittest.TestCase):
             job_dir = Path(temp_dir) / "decompose" / "job"
             self._use_fixed_job_dir(job_dir)
             with self.assertRaisesRegex(RuntimeError, "backend failed"):
-                ViviSeeThroughDecompose().decompose(
-                    image=object(),
-                    seed=42,
-                    resolution=1280,
-                    num_inference_steps=30,
-                    tblr_split=True,
-                    use_lama=True,
-                    quant_mode="none",
-                    group_offload=False,
-                    filename_prefix="test",
-                    schema_version="1.0.0",
-                    plugin_version="0.1.0",
-                    capability="vivi2d.seethrough.v1",
-                )
+                self._decompose(image=object())
             self.assertFalse(job_dir.exists())
 
     def test_saved_layer_validation_rejects_non_png_content(self):

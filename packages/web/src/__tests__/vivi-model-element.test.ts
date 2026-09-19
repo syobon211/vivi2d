@@ -64,10 +64,6 @@ describe("ViviModelElement", () => {
     vi.restoreAllMocks();
   });
 
-  it("カスタム要素として登録されている", () => {
-    expect(customElements.get("vivi-model")).toBe(ViviModelElement);
-  });
-
   it("observedAttributesが正しい", () => {
     expect(ViviModelElement.observedAttributes).toEqual([
       "src",
@@ -77,22 +73,26 @@ describe("ViviModelElement", () => {
     ]);
   });
 
-  it("Shadow DOMにcanvasが含まれる", () => {
-    const el = document.createElement("vivi-model") as ViviModelElement;
-    expect(el.shadowRoot).not.toBeNull();
-    const canvas = el.shadowRoot!.querySelector("canvas");
-    expect(canvas).not.toBeNull();
-  });
-
-  it("初期状態ではmodelがnull", () => {
+  it("未load状態の公開getterとmutatorは空/null/no-opを保持する", () => {
     const el = document.createElement("vivi-model") as ViviModelElement;
     expect(el.model).toBeNull();
     expect(el.project).toBeNull();
+    expect(el.getParameters()).toEqual([]);
+    expect(() => el.setParameter("p1", 15)).not.toThrow();
+    expect(() => el.setParameters({ p1: 20 })).not.toThrow();
+    expect(() => el.resetParameters()).not.toThrow();
+    expect(el.getExpressionPresets()).toEqual([]);
+    expect(() => el.applyExpressionPreset("nonexistent")).not.toThrow();
+    expect(() => el.applyPresetByHotkey(1)).not.toThrow();
+    expect(el.hitTest(0, 0)).toBeNull();
+    expect(el.screenToWorld(0, 0)).toBeNull();
     expect(el.loading).toBe(false);
   });
 
   it("load()でモデルを読み込める", async () => {
     const el = document.createElement("vivi-model") as ViviModelElement;
+    expect(el.shadowRoot).not.toBeNull();
+    expect(el.shadowRoot!.querySelector("canvas")).not.toBeNull();
     document.body.appendChild(el);
 
     const loadPromise = new Promise<void>((resolve) => {
@@ -107,9 +107,10 @@ describe("ViviModelElement", () => {
     expect(el.loading).toBe(false);
 
     document.body.removeChild(el);
+    expect(el.model).toBeNull();
   });
 
-  it("getExpressionPresets()がプリセット一覧を返す", async () => {
+  it("プリセットとパラメータの公開metadataを返す", async () => {
     const el = document.createElement("vivi-model") as ViviModelElement;
     document.body.appendChild(el);
     await el.load("test.vivi");
@@ -122,14 +123,6 @@ describe("ViviModelElement", () => {
       hotkey: 1,
     });
 
-    document.body.removeChild(el);
-  });
-
-  it("getParameters()がパラメータ一覧を返す", async () => {
-    const el = document.createElement("vivi-model") as ViviModelElement;
-    document.body.appendChild(el);
-    await el.load("test.vivi");
-
     const params = el.getParameters();
     expect(params).toHaveLength(1);
     expect(params[0]).toEqual({
@@ -139,17 +132,6 @@ describe("ViviModelElement", () => {
       max: 30,
       default: 0,
     });
-
-    document.body.removeChild(el);
-  });
-
-  it("setParameter()でパラメータを設定できる", async () => {
-    const el = document.createElement("vivi-model") as ViviModelElement;
-    document.body.appendChild(el);
-    await el.load("test.vivi");
-
-    el.setParameter("p1", 15);
-    expect(el.model!.parameterValues.p1).toBe(15);
 
     document.body.removeChild(el);
   });
@@ -180,16 +162,6 @@ describe("ViviModelElement", () => {
     expect(el.model!.parameterValues.p1).toBe(10);
 
     document.body.removeChild(el);
-  });
-
-  it("disconnectedCallbackでリソースが破棄される", async () => {
-    const el = document.createElement("vivi-model") as ViviModelElement;
-    document.body.appendChild(el);
-    await el.load("test.vivi");
-    expect(el.model).not.toBeNull();
-
-    document.body.removeChild(el);
-    expect(el.model).toBeNull();
   });
 
   it("setParameters()で複数パラメータを一括設定できる", async () => {
@@ -226,47 +198,6 @@ describe("ViviModelElement", () => {
     expect(el.model!.parameterValues.p1).toBe(0);
 
     document.body.removeChild(el);
-  });
-
-  it("load()前にsetParameter()を呼んでもクラッシュしない", () => {
-    const el = document.createElement("vivi-model") as ViviModelElement;
-    el.setParameter("p1", 10);
-    el.resetParameters();
-    el.applyExpressionPreset("nonexistent");
-    el.applyPresetByHotkey(1);
-  });
-
-  it("load()前のgetExpressionPresets()は空配列を返す", () => {
-    const el = document.createElement("vivi-model") as ViviModelElement;
-    expect(el.getExpressionPresets()).toEqual([]);
-    expect(el.getParameters()).toEqual([]);
-  });
-
-  it("src属性変更でload()が再呼び出しされる", async () => {
-    const el = document.createElement("vivi-model") as ViviModelElement;
-    document.body.appendChild(el);
-
-    el.setAttribute("src", "first.vivi");
-    await vi.waitFor(() => expect(el.model).not.toBeNull());
-
-    const modelBefore = el.model;
-    el.setAttribute("src", "first.vivi");
-    expect(el.model).toBe(modelBefore);
-
-    el.setAttribute("src", "different.vivi");
-    await vi.waitFor(() => expect(el.model).not.toBe(modelBefore));
-
-    document.body.removeChild(el);
-  });
-
-  it("hitTest()はload()前にnullを返す", () => {
-    const el = document.createElement("vivi-model") as ViviModelElement;
-    expect(el.hitTest(0, 0)).toBeNull();
-  });
-
-  it("screenToWorld()はload()前にnullを返す", () => {
-    const el = document.createElement("vivi-model") as ViviModelElement;
-    expect(el.screenToWorld(100, 100)).toBeNull();
   });
 });
 

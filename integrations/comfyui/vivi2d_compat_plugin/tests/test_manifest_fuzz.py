@@ -15,39 +15,7 @@ TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
 from vivi2d_compat import manifest
 
 
-def _rng(seed: int):
-    state = seed & 0xFFFFFFFF
-    while True:
-        state = (1664525 * state + 1013904223) & 0xFFFFFFFF
-        yield state
-
-
-def _random_value(seed: int):
-    next_value = _rng(seed)
-
-    def build(depth: int):
-        value = next(next_value)
-        choice = value % (6 if depth <= 0 else 9)
-        if choice == 0:
-            return None
-        if choice == 1:
-            return bool(value & 1)
-        if choice == 2:
-            return value / 17.0
-        if choice == 3:
-            return f"s-{value:x}"
-        if choice == 4:
-            return "__proto__"
-        if choice == 5:
-            return "C:/Users/Alice/private-token"
-        if choice == 6:
-            return [build(depth - 1) for _ in range(value % 4)]
-        return {f"k{index}": build(depth - 1) for index in range(value % 4)}
-
-    return build(3)
-
-
-class ManifestFuzzTests(unittest.TestCase):
+class ManifestMalformedRootTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_root = TEST_TEMP_ROOT / f"manifest_fuzz_{uuid.uuid4().hex}"
         self.temp_root.mkdir(parents=True, exist_ok=False)
@@ -60,35 +28,37 @@ class ManifestFuzzTests(unittest.TestCase):
         path.write_text(json.dumps(value), encoding="utf-8")
         return path
 
-    def test_random_json_values_fail_closed_or_parse_as_manifest_objects(self) -> None:
-        for seed in range(1, 129):
-            path = self._write_manifest(_random_value(seed))
-            try:
-                loaded = manifest.read_manifest(path)
-                self.assertIsInstance(loaded, dict)
-                self.assertEqual(loaded["schema_version"], "1.0.0")
-                self.assertIsInstance(loaded["layers"], list)
-            except RuntimeError as exc:
-                self.assertNotIn("private-token", str(exc))
-                self.assertNotIn("Alice", str(exc))
-
-    def test_unknown_top_level_fields_are_rejected(self) -> None:
-        valid = {
-            "schema_version": "1.0.0",
-            "generator": {
-                "plugin": "vivi2d-compat-comfyui",
-                "plugin_version": "0.1.0",
-                "model": "ComfyUI-See-through",
-                "model_version": "test",
-            },
-            "canvas": {"width": 1, "height": 1},
-            "layers": [],
-        }
-        path = self._write_manifest({**valid, "absolute_path": "C:/Users/Alice/private"})
-
-        with self.assertRaisesRegex(RuntimeError, "expected schema") as ctx:
-            manifest.read_manifest(path)
-        self.assertNotIn("Alice", str(ctx.exception))
+    def test_malformed_json_roots_fail_closed_without_echoing_values(self) -> None:
+        # The former random generator never produced the required manifest keys.
+        # Exercise its actual root-shape boundary directly, not as semantic fuzzing.
+        values = [
+            None,
+            False,
+            0,
+            1.5,
+            "__proto__",
+            "C:/Users/Alice/private-token",
+            [],
+            ["private-token"],
+            {},
+            {"k0": "private-token"},
+        ]
+        for index, value in enumerate(values):
+            with self.subTest(index=index):
+                path = self._write_manifest(value)
+                with self.assertRaises(RuntimeError) as raised:
+                    manifest.read_manifest(path)
+                message = str(raised.exception)
+                self.assertEqual(
+                    message,
+                    "Vivi2D manifest does not match the expected schema."
+                    if isinstance(value, dict)
+                    else "Vivi2D manifest must be a JSON object.",
+                )
+                self.assertNotIn("private-token", message)
+                self.assertNotIn("Alice", message)
+                self.assertNotIn("__proto__", message)
+                self.assertNotIn("Traceback", message)
 
 
 if __name__ == "__main__":

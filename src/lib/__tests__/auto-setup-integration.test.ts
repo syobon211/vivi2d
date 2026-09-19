@@ -1,6 +1,5 @@
-
 import type { LayerNode } from "@vivi2d/core/types";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   generateAllBones,
   generateBodyBones,
@@ -14,7 +13,8 @@ import {
 } from "@/lib/ai-part-detector";
 import { detectSwayingParts, generatePhysicsGroups } from "@/lib/ai-physics-generator";
 import { generateAutoWeights } from "@/lib/auto-setup";
-import { createViviMesh, createGroup } from "@/test/fixtures";
+import * as bbwClient from "@/lib/workers/bbw-weights-client";
+import { createGroup, createViviMesh } from "@/test/fixtures";
 
 function createVTuberLayerTree(): {
   layers: LayerNode[];
@@ -138,20 +138,61 @@ describe("自動生成統合テスト", () => {
   describe("検出→フィルタリング→ボーン生成→物理生成の完全パイプライン", () => {
     it("典型的なVTuberモデルで全パイプラインが正常に動作する", () => {
       const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-
       const allParts = detectParts(layers);
       expect(allParts.length).toBeGreaterThan(0);
-
       const filteredParts = filterDetectedParts(allParts, 0.3);
       expect(filteredParts.length).toBeGreaterThan(0);
-      expect(filteredParts.every((p) => p.confidence >= 0.3)).toBe(true);
-
+      expect(filteredParts.every((part) => part.confidence >= 0.3)).toBe(true);
+      const expectedFaceParents = {
+        bone_head: null,
+        bone_eye_left: "bone_head",
+        bone_eye_right: "bone_head",
+        bone_eyebrow_left: "bone_head",
+        bone_eyebrow_right: "bone_head",
+        bone_mouth: "bone_head",
+      };
+      const expectedBodyParents = {
+        bone_body: null,
+        bone_arm_left: "bone_body",
+        bone_arm_right: "bone_body",
+      };
+      const face = generateFaceBones(filteredParts, canvasWidth, canvasHeight);
+      const body = generateBodyBones(filteredParts, canvasWidth, canvasHeight);
+      expect(
+        Object.fromEntries(face.bones.map((bone) => [bone.tempId, bone.parentTempId])),
+      ).toEqual(expectedFaceParents);
+      expect(
+        Object.fromEntries(body.bones.map((bone) => [bone.tempId, bone.parentTempId])),
+      ).toEqual(expectedBodyParents);
       const boneResult = generateAllBones(filteredParts, canvasWidth, canvasHeight);
-      expect(boneResult.bones.length).toBeGreaterThan(0);
+      expect(boneResult.bones).toHaveLength(9);
+      expect(new Set(boneResult.bones.map((bone) => bone.tempId)).size).toBe(9);
+      expect(
+        Object.fromEntries(
+          boneResult.bones.map((bone) => [bone.tempId, bone.parentTempId]),
+        ),
+      ).toEqual({
+        ...expectedBodyParents,
+        ...expectedFaceParents,
+        bone_head: "bone_body",
+      });
+      expect(
+        boneResult.bones.find((bone) => bone.tempId === "bone_head")!.partCategory,
+      ).toBe("head");
       expect(boneResult.parameters.length).toBeGreaterThan(0);
-
       const physicsGroups = generatePhysicsGroups(filteredParts);
-      expect(physicsGroups.length).toBeGreaterThan(0);
+      expect(physicsGroups.map((group) => [group.partCategory, group.layerIds])).toEqual([
+        ["hairFront", [layers[1]!.id]],
+        ["hairBack", [layers[2]!.id]],
+        ["hairSide", [layers[3]!.id]],
+      ]);
+      for (const group of physicsGroups) {
+        expect(group.name.length).toBeGreaterThan(0);
+        for (const value of [group.stiffness, group.gravity, group.damping]) {
+          expect(value).toBeGreaterThanOrEqual(0);
+          expect(value).toBeLessThanOrEqual(1);
+        }
+      }
     });
   });
 
@@ -191,106 +232,7 @@ describe("自動生成統合テスト", () => {
     });
   });
 
-  describe("ボーン階層の親子関係検証", () => {
-    it("頭→目/眉/口 の親子関係が正しい", () => {
-      const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-
-      const faceResult = generateFaceBones(parts, canvasWidth, canvasHeight);
-      const { bones } = faceResult;
-
-      const headBone = bones.find((b) => b.tempId === "bone_head");
-      expect(headBone).toBeDefined();
-      expect(headBone!.partCategory).toBe("head");
-
-      const eyeLeftBone = bones.find((b) => b.tempId === "bone_eye_left");
-      if (eyeLeftBone) {
-        expect(eyeLeftBone.parentTempId).toBe("bone_head");
-      }
-
-      const eyeRightBone = bones.find((b) => b.tempId === "bone_eye_right");
-      if (eyeRightBone) {
-        expect(eyeRightBone.parentTempId).toBe("bone_head");
-      }
-
-      const browLeftBone = bones.find((b) => b.tempId === "bone_eyebrow_left");
-      if (browLeftBone) {
-        expect(browLeftBone.parentTempId).toBe("bone_head");
-      }
-
-      const mouthBone = bones.find((b) => b.tempId === "bone_mouth");
-      if (mouthBone) {
-        expect(mouthBone.parentTempId).toBe("bone_head");
-      }
-    });
-
-    it("体→腕 の親子関係が正しい", () => {
-      const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-
-      const bodyResult = generateBodyBones(parts, canvasWidth, canvasHeight);
-      const { bones } = bodyResult;
-
-      const bodyBone = bones.find((b) => b.tempId === "bone_body");
-      expect(bodyBone).toBeDefined();
-
-      const armLeftBone = bones.find((b) => b.tempId === "bone_arm_left");
-      if (armLeftBone) {
-        expect(armLeftBone.parentTempId).toBe("bone_body");
-      }
-
-      const armRightBone = bones.find((b) => b.tempId === "bone_arm_right");
-      if (armRightBone) {
-        expect(armRightBone.parentTempId).toBe("bone_body");
-      }
-    });
-
-    it("generateAllBones で頭ボーンが体ボーンの子に接続される", () => {
-      const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-
-      const result = generateAllBones(parts, canvasWidth, canvasHeight);
-
-      const headBone = result.bones.find((b) => b.tempId === "bone_head");
-      const bodyBone = result.bones.find((b) => b.tempId === "bone_body");
-
-      expect(headBone).toBeDefined();
-      expect(bodyBone).toBeDefined();
-      expect(headBone!.parentTempId).toBe("bone_body");
-    });
-  });
-
   describe("物理グループの推奨パラメータ", () => {
-    it("物理グループの推奨パラメータが適切な範囲内にある", () => {
-      const { layers } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-      const physicsGroups = generatePhysicsGroups(parts);
-
-      for (const group of physicsGroups) {
-        expect(group.stiffness).toBeGreaterThanOrEqual(0);
-        expect(group.stiffness).toBeLessThanOrEqual(1);
-        expect(group.gravity).toBeGreaterThanOrEqual(0);
-        expect(group.gravity).toBeLessThanOrEqual(1);
-        expect(group.damping).toBeGreaterThanOrEqual(0);
-        expect(group.damping).toBeLessThanOrEqual(1);
-
-        expect(group.name.length).toBeGreaterThan(0);
-
-        expect(group.layerIds.length).toBeGreaterThan(0);
-      }
-    });
-
-    it("髪パーツの物理グループが生成される", () => {
-      const { layers } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-      const physicsGroups = generatePhysicsGroups(parts);
-
-      const hairGroups = physicsGroups.filter((g) =>
-        ["hair", "hairFront", "hairBack", "hairSide"].includes(g.partCategory),
-      );
-      expect(hairGroups.length).toBeGreaterThan(0);
-    });
-
     it("アクセサリの物理グループが生成される", () => {
       const { layers } = createVTuberLayerTree();
       const parts = filterDetectedParts(detectParts(layers), 0.1);
@@ -303,74 +245,6 @@ describe("自動生成統合テスト", () => {
   });
 
   describe("ボーン階層の完全性検証", () => {
-    it("全ボーンのtempIdが一意である", () => {
-      const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-      const result = generateAllBones(parts, canvasWidth, canvasHeight);
-
-      const ids = result.bones.map((b) => b.tempId);
-      expect(new Set(ids).size).toBe(ids.length);
-    });
-
-    it("ルートボーンが正確に1つ（bone_body）である", () => {
-      const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-      const result = generateAllBones(parts, canvasWidth, canvasHeight);
-
-      const roots = result.bones.filter((b) => b.parentTempId === null);
-      expect(roots).toHaveLength(1);
-      expect(roots[0]!.tempId).toBe("bone_body");
-    });
-
-    it("全ての非ルートボーンのparentTempIdが有効なtempIdを参照する", () => {
-      const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-      const result = generateAllBones(parts, canvasWidth, canvasHeight);
-
-      const validIds = new Set(result.bones.map((b) => b.tempId));
-      for (const bone of result.bones) {
-        if (bone.parentTempId !== null) {
-          expect(validIds.has(bone.parentTempId)).toBe(true);
-        }
-      }
-    });
-
-    it("循環参照が存在しない", () => {
-      const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-      const result = generateAllBones(parts, canvasWidth, canvasHeight);
-
-      const parentMap = new Map(result.bones.map((b) => [b.tempId, b.parentTempId]));
-      for (const bone of result.bones) {
-        const visited = new Set<string>();
-        let current: string | null = bone.tempId;
-        while (current !== null) {
-          expect(visited.has(current)).toBe(false);
-          visited.add(current);
-          current = parentMap.get(current) ?? null;
-        }
-      }
-    });
-
-    it("階層の深さが最大3段（body→head→eye/mouth）である", () => {
-      const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-      const result = generateAllBones(parts, canvasWidth, canvasHeight);
-
-      const parentMap = new Map(result.bones.map((b) => [b.tempId, b.parentTempId]));
-      function getDepth(id: string): number {
-        let depth = 0;
-        let current: string | null = parentMap.get(id) ?? null;
-        while (current !== null) {
-          depth++;
-          current = parentMap.get(current) ?? null;
-        }
-        return depth;
-      }
-      const maxDepth = Math.max(...result.bones.map((b) => getDepth(b.tempId)));
-      expect(maxDepth).toBeLessThanOrEqual(2);
-    });
-
     it("顔のみ検出された場合のボーン階層", () => {
       const layers: LayerNode[] = [
         createViviMesh({ name: "左目", x: 400, y: 200, width: 80, height: 40 }),
@@ -405,25 +279,70 @@ describe("自動生成統合テスト", () => {
     });
 
     it("ボーン親子階層がBBWウェイト計算にparentIdとして渡される", async () => {
-      const { layers, canvasWidth, canvasHeight } = createVTuberLayerTree();
-      const parts = filterDetectedParts(detectParts(layers), 0.3);
-      const boneResult = generateAllBones(parts, canvasWidth, canvasHeight);
-
-      const dummyMesh = {
-        layerId: "test",
-        layerName: "テスト",
-        mesh: {
-          vertices: [0, 0, 100, 0, 50, 100],
-          uvs: [0, 0, 1, 0, 0.5, 1],
-          indices: [0, 1, 2],
-          divisionsX: 0,
-          divisionsY: 0,
-        },
-      };
-
-      const weights = await generateAutoWeights([dummyMesh], boneResult.bones);
-      expect(weights).toHaveLength(1);
-      expect(weights[0]!.boneIds.length).toBe(boneResult.bones.length);
+      const vertices = [0, 0, 100, 0, 50, 100];
+      const indices = [0, 1, 2];
+      const weights = [
+        [{ boneId: "root", weight: 1 }],
+        [{ boneId: "child", weight: 1 }],
+        [
+          { boneId: "root", weight: 0.25 },
+          { boneId: "child", weight: 0.75 },
+        ],
+      ];
+      const solve = vi
+        .spyOn(bbwClient, "computeBBWWeightsAsync")
+        .mockResolvedValue(weights);
+      try {
+        const result = await generateAutoWeights(
+          [
+            {
+              layerId: "test",
+              layerName: "テスト",
+              mesh: {
+                vertices,
+                indices,
+                uvs: [0, 0, 1, 0, 0.5, 1],
+                divisionsX: 0,
+                divisionsY: 0,
+              },
+            },
+          ],
+          [
+            {
+              tempId: "root",
+              name: "体",
+              parentTempId: null,
+              x: 12,
+              y: 34,
+              partCategory: "body",
+            },
+            {
+              tempId: "child",
+              name: "頭",
+              parentTempId: "root",
+              x: 56,
+              y: 78,
+              partCategory: "head",
+            },
+          ],
+        );
+        expect(solve).toHaveBeenCalledExactlyOnceWith(
+          vertices,
+          indices,
+          [
+            { id: "root", parentId: null, x: 12, y: 34 },
+            { id: "child", parentId: "root", x: 56, y: 78 },
+          ],
+          undefined,
+          { signal: undefined },
+        );
+        expect(result).toEqual([
+          { layerId: "test", weights, boneIds: ["root", "child"], solver: "bbw" },
+        ]);
+        expect(result[0]!.weights).toBe(weights);
+      } finally {
+        solve.mockRestore();
+      }
     });
   });
 

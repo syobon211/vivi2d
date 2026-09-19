@@ -7,18 +7,18 @@ import {
 import { flattenLayers } from "@vivi2d/core/layer-utils";
 import { generateGridMesh } from "@vivi2d/core/mesh-utils";
 import type {
-  ViviMeshNode,
   BlendMode,
   GroupNode,
   LayerNode,
   ProjectData,
+  ViviMeshNode,
 } from "@vivi2d/core/types";
 import type { Layer } from "ag-psd";
-import { readPsd } from "ag-psd";
 import { isValidBlendMode } from "./blend-modes";
 import {
   assertPsdBufferWithinLimit,
   PSD_METADATA_READ_OPTIONS,
+  readPsdSafely,
   validateParsedPsdDocument,
 } from "./psd-security";
 import { clearTextures, setTexture } from "./texture-store";
@@ -92,15 +92,9 @@ function assignDrawOrders(layers: LayerNode[]): void {
 
 export function parsePsd(buffer: ArrayBuffer, fileName: string): ProjectData {
   assertPsdBufferWithinLimit(buffer);
-  let psd: ReturnType<typeof readPsd>;
-  try {
-    const metadata = readPsd(buffer, PSD_METADATA_READ_OPTIONS);
-    validateParsedPsdDocument(metadata);
-    psd = readPsd(buffer, { useImageData: false });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    throw new Error(`Failed to load PSD file: ${msg}`);
-  }
+  const metadata = readPsdSafely(buffer, PSD_METADATA_READ_OPTIONS);
+  validateParsedPsdDocument(metadata);
+  const psd = readPsdSafely(buffer, { useImageData: false });
 
   validateParsedPsdDocument(psd);
   clearTextures();

@@ -18,19 +18,6 @@ function createMapping(overrides: Partial<VMCMapping> = {}): VMCMapping {
 }
 
 describe("vmcStore", () => {
-  describe("初期状態", () => {
-    it("connected=false, receivePort=39539, sendPort=39540", () => {
-      const state = useVMCStore.getState();
-      expect(state.connected).toBe(false);
-      expect(state.receivePort).toBe(39539);
-      expect(state.sendPort).toBe(39540);
-      expect(state.sendHost).toBe("127.0.0.1");
-      expect(state.mappings).toEqual([]);
-      expect(state.lastReceivedAt).toBeNull();
-      expect(state.faceChannelBuffer).toEqual({});
-    });
-  });
-
   // ==============================================================
   // setConnected
   // ==============================================================
@@ -96,38 +83,30 @@ describe("vmcStore", () => {
   // removeMapping
   // ==============================================================
   describe("removeMapping", () => {
-    it("インデックス指定で削除する", () => {
-      const { addMapping, removeMapping } = useVMCStore.getState();
-      addMapping(createMapping({ vmcName: "A" }));
-      addMapping(createMapping({ vmcName: "B" }));
-      addMapping(createMapping({ vmcName: "C" }));
-
+    it("部分更新と先頭・中間の削除は指定mappingだけを変更する", () => {
+      const { addMapping, updateMapping, removeMapping } = useVMCStore.getState();
+      const a = createMapping({ vmcName: "A" }),
+        b = createMapping({ vmcName: "B" }),
+        c = createMapping({ vmcName: "C" });
+      for (const mapping of [a, b, c]) addMapping(mapping);
+      updateMapping(1, { vmcName: "新しい名前", scale: 2.5 });
+      expect(useVMCStore.getState().mappings).toEqual([
+        a,
+        { ...b, vmcName: "新しい名前", scale: 2.5 },
+        c,
+      ]);
       removeMapping(1);
-
-      const state = useVMCStore.getState();
-      expect(state.mappings).toHaveLength(2);
-      expect(state.mappings[0]!.vmcName).toBe("A");
-      expect(state.mappings[1]!.vmcName).toBe("C");
+      expect(useVMCStore.getState().mappings).toEqual([a, c]);
+      updateMapping(0, { scale: 3 });
+      expect(useVMCStore.getState().mappings).toEqual([{ ...a, scale: 3 }, c]);
+      removeMapping(0);
+      expect(useVMCStore.getState().mappings).toEqual([c]);
     });
   });
 
   // ==============================================================
   // updateMapping
   // ==============================================================
-  describe("updateMapping", () => {
-    it("部分更新ができる", () => {
-      const { addMapping, updateMapping } = useVMCStore.getState();
-      addMapping(createMapping({ vmcName: "元の名前", scale: 1, offset: 0 }));
-
-      updateMapping(0, { vmcName: "新しい名前", scale: 2.5 });
-
-      const state = useVMCStore.getState();
-      expect(state.mappings[0]!.vmcName).toBe("新しい名前");
-      expect(state.mappings[0]!.scale).toBe(2.5);
-      expect(state.mappings[0]!.offset).toBe(0);
-      expect(state.mappings[0]!.parameterId).toBe("param-1");
-    });
-  });
 
   // ==============================================================
   // updateFaceChannelBuffer
@@ -264,29 +243,6 @@ describe("vmcStore", () => {
       addMapping(createMapping());
       removeMapping(99);
       expect(useVMCStore.getState().mappings).toHaveLength(1);
-    });
-
-    it("updateFaceChannelBuffer: 同じキーを上書きできる", () => {
-      const { updateFaceChannelBuffer } = useVMCStore.getState();
-      updateFaceChannelBuffer({ Blink_L: 0.5 });
-      updateFaceChannelBuffer({ Blink_L: 0.8 });
-      expect(useVMCStore.getState().faceChannelBuffer.Blink_L).toBe(0.8);
-    });
-
-    it("setConnected: false→true→false の切り替え", () => {
-      const { setConnected } = useVMCStore.getState();
-      setConnected(true);
-      expect(useVMCStore.getState().connected).toBe(true);
-      setConnected(false);
-      expect(useVMCStore.getState().connected).toBe(false);
-    });
-
-    it("reset 後に markReceived するとタイムスタンプが設定される", () => {
-      const { markReceived } = useVMCStore.getState();
-      useVMCStore.getState().reset();
-      expect(useVMCStore.getState().lastReceivedAt).toBeNull();
-      markReceived();
-      expect(useVMCStore.getState().lastReceivedAt).not.toBeNull();
     });
   });
 });

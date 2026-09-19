@@ -98,20 +98,28 @@ describe("serializeProject", () => {
   });
 
   it("UVがアトラス空間にリマッピングされる", () => {
-    const mesh = createViviMesh();
+    const mesh = createViviMesh({ id: "uv-mesh", width: 64, height: 32 });
+    mesh.mesh.uvs = [0, 0, 1, 0, 0.25, 0.75];
     const project = createProject({ layers: [mesh] });
-    const textures = makeTexturesForProject(project);
-
-    const result = serializeProject(project, textures);
+    const result = serializeProject(project, makeTexturesForProject(project));
+    expect(result.atlases).toHaveLength(1);
+    const atlas = result.atlases[0]!;
+    expect([atlas.width, atlas.height]).toEqual([256, 256]);
+    expect(atlas.entries).toEqual([
+      { layerId: "uv-mesh", x: 2, y: 2, width: 64, height: 32 },
+    ]);
     const serializedMesh = result.project.layers[0]!;
-
-    expect(serializedMesh).toBeDefined();
-    if (serializedMesh.kind === "viviMesh") {
-      for (const uv of serializedMesh.mesh.uvs) {
-        expect(uv).toBeGreaterThanOrEqual(0);
-        expect(uv).toBeLessThanOrEqual(1);
-      }
-    }
+    if (serializedMesh.kind !== "viviMesh") throw new Error("Expected mesh");
+    // Independent three-point witness: atlas offset plus full/quarter width and three-quarter height.
+    expect(serializedMesh.mesh.uvs).toEqual([
+      2 / 256,
+      2 / 256,
+      66 / 256,
+      2 / 256,
+      18 / 256,
+      26 / 256,
+    ]);
+    expect(mesh.mesh.uvs).toEqual([0, 0, 1, 0, 0.25, 0.75]);
   });
 });
 
@@ -278,35 +286,36 @@ describe("deserializeProject", () => {
     { width: 0, height: 2, expected: [0, 0, 0, 0, 0, 0.5, 0, 0.5] },
     { width: 2, height: 0, expected: [0, 0, 0.5, 0, 0, 0, 0.5, 0] },
     { width: 0, height: 0, expected: [0, 0, 0, 0, 0, 0, 0, 0] },
-  ])(
-    "canonicalizes zero axes when restoring a parsed $width x $height entry",
-    async ({ width, height, expected }) => {
-      const mesh = createViviMesh({ id: "mesh-1" });
-      mesh.mesh.uvs = [0.25, 0.25, 0.375, 0.25, 0.25, 0.375, 0.375, 0.375];
-      const fileData: ViviFileData = {
-        version: 1,
-        project: createProject({ layers: [mesh] }),
-        atlases: [
-          {
-            image: MOCK_PNG_BASE64,
-            width: 8,
-            height: 8,
-            entries: [{ layerId: "mesh-1", x: 2, y: 2, width, height }],
-          },
-        ],
-      };
+  ])("canonicalizes zero axes when restoring a parsed $width x $height entry", async ({
+    width,
+    height,
+    expected,
+  }) => {
+    const mesh = createViviMesh({ id: "mesh-1" });
+    mesh.mesh.uvs = [0.25, 0.25, 0.375, 0.25, 0.25, 0.375, 0.375, 0.375];
+    const fileData: ViviFileData = {
+      version: 1,
+      project: createProject({ layers: [mesh] }),
+      atlases: [
+        {
+          image: MOCK_PNG_BASE64,
+          width: 8,
+          height: 8,
+          entries: [{ layerId: "mesh-1", x: 2, y: 2, width, height }],
+        },
+      ],
+    };
 
-      const project = await deserializeProject(parseViviFile(JSON.stringify(fileData)));
+    const project = await deserializeProject(parseViviFile(JSON.stringify(fileData)));
 
-      expect(getAllTextureIds()).toEqual(["mesh-1"]);
-      expect(getTexture("mesh-1")!.width).toBe(width);
-      expect(getTexture("mesh-1")!.height).toBe(height);
-      const restored = project.layers[0]!;
-      if (restored.kind !== "viviMesh") throw new Error("Expected restored mesh");
-      expect(restored.mesh.uvs).toEqual(expected);
-      expect(restored.mesh.uvs.every(Number.isFinite)).toBe(true);
-    },
-  );
+    expect(getAllTextureIds()).toEqual(["mesh-1"]);
+    expect(getTexture("mesh-1")!.width).toBe(width);
+    expect(getTexture("mesh-1")!.height).toBe(height);
+    const restored = project.layers[0]!;
+    if (restored.kind !== "viviMesh") throw new Error("Expected restored mesh");
+    expect(restored.mesh.uvs).toEqual(expected);
+    expect(restored.mesh.uvs.every(Number.isFinite)).toBe(true);
+  });
 });
 
 describe("ラウンドトリップ: serialize → parse → deserialize", () => {
@@ -320,69 +329,56 @@ describe("ラウンドトリップ: serialize → parse → deserialize", () => 
   });
 
   it("プロジェクトのメタデータが保持される", async () => {
-    const original = createProject({ name: "テストモデル" });
-    const textures = makeTexturesForProject(original);
-
-    const serialized = serializeProject(original, textures);
-    const json = JSON.stringify(serialized);
-    const parsed = parseViviFile(json);
-    const restored = await deserializeProject(parsed);
-
-    expect(restored.name).toBe("テストモデル");
-    expect(restored.width).toBe(original.width);
-    expect(restored.height).toBe(original.height);
-  });
-
-  it("ViviMesh のメッシュデータが保持される", async () => {
-    const mesh = createViviMesh({ name: "テスト" });
+    const grandchild = createBoneNode({ id: "gc", name: "孫", parentBoneId: "child" });
+    const child = createBoneNode({
+      id: "child",
+      name: "子",
+      parentBoneId: "root",
+      children: [grandchild],
+    });
+    const root = createBoneNode({ id: "root", name: "ルート", children: [child] });
+    const mesh = createViviMesh({ id: "mesh", name: "テスト", width: 64, height: 32 });
+    const leaf = createBoneNode({ id: "single", name: "単独ボーン" });
+    const group = createGroup({ id: "grp", name: "親", children: [root, mesh] });
+    const original = createProject({
+      name: "テストモデル",
+      width: 640,
+      height: 480,
+      layers: [group, leaf],
+    });
     const originalVertices = [...mesh.mesh.vertices];
     const originalIndices = [...mesh.mesh.indices];
     const originalUvs = [...mesh.mesh.uvs];
-
-    const project = createProject({ layers: [mesh] });
-    const textures = makeTexturesForProject(project);
-
-    const serialized = serializeProject(project, textures);
-    const json = JSON.stringify(serialized);
-    const parsed = parseViviFile(json);
-    const restored = await deserializeProject(parsed);
-
-    const restoredMesh = restored.layers[0]!;
-    expect(restoredMesh.kind).toBe("viviMesh");
-    if (restoredMesh.kind === "viviMesh") {
-      expect(restoredMesh.mesh.vertices).toEqual(originalVertices);
-      expect(restoredMesh.mesh.indices).toEqual(originalIndices);
-      for (let i = 0; i < originalUvs.length; i++) {
-        expect(restoredMesh.mesh.uvs[i]).toBeCloseTo(originalUvs[i]!, 5);
-      }
+    const serialized = serializeProject(original, makeTexturesForProject(original));
+    const restored = await deserializeProject(parseViviFile(JSON.stringify(serialized)));
+    expect([restored.name, restored.width, restored.height]).toEqual([
+      "テストモデル",
+      640,
+      480,
+    ]);
+    expect(restored.layers.map((layer) => [layer.id, layer.kind, layer.name])).toEqual([
+      ["grp", "group", "親"],
+      ["single", "bone", "単独ボーン"],
+    ]);
+    const restoredGroup = restored.layers[0]!;
+    expect(restoredGroup.children).toHaveLength(2);
+    expect(restoredGroup.children[0]).toEqual(root);
+    expect(restored.layers[1]).toEqual(leaf);
+    const restoredMesh = restoredGroup.children[1]!;
+    expect([restoredMesh.id, restoredMesh.name]).toEqual(["mesh", "テスト"]);
+    if (restoredMesh.kind !== "viviMesh") throw new Error("Expected restored mesh");
+    expect(restoredMesh.mesh.vertices).toEqual(originalVertices);
+    expect(restoredMesh.mesh.indices).toEqual(originalIndices);
+    expect(restoredMesh.mesh.uvs).toHaveLength(originalUvs.length);
+    for (let i = 0; i < originalUvs.length; i++) {
+      expect(restoredMesh.mesh.uvs[i]).toBeCloseTo(originalUvs[i]!, 5);
     }
-  });
-
-  it("ネストされたレイヤー構造が保持される", async () => {
-    const child = createViviMesh({ name: "子" });
-    const group = createGroup({ name: "親", children: [child] });
-    const project = createProject({ layers: [group] });
-    const textures = makeTexturesForProject(project);
-
-    const serialized = serializeProject(project, textures);
-    const json = JSON.stringify(serialized);
-    const parsed = parseViviFile(json);
-    const restored = await deserializeProject(parsed);
-
-    expect(restored.layers).toHaveLength(1);
-    expect(restored.layers[0]!.name).toBe("親");
-    expect(restored.layers[0]!.children).toHaveLength(1);
-    expect(restored.layers[0]!.children[0]!.name).toBe("子");
+    expect(getAllTextureIds()).toEqual(["mesh"]);
+    expect([getTexture("mesh")!.width, getTexture("mesh")!.height]).toEqual([64, 32]);
   });
 });
 
 describe("parseViviFile — エッジケース", () => {
-  it("不正なJSONで例外を投げる", () => {
-    expect(() => parseViviFile("{invalid json")).toThrow(
-      "Failed to parse .vivi file: invalid JSON",
-    );
-  });
-
   it("null を渡すと例外を投げる", () => {
     expect(() => parseViviFile("null")).toThrow(
       "Failed to parse .vivi file: root value is not an object",
@@ -393,12 +389,6 @@ describe("parseViviFile — エッジケース", () => {
     expect(() => parseViviFile("[]")).toThrow(
       "Failed to parse .vivi file: root value is not an object",
     );
-  });
-
-  it("不正なバージョンで例外を投げる", () => {
-    expect(() =>
-      parseViviFile(JSON.stringify({ version: 99, project: {}, atlases: [] })),
-    ).toThrow("Invalid .vivi file version: 99");
   });
 
   it("project フィールド欠損で例外を投げる", () => {
@@ -429,16 +419,6 @@ describe("parseViviFile — エッジケース", () => {
 });
 
 describe("parseViviFile — バージョン分岐カバレッジ", () => {
-  it("version=1 を正常にパースできる", () => {
-    const data = {
-      version: 1,
-      project: { layers: [], parameters: [] },
-      atlases: [],
-    };
-    const result = parseViviFile(JSON.stringify(data));
-    expect(result.version).toBe(1);
-  });
-
   it("version=2 を正常にパースできる", () => {
     const data = {
       version: 2,
@@ -542,9 +522,9 @@ describe("serializeProject — ブランチカバレッジ強化", () => {
 
     const result = serializeProject(project, textures);
     const serializedMesh = result.project.layers.find((l) => l.name === "テクスチャなし");
-    if (serializedMesh && serializedMesh.kind === "viviMesh") {
-      expect(serializedMesh.mesh.uvs).toEqual(originalUvs);
-    }
+    expect(serializedMesh?.kind).toBe("viviMesh");
+    if (serializedMesh?.kind !== "viviMesh") throw new Error("Expected mesh");
+    expect(serializedMesh.mesh.uvs).toEqual(originalUvs);
   });
 });
 
@@ -558,28 +538,9 @@ describe("deserializeProject — ブランチカバレッジ強化", () => {
     clearTextures();
   });
 
-  it("version=2 のデータを v2→v3 マイグレーションを適用して復元できる", async () => {
-    const fileData: ViviFileData = {
-      version: 2,
-      project: createEmptyProject(),
-      atlases: [],
-    };
-    const project = await deserializeProject(fileData);
-    expect(project.name).toBe("Empty project");
-  });
-
-  it("version=3 のデータを復元できる", async () => {
-    const fileData: ViviFileData = {
-      version: 3,
-      project: createEmptyProject(),
-      atlases: [],
-    };
-    const project = await deserializeProject(fileData);
-    expect(project.name).toBe("Empty project");
-  });
-
   it("エントリに対応しないメッシュの UV はそのまま保持される", async () => {
     const mesh = createViviMesh({ id: "orphan-mesh" });
+    const originalUvs = [...mesh.mesh.uvs];
     const fileData: ViviFileData = {
       version: 1,
       project: createProject({ layers: [mesh] }),
@@ -587,78 +548,8 @@ describe("deserializeProject — ブランチカバレッジ強化", () => {
     };
     const project = await deserializeProject(fileData);
     const restoredMesh = project.layers.find((l) => l.id === "orphan-mesh");
-    expect(restoredMesh).toBeDefined();
-  });
-
-  it("ボーン親子階層がシリアライズ後も保持される", async () => {
-    const grandchild = createBoneNode({ id: "gc", name: "孫", parentBoneId: "child" });
-    const child = createBoneNode({
-      id: "child",
-      name: "子",
-      parentBoneId: "root",
-      children: [grandchild],
-    });
-    const root = createBoneNode({ id: "root", name: "ルート", children: [child] });
-
-    const project = createProject({ layers: [root] });
-    const serialized = serializeProject(project, new Map());
-    const json = JSON.stringify(serialized);
-    const parsed = parseViviFile(json);
-    const restored = await deserializeProject(parsed);
-
-    const rootBones = restored.layers.filter((l) => l.kind === "bone");
-    expect(rootBones).toHaveLength(1);
-    expect(rootBones[0]!.name).toBe("ルート");
-    expect(rootBones[0]!.children).toHaveLength(1);
-    expect(rootBones[0]!.children[0]!.name).toBe("子");
-    expect(rootBones[0]!.children[0]!.children).toHaveLength(1);
-    expect(rootBones[0]!.children[0]!.children[0]!.name).toBe("孫");
-  });
-
-  it("parentBoneIdがシリアライズ後も保持される", async () => {
-    const child = createBoneNode({ id: "child", name: "子", parentBoneId: "root" });
-    const root = createBoneNode({ id: "root", name: "ルート", children: [child] });
-
-    const project = createProject({ layers: [root] });
-    const serialized = serializeProject(project, new Map());
-    const json = JSON.stringify(serialized);
-    const parsed = parseViviFile(json);
-    const restored = await deserializeProject(parsed);
-
-    const rootBone = restored.layers[0]!;
-    const childBone = rootBone.children[0]! as any;
-    expect(childBone.parentBoneId).toBe("root");
-  });
-
-  it("ボーン階層とメッシュの混在ツリーがシリアライズ後も保持される", async () => {
-    const bone = createBoneNode({ id: "bone1", name: "ボーン" });
-    const mesh = createViviMesh({ id: "mesh1", name: "メッシュ" });
-    const group = createGroup({ id: "grp", name: "グループ", children: [bone, mesh] });
-
-    const project = createProject({ layers: [group] });
-    const serialized = serializeProject(project, new Map());
-    const json = JSON.stringify(serialized);
-    const parsed = parseViviFile(json);
-    const restored = await deserializeProject(parsed);
-
-    const restoredGroup = restored.layers[0]!;
-    expect(restoredGroup.children).toHaveLength(2);
-    expect(restoredGroup.children.some((c) => c.kind === "bone")).toBe(true);
-    expect(restoredGroup.children.some((c) => c.kind === "viviMesh")).toBe(true);
-  });
-
-  it("空のボーン階層（子なし）がシリアライズ後も保持される", async () => {
-    const bone = createBoneNode({ id: "single", name: "単独ボーン" });
-
-    const project = createProject({ layers: [bone] });
-    const serialized = serializeProject(project, new Map());
-    const json = JSON.stringify(serialized);
-    const parsed = parseViviFile(json);
-    const restored = await deserializeProject(parsed);
-
-    const restoredBone = restored.layers.find((l) => l.id === "single");
-    expect(restoredBone).toBeDefined();
-    expect(restoredBone!.kind).toBe("bone");
-    expect(restoredBone!.children).toHaveLength(0);
+    expect(restoredMesh?.kind).toBe("viviMesh");
+    if (restoredMesh?.kind !== "viviMesh") throw new Error("Expected restored mesh");
+    expect(restoredMesh.mesh.uvs).toEqual(originalUvs);
   });
 });

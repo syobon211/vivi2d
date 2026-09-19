@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const appMocks = vi.hoisted(() => ({
@@ -300,44 +300,6 @@ describe("App extra coverage", () => {
       }),
     );
     expect(anchorClickSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it("updates the background mode and forwards it to the electron bridge", () => {
-    const setBackgroundMode = vi.fn();
-    (window as typeof window & { viviAPI?: unknown }).viviAPI = {
-      setBackgroundMode,
-      toggleAlwaysOnTop: vi.fn(),
-      toggleFrame: vi.fn(),
-      setWindowSize: vi.fn(),
-      onBackgroundModeChanged: vi.fn(() => () => {}),
-    };
-
-    render(<App />);
-    click("bg-green");
-
-    expect(appMocks.setBgModeMock).toHaveBeenCalledWith("green");
-    expect(appMocks.updateSettingsMock).toHaveBeenCalledWith({ bgMode: "green" });
-    expect(setBackgroundMode).toHaveBeenCalledWith("green");
-  });
-
-  it("syncs always-on-top state through the electron bridge and persisted settings", async () => {
-    const toggleAlwaysOnTop = vi.fn().mockResolvedValue(true);
-    (window as typeof window & { viviAPI?: unknown }).viviAPI = {
-      setBackgroundMode: vi.fn(),
-      toggleAlwaysOnTop,
-      toggleFrame: vi.fn(),
-      setWindowSize: vi.fn(),
-      onBackgroundModeChanged: vi.fn(() => () => {}),
-    };
-
-    render(<App />);
-    click("toggle-aot");
-
-    await waitFor(() => {
-      expect(toggleAlwaysOnTop).toHaveBeenCalledTimes(1);
-    });
-    expect(appMocks.setAlwaysOnTopMock).toHaveBeenCalledWith(true);
-    expect(appMocks.updateSettingsMock).toHaveBeenCalledWith({ alwaysOnTop: true });
   });
 
   it("imports a config file, updates runtime settings, and shows a success toast", async () => {

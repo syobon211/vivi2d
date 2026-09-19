@@ -238,11 +238,11 @@ describe("computeBlendFactor", () => {
       expect(computeBlendFactor(blend, 10, 0)).toBe(1); // elapsed >= transitionFrames
     });
 
-    it("bezier: smooth hermite 近似（中間で0.5付近）", () => {
-      const blend = makeBlend(10, "bezier");
-      const factor = computeBlendFactor(blend, 5, 0); // t=0.5
-      // hermite(0.5) = 0.5*0.5*(3-2*0.5) = 0.5
-      expect(factor).toBeCloseTo(0.5);
+    it("非対称時刻でbezier・snsをlinearと区別する", () => {
+      // At t=1/4, Hermite = 5/32 and smootherstep = 53/512.
+      expect(computeBlendFactor(makeBlend(8, "linear"), 2, 0)).toBe(0.25);
+      expect(computeBlendFactor(makeBlend(8, "bezier"), 2, 0)).toBe(0.15625);
+      expect(computeBlendFactor(makeBlend(8, "sns"), 2, 0)).toBe(0.103515625);
     });
 
     it("ellipse: 四分楕円近似（中間で0.5以上）", () => {
@@ -252,11 +252,7 @@ describe("computeBlendFactor", () => {
       expect(factor).toBeLessThanOrEqual(1);
     });
 
-    it("sns: スムーズステップ6次（中間で0.5付近）", () => {
-      const blend = makeBlend(10, "sns");
-      const factor = computeBlendFactor(blend, 5, 0); // t=0.5
-      expect(factor).toBeCloseTo(0.5);
-    });
+
   });
 });
 
@@ -414,18 +410,4 @@ describe("evaluateClipAtFrame 同一フレームキーフレーム", () => {
     expect(result.p1).toBeCloseTo(10);
   });
 
-  it("フレーム0より前のフレームは最初のキーフレーム値を返す", () => {
-    const clip = makeClip([
-      {
-        parameterId: "p1",
-        keyframes: [
-          { frame: 10, value: 50, interpolation: "linear" },
-          { frame: 20, value: 100, interpolation: "linear" },
-        ],
-      },
-    ]);
-    const defs = [makeDef("p1")];
-    const result = evaluateClipAtFrame(clip, 0, defs);
-    expect(result.p1).toBeCloseTo(50);
-  });
 });

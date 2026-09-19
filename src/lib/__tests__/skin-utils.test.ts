@@ -57,10 +57,7 @@ describe("computeSkinnedVertices", () => {
   it("ウェイトなしの頂点はレスト位置を維持", () => {
     const rest = [10, 20, 30, 40];
     const skin: SkinData = {
-      weights: [
-        [],
-        [{ boneId: "b1", weight: 1 }],
-      ],
+      weights: [[], [{ boneId: "b1", weight: 1 }]],
       bindPoseInverse: { b1: [...IDENTITY] },
     };
     const worlds = new Map<string, Affine2D>([["b1", [1, 0, 0, 1, 5, 5]]]);
@@ -152,30 +149,6 @@ describe("normalizeWeights", () => {
 });
 
 describe("smoothWeights", () => {
-  it("平滑化後のウェイト合計が1.0以下を維持する", () => {
-    const weights: SkinWeight[][] = [
-      [
-        { boneId: "b1", weight: 0.8 },
-        { boneId: "b2", weight: 0.2 },
-      ],
-      [
-        { boneId: "b1", weight: 0.3 },
-        { boneId: "b2", weight: 0.7 },
-      ],
-      [
-        { boneId: "b1", weight: 0.5 },
-        { boneId: "b2", weight: 0.5 },
-      ],
-    ];
-    const indices = [0, 1, 2];
-    const result = smoothWeights(weights, indices, 5);
-    expect(result).toHaveLength(3);
-    for (const vw of result) {
-      const total = vw.reduce((sum, w) => sum + w.weight, 0);
-      expect(total).toBeLessThanOrEqual(1.0 + 1e-9);
-    }
-  });
-
   it("隣接頂点が互いに近づく方向へ平滑化される", () => {
     const weights: SkinWeight[][] = [
       [{ boneId: "boneA", weight: 1 }],

@@ -1,7 +1,7 @@
 import {
-  ViviRuntime,
   type RuntimeMeshSnapshot,
   type ViviFileData,
+  ViviRuntime,
 } from "@vivi2d/runtime";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readRuntimeConformanceFixture } from "../../../../tests/conformance/runtime-v1/runner";
@@ -10,7 +10,6 @@ import { ViviPhaserRenderer } from "../renderer";
 type MutableRuntimeMeshSnapshot = {
   -readonly [Key in keyof RuntimeMeshSnapshot]: RuntimeMeshSnapshot[Key];
 };
-
 
 function createMockPhaserScene() {
   const textures = new Map<string, unknown>();
@@ -52,7 +51,6 @@ function createMockPhaserMesh() {
     destroy: vi.fn(),
   };
 }
-
 
 function createMockMeshState(
   overrides?: Partial<MutableRuntimeMeshSnapshot>,
@@ -103,7 +101,6 @@ function createFixtureTextureMap(model: {
   );
 }
 
-
 describe("ViviPhaserRenderer", () => {
   let mockScene: ReturnType<typeof createMockPhaserScene>;
 
@@ -112,24 +109,6 @@ describe("ViviPhaserRenderer", () => {
   });
 
   // --- constructor ---
-  describe("constructor", () => {
-    it("レンダラーが作成される", () => {
-      const renderer = new ViviPhaserRenderer({ scene: mockScene });
-      expect(renderer).toBeInstanceOf(ViviPhaserRenderer);
-      renderer.destroy();
-    });
-
-    it("オフセットと深度ベースが設定される", () => {
-      const renderer = new ViviPhaserRenderer({
-        scene: mockScene,
-        x: 50,
-        y: 100,
-        depthBase: 10,
-      });
-      expect(renderer.screenToWorld(150, 200)).toEqual({ x: 100, y: 100 });
-      renderer.destroy();
-    });
-  });
 
   // --- setModel() ---
   describe("setModel()", () => {
@@ -149,15 +128,19 @@ describe("ViviPhaserRenderer", () => {
       expect(mockScene.textures.exists(secondKey)).toBe(false);
     });
 
-    it("テクスチャが登録されメッシュが構築される", () => {
+    it("builds textured meshes while skipping unbound texture IDs", () => {
       const renderer = new ViviPhaserRenderer({ scene: mockScene });
-      const model = createMockModel();
-      const textures = new Map([["mesh-1", document.createElement("canvas")]]);
-
-      renderer.setModel(model, textures);
-
+      const model = createMockModel(
+        new Map([
+          ["missing", createMockMeshState({ id: "missing", textureId: "missing" })],
+          ["mesh-1", createMockMeshState()],
+        ]),
+      );
+      const canvas = document.createElement("canvas");
+      renderer.setModel(model, new Map([["mesh-1", canvas]]));
       expect(mockScene.textures.addCanvas).toHaveBeenCalledTimes(1);
-      expect(mockScene.add.mesh).toHaveBeenCalledTimes(1);
+      const key = mockScene.textures.addCanvas.mock.calls[0]![0];
+      expect(mockScene.add.mesh).toHaveBeenCalledExactlyOnceWith(10, 20, key);
       renderer.destroy();
     });
 
@@ -174,16 +157,6 @@ describe("ViviPhaserRenderer", () => {
       renderer.setModel(model2, tex2);
 
       expect(mockScene.add.mesh).toHaveBeenCalledTimes(2);
-      renderer.destroy();
-    });
-
-    it("テクスチャがないメッシュはスキップされる", () => {
-      const renderer = new ViviPhaserRenderer({ scene: mockScene });
-      const model = createMockModel();
-      const textures = new Map([["no-match", document.createElement("canvas")]]);
-
-      renderer.setModel(model, textures);
-
       renderer.destroy();
     });
 
@@ -239,20 +212,6 @@ describe("ViviPhaserRenderer", () => {
       vi.mocked(model.getMeshSnapshot).mockReturnValue(null);
 
       expect(() => renderer.sync()).not.toThrow();
-      renderer.destroy();
-    });
-
-    it("頂点が更新される", () => {
-      const renderer = new ViviPhaserRenderer({ scene: mockScene });
-      const state = createMockMeshState();
-      const model = createMockModel(new Map([["mesh-1", state]]));
-      const textures = new Map([["mesh-1", document.createElement("canvas")]]);
-      renderer.setModel(model, textures);
-
-      state.vertices = new Float32Array([10, 10, 110, 10, 10, 110, 110, 110]);
-      renderer.sync();
-
-      expect(model.getMeshSnapshot).toHaveBeenCalledWith("mesh-1");
       renderer.destroy();
     });
   });

@@ -22,17 +22,22 @@ vi.mock("pixi.js", () => ({
 }));
 
 describe("createScreenColorFilter", () => {
-  it("stores the color in screenColorUniforms.uScreenColor", () => {
-    const filter = createScreenColorFilter({ r: 0.5, g: 0.3, b: 0.1 });
+  it.each([
+    [0.5, 0.3, 0.1],
+    [0, 0, 0],
+    [1, 1, 1],
+  ])("stores RGB (%s, %s, %s) in the shader uniform", (r, g, b) => {
+    const filter = createScreenColorFilter({ r, g, b });
 
     const uniform = filter.resources.screenColorUniforms?.uniforms?.uScreenColor as
       | Float32Array
       | undefined;
 
     expect(uniform).toBeInstanceOf(Float32Array);
-    expect(uniform?.[0]).toBeCloseTo(0.5, 5);
-    expect(uniform?.[1]).toBeCloseTo(0.3, 5);
-    expect(uniform?.[2]).toBeCloseTo(0.1, 5);
+    expect(uniform).toHaveLength(3);
+    expect(uniform?.[0]).toBeCloseTo(r, 5);
+    expect(uniform?.[1]).toBeCloseTo(g, 5);
+    expect(uniform?.[2]).toBeCloseTo(b, 5);
   });
 
   it("uses GlProgram.from with named shader sources", async () => {
@@ -54,14 +59,18 @@ describe("updateScreenColorFilter", () => {
   it("updates the existing uniform values", () => {
     const filter = createScreenColorFilter({ r: 0.1, g: 0.2, b: 0.3 });
 
-    updateScreenColorFilter(filter, { r: 0.9, g: 0.8, b: 0.7 });
-
-    const uniform = filter.resources.screenColorUniforms?.uniforms?.uScreenColor as
-      | Float32Array
-      | undefined;
-    expect(uniform?.[0]).toBeCloseTo(0.9, 5);
-    expect(uniform?.[1]).toBeCloseTo(0.8, 5);
-    expect(uniform?.[2]).toBeCloseTo(0.7, 5);
+    for (const [r, g, b] of [
+      [1, 1, 1],
+      [0.9, 0.8, 0.7],
+      [0, 0, 0],
+    ]) {
+      updateScreenColorFilter(filter, { r, g, b });
+      const uniform = filter.resources.screenColorUniforms?.uniforms?.uScreenColor;
+      expect(uniform).toHaveLength(3);
+      expect(uniform?.[0]).toBeCloseTo(r!, 5);
+      expect(uniform?.[1]).toBeCloseTo(g!, 5);
+      expect(uniform?.[2]).toBeCloseTo(b!, 5);
+    }
   });
 
   it("does not throw when the uniform group is missing", () => {

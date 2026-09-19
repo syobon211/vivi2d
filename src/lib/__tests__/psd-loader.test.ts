@@ -62,12 +62,19 @@ describe("parsePsd", () => {
           hidden: false,
           blendMode: "multiply",
         },
+        { name: "既定不透明", left: 0, top: 0, right: 50, bottom: 50 },
       ],
     } as any);
 
-    const result = parsePsd(new ArrayBuffer(0), "face.psd");
+    const buffer = new ArrayBuffer(8);
+    const result = parsePsd(buffer, "face.psd");
 
-    expect(result.layers).toHaveLength(1);
+    expect(mockReadPsd).toHaveBeenCalledWith(buffer, {
+      useImageData: false,
+      skipThumbnail: true,
+      log: expect.any(Function),
+    });
+    expect(result.layers).toHaveLength(2);
     const layer = result.layers[0]!;
     expect(layer.name).toBe("目");
     expect(layer.x).toBe(100);
@@ -79,6 +86,16 @@ describe("parsePsd", () => {
     expect(layer.blendMode).toBe("multiply");
     expect(layer.kind).toBe("viviMesh");
     expect(layer.id).toMatch(/\S/);
+    expect(getTexture(layer.id)).toBe(canvas);
+    if (layer.kind !== "viviMesh") throw new Error("Expected mesh");
+    expect(layer.mesh.divisionsX).toBe(3);
+    expect(layer.mesh.divisionsY).toBe(3);
+    expect(layer.mesh.vertices).toHaveLength(32);
+    expect(layer.mesh.uvs).toHaveLength(32);
+    expect(layer.mesh.indices).toHaveLength(54);
+    expect(layer.mesh.vertices.slice(0, 2)).toEqual([0, 0]);
+    expect(layer.mesh.vertices.slice(-2)).toEqual([200, 150]);
+    expect(result.layers[1]!.opacity).toBe(1);
   });
 
   it("非表示レイヤーの visible が false になる", () => {
@@ -118,20 +135,6 @@ describe("parsePsd", () => {
     expect(group.children).toHaveLength(2);
     expect(group.children[0]!.name).toBe("目");
     expect(group.children[1]!.name).toBe("口");
-  });
-
-  it("canvas を texture-store に保存する", () => {
-    const canvas = document.createElement("canvas");
-    mockReadPsd.mockReturnValue({
-      width: 100,
-      height: 100,
-      children: [{ name: "レイヤー", canvas, left: 0, top: 0, right: 100, bottom: 100 }],
-    } as any);
-
-    const result = parsePsd(new ArrayBuffer(0), "test.psd");
-    const layerId = result.layers[0]!.id;
-
-    expect(getTexture(layerId)).toBe(canvas);
   });
 
   it("canvas がないレイヤーは texture-store に保存しない", () => {
@@ -186,31 +189,6 @@ describe("parsePsd", () => {
     expect(unique.size).toBe(3);
   });
 
-  it("opacity 未指定時は不透明(1.0)になる", () => {
-    mockReadPsd.mockReturnValue({
-      width: 100,
-      height: 100,
-      children: [{ name: "A", left: 0, top: 0, right: 50, bottom: 50 }],
-    } as any);
-
-    const result = parsePsd(new ArrayBuffer(0), "test.psd");
-    expect(result.layers[0]!.opacity).toBe(1);
-  });
-
-  it("useImageData: false で readPsd を呼ぶ", () => {
-    mockReadPsd.mockReturnValue({
-      width: 100,
-      height: 100,
-      children: [],
-    } as any);
-
-    const buf = new ArrayBuffer(8);
-    parsePsd(buf, "test.psd");
-
-    expect(mockReadPsd).toHaveBeenCalledWith(buf, { useImageData: false });
-  });
-
-
   it("全レイヤーに適切な kind が設定される", () => {
     mockReadPsd.mockReturnValue({
       width: 100,
@@ -229,31 +207,6 @@ describe("parsePsd", () => {
     expect(result.layers[0]!.kind).toBe("viviMesh");
     expect(result.layers[1]!.kind).toBe("group");
     expect(result.layers[1]!.children[0]!.kind).toBe("viviMesh");
-  });
-
-  it("非グループレイヤーに 3x3 デフォルトメッシュが生成される", () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 200;
-    canvas.height = 150;
-
-    mockReadPsd.mockReturnValue({
-      width: 500,
-      height: 500,
-      children: [
-        { name: "メッシュ付き", canvas, left: 10, top: 20, right: 210, bottom: 170 },
-      ],
-    } as any);
-
-    const result = parsePsd(new ArrayBuffer(0), "test.psd");
-    const layer = result.layers[0] as ViviMeshNode;
-
-    expect(layer.kind).toBe("viviMesh");
-    expect(layer.mesh).toBeDefined();
-    expect(layer.mesh.divisionsX).toBe(3);
-    expect(layer.mesh.divisionsY).toBe(3);
-    expect(layer.mesh.vertices.length).toBe(16 * 2);
-    expect(layer.mesh.uvs.length).toBe(16 * 2);
-    expect(layer.mesh.indices.length).toBe(54);
   });
 
   it("グループレイヤーには mesh が生成されない", () => {
@@ -285,25 +238,6 @@ describe("parsePsd", () => {
 
     expect(result.layers[0]!.kind).toBe("group");
     expect("mesh" in result.layers[0]!).toBe(false);
-  });
-
-  it("メッシュの頂点がレイヤーサイズに基づく", () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 120;
-    canvas.height = 80;
-
-    mockReadPsd.mockReturnValue({
-      width: 500,
-      height: 500,
-      children: [{ name: "L", canvas, left: 0, top: 0, right: 120, bottom: 80 }],
-    } as any);
-
-    const result = parsePsd(new ArrayBuffer(0), "test.psd");
-    const mesh = (result.layers[0] as ViviMeshNode).mesh;
-
-    const lastVertIdx = (mesh.vertices.length / 2 - 1) * 2;
-    expect(mesh.vertices[lastVertIdx]).toBe(120);
-    expect(mesh.vertices[lastVertIdx + 1]).toBe(80);
   });
 });
 
@@ -434,31 +368,6 @@ describe("parsePsd BlendMode変換", () => {
     const result = parsePsd(new ArrayBuffer(0), "test.psd");
     expect(result.layers[0]!.blendMode).toBe("normal");
   });
-
-  it("multiply はそのまま変換される", () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 50;
-    canvas.height = 50;
-
-    mockReadPsd.mockReturnValue({
-      width: 100,
-      height: 100,
-      children: [
-        {
-          name: "乗算",
-          canvas,
-          left: 0,
-          top: 0,
-          right: 50,
-          bottom: 50,
-          blendMode: "multiply",
-        },
-      ],
-    } as any);
-
-    const result = parsePsd(new ArrayBuffer(0), "test.psd");
-    expect(result.layers[0]!.blendMode).toBe("multiply");
-  });
 });
 
 describe("parsePsd グループ vs viviMesh 分類", () => {
@@ -502,31 +411,6 @@ describe("parsePsd グループ vs viviMesh 分類", () => {
     expect(result.layers[0]!.kind).toBe("viviMesh");
   });
 
-  it("子レイヤーがundefinedの場合はviviMeshになる", () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 50;
-    canvas.height = 50;
-
-    mockReadPsd.mockReturnValue({
-      width: 100,
-      height: 100,
-      children: [
-        {
-          name: "undefined children",
-          canvas,
-          left: 0,
-          top: 0,
-          right: 50,
-          bottom: 50,
-          children: undefined,
-        },
-      ],
-    } as any);
-
-    const result = parsePsd(new ArrayBuffer(0), "test.psd");
-    expect(result.layers[0]!.kind).toBe("viviMesh");
-  });
-
   it("名前未指定レイヤーにデフォルト名が付与される", () => {
     mockReadPsd.mockReturnValue({
       width: 100,
@@ -540,67 +424,21 @@ describe("parsePsd グループ vs viviMesh 分類", () => {
   });
 });
 
-describe("parsePsd drawOrder 自動配分", () => {
-  afterEach(() => {
-    clearTextures();
-  });
-
-  it("複数レイヤーに drawOrder が等間隔で割り当てられる", () => {
-    mockReadPsd.mockReturnValue({
-      width: 100,
-      height: 100,
-      children: [
-        { name: "A", left: 0, top: 0, right: 50, bottom: 50 },
-        { name: "B", left: 0, top: 0, right: 50, bottom: 50 },
-        { name: "C", left: 0, top: 0, right: 50, bottom: 50 },
-      ],
-    } as any);
-
-    const result = parsePsd(new ArrayBuffer(0), "test.psd");
-    for (const layer of result.layers) {
-      expect(layer.drawOrder).toBeDefined();
-      expect(typeof layer.drawOrder).toBe("number");
-    }
-  });
-
-  it("1レイヤーでも drawOrder が設定される", () => {
-    mockReadPsd.mockReturnValue({
-      width: 100,
-      height: 100,
-      children: [{ name: "唯一", left: 0, top: 0, right: 50, bottom: 50 }],
-    } as any);
-
-    const result = parsePsd(new ArrayBuffer(0), "test.psd");
-    expect(result.layers[0]!.drawOrder).toBeDefined();
-  });
-});
-
 describe("parsePsd エラーハンドリング", () => {
   afterEach(() => {
     clearTextures();
   });
 
   it("readPsd がエラーを投げた場合、ユーザー向けメッセージ付きで re-throw する", () => {
+    const existing = document.createElement("canvas");
+    setTexture("existing", existing);
     mockReadPsd.mockImplementation(() => {
       throw new Error("Invalid PSD signature");
     });
-
     expect(() => parsePsd(new ArrayBuffer(0), "broken.psd")).toThrow(
-      "Failed to load PSD file: Invalid PSD signature",
+      "Failed to load PSD file.",
     );
-  });
-
-  it("readPsd がエラーを投げた場合、clearTextures を呼ばない", () => {
-    mockReadPsd.mockImplementation(() => {
-      throw new Error("corrupt");
-    });
-
-    setTexture("existing", document.createElement("canvas"));
-    expect(getTexture("existing")).not.toBeUndefined();
-
-    expect(() => parsePsd(new ArrayBuffer(0), "broken.psd")).toThrow();
-
-    expect(getTexture("existing")).not.toBeUndefined();
+    expect(getTexture("existing")).toBe(existing);
   });
 
   it("非 Error オブジェクトが throw された場合もラップする", () => {
@@ -609,7 +447,7 @@ describe("parsePsd エラーハンドリング", () => {
     });
 
     expect(() => parsePsd(new ArrayBuffer(0), "broken.psd")).toThrow(
-      "Failed to load PSD file: unexpected string error",
+      "Failed to load PSD file.",
     );
   });
 });

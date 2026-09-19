@@ -10,7 +10,6 @@ import { useParameterStore } from "@/stores/parameterStore";
 import { loadPsdFromBuffer } from "@/stores/projectIO";
 import { resetAllStores } from "@/test/store-reset";
 
-
 function setupPairedParams(): {
   paramX: ParameterDefinition;
   paramY: ParameterDefinition;
@@ -42,23 +41,14 @@ describe("ParameterSlider2D", () => {
     resetAllStores();
   });
 
-  it("パラメータ名が X / Y の形式で表示される", () => {
-    const { paramX, paramY } = setupPairedParams();
-    render(<ParameterSlider2D paramX={paramX} paramY={paramY} valueX={0} valueY={0} />);
-    expect(screen.getByText("角度X / 角度Y")).toBeInTheDocument();
-  });
-
   it("X軸とY軸の値が表示される", () => {
     const { paramX, paramY } = setupPairedParams();
     render(<ParameterSlider2D paramX={paramX} paramY={paramY} valueX={10} valueY={-5} />);
+    expect(screen.getByText("角度X / 角度Y")).toBeInTheDocument();
+    expect(screen.getByText("X")).toBeInTheDocument();
+    expect(screen.getByText("Y")).toBeInTheDocument();
     expect(screen.getByText("10")).toBeInTheDocument();
     expect(screen.getByText("-5")).toBeInTheDocument();
-  });
-
-  it("結合解除ボタンが表示される", () => {
-    const { paramX, paramY } = setupPairedParams();
-    render(<ParameterSlider2D paramX={paramX} paramY={paramY} valueX={0} valueY={0} />);
-    expect(screen.getByTitle("結合を解除")).toBeInTheDocument();
   });
 
   it("結合解除ボタンクリックでパラメータの結合が解除される", async () => {
@@ -85,30 +75,6 @@ describe("ParameterSlider2D", () => {
     expect(useParameterStore.getState().parameterValues[paramY.id]).toBe(0);
   });
 
-  it("2DパッドのpointerDownイベントでパラメータ値が更新される", () => {
-    const { paramX, paramY } = setupPairedParams();
-    render(<ParameterSlider2D paramX={paramX} paramY={paramY} valueX={0} valueY={0} />);
-    const pad = document.querySelector(".parameter-2d-pad")!;
-    vi.spyOn(pad, "getBoundingClientRect").mockReturnValue({
-      left: 0,
-      top: 0,
-      width: 140,
-      height: 140,
-      right: 140,
-      bottom: 140,
-      x: 0,
-      y: 0,
-      toJSON: () => {},
-    });
-
-    fireEvent.pointerDown(pad, { clientX: 70, clientY: 70 });
-
-    const valX = useParameterStore.getState().parameterValues[paramX.id]!;
-    const valY = useParameterStore.getState().parameterValues[paramY.id]!;
-    expect(valX).toBeCloseTo(0, 0);
-    expect(valY).toBeCloseTo(0, 0);
-  });
-
   it("2DパッドのpointerMoveイベントでドラッグ中に値が更新される", () => {
     const { paramX, paramY } = setupPairedParams();
     render(<ParameterSlider2D paramX={paramX} paramY={paramY} valueX={0} valueY={0} />);
@@ -125,62 +91,22 @@ describe("ParameterSlider2D", () => {
       toJSON: () => {},
     });
 
-    fireEvent.pointerDown(pad, { clientX: 70, clientY: 70 });
+    fireEvent.pointerMove(pad, { clientX: 140, clientY: 0 });
+    expect(useParameterStore.getState().parameterValues[paramX.id]).toBe(0);
+    expect(useParameterStore.getState().parameterValues[paramY.id]).toBe(0);
+    fireEvent.pointerDown(pad, { clientX: 105, clientY: 105 });
+    expect(useParameterStore.getState().parameterValues[paramX.id]).toBe(15);
+    expect(useParameterStore.getState().parameterValues[paramY.id]).toBe(-15);
     fireEvent.pointerMove(pad, { clientX: 140, clientY: 0 });
 
     const valX = useParameterStore.getState().parameterValues[paramX.id]!;
     const valY = useParameterStore.getState().parameterValues[paramY.id]!;
     expect(valX).toBeCloseTo(30, 0);
     expect(valY).toBeCloseTo(30, 0);
-  });
-
-  it("pointerDownなしのpointerMoveでは値が変わらない", () => {
-    const { paramX, paramY } = setupPairedParams();
-    render(<ParameterSlider2D paramX={paramX} paramY={paramY} valueX={0} valueY={0} />);
-    const pad = document.querySelector(".parameter-2d-pad")!;
-    vi.spyOn(pad, "getBoundingClientRect").mockReturnValue({
-      left: 0,
-      top: 0,
-      width: 140,
-      height: 140,
-      right: 140,
-      bottom: 140,
-      x: 0,
-      y: 0,
-      toJSON: () => {},
-    });
-
-    fireEvent.pointerMove(pad, { clientX: 140, clientY: 0 });
-
-    expect(useParameterStore.getState().parameterValues[paramX.id]).toBe(0);
-    expect(useParameterStore.getState().parameterValues[paramY.id]).toBe(0);
-  });
-
-  it("pointerUpでドラッグが終了する", () => {
-    const { paramX, paramY } = setupPairedParams();
-    render(<ParameterSlider2D paramX={paramX} paramY={paramY} valueX={0} valueY={0} />);
-    const pad = document.querySelector(".parameter-2d-pad")!;
-    vi.spyOn(pad, "getBoundingClientRect").mockReturnValue({
-      left: 0,
-      top: 0,
-      width: 140,
-      height: 140,
-      right: 140,
-      bottom: 140,
-      x: 0,
-      y: 0,
-      toJSON: () => {},
-    });
-
-    fireEvent.pointerDown(pad, { clientX: 70, clientY: 70 });
     fireEvent.pointerUp(pad);
-
-    fireEvent.pointerMove(pad, { clientX: 0, clientY: 0 });
-
-    const valX = useParameterStore.getState().parameterValues[paramX.id]!;
-    const valY = useParameterStore.getState().parameterValues[paramY.id]!;
-    expect(valX).toBeCloseTo(0, 0);
-    expect(valY).toBeCloseTo(0, 0);
+    fireEvent.pointerMove(pad, { clientX: 0, clientY: 140 });
+    expect(useParameterStore.getState().parameterValues[paramX.id]).toBe(30);
+    expect(useParameterStore.getState().parameterValues[paramY.id]).toBe(30);
   });
 
   it("カーソル位置がパーセントで正しくレンダリングされる", () => {
@@ -189,13 +115,6 @@ describe("ParameterSlider2D", () => {
       <ParameterSlider2D paramX={paramX} paramY={paramY} valueX={30} valueY={-30} />,
     );
     const cursor = document.querySelector(".parameter-2d-cursor")!;
-    expect(cursor).toBeInTheDocument();
-  });
-
-  it("X軸とY軸のラベルが表示される", () => {
-    const { paramX, paramY } = setupPairedParams();
-    render(<ParameterSlider2D paramX={paramX} paramY={paramY} valueX={0} valueY={0} />);
-    expect(screen.getByText("X")).toBeInTheDocument();
-    expect(screen.getByText("Y")).toBeInTheDocument();
+    expect(cursor).toHaveStyle({ left: "100%", top: "100%" });
   });
 });

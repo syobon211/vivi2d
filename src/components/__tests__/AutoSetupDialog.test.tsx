@@ -1,9 +1,9 @@
 import {
   act,
   cleanup,
+  screen,
   fireEvent as testingLibraryFireEvent,
   render as testingLibraryRender,
-  screen,
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -12,7 +12,7 @@ import type { GeneratedBone } from "@/lib/ai-bone-generator";
 import * as autoSetup from "@/lib/auto-setup";
 import { useEditorStore } from "@/stores/editorStore";
 import { _resetMergeTimer, useHistoryStore } from "@/stores/historyStore";
-import { createViviMesh, createEmptyProject } from "@/test/fixtures";
+import { createEmptyProject, createViviMesh } from "@/test/fixtures";
 import {
   resetAutoSetupDraftStore,
   resetEditorStore,
@@ -175,40 +175,12 @@ describe("AutoSetupDialog", async () => {
     vi.restoreAllMocks();
   });
 
-  it("ダイアログが表示される", async () => {
-    setupProject();
-    render(<AutoSetupDialog onClose={() => {}} />);
-    expect(screen.getByText("自動セットアップ")).toBeInTheDocument();
-  });
-
-  it("検出ステップでオプションが表示される", async () => {
-    setupProject();
-    render(<AutoSetupDialog onClose={() => {}} />);
-    expect(screen.getByText("ボーン生成")).toBeInTheDocument();
-    expect(screen.getByText("物理設定生成")).toBeInTheDocument();
-  });
-
-  it("検出開始ボタンが表示される", async () => {
-    setupProject();
-    render(<AutoSetupDialog onClose={() => {}} />);
-    expect(screen.getByText("検出開始")).toBeInTheDocument();
-  });
-
   it("検出を実行するとパーツ一覧が表示される", async () => {
     setupProject();
     render(<AutoSetupDialog onClose={() => {}} />);
     await clickDetectAndWait();
     expect(screen.getByText("検出結果", { exact: false })).toBeInTheDocument();
   });
-
-  it("オーバーレイクリックで閉じる", async () => {
-    setupProject();
-    const onClose = vi.fn();
-    render(<AutoSetupDialog onClose={onClose} />);
-    fireEvent.click(document.querySelector(".modal-overlay")!);
-    expect(onClose).toHaveBeenCalled();
-  });
-
 
   it("ダイアログに role=dialog / aria-modal / aria-labelledby が設定されている", async () => {
     setupProject();
@@ -221,6 +193,11 @@ describe("AutoSetupDialog", async () => {
     expect(labelledBy).toMatch(/\S/);
     const titleEl = document.querySelector(`#${labelledBy}`);
     expect(titleEl?.textContent).toContain("自動セットアップ");
+    expect(screen.getByText("ボーン生成")).toBeInTheDocument();
+    expect(screen.getByText("物理設定生成")).toBeInTheDocument();
+    expect(screen.getByText("検出開始")).toBeInTheDocument();
+    expect(screen.getByText("メッシュ自動生成")).toBeInTheDocument();
+    expect(screen.getByText("ウェイト自動計算")).toBeInTheDocument();
   });
 
   it("Escape キー押下で onClose が呼ばれる", async () => {
@@ -252,50 +229,10 @@ describe("AutoSetupDialog", async () => {
     });
   });
 
-
   it("プロジェクトがnullの場合にnullを返す", async () => {
     useEditorStore.setState({ project: null });
     render(<AutoSetupDialog onClose={() => {}} />);
     expect(document.querySelector(".auto-setup-dialog")).not.toBeInTheDocument();
-  });
-
-  it("ボーン生成チェックボックスを操作できる", async () => {
-    setupProject();
-    const user = userEvent.setup();
-    render(<AutoSetupDialog onClose={() => {}} />);
-
-    const boneCheckbox = screen.getByText("ボーン生成").querySelector("input")!;
-    expect(boneCheckbox).toBeChecked();
-
-    await user.click(boneCheckbox);
-    expect(boneCheckbox).not.toBeChecked();
-
-    await user.click(boneCheckbox);
-    expect(boneCheckbox).toBeChecked();
-  });
-
-  it("物理設定生成チェックボックスを操作できる", async () => {
-    setupProject();
-    const user = userEvent.setup();
-    render(<AutoSetupDialog onClose={() => {}} />);
-
-    const physicsCheckbox = screen.getByText("物理設定生成").querySelector("input")!;
-    expect(physicsCheckbox).toBeChecked();
-
-    await user.click(physicsCheckbox);
-    expect(physicsCheckbox).not.toBeChecked();
-  });
-
-  it("確信度スライダーを操作できる", async () => {
-    setupProject();
-    render(<AutoSetupDialog onClose={() => {}} />);
-
-    const slider = document.querySelector('input[type="range"]') as HTMLInputElement;
-    expect(slider).toBeInTheDocument();
-    expect(slider.value).toBe("0.3");
-
-    fireEvent.change(slider, { target: { value: "0.5" } });
-    expect(slider.value).toBe("0.5");
   });
 
   it("検出結果テーブルにパーツ情報が表示される", async () => {
@@ -399,18 +336,6 @@ describe("AutoSetupDialog", async () => {
     });
   });
 
-  it("検出結果が空の場合にメッセージが表示される", async () => {
-    setupProject();
-    mockEmptyDetectionResult();
-    render(<AutoSetupDialog onClose={() => {}} />);
-
-    await clickDetectAndWait();
-
-    expect(
-      screen.getByText("パーツが検出されませんでした。レイヤー名を確認してください。"),
-    ).toBeInTheDocument();
-  });
-
   it("検出結果が空の場合にプレビューボタンが無効化される", async () => {
     setupProject();
     mockEmptyDetectionResult();
@@ -420,6 +345,9 @@ describe("AutoSetupDialog", async () => {
 
     const previewBtn = screen.getByText("プレビュー");
     expect(previewBtn).toBeDisabled();
+    expect(
+      screen.getByText("パーツが検出されませんでした。レイヤー名を確認してください。"),
+    ).toBeInTheDocument();
   });
 
   it("オーバーレイクリックでonCloseが呼ばれる", async () => {
@@ -427,23 +355,13 @@ describe("AutoSetupDialog", async () => {
     const onClose = vi.fn();
     render(<AutoSetupDialog onClose={onClose} />);
 
+    fireEvent.click(document.querySelector(".auto-setup-dialog")!);
+    expect(onClose).not.toHaveBeenCalled();
     const overlay = document.querySelector(".modal-overlay")!;
     fireEvent.click(overlay);
 
     expect(onClose).toHaveBeenCalledOnce();
   });
-
-  it("ダイアログ内クリックではonCloseが呼ばれない", async () => {
-    setupProject();
-    const onClose = vi.fn();
-    render(<AutoSetupDialog onClose={onClose} />);
-
-    const dialog = document.querySelector(".auto-setup-dialog")!;
-    fireEvent.click(dialog);
-
-    expect(onClose).not.toHaveBeenCalled();
-  });
-
 
   it("ダイアログタイトルが「自動セットアップ」であること（「AI」がつかないこと）", async () => {
     setupProject();
@@ -499,6 +417,7 @@ describe("AutoSetupDialog", async () => {
 
     fireEvent.change(slider, { target: { value: "0.5" } });
     expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(slider.value).toBe("0.5");
 
     fireEvent.change(slider, { target: { value: "0.9" } });
     expect(screen.getByText("90%")).toBeInTheDocument();
@@ -630,7 +549,6 @@ describe("AutoSetupDialog", async () => {
     expect(screen.getByText(/重力0\.30/)).toBeInTheDocument();
     expect(screen.getByText(/減衰0\.10/)).toBeInTheDocument();
   });
-
 
   it("適用時に既存パラメータと同名のパラメータは追加されない", async () => {
     useEditorStore.setState({
@@ -774,7 +692,6 @@ describe("AutoSetupDialog", async () => {
     });
   });
 
-
   it("メッシュ結果があると適用後にメッシュデータが更新される", async () => {
     setupProject();
     const meshData = {
@@ -913,16 +830,6 @@ describe("AutoSetupDialog", async () => {
 
     const project = useEditorStore.getState().project!;
     expect(Object.keys(project.skins)).toHaveLength(0);
-  });
-
-  it("メッシュ/ウェイトオプションがUIに表示される", async () => {
-    setupProject();
-    vi.mocked(autoSetup.previewAutoSetup).mockReturnValue(mockDetectionResult());
-
-    render(<AutoSetupDialog onClose={() => {}} />);
-
-    expect(screen.getByText("メッシュ自動生成")).toBeInTheDocument();
-    expect(screen.getByText("ウェイト自動計算")).toBeInTheDocument();
   });
 
   it("プレビューにメッシュセクションが表示される", async () => {

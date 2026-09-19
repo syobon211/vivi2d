@@ -37,6 +37,7 @@ export class LipSyncAnalyser {
   }
 
   start(callback: OnVolumeCallback): void {
+    this.stop();
     this.onVolume = callback;
     this.running = true;
     this.prevVolume = 0;

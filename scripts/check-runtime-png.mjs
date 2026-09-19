@@ -1013,21 +1013,22 @@ function pngHostSource(fixture) {
     "e96718c2446ee1508c58808d15b103b9c2dfc93a53952ca0164b1b9a16179859",
     "hex",
   );
-  const legacyDefinitions = fixture.legacy
+  // assertLegacyCorpus has already pinned and extracted all three source files.
+  // Each compiler/link form needs one decode per distinct PNG, not per container.
+  const legacy = [
+    ...new Map(
+      fixture.legacy.map((entry) => [entry.png.toString("hex"), entry]),
+    ).values(),
+  ];
+  const legacyDefinitions = legacy
     .map(
       (entry, index) =>
         `static const uint8_t legacy_png_${index}[] = { ${cBytes(entry.png)} };\nstatic const uint8_t legacy_hash_${index}[32] = { ${cBytes(legacyHash)} };`,
     )
     .join("\n");
-  const legacyPointers = fixture.legacy
-    .map((_, index) => `legacy_png_${index}`)
-    .join(", ");
-  const legacySizes = fixture.legacy
-    .map((_, index) => `sizeof(legacy_png_${index})`)
-    .join(", ");
-  const legacyHashes = fixture.legacy
-    .map((_, index) => `legacy_hash_${index}`)
-    .join(", ");
+  const legacyPointers = legacy.map((_, index) => `legacy_png_${index}`).join(", ");
+  const legacySizes = legacy.map((_, index) => `sizeof(legacy_png_${index})`).join(", ");
+  const legacyHashes = legacy.map((_, index) => `legacy_hash_${index}`).join(", ");
   return `#include "vivi_png.h"
 #include <stdint.h>
 #include <stdio.h>
