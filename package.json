@@ -51,6 +51,7 @@
     "check:content-safety-integrity": "node scripts/check-content-safety-integrity.mjs",
     "check:escalation-template": "node scripts/check-escalation-template.mjs",
     "docs:user:check": "node scripts/check-user-docs.mjs",
+    "docs:user:rehash": "node scripts/rehash-user-docs.mjs",
     "docs:user:check:release": "node scripts/check-user-docs.mjs --release-candidate",
     "docs:user:changed-copy": "node scripts/extract-user-docs-changed-copy.mjs",
     "docs:media:check": "node scripts/check-user-docs-media.mjs",

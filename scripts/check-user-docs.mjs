@@ -2,15 +2,22 @@ import { spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { TextDecoder } from "node:util";
 import {
   comfyUiSourceRecordRequiredReasons,
   validateComfyUiSourceRecord,
 } from "./lib/comfyui-source-record.mjs";
 
+import {
+  canonicalUserAssetPath,
+  decodeUserDocUtf8,
+  parseUserDocFrontmatter,
+  sourceContentHashForPage,
+  USER_DOC_LOCALES,
+} from "./lib/user-docs-source.mjs";
+
 const root = process.cwd();
 const failures = [];
-const locales = ["en", "ja", "zh-Hans", "ko-KR"];
+const locales = USER_DOC_LOCALES;
 const statuses = new Set(["draft", "reviewed", "stub"]);
 const audiences = new Set(["artist", "rigger", "streamer", "developer"]);
 const releaseCandidate = process.argv.includes("--release-candidate");
@@ -37,13 +44,11 @@ function exists(relativePath) {
 }
 
 function readText(relativePath) {
-  const bytes = fs.readFileSync(path.join(root, relativePath));
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  } catch {
-    fail(`${relativePath}: invalid UTF-8 byte sequence.`);
-    return "";
-  }
+  return decodeUserDocUtf8(
+    fs.readFileSync(path.join(root, relativePath)),
+    relativePath,
+    fail,
+  );
 }
 
 function fileSha256(relativePath) {
@@ -51,16 +56,6 @@ function fileSha256(relativePath) {
   if (!fs.existsSync(file)) return null;
   const digest = crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
   return `sha256:v1:${digest}`;
-}
-
-function canonicalUserAssetPath(value) {
-  if (typeof value !== "string") return null;
-  if (value.includes("\\") || value.includes("\0")) return null;
-  const normalized = path.posix.normalize(value);
-  if (normalized !== value) return null;
-  if (!normalized.startsWith("docs/user/assets/")) return null;
-  if (normalized === "docs/user/assets/" || normalized.endsWith("/")) return null;
-  return normalized;
 }
 
 function readJson(relativePath) {
@@ -92,101 +87,8 @@ function slugFromLocaleRelative(relativePath) {
   return relativePath.replace(/\.md$/, "");
 }
 
-function parseScalar(value, file, context) {
-  const trimmed = value.trim();
-  if (trimmed === "true") return true;
-  if (trimmed === "false") return false;
-  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    return trimmed.slice(1, -1);
-  }
-  if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-    try {
-      return JSON.parse(trimmed);
-    } catch (error) {
-      fail(`${file}: malformed JSON array in frontmatter ${context} (${error.message}).`);
-      return null;
-    }
-  }
-  return trimmed;
-}
-
 function parseFrontmatter(file) {
-  const raw = readText(file);
-  if (raw.charCodeAt(0) === 0xfeff) {
-    fail(`${file}: UTF-8 BOM is not allowed.`);
-  }
-
-  const text = raw.replace(/\r\n?/g, "\n");
-  const lines = text.split("\n");
-  if (lines[0] !== "---") {
-    fail(`${file}: missing opening frontmatter delimiter.`);
-    return { data: {}, body: text };
-  }
-
-  const closeIndex = lines.findIndex((line, index) => index > 0 && line === "---");
-  if (closeIndex === -1) {
-    fail(`${file}: missing closing frontmatter delimiter.`);
-    return { data: {}, body: "" };
-  }
-
-  const data = {};
-  const seen = new Set();
-  let currentKey = null;
-  for (let lineIndex = 1; lineIndex < closeIndex; lineIndex += 1) {
-    const line = lines[lineIndex];
-    if (line.trim() === "") continue;
-    if (line.startsWith("  - ")) {
-      if (!currentKey || !Array.isArray(data[currentKey])) {
-        fail(`${file}: list item has no array parent in frontmatter: ${line}`);
-        continue;
-      }
-      data[currentKey].push(parseScalar(line.slice(4), file, currentKey));
-      continue;
-    }
-    if (line.startsWith("  ")) {
-      if (
-        !currentKey ||
-        typeof data[currentKey] !== "object" ||
-        Array.isArray(data[currentKey])
-      ) {
-        fail(`${file}: nested field has no object parent in frontmatter: ${line}`);
-        continue;
-      }
-      const match = /^ {2}([A-Za-z][A-Za-z0-9]*):\s*(.*)$/.exec(line);
-      if (!match) {
-        fail(`${file}: unsupported nested frontmatter syntax: ${line}`);
-        continue;
-      }
-      data[currentKey][match[1]] = parseScalar(
-        match[2],
-        file,
-        `${currentKey}.${match[1]}`,
-      );
-      continue;
-    }
-
-    const match = /^([A-Za-z][A-Za-z0-9]*):\s*(.*)$/.exec(line);
-    if (!match) {
-      fail(`${file}: unsupported frontmatter syntax: ${line}`);
-      continue;
-    }
-    const [, key, rawValue] = match;
-    if (seen.has(key)) {
-      fail(`${file}: duplicate frontmatter field: ${key}`);
-    }
-    seen.add(key);
-    if (rawValue === "") {
-      const following = lines
-        .slice(lineIndex + 1, closeIndex)
-        .find((candidate) => candidate.trim() !== "");
-      data[key] = following?.startsWith("  - ") ? [] : {};
-    } else {
-      data[key] = parseScalar(rawValue, file, key);
-    }
-    currentKey = key;
-  }
-
-  return { data, body: lines.slice(closeIndex + 1).join("\n") };
+  return parseUserDocFrontmatter(readText(file), file, fail);
 }
 
 function validateRequiredString(file, data, key) {
@@ -201,72 +103,11 @@ function validateRequiredStringValue(file, data, key) {
   }
 }
 
-function normalizeBodyForHash(body) {
-  return body.replace(/\r\n?/g, "\n");
-}
-
-function localizedRecordForHash(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const record = {};
-  for (const locale of locales) {
-    record[locale] = typeof value[locale] === "string" ? value[locale] : null;
-  }
-  return record;
-}
-
-function localizedOrScalarRecordForHash(value) {
-  if (!value) return null;
-  if (typeof value === "string") return value;
-  return localizedRecordForHash(value);
-}
-
-function mediaSourceRecordForHash(mediaId, mediaManifests) {
-  const record = mediaManifests.get(mediaId);
-  if (!record) return { id: mediaId, missing: true };
-  const manifest = record.manifest;
-  const variants = {};
-  for (const variantName of Object.keys(manifest.variants ?? {}).sort()) {
-    const variant = manifest.variants[variantName] ?? {};
-    const variantPath = canonicalUserAssetPath(variant.path);
-    variants[variantName] = {
-      fileSha256: variantPath ? fileSha256(variantPath) : null,
-      path: variantPath,
-      alt: localizedRecordForHash(variant.alt),
-      caption: localizedRecordForHash(variant.caption),
-      captions: localizedOrScalarRecordForHash(variant.captions),
-      transcript: localizedOrScalarRecordForHash(variant.transcript),
-    };
-  }
-  return {
-    id: mediaId,
-    kind: manifest.kind ?? null,
-    status: manifest.status ?? null,
-    topicSlugs: Array.isArray(manifest.topicSlugs) ? manifest.topicSlugs : null,
-    variants,
-  };
-}
-
 function sourceContentHashForEnglishSlug(slug, mediaManifests) {
   const relativePath = slug === "" ? "index.md" : `${slug}.md`;
   const file = `docs/user/en/${relativePath}`;
   if (!exists(file)) return null;
-  const { data, body } = parseFrontmatter(file);
-  const included = {};
-  for (const key of ["title", "description", "audience", "media", "workflow"]) {
-    if (data[key] !== undefined) included[key] = data[key];
-  }
-  if (Array.isArray(data.media)) {
-    included.mediaMetadata = data.media.map((mediaId) =>
-      mediaSourceRecordForHash(mediaId, mediaManifests),
-    );
-  }
-  const prefix = Object.keys(included)
-    .sort()
-    .map((key) => `${key}=${JSON.stringify(included[key])}`)
-    .join("\n");
-  const payload = `${prefix}\n\n${normalizeBodyForHash(body)}`;
-  const digest = crypto.createHash("sha256").update(payload, "utf8").digest("hex");
-  return `sha256:v1:${digest}`;
+  return sourceContentHashForPage(parseFrontmatter(file), mediaManifests, fileSha256);
 }
 
 function readReviewOwnership() {
