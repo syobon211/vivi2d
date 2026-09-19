@@ -23,6 +23,7 @@ on:
       - "packages/**"
       - "scripts/**"
       - "src/**"
+      - "tests/conformance/runtime-v1/**"
       - "tsconfig.json"
       - "tsconfig.packages.json"
       - "vite.aliases.ts"
