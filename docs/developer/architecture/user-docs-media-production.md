@@ -54,9 +54,9 @@ Use this order for every media replacement batch:
    changing the media manifest. This keeps the tree structurally honest while
    review is stale.
 8. Move media manifests to `status: "reviewed"` only after authorized review.
-9. Refresh affected translation source hashes only after localized re-review
-   and only through an approved helper that shares the same hash implementation
-   as `scripts/check-user-docs.mjs`.
+9. Refresh affected translation source hashes as drafts through
+   `docs:user:rehash`, which shares the checker's hash implementation. Restore
+   reviewed status only after authorized localized re-review.
 10. Promote routes only in a separate final-tree route promotion change.
 
 The media pass may be split into multiple small PRs, but each PR must leave the
@@ -437,12 +437,35 @@ separate architecture change.
 Do not bulk-update stale translation hashes without rereading the affected
 localized page against the new media.
 
-An approved hash-refresh helper does not exist yet. Before the first PR that
-keeps localized pages `reviewed` after media replacement, add a helper such as
-`npm run docs:user:rehash` that shares the same normalization implementation as
-`scripts/check-user-docs.mjs`. The helper must not silently preserve reviewed
-status. It should either downgrade stale pages to draft or require an explicit
-review-refresh input from an authorized reviewer.
+Use the route-scoped helper, starting with its default dry-run:
+
+```sh
+npm run docs:user:rehash -- --slug=workflows/auto-setup
+npm run docs:user:rehash -- --slug=workflows/auto-setup --write
+```
+
+Repeat `--slug=<route>` for an explicit batch; `--slug=` selects the localized
+home pages. There is no implicit all-route mode. The helper and
+`scripts/check-user-docs.mjs` share parsing and normalization in
+`scripts/lib/user-docs-source.mjs`, including every referenced media locale and
+file digest. Selected stale non-English pages receive the current source hash,
+`status: "draft"`, and `translation.reviewed: false`; stale reviewer handles and
+dates are cleared. Fresh reviewed pages are unchanged. Markdown bodies,
+unrelated frontmatter, English pages, media, and publication metadata are not
+rewritten.
+
+The helper refuses a published-route downgrade before writing any selected
+page; changing that route's publication state requires a separate explicit
+decision. It rejects ambiguous frontmatter and linked or escaping paths.
+Validation completes before writes, but file replacements are individually
+atomic, not a multi-file transaction: inspect the selected files if an I/O
+failure interrupts a write batch.
+
+Hash refresh is not translation review, media review, or publication approval.
+It never promotes a page or fills in reviewer authorization. Re-read every
+affected locale, restore review metadata only through authorized review, and
+run the docs gates afterward. Shared-media changes can stale routes outside the
+selected batch; those routes stay untouched and still require explicit review.
 
 ## Review Ownership
 

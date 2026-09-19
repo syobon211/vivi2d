@@ -457,12 +457,39 @@ describe("check-user-docs", () => {
     expect(outputOf(result)).toContain("invalid UTF-8 byte sequence");
   });
 
+  it("rejects a UTF-8 BOM before the decoder can consume it", () => {
+    const root = makeTempRepo();
+    writeBaselineDocs(root);
+    const file = path.join(root, "docs/user/en/index.md");
+    fs.writeFileSync(
+      file,
+      Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), fs.readFileSync(file)]),
+    );
+    const result = runChecker(root);
+    expect(result.status).not.toBe(0);
+    expect(outputOf(result)).toContain("UTF-8 BOM is not allowed");
+  });
+
+  it("rejects duplicate nested review metadata instead of overwriting it", () => {
+    const root = makeTempRepo();
+    writeRootSelector(root);
+    writeLocalePages(root, {
+      pages: { ja: { extra: "translation:\n  reviewed: true\n  reviewed: false\n" } },
+    });
+    writePublicationManifest(root);
+    const result = runChecker(root);
+    expect(result.status).not.toBe(0);
+    expect(outputOf(result)).toContain(
+      "duplicate nested frontmatter field: translation.reviewed",
+    );
+  });
+
   it("reports malformed frontmatter arrays without crashing", () => {
     const root = makeTempRepo();
     writeRootSelector(root);
     writeLocalePages(root, {
       pages: {
-        en: { extra: "audience: [artist, rigger]\n" },
+        en: { extra: "audience: [private-canary]\n" },
       },
     });
     writePublicationManifest(root);
@@ -472,6 +499,7 @@ describe("check-user-docs", () => {
     expect(result.status).not.toBe(0);
     expect(outputOf(result)).toContain("malformed JSON array in frontmatter audience");
     expect(outputOf(result)).not.toContain("SyntaxError");
+    expect(outputOf(result)).not.toContain("private-canary");
   });
 
   it("requires reviewed translations to bind to the current English source hash", () => {
