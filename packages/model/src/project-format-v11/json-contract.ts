@@ -65,8 +65,15 @@ export function parseJsonV11(
   return new JsonV11Parser(source, limits).parse();
 }
 
-export function canonicalizeJsonV11(value: unknown): string {
-  return canonicalizeValue(value, 0, new WeakSet<object>());
+export function canonicalizeJsonV11(
+  value: unknown,
+  options: ParseJsonV11Options = {},
+): string {
+  return canonicalizeValue(value, 0, new WeakSet<object>(), {
+    limits: resolveLimits(options.testLimits),
+    bytes: 0,
+    tokens: 0,
+  });
 }
 
 class JsonV11Parser {
@@ -433,20 +440,79 @@ function utf8ByteLengthOfWellFormedString(
   return byteLength;
 }
 
+interface CanonicalBudget {
+  limits: ProjectFormatV11JsonLimits;
+  bytes: number;
+  tokens: number;
+}
+
+// Charge before constructing strings or joining child output. Reflection arrays
+// and already accepted prefixes may still allocate; this is not an OOM guarantee.
+function chargeCanonicalBudget(
+  budget: CanonicalBudget,
+  bytes: number,
+  tokens: number,
+): void {
+  if (bytes > budget.limits.maxInputUtf8Bytes - budget.bytes) {
+    throw new ProjectFormatV11JsonError(
+      "VIVI_FMT_JSON_TOO_LARGE",
+      "Canonical JSON exceeds the UTF-8 byte limit",
+    );
+  }
+  if (tokens > budget.limits.maxTokens - budget.tokens) {
+    throw new ProjectFormatV11JsonError(
+      "VIVI_FMT_TOKEN_LIMIT_EXCEEDED",
+      "Canonical JSON exceeds the token limit",
+    );
+  }
+  budget.bytes += bytes;
+  budget.tokens += tokens;
+}
+
+function canonicalizeString(value: string, budget: CanonicalBudget): string {
+  const decodedBytes = assertDecodedStringUtf8Limit(
+    value,
+    budget.limits.maxDecodedStringUtf8Bytes,
+    0,
+  );
+  chargeCanonicalBudget(budget, decodedBytes + 2, 1);
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    if (code === 0x22 || code === 0x5c || code <= 0x1f) {
+      // Quotes, backslashes and the five short control escapes take two bytes;
+      // the remaining ASCII controls use six-byte \u00xx escapes.
+      const extraBytes =
+        code === 0x22 ||
+        code === 0x5c ||
+        code === 0x08 ||
+        code === 0x0c ||
+        code === 0x0a ||
+        code === 0x0d ||
+        code === 0x09
+          ? 1
+          : 5;
+      chargeCanonicalBudget(budget, extraBytes, 0);
+    }
+  }
+  return JSON.stringify(value);
+}
+
 function canonicalizeValue(
   value: unknown,
   depth: number,
   ancestors: WeakSet<object>,
+  budget: CanonicalBudget,
 ): string {
-  if (value === null) return "null";
-  if (typeof value === "boolean") return value ? "true" : "false";
+  if (value === null) {
+    chargeCanonicalBudget(budget, 4, 1);
+    return "null";
+  }
+  if (typeof value === "boolean") {
+    chargeCanonicalBudget(budget, value ? 4 : 5, 1);
+    return value ? "true" : "false";
+  }
   if (typeof value === "string") {
-    assertDecodedStringUtf8Limit(
-      value,
-      PROJECT_FORMAT_V11_JSON_LIMITS.maxDecodedStringUtf8Bytes,
-      0,
-    );
-    return JSON.stringify(value);
+    return canonicalizeString(value, budget);
   }
   if (typeof value === "number") {
     if (!Number.isFinite(value)) {
@@ -461,7 +527,9 @@ function canonicalizeValue(
         "Canonical JSON only accepts integers in the safe integer range",
       );
     }
-    return JSON.stringify(Object.is(value, -0) ? 0 : value);
+    const canonical = JSON.stringify(Object.is(value, -0) ? 0 : value);
+    chargeCanonicalBudget(budget, canonical.length, 1);
+    return canonical;
   }
   if (typeof value !== "object") {
     throw new ProjectFormatV11JsonError(
@@ -469,10 +537,10 @@ function canonicalizeValue(
       `Canonical JSON cannot represent ${typeof value}`,
     );
   }
-  if (depth + 1 > PROJECT_FORMAT_V11_JSON_LIMITS.maxContainerDepth) {
+  if (depth + 1 > budget.limits.maxContainerDepth) {
     throw new ProjectFormatV11JsonError(
       "VIVI_FMT_DEPTH_EXCEEDED",
-      `JSON container depth exceeds ${PROJECT_FORMAT_V11_JSON_LIMITS.maxContainerDepth}`,
+      `JSON container depth exceeds ${budget.limits.maxContainerDepth}`,
     );
   }
   if (ancestors.has(value)) {
@@ -495,6 +563,8 @@ function canonicalizeValue(
           "Canonical JSON only accepts dense arrays without extra properties",
         );
       }
+      const punctuation = value.length === 0 ? 2 : value.length + 1;
+      chargeCanonicalBudget(budget, punctuation, punctuation);
       const elements: string[] = [];
       for (let index = 0; index < value.length; index += 1) {
         const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
@@ -504,7 +574,7 @@ function canonicalizeValue(
             "Canonical JSON only accepts enumerable array data properties",
           );
         }
-        elements.push(canonicalizeValue(descriptor.value, depth + 1, ancestors));
+        elements.push(canonicalizeValue(descriptor.value, depth + 1, ancestors, budget));
       }
       return `[${elements.join(",")}]`;
     }
@@ -530,13 +600,11 @@ function canonicalizeValue(
         "Canonical JSON only accepts enumerable data properties",
       );
     }
+    const punctuation = keys.length === 0 ? 2 : 2 * keys.length + 1;
+    chargeCanonicalBudget(budget, punctuation, punctuation);
     return `{${keys
       .map((key) => {
-        assertDecodedStringUtf8Limit(
-          key,
-          PROJECT_FORMAT_V11_JSON_LIMITS.maxDecodedStringUtf8Bytes,
-          0,
-        );
+        const canonicalKey = canonicalizeString(key, budget);
         const descriptor = Object.getOwnPropertyDescriptor(value, key);
         if (!descriptor || !("value" in descriptor)) {
           throw new ProjectFormatV11JsonError(
@@ -544,10 +612,11 @@ function canonicalizeValue(
             "Canonical JSON does not invoke object accessors",
           );
         }
-        return `${JSON.stringify(key)}:${canonicalizeValue(
+        return `${canonicalKey}:${canonicalizeValue(
           descriptor.value,
           depth + 1,
           ancestors,
+          budget,
         )}`;
       })
       .join(",")}}`;
@@ -560,7 +629,7 @@ function assertDecodedStringUtf8Limit(
   value: string,
   maxByteLength: number,
   errorOffsetBase: number,
-): void {
+): number {
   const byteLength = utf8ByteLengthOfWellFormedString(
     value,
     maxByteLength,
@@ -573,6 +642,7 @@ function assertDecodedStringUtf8Limit(
       errorOffsetBase,
     );
   }
+  return byteLength;
 }
 
 function isAsciiDigit(code: number): boolean {

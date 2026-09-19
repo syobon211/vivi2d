@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MAX_VIVI_TEXT_FILE_BYTES } from "../load-limits";
 import {
   canonicalizeJsonV11,
@@ -227,5 +227,210 @@ describe("canonicalizeJsonV11", () => {
     const extraProperty = [0] as number[] & { metadata?: string };
     extraProperty.metadata = "not JSON array data";
     expectCode(() => canonicalizeJsonV11(extraProperty), "VIVI_FMT_INVALID_JSON");
+  });
+
+  it.each([
+    [null, "null"],
+    [true, "true"],
+    [false, "false"],
+    [-0, "0"],
+    [-12.5, "-12.5"],
+    [1e-7, "1e-7"],
+    [Number.MIN_VALUE, "5e-324"],
+    ["é水😀", '"é水😀"'],
+    ['"\\\b\f\n\r\t\u0000\u001f/', '"\\"\\\\\\b\\f\\n\\r\\t\\u0000\\u001f/"'],
+    [{ 'é"': ["水", null], a: {} }, '{"a":{},"é\\"":["水",null]}'],
+    [[], "[]"],
+    [{}, "{}"],
+  ] as const)("accounts for exact canonical UTF-8 bytes %#", (value, canonical) => {
+    const bytes = new TextEncoder().encode(canonical).byteLength;
+    for (const maxInputUtf8Bytes of [bytes, bytes + 1]) {
+      expect(canonicalizeJsonV11(value, { testLimits: { maxInputUtf8Bytes } })).toBe(
+        canonical,
+      );
+    }
+    expectCode(
+      () => canonicalizeJsonV11(value, { testLimits: { maxInputUtf8Bytes: bytes - 1 } }),
+      "VIVI_FMT_JSON_TOO_LARGE",
+    );
+  });
+
+  it.each([
+    [null, 1],
+    [[], 2],
+    [{}, 2],
+    [[0], 3],
+    [[0, true], 5],
+    [{ a: null }, 5],
+    [{ a: [0, 1], b: {} }, 14],
+  ] as const)("matches parser punctuation and scalar token accounting %#", (value, tokens) => {
+    const canonical = canonicalizeJsonV11(value);
+    for (const maxTokens of [tokens, tokens + 1]) {
+      expect(canonicalizeJsonV11(value, { testLimits: { maxTokens } })).toBe(canonical);
+      expect(parseJsonV11(canonical, { testLimits: { maxTokens } })).toEqual(value);
+    }
+    expectCode(
+      () => canonicalizeJsonV11(value, { testLimits: { maxTokens: tokens - 1 } }),
+      "VIVI_FMT_TOKEN_LIMIT_EXCEEDED",
+    );
+    expectCode(
+      () => parseJsonV11(canonical, { testLimits: { maxTokens: tokens - 1 } }),
+      "VIVI_FMT_TOKEN_LIMIT_EXCEEDED",
+    );
+  });
+
+  it("bounds canonical output even when an accepted input number uses fewer bytes", () => {
+    const value = parseJsonV11("1E5", { testLimits: { maxInputUtf8Bytes: 4 } });
+    expect(value).toBe(100_000);
+    expectCode(
+      () => canonicalizeJsonV11(value, { testLimits: { maxInputUtf8Bytes: 4 } }),
+      "VIVI_FMT_JSON_TOO_LARGE",
+    );
+    expect(canonicalizeJsonV11(value, { testLimits: { maxInputUtf8Bytes: 6 } })).toBe(
+      "100000",
+    );
+  });
+
+  it.each([
+    "é",
+    { é: null },
+  ])("bounds decoded strings and keys independently %#", (value) => {
+    for (const maxDecodedStringUtf8Bytes of [2, 3]) {
+      expect(
+        canonicalizeJsonV11(value, { testLimits: { maxDecodedStringUtf8Bytes } }),
+      ).toBe(canonicalizeJsonV11(value));
+    }
+    expectCode(
+      () => canonicalizeJsonV11(value, { testLimits: { maxDecodedStringUtf8Bytes: 1 } }),
+      "VIVI_FMT_STRING_TOO_LARGE",
+    );
+  });
+
+  it("applies the lower-only depth limit before nested output", () => {
+    for (const maxContainerDepth of [2, 3]) {
+      expect(canonicalizeJsonV11([[0]], { testLimits: { maxContainerDepth } })).toBe(
+        "[[0]]",
+      );
+    }
+    expectCode(
+      () => canonicalizeJsonV11([[0]], { testLimits: { maxContainerDepth: 1 } }),
+      "VIVI_FMT_DEPTH_EXCEEDED",
+    );
+    expect(canonicalizeJsonV11(0, { testLimits: { maxContainerDepth: 0 } })).toBe("0");
+  });
+
+  it("rejects raised, negative, fractional, and nonfinite test ceilings", () => {
+    for (const key of Object.keys(PROJECT_FORMAT_V11_JSON_LIMITS) as Array<
+      keyof typeof PROJECT_FORMAT_V11_JSON_LIMITS
+    >) {
+      for (const value of [PROJECT_FORMAT_V11_JSON_LIMITS[key] + 1, -1, 0.5, Infinity]) {
+        expect(() => canonicalizeJsonV11(null, { testLimits: { [key]: value } })).toThrow(
+          RangeError,
+        );
+      }
+    }
+  });
+
+  it("rejects escaped expansion before stringifying an over-budget value or key", () => {
+    const expanded = "\u0000".repeat(4_096);
+    const stringify = vi.spyOn(JSON, "stringify");
+    try {
+      for (const value of [expanded, { [expanded]: null }]) {
+        expectCode(
+          () => canonicalizeJsonV11(value, { testLimits: { maxInputUtf8Bytes: 4_100 } }),
+          "VIVI_FMT_JSON_TOO_LARGE",
+        );
+      }
+      expect(stringify.mock.calls.some(([value]) => value === expanded)).toBe(false);
+    } finally {
+      stringify.mockRestore();
+    }
+  });
+
+  it("shares output and token budgets across sibling subtrees", () => {
+    const first = "a".repeat(8);
+    const second = "b".repeat(8);
+    const stringify = vi.spyOn(JSON, "stringify");
+    try {
+      expectCode(
+        () =>
+          canonicalizeJsonV11([first, second], { testLimits: { maxInputUtf8Bytes: 20 } }),
+        "VIVI_FMT_JSON_TOO_LARGE",
+      );
+      expect(stringify.mock.calls.some(([value]) => value === second)).toBe(false);
+      stringify.mockClear();
+      expectCode(
+        () => canonicalizeJsonV11([first, second], { testLimits: { maxTokens: 4 } }),
+        "VIVI_FMT_TOKEN_LIMIT_EXCEEDED",
+      );
+      expect(stringify.mock.calls.some(([value]) => value === second)).toBe(false);
+    } finally {
+      stringify.mockRestore();
+    }
+  });
+
+  it("charges shared objects for every appearance without mistaking them for cycles", () => {
+    const shared = { a: 0 };
+    const value = [shared, shared];
+    const canonical = '[{"a":0},{"a":0}]';
+    expect(
+      canonicalizeJsonV11(value, {
+        testLimits: { maxInputUtf8Bytes: canonical.length, maxTokens: 13 },
+      }),
+    ).toBe(canonical);
+    expectCode(
+      () => canonicalizeJsonV11(value, { testLimits: { maxInputUtf8Bytes: 16 } }),
+      "VIVI_FMT_JSON_TOO_LARGE",
+    );
+    expectCode(
+      () => canonicalizeJsonV11(value, { testLimits: { maxTokens: 12 } }),
+      "VIVI_FMT_TOKEN_LIMIT_EXCEEDED",
+    );
+  });
+
+  it("retains UTF-16 key ordering and null-prototype data keys", () => {
+    const value = Object.create(null) as Record<string, unknown>;
+    value["\ue000"] = 1;
+    value["\u{10000}"] = 2;
+    value.__proto__ = 3;
+    expect(canonicalizeJsonV11(value)).toBe('{"__proto__":3,"𐀀":2,"":1}');
+  });
+
+  it("rejects all existing non-data property forms and invalid scalar strings", () => {
+    for (const value of ["\ud800", "\udfff", { "\ud800": null }]) {
+      expectCode(() => canonicalizeJsonV11(value), "VIVI_FMT_UNICODE_SCALAR_INVALID");
+    }
+    for (const value of [
+      Object.defineProperty({}, "hidden", { value: 1 }),
+      { [Symbol("non-data-key")]: 1 },
+      new Date(0),
+      undefined,
+      1n,
+    ]) {
+      expectCode(() => canonicalizeJsonV11(value), "VIVI_FMT_INVALID_JSON");
+    }
+  });
+
+  it("uses source-free budget errors when a value also contains a later getter", () => {
+    let getterCalls = 0;
+    const value = { a: "synthetic-private-content" };
+    Object.defineProperty(value, "z", {
+      enumerable: true,
+      get() {
+        getterCalls += 1;
+        return "not accessed";
+      },
+    });
+    try {
+      canonicalizeJsonV11(value, { testLimits: { maxInputUtf8Bytes: 8 } });
+      throw new Error("Expected canonical byte rejection");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ProjectFormatV11JsonError);
+      expect((error as ProjectFormatV11JsonError).code).toBe("VIVI_FMT_JSON_TOO_LARGE");
+      expect((error as Error).message).toBe(
+        "Canonical JSON exceeds the UTF-8 byte limit",
+      );
+    }
+    expect(getterCalls).toBe(0);
   });
 });

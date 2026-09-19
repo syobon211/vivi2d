@@ -1097,3 +1097,180 @@ describe("read-only authoring host W7a", () => {
     }
   });
 });
+
+describe("scene-nested clip capability derivation", () => {
+  const clipCapability = "vivi.cap.clipPlayback";
+
+  function clip(id: string) {
+    return { id, name: "Scene clip", duration: 1, fps: 30, tracks: [] };
+  }
+
+  function nestedWire(): Record<string, unknown> {
+    const wire = embeddedWire();
+    (wire.project as Record<string, unknown>).scenes = [
+      { id: "scene", name: "Scene", clips: [clip("nested-clip")] },
+    ];
+    return wire;
+  }
+
+  function declareClips(wire: Record<string, unknown>): void {
+    wire.requires = [{ id: clipCapability, minVersion: 1, requiredFor: ["render"] }];
+  }
+
+  it("rejects undeclared nested-only clips before either asset port", async () => {
+    const { host, materializeEmbeddedAtlas, resolveReferencedAtlas } = harness({
+      supportedCapabilities: new Map([[clipCapability, 1]]),
+    });
+    const error = await rejected(
+      host.initJson(JSON.stringify(nestedWire())),
+      "VIVI_EDITOR_HOST_INIT_FAILED",
+    );
+    expect(error).toMatchObject({
+      causeCode: "VIVI_FMT_REQUIRES_MISMATCH",
+      path: "/requires",
+      causeStage: "semantic",
+    });
+    expect(materializeEmbeddedAtlas).not.toHaveBeenCalled();
+    expect(resolveReferencedAtlas).not.toHaveBeenCalled();
+  });
+
+  it("classifies unsupported declared nested clips as invalid without asset work", async () => {
+    const wire = nestedWire();
+    declareClips(wire);
+    const { host, materializeEmbeddedAtlas, resolveReferencedAtlas } = harness({
+      supportedCapabilities: new Map(),
+    });
+    const initialized = await host.initJson(JSON.stringify(wire));
+    expect(initialized.snapshot).toMatchObject({
+      compatibility: "invalid",
+      assetReadiness: { state: "notChecked", missingAtlasIds: [] },
+      runtimeState: "forbidden",
+      missingRequirements: [
+        {
+          id: clipCapability,
+          minVersion: 1,
+          supportedVersion: null,
+          requiredFor: ["render"],
+        },
+      ],
+      guards: { canRuntime: false, canLocalDuplicate: false, canEdit: false },
+    });
+    expect(materializeEmbeddedAtlas).not.toHaveBeenCalled();
+    expect(resolveReferencedAtlas).not.toHaveBeenCalled();
+    rejectedSync(
+      () => host.serializeLocalDuplicate(initialized.sessionId),
+      "VIVI_EDITOR_HOST_LOCAL_DUPLICATE_FORBIDDEN",
+    );
+  });
+
+  it("preserves supported nested clip source through canonical local duplication", async () => {
+    const wire = nestedWire();
+    declareClips(wire);
+    const source = JSON.stringify(wire);
+    const { host } = harness({
+      supportedCapabilities: new Map([[clipCapability, 1]]),
+    });
+    const initialized = await host.initJson(source);
+    expect(initialized.snapshot).toMatchObject({
+      compatibility: "full",
+      derivedRequirements: [
+        { id: clipCapability, minVersion: 1, requiredFor: ["render"] },
+      ],
+      missingRequirements: [],
+      guards: {
+        canLocalDuplicate: true,
+        canEdit: false,
+        canOrdinarySave: false,
+        canPublicExport: false,
+      },
+    });
+    const duplicate = host.serializeLocalDuplicate(initialized.sessionId);
+    expect(JSON.parse(duplicate)).toEqual(JSON.parse(source));
+    const reparsed = await host.initJson(duplicate);
+    expect(reparsed.snapshot.compatibility).toBe("full");
+    expect(host.serializeLocalDuplicate(reparsed.sessionId)).toBe(duplicate);
+    // Full is Project document compatibility, not evidence of scene execution
+    // or permission to edit/save through this read-only host.
+  });
+
+  it("derives one clip requirement for root clips and clips in multiple scenes", async () => {
+    const wire = nestedWire();
+    const value = wire.project as Record<string, unknown>;
+    value.clips = [clip("root-clip")];
+    (value.scenes as unknown[]).push({
+      id: "second-scene",
+      name: "Second scene",
+      clips: [clip("second-nested-clip")],
+    });
+    declareClips(wire);
+    const { host, materializeEmbeddedAtlas, resolveReferencedAtlas } = harness({
+      supportedCapabilities: new Map(),
+    });
+    // A single declaration must match all three occurrences, not fail the
+    // exact requirement-count check or acquire duplicate capability entries.
+    const initialized = await host.initJson(JSON.stringify(wire));
+    expect(initialized.snapshot.compatibility).toBe("invalid");
+    expect(initialized.snapshot.derivedRequirements).toEqual([
+      { id: clipCapability, minVersion: 1, requiredFor: ["render"] },
+    ]);
+    expect(initialized.snapshot.missingRequirements).toEqual([
+      {
+        id: clipCapability,
+        minVersion: 1,
+        supportedVersion: null,
+        requiredFor: ["render"],
+      },
+    ]);
+    expect(materializeEmbeddedAtlas).not.toHaveBeenCalled();
+    expect(resolveReferencedAtlas).not.toHaveBeenCalled();
+  });
+
+  it("does not add a clip requirement for absent scene clips or empty scenes", async () => {
+    for (const scenes of [[], [{ id: "empty-scene", name: "Empty scene", clips: [] }]]) {
+      const wire = embeddedWire();
+      (wire.project as Record<string, unknown>).scenes = scenes;
+      const { host } = harness({ supportedCapabilities: new Map() });
+      const initialized = await host.initJson(JSON.stringify(wire));
+      expect(initialized.snapshot).toMatchObject({
+        compatibility: "full",
+        derivedRequirements: [],
+        missingRequirements: [],
+      });
+      const duplicate = JSON.parse(host.serializeLocalDuplicate(initialized.sessionId));
+      expect(duplicate).toEqual(wire);
+      expect(duplicate).not.toHaveProperty("requires");
+    }
+  });
+
+  it("keeps all legacy versions metadata-only without deriving scene requirements", async () => {
+    for (let version = 1; version <= 10; version += 1) {
+      const legacy = {
+        version,
+        project: nestedWire().project,
+        atlases: [{ image: "AA==", width: 1, height: 1, entries: [] }],
+      };
+      const { host, materializeEmbeddedAtlas, resolveReferencedAtlas } = harness({
+        supportedCapabilities: new Map(),
+      });
+      const initialized = await host.initJson(JSON.stringify(legacy));
+      expect(initialized.snapshot).toMatchObject({
+        sourceVersion: version,
+        compatibility: "full",
+        derivedRequirements: [],
+        missingRequirements: [],
+        assetReadiness: { state: "notChecked", missingAtlasIds: [] },
+        runtimeState: "unsupported",
+        guards: { canRuntime: false, canLocalDuplicate: true, canOrdinarySave: false },
+      });
+      expect(materializeEmbeddedAtlas).not.toHaveBeenCalled();
+      expect(resolveReferencedAtlas).not.toHaveBeenCalled();
+      expect(JSON.parse(host.serializeLocalDuplicate(initialized.sessionId))).toEqual(
+        legacy,
+      );
+      rejectedSync(
+        () => host.buildRuntimePayload(initialized.sessionId),
+        "VIVI_EDITOR_HOST_LEGACY_RUNTIME_UNSUPPORTED",
+      );
+    }
+  });
+});
