@@ -1535,6 +1535,41 @@
     },
     {
       "kind": "assignment",
+      "line": 97,
+      "path": "src/components/ReimportDialog.tsx",
+      "signature": "src/components/ReimportDialog.tsx:assignment:previewRef.current = analyzed",
+      "text": "previewRef.current = analyzed"
+    },
+    {
+      "kind": "assignment",
+      "line": 50,
+      "path": "src/components/ReimportDialog.tsx",
+      "signature": "src/components/ReimportDialog.tsx:assignment:previewRef.current = null",
+      "text": "previewRef.current = null"
+    },
+    {
+      "kind": "update",
+      "line": 79,
+      "path": "src/components/ReimportDialog.tsx",
+      "signature": "src/components/ReimportDialog.tsx:update:++requestId.current",
+      "text": "++requestId.current"
+    },
+    {
+      "kind": "update",
+      "line": 55,
+      "path": "src/components/ReimportDialog.tsx",
+      "signature": "src/components/ReimportDialog.tsx:update:requestId.current++",
+      "text": "requestId.current++"
+    },
+    {
+      "kind": "update",
+      "line": 69,
+      "path": "src/components/ReimportDialog.tsx",
+      "signature": "src/components/ReimportDialog.tsx:update:requestId.current++",
+      "text": "requestId.current++"
+    },
+    {
+      "kind": "assignment",
       "line": 68,
       "path": "src/components/ShortcutSettingsDialog.tsx",
       "signature": "src/components/ShortcutSettingsDialog.tsx:assignment:a.download = \"vivi2d-shortcuts.json\"",
@@ -4950,39 +4985,81 @@
       "text": "!layer.hidden"
     },
     {
-      "kind": "assignment",
-      "line": 48,
+      "kind": "mutating-call",
+      "line": 236,
       "path": "src/lib/psd-reimport.ts",
-      "signature": "src/lib/psd-reimport.ts:assignment:layer.parentName = parentName",
-      "text": "layer.parentName = parentName"
+      "signature": "src/lib/psd-reimport.ts:mutating-call:after.push(snapshot)",
+      "text": "after.push(snapshot)"
     },
     {
       "kind": "mutating-call",
-      "line": 51,
+      "line": 235,
       "path": "src/lib/psd-reimport.ts",
-      "signature": "src/lib/psd-reimport.ts:mutating-call:result.push(...flattenPsdLayers(layer.children, layer.name))",
-      "text": "result.push(...flattenPsdLayers(layer.children, layer.name))"
+      "signature": "src/lib/psd-reimport.ts:mutating-call:before.push(old)",
+      "text": "before.push(old)"
     },
     {
       "kind": "mutating-call",
-      "line": 49,
+      "line": 234,
       "path": "src/lib/psd-reimport.ts",
-      "signature": "src/lib/psd-reimport.ts:mutating-call:result.push(layer)",
-      "text": "result.push(layer)"
+      "signature": "src/lib/psd-reimport.ts:mutating-call:changedIds.add(target.layerId)",
+      "text": "changedIds.add(target.layerId)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 237,
+      "path": "src/lib/psd-reimport.ts",
+      "signature": "src/lib/psd-reimport.ts:mutating-call:changedTextureIds.add(target.layerId)",
+      "text": "changedTextureIds.add(target.layerId)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 75,
+      "path": "src/lib/psd-reimport.ts",
+      "signature": "src/lib/psd-reimport.ts:mutating-call:leaves.push(...flattenRasterLeaves(layer.children))",
+      "text": "leaves.push(...flattenRasterLeaves(layer.children))"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 76,
+      "path": "src/lib/psd-reimport.ts",
+      "signature": "src/lib/psd-reimport.ts:mutating-call:leaves.push(layer)",
+      "text": "leaves.push(layer)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 199,
+      "path": "src/lib/psd-reimport.ts",
+      "signature": "src/lib/psd-reimport.ts:mutating-call:pendingReimports.delete(preview)",
+      "text": "pendingReimports.delete(preview)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 191,
+      "path": "src/lib/psd-reimport.ts",
+      "signature": "src/lib/psd-reimport.ts:mutating-call:pendingReimports.set(preview, operation)",
+      "text": "pendingReimports.set(preview, operation)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 164,
+      "path": "src/lib/psd-reimport.ts",
+      "signature": "src/lib/psd-reimport.ts:mutating-call:sources.set(entry.nodeId, { canvas, snapshot: snapshotTextureCanvas(entry.nodeId, canvas), })",
+      "text": "sources.set(entry.nodeId, { canvas, snapshot: snapshotTextureCanvas(entry.nodeId, canvas), })"
     },
     {
       "kind": "update",
-      "line": 80,
+      "line": 147,
       "path": "src/lib/psd-reimport.ts",
-      "signature": "src/lib/psd-reimport.ts:update:!layer.hidden",
-      "text": "!layer.hidden"
+      "signature": "src/lib/psd-reimport.ts:update:!canvases[index]",
+      "text": "!canvases[index]"
     },
     {
       "kind": "update",
-      "line": 88,
+      "line": 159,
       "path": "src/lib/psd-reimport.ts",
-      "signature": "src/lib/psd-reimport.ts:update:!layer.isGroup",
-      "text": "!layer.isGroup"
+      "signature": "src/lib/psd-reimport.ts:update:!entry.nodeId",
+      "text": "!entry.nodeId"
     },
     {
       "kind": "mutating-call",
@@ -5448,115 +5525,206 @@
     },
     {
       "kind": "assignment",
-      "line": 215,
+      "line": 343,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:assignment:bytes[input.length] = 0x80",
       "text": "bytes[input.length] = 0x80"
     },
     {
       "kind": "assignment",
-      "line": 49,
+      "line": 58,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:assignment:canvas.height = height",
       "text": "canvas.height = height"
     },
     {
       "kind": "assignment",
-      "line": 84,
+      "line": 122,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:assignment:canvas.height = imageData.height",
       "text": "canvas.height = imageData.height"
     },
     {
       "kind": "assignment",
-      "line": 83,
+      "line": 121,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:assignment:canvas.width = imageData.width",
       "text": "canvas.width = imageData.width"
     },
     {
       "kind": "assignment",
-      "line": 48,
+      "line": 57,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:assignment:canvas.width = width",
       "text": "canvas.width = width"
     },
     {
       "kind": "assignment",
-      "line": 237,
+      "line": 367,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:assignment:w[index] = (w[index - 16]! + s0 + w[index - 7]! + s1) >>> 0",
       "text": "w[index] = (w[index - 16]! + s0 + w[index - 7]! + s1) >>> 0"
     },
     {
       "kind": "assignment",
-      "line": 232,
+      "line": 360,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:assignment:w[index] = view.getUint32(offset + index * 4)",
       "text": "w[index] = view.getUint32(offset + index * 4)"
     },
     {
       "kind": "mutating-call",
-      "line": 214,
+      "line": 237,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:[...effects].reverse()",
+      "text": "[...effects].reverse()"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 229,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:before.set(textureId, textures.get(textureId))",
+      "text": "before.set(textureId, textures.get(textureId))"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 342,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:mutating-call:bytes.set(input)",
       "text": "bytes.set(input)"
     },
     {
       "kind": "mutating-call",
-      "line": 114,
+      "line": 207,
       "path": "src/lib/texture-store.ts",
-      "signature": "src/lib/texture-store.ts:mutating-call:snapshots.push(snapshotCanvas(textureId, canvas))",
-      "text": "snapshots.push(snapshotCanvas(textureId, canvas))"
+      "signature": "src/lib/texture-store.ts:mutating-call:hashes.set(canvas, currentHash)",
+      "text": "hashes.set(canvas, currentHash)"
     },
     {
       "kind": "mutating-call",
-      "line": 99,
+      "line": 259,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:hashes.set(canvas, entry.snapshot.hash)",
+      "text": "hashes.set(canvas, entry.snapshot.hash)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 233,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:hashes.set(canvas, snapshot.hash)",
+      "text": "hashes.set(canvas, snapshot.hash)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 249,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:simulated.delete(textureId)",
+      "text": "simulated.delete(textureId)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 260,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:simulated.set(entry.textureId, canvas)",
+      "text": "simulated.set(entry.textureId, canvas)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 253,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:simulated.set(snapshot.textureId, prepareSnapshot(snapshot))",
+      "text": "simulated.set(snapshot.textureId, prepareSnapshot(snapshot))"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 152,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:snapshots.push(snapshotTextureCanvas(textureId, canvas))",
+      "text": "snapshots.push(snapshotTextureCanvas(textureId, canvas))"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 137,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:mutating-call:textures.clear()",
       "text": "textures.clear()"
     },
     {
       "kind": "mutating-call",
-      "line": 104,
+      "line": 275,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:textures.delete(change.textureId)",
+      "text": "textures.delete(change.textureId)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 290,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:textures.delete(change.textureId)",
+      "text": "textures.delete(change.textureId)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 142,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:mutating-call:textures.delete(layerId)",
       "text": "textures.delete(layerId)"
     },
     {
       "kind": "mutating-call",
-      "line": 144,
+      "line": 182,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:mutating-call:textures.delete(textureId)",
       "text": "textures.delete(textureId)"
     },
     {
       "kind": "mutating-call",
-      "line": 127,
+      "line": 289,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:textures.set(change.textureId, change.after)",
+      "text": "textures.set(change.textureId, change.after)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 274,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:textures.set(change.textureId, change.before)",
+      "text": "textures.set(change.textureId, change.before)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 163,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:mutating-call:textures.set(entry.textureId, entry.canvas)",
       "text": "textures.set(entry.textureId, entry.canvas)"
     },
     {
       "kind": "mutating-call",
-      "line": 136,
+      "line": 174,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:mutating-call:textures.set(entry.textureId, entry.canvas)",
       "text": "textures.set(entry.textureId, entry.canvas)"
     },
     {
       "kind": "mutating-call",
-      "line": 77,
+      "line": 115,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:mutating-call:textures.set(layerId, canvas)",
       "text": "textures.set(layerId, canvas)"
     },
     {
       "kind": "mutating-call",
-      "line": 90,
+      "line": 128,
       "path": "src/lib/texture-store.ts",
       "signature": "src/lib/texture-store.ts:mutating-call:textures.set(layerId, canvas)",
       "text": "textures.set(layerId, canvas)"
+    },
+    {
+      "kind": "update",
+      "line": 87,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:update:!entry.canvas",
+      "text": "!entry.canvas"
     },
     {
       "kind": "mutating-call",
@@ -6420,13 +6588,6 @@
       "text": "!s.project"
     },
     {
-      "kind": "mutating-call",
-      "line": 246,
-      "path": "src/stores/historyStore.ts",
-      "signature": "src/stores/historyStore.ts:mutating-call:[...(effects ?? [])].reverse()",
-      "text": "[...(effects ?? [])].reverse()"
-    },
-    {
       "kind": "update",
       "line": 47,
       "path": "src/stores/ikControllerStore.ts",
@@ -6663,6 +6824,13 @@
       "path": "src/stores/projectIO/image.ts",
       "signature": "src/stores/projectIO/image.ts:update:!options.trimTransparentBounds",
       "text": "!options.trimTransparentBounds"
+    },
+    {
+      "kind": "update",
+      "line": 732,
+      "path": "src/stores/projectIO/image.ts",
+      "signature": "src/stores/projectIO/image.ts:update:!source?.buffer",
+      "text": "!source?.buffer"
     },
     {
       "kind": "assignment",

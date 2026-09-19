@@ -333,8 +333,11 @@ test("capture all reachable dialog states", async ({ app, window }) => {
   await clickFileMenuItem(window, "Reimport PSD");
   await captureDialogState(window, "psd-reimport", "initial");
   await mockOpenPsd(app, TEST_PSD);
-  await window.locator(".modal-btn-primary").click();
-  await expect(window.locator(".reimport-diff, .reimport-info").last()).toBeVisible({
+  const reimportDialog = window.getByRole("dialog").last();
+  await reimportDialog
+    .getByRole("button", { name: /PSD ?ファイルを選択|Select PSD File/ })
+    .click();
+  await expect(reimportDialog.locator(".reimport-diff")).toBeVisible({
     timeout: 15_000,
   });
   await captureDialogState(window, "psd-reimport", "same-file-no-changes");

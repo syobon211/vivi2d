@@ -1,282 +1,396 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { readPsd } from "ag-psd";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as psdReimport from "@/lib/psd-reimport";
+import type { PsdReimportPreview } from "@/lib/psd-reimport";
+import {
+  analyzePsdReimport,
+  applyPsdReimport,
+  disposePsdReimport,
+} from "@/lib/psd-reimport";
 import { useEditorStore } from "@/stores/editorStore";
 import { useNotificationStore } from "@/stores/notificationStore";
-import { useSelectionStore } from "@/stores/selectionStore";
 import { createEmptyProject } from "@/test/fixtures";
 import { resetEditorStore } from "@/test/store-reset";
 import { ReimportDialog } from "../ReimportDialog";
 
+vi.mock("@/lib/psd-reimport", () => ({
+  analyzePsdReimport: vi.fn(),
+  applyPsdReimport: vi.fn(),
+  disposePsdReimport: vi.fn(),
+}));
 
-function setupStores() {
-  useEditorStore.setState({
-    project: createEmptyProject(),
-    projectVersion: 1,
+function createPreview(): PsdReimportPreview {
+  return {
+    documentWidth: 800,
+    documentHeight: 600,
+    entries: [
+      {
+        leafIndex: 0,
+        nodeId: "paint",
+        nodeName: "Paint",
+        status: "eligible",
+        oldWidth: 32,
+        oldHeight: 32,
+        newWidth: 32,
+        newHeight: 32,
+        sourceLeft: 5,
+        sourceTop: 6,
+      },
+      {
+        leafIndex: 1,
+        nodeId: "detail",
+        nodeName: "Detail",
+        status: "needs-confirmation",
+        oldWidth: 32,
+        oldHeight: 32,
+        newWidth: 64,
+        newHeight: 64,
+        sourceLeft: 10,
+        sourceTop: 12,
+      },
+      {
+        leafIndex: 2,
+        nodeId: "shadow",
+        nodeName: "Shadow",
+        status: "needs-confirmation",
+        oldWidth: 16,
+        oldHeight: 16,
+        newWidth: 32,
+        newHeight: 32,
+        sourceLeft: 0,
+        sourceTop: 0,
+      },
+      {
+        leafIndex: 3,
+        nodeId: "aspect",
+        nodeName: "Aspect",
+        status: "held",
+        reason: "aspect-ratio-change",
+        oldWidth: 30,
+        oldHeight: 10,
+        newWidth: 30,
+        newHeight: 20,
+        sourceLeft: 0,
+        sourceTop: 0,
+      },
+      {
+        leafIndex: 4,
+        nodeName: "New",
+        status: "unmatched",
+        newWidth: 16,
+        newHeight: 16,
+        sourceLeft: 0,
+        sourceTop: 0,
+      },
+    ],
+    removed: [{ nodeId: "old", nodeName: "Old" }],
+  };
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
   });
-  useSelectionStore.setState({ selectedLayerId: null, selectedLayerIds: [] });
+  return { promise, resolve };
+}
+
+async function selectFile() {
+  fireEvent.click(screen.getByRole("button", { name: "PSD ファイルを選択" }));
+  await screen.findByRole("checkbox", { name: "Paint" });
 }
 
 describe("ReimportDialog", () => {
+  const file = { buffer: new ArrayBuffer(8), fileName: "test.psd" };
+
   beforeEach(() => {
-    vi.mocked(readPsd).mockReturnValue({
-      width: 800,
-      height: 600,
-      children: [],
-    } as any);
-    setupStores();
-  });
-  afterEach(() => {
-    resetEditorStore();
-  });
-
-  it("ダイアログタイトルが表示される", () => {
-    render(<ReimportDialog onClose={vi.fn()} />);
-
-    expect(screen.getByText("PSD 再読み込み")).toBeInTheDocument();
-  });
-
-  it("説明テキストが表示される", () => {
-    render(<ReimportDialog onClose={vi.fn()} />);
-
-    expect(
-      screen.getByText(/差分を確認する PSD ファイルを選択してください/),
-    ).toBeInTheDocument();
-  });
-
-  it("PSDファイル選択ボタンが表示される", () => {
-    render(<ReimportDialog onClose={vi.fn()} />);
-
-    expect(screen.getByText("PSD ファイルを選択")).toBeInTheDocument();
-  });
-
-  it("キャンセルボタンが表示される", () => {
-    render(<ReimportDialog onClose={vi.fn()} />);
-
-    expect(screen.getByText("キャンセル")).toBeInTheDocument();
-  });
-
-  it("キャンセルクリックで onClose が呼ばれる", () => {
-    const onClose = vi.fn();
-    render(<ReimportDialog onClose={onClose} />);
-
-    fireEvent.click(screen.getByText("キャンセル"));
-
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it("モーダルオーバーレイクリックで onClose が呼ばれる", () => {
-    const onClose = vi.fn();
-    render(<ReimportDialog onClose={onClose} />);
-
-    const overlay = document.querySelector(".modal-overlay")!;
-    fireEvent.click(overlay);
-
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it("モーダルコンテンツクリックでは onClose が呼ばれない", () => {
-    const onClose = vi.fn();
-    render(<ReimportDialog onClose={onClose} />);
-
-    const content = document.querySelector(".modal-content")!;
-    fireEvent.click(content);
-
-    expect(onClose).not.toHaveBeenCalled();
-  });
-
-  it("初期状態では適用ボタンが表示されない", () => {
-    render(<ReimportDialog onClose={vi.fn()} />);
-
-    expect(screen.queryByText("適用")).not.toBeInTheDocument();
-  });
-
-  it("プロジェクト未読み込み時はファイル選択ボタンが無効", () => {
-    useEditorStore.setState({ project: null });
-
-    render(<ReimportDialog onClose={vi.fn()} />);
-
-    const btn = screen.getByText("PSD ファイルを選択");
-    expect(btn).toBeDisabled();
-  });
-
-
-  it("PSDファイル選択で analyzePsdReimport が呼ばれ差分が表示される", async () => {
-    const fakeBuffer = new ArrayBuffer(8);
-    (window.electronAPI.openPsdFile as any) = vi
-      .fn()
-      .mockResolvedValue({ buffer: fakeBuffer, path: "test.psd" });
-    const analyzeSpy = vi.spyOn(psdReimport, "analyzePsdReimport").mockReturnValue({
-      diff: {
-        updated: [{ nodeId: "n1", nodeName: "レイヤー1" } as any],
-        added: [{ nodeName: "新レイヤー" } as any],
-        removed: [],
-      },
-      project: createEmptyProject(),
-    } as any);
-
-    render(<ReimportDialog onClose={vi.fn()} />);
-    fireEvent.click(screen.getByText("PSD ファイルを選択"));
-
-    await waitFor(() => {
-      expect(analyzeSpy).toHaveBeenCalled();
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("更新 (1)")).toBeInTheDocument();
-      expect(screen.getByText("新規追加 (1)")).toBeInTheDocument();
-      expect(screen.getByText("レイヤー1")).toBeInTheDocument();
-      expect(screen.getByText("新レイヤー")).toBeInTheDocument();
-    });
-    analyzeSpy.mockRestore();
-  });
-
-  it("PSDファイル選択がキャンセルされた場合は何も起きない", async () => {
-    (window.electronAPI.openPsdFile as any) = vi.fn().mockResolvedValue(null);
-    const analyzeSpy = vi.spyOn(psdReimport, "analyzePsdReimport");
-
-    render(<ReimportDialog onClose={vi.fn()} />);
-    fireEvent.click(screen.getByText("PSD ファイルを選択"));
-
-    await waitFor(() => {
-      expect(window.electronAPI.openPsdFile).toHaveBeenCalled();
-    });
-
-    expect(analyzeSpy).not.toHaveBeenCalled();
-    analyzeSpy.mockRestore();
-  });
-
-  it("PSD解析エラー時に通知が送られる", async () => {
-    (window.electronAPI.openPsdFile as any) = vi
-      .fn()
-      .mockRejectedValue(new Error("解析エラー"));
-    const addNotification = vi.fn();
-    useNotificationStore.setState({ addNotification } as any);
-
-    render(<ReimportDialog onClose={vi.fn()} />);
-    fireEvent.click(screen.getByText("PSD ファイルを選択"));
-
-    await waitFor(() => {
-      expect(addNotification).toHaveBeenCalledWith(
-        "error",
-        expect.stringContaining("PSD解析失敗"),
-      );
-    });
-  });
-
-
-  it("削除のみの差分では適用ボタンが表示されない", async () => {
-    const fakeBuffer = new ArrayBuffer(8);
-    (window.electronAPI.openPsdFile as any) = vi
-      .fn()
-      .mockResolvedValue({ buffer: fakeBuffer });
-    const analyzeSpy = vi.spyOn(psdReimport, "analyzePsdReimport").mockReturnValue({
-      diff: {
-        updated: [],
-        added: [],
-        removed: [{ nodeId: "n2", nodeName: "消えたレイヤー" } as any],
-      },
-      project: createEmptyProject(),
-    } as any);
-
-    render(<ReimportDialog onClose={vi.fn()} />);
-    fireEvent.click(screen.getByText("PSD ファイルを選択"));
-
-    await waitFor(() => {
-      expect(screen.getByText("PSDから消失 (1)")).toBeInTheDocument();
-    });
-    expect(screen.queryByText("適用")).not.toBeInTheDocument();
-    analyzeSpy.mockRestore();
-  });
-
-  it("差分なしの場合 '変更なし' 表示になる", async () => {
-    const fakeBuffer = new ArrayBuffer(8);
-    (window.electronAPI.openPsdFile as any) = vi
-      .fn()
-      .mockResolvedValue({ buffer: fakeBuffer });
-    const analyzeSpy = vi.spyOn(psdReimport, "analyzePsdReimport").mockReturnValue({
-      diff: { updated: [], added: [], removed: [] },
-      project: createEmptyProject(),
-    } as any);
-
-    render(<ReimportDialog onClose={vi.fn()} />);
-    fireEvent.click(screen.getByText("PSD ファイルを選択"));
-
-    await waitFor(() => {
-      expect(screen.getByText(/変更はありません|No changes/)).toBeInTheDocument();
-    });
-    analyzeSpy.mockRestore();
-  });
-
-  it("適用ボタンクリックで applyPsdReimport と onClose が呼ばれる", async () => {
-    const fakeBuffer = new ArrayBuffer(8);
-    (window.electronAPI.openPsdFile as any) = vi
-      .fn()
-      .mockResolvedValue({ buffer: fakeBuffer });
-    const updatedProject = createEmptyProject();
-    const analyzeSpy = vi.spyOn(psdReimport, "analyzePsdReimport").mockReturnValue({
-      diff: {
-        updated: [{ nodeId: "n1", nodeName: "レイヤー1" } as any],
-        added: [],
-        removed: [],
-      },
-      project: updatedProject,
-    } as any);
-    const applySpy = vi.spyOn(psdReimport, "applyPsdReimport").mockReturnValue({
-      project: updatedProject,
-      diff: {
-        updated: [{ nodeId: "n1", nodeName: "レイヤー1" } as any],
-        added: [],
-        removed: [],
-      },
-    } as any);
-    const onClose = vi.fn();
-
-    render(<ReimportDialog onClose={onClose} />);
-    fireEvent.click(screen.getByText("PSD ファイルを選択"));
-    await waitFor(() => {
-      expect(screen.getByText("適用")).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByText("適用"));
-
-    expect(applySpy).toHaveBeenCalled();
-    expect(onClose).toHaveBeenCalled();
-    analyzeSpy.mockRestore();
-    applySpy.mockRestore();
-  });
-
-  it("適用時のエラーで通知が送られる", async () => {
-    const fakeBuffer = new ArrayBuffer(8);
-    (window.electronAPI.openPsdFile as any) = vi
-      .fn()
-      .mockResolvedValue({ buffer: fakeBuffer });
-    const analyzeSpy = vi.spyOn(psdReimport, "analyzePsdReimport").mockReturnValue({
-      diff: {
-        updated: [{ nodeId: "n1", nodeName: "L" } as any],
-        added: [],
-        removed: [],
-      },
-      project: createEmptyProject(),
-    } as any);
-    const applySpy = vi.spyOn(psdReimport, "applyPsdReimport").mockImplementation(() => {
-      throw new Error("apply failed");
-    });
-    const addNotification = vi.fn();
-    useNotificationStore.setState({ addNotification } as any);
-
-    render(<ReimportDialog onClose={vi.fn()} />);
-    fireEvent.click(screen.getByText("PSD ファイルを選択"));
-    await waitFor(() => {
-      expect(screen.getByText("適用")).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByText("適用"));
-
-    expect(addNotification).toHaveBeenCalledWith(
-      "error",
-      expect.stringContaining("再インポート失敗"),
+    useEditorStore.setState({ project: createEmptyProject(), projectVersion: 1 });
+    vi.mocked(window.electronAPI.openPsdFile).mockReset().mockResolvedValue(file);
+    vi.mocked(analyzePsdReimport).mockReset().mockReturnValue(createPreview());
+    vi.mocked(applyPsdReimport).mockReset().mockReturnValue({ updatedCount: 1 });
+    vi.mocked(disposePsdReimport).mockReset();
+    vi.spyOn(useNotificationStore.getState(), "addNotification").mockImplementation(
+      () => {},
     );
-    analyzeSpy.mockRestore();
-    applySpy.mockRestore();
+  });
+
+  afterEach(() => {
+    cleanup();
+    resetEditorStore();
+    vi.restoreAllMocks();
+  });
+
+  it("shows the update-only preview, raster sizes and separate source coordinates", async () => {
+    const project = useEditorStore.getState().project;
+    render(<ReimportDialog onClose={vi.fn()} />);
+    expect(screen.getByRole("dialog", { name: "PSD 再読み込み" })).toBeInTheDocument();
+    expect(screen.getByText(/レイヤーは追加しません/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "適用" })).not.toBeInTheDocument();
+    await selectFile();
+
+    expect(analyzePsdReimport).toHaveBeenCalledExactlyOnceWith(file.buffer, project);
+    expect(
+      screen.getByText(/入力 PSD のドキュメントサイズ: 800 × 600/),
+    ).toBeInTheDocument();
+    expect(screen.getByText("入力 PSD 内の位置: (5, 6) px")).toBeInTheDocument();
+    expect(
+      screen.getByText("テクスチャの画素数（現在 → 入力）: 32 × 32 → 64 × 64 px"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/モデルのサイズ・配置・メッシュ・UV・リグは変更しません/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/同じサイズでも画像のフレーム変更は自動検出できません/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/PSD の位置とドキュメントサイズはモデルに反映しません/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Paint" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Detail" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Aspect" })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "New" })).toBeDisabled();
+    expect(screen.getByText(/テクスチャの縦横比が変わっています/)).toBeInTheDocument();
+    expect(
+      screen.getByText("対応する既存レイヤーなし — 追加しません"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("PSDから消失 (1)")).toBeInTheDocument();
+    expect(
+      screen.getByText("以下はプロジェクトに残ります（削除されません）"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/新規追加/)).not.toBeInTheDocument();
+  });
+
+  it("passes only selected existing layers to the atomic adapter without replacing the project", async () => {
+    const preview = createPreview();
+    vi.mocked(analyzePsdReimport).mockReturnValue(preview);
+    const project = useEditorStore.getState().project;
+    const onClose = vi.fn();
+    render(<ReimportDialog onClose={onClose} />);
+    await selectFile();
+    fireEvent.click(screen.getByRole("button", { name: "適用" }));
+
+    expect(applyPsdReimport).toHaveBeenCalledExactlyOnceWith(preview, {
+      selectedLeafIndices: [0],
+      confirmedResolutionLeafIndices: [],
+    });
+    expect(useEditorStore.getState().project).toBe(project);
+    expect(useNotificationStore.getState().addNotification).toHaveBeenCalledWith(
+      "info",
+      "PSD再インポート完了: 1 件更新",
+    );
+    expect(disposePsdReimport).toHaveBeenCalledWith(preview);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("requires confirmation for the exact selected resolution changes and invalidates changed sets", async () => {
+    render(<ReimportDialog onClose={vi.fn()} />);
+    await selectFile();
+    const apply = screen.getByRole("button", { name: "適用" });
+    fireEvent.click(screen.getByRole("checkbox", { name: "Detail" }));
+    expect(apply).toBeDisabled();
+    expect(screen.getByText("Detail: 32 × 32 → 64 × 64 px")).toBeInTheDocument();
+    expect(screen.getByText(/縦横比が同じだけでは保証できません/)).toBeInTheDocument();
+    fireEvent.click(apply);
+    expect(applyPsdReimport).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "同じフレームであることを確認" }));
+    expect(apply).toBeEnabled();
+    // Changing an ordinary artwork selection does not invalidate the resolution set.
+    fireEvent.click(screen.getByRole("checkbox", { name: "Paint" }));
+    expect(apply).toBeEnabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Shadow" }));
+    expect(apply).toBeDisabled();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "同じフレームであることを確認" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Shadow" }));
+    expect(apply).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "同じフレームであることを確認" }));
+    fireEvent.click(apply);
+    expect(applyPsdReimport).toHaveBeenCalledWith(expect.anything(), {
+      selectedLeafIndices: [1],
+      confirmedResolutionLeafIndices: [1],
+    });
+  });
+
+  it("keeping current resolution textures retains same-size selections without applying automatically", async () => {
+    render(<ReimportDialog onClose={vi.fn()} />);
+    await selectFile();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Detail" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Shadow" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "これらのレイヤーは現在の画像を保持" }),
+    );
+    expect(screen.getByRole("checkbox", { name: "Paint" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Detail" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Shadow" })).not.toBeChecked();
+    expect(applyPsdReimport).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "適用" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Paint" }));
+    expect(screen.getByRole("button", { name: "適用" })).toBeDisabled();
+  });
+
+  it("reports an adapter no-op without a false updated or added count", async () => {
+    vi.mocked(applyPsdReimport).mockReturnValue({ updatedCount: 0 });
+    const onClose = vi.fn();
+    render(<ReimportDialog onClose={onClose} />);
+    await selectFile();
+    fireEvent.click(screen.getByRole("button", { name: "適用" }));
+    expect(
+      useNotificationStore.getState().addNotification,
+    ).toHaveBeenCalledExactlyOnceWith("info", "変更はありません。");
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("reselecting disposes the old preview and never carries its confirmation forward", async () => {
+    const first = createPreview();
+    const second = createPreview();
+    vi.mocked(analyzePsdReimport).mockReturnValueOnce(first).mockReturnValueOnce(second);
+    const { unmount } = render(<ReimportDialog onClose={vi.fn()} />);
+    await selectFile();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Detail" }));
+    fireEvent.click(screen.getByRole("button", { name: "同じフレームであることを確認" }));
+    await selectFile();
+    expect(disposePsdReimport).toHaveBeenCalledExactlyOnceWith(first);
+    expect(screen.getByRole("checkbox", { name: "Detail" })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Detail" }));
+    expect(screen.getByRole("button", { name: "適用" })).toBeDisabled();
+    unmount();
+    expect(disposePsdReimport).toHaveBeenLastCalledWith(second);
+  });
+
+  it("cancel and backdrop dismissal dispose previews, but clicks inside do not close", async () => {
+    const preview = createPreview();
+    vi.mocked(analyzePsdReimport).mockReturnValue(preview);
+    const onClose = vi.fn();
+    render(<ReimportDialog onClose={onClose} />);
+    await selectFile();
+    fireEvent.click(screen.getByRole("dialog"));
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(document.querySelector(".modal-overlay")!);
+    expect(disposePsdReimport).toHaveBeenCalledExactlyOnceWith(preview);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("does not analyze a late native file result after cancel", async () => {
+    const pending = deferred<typeof file | null>();
+    vi.mocked(window.electronAPI.openPsdFile).mockReturnValue(pending.promise);
+    const onClose = vi.fn();
+    render(<ReimportDialog onClose={onClose} />);
+    fireEvent.click(screen.getByRole("button", { name: "PSD ファイルを選択" }));
+    expect(screen.getByRole("button", { name: "解析中..." })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+    await act(async () => pending.resolve(file));
+    expect(analyzePsdReimport).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("disposes a late prepared result after unmount instead of publishing it", async () => {
+    const pending = deferred<PsdReimportPreview>();
+    // Exercise the awaited-result lifetime independently of the adapter's synchronous decode.
+    vi.mocked(analyzePsdReimport).mockReturnValue(
+      pending.promise as unknown as PsdReimportPreview,
+    );
+    const { unmount } = render(<ReimportDialog onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "PSD ファイルを選択" }));
+    await waitFor(() => expect(analyzePsdReimport).toHaveBeenCalledOnce());
+    unmount();
+    const preview = createPreview();
+    await act(async () => pending.resolve(preview));
+    expect(disposePsdReimport).toHaveBeenCalledExactlyOnceWith(preview);
+    expect(applyPsdReimport).not.toHaveBeenCalled();
+  });
+
+  it("captures the project before file selection and rejects a preview from a changed project", async () => {
+    const original = useEditorStore.getState().project;
+    const pending = deferred<typeof file | null>();
+    vi.mocked(window.electronAPI.openPsdFile).mockReturnValue(pending.promise);
+    const preview = createPreview();
+    vi.mocked(analyzePsdReimport).mockReturnValue(preview);
+    render(<ReimportDialog onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "PSD ファイルを選択" }));
+    act(() => useEditorStore.setState({ project: createEmptyProject() }));
+    await act(async () => pending.resolve(file));
+    expect(analyzePsdReimport).toHaveBeenCalledExactlyOnceWith(file.buffer, original);
+    expect(disposePsdReimport).toHaveBeenCalledExactlyOnceWith(preview);
+    expect(screen.queryByRole("button", { name: "適用" })).not.toBeInTheDocument();
+    expect(useNotificationStore.getState().addNotification).toHaveBeenCalledWith(
+      "error",
+      "PSDの解析に失敗しました。ファイルを選び直してください。",
+    );
+  });
+
+  it("handles file-dialog cancellation and disables selection without a project", async () => {
+    vi.mocked(window.electronAPI.openPsdFile).mockResolvedValue(null);
+    render(<ReimportDialog onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "PSD ファイルを選択" }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "PSD ファイルを選択" })).toBeEnabled(),
+    );
+    expect(analyzePsdReimport).not.toHaveBeenCalled();
+    act(() => useEditorStore.setState({ project: null }));
+    expect(screen.getByRole("button", { name: "PSD ファイルを選択" })).toBeDisabled();
+  });
+
+  it("does not offer Apply for missing or unmatched layers only", async () => {
+    const original = createPreview();
+    const preview = {
+      ...original,
+      entries: original.entries.filter((entry) => entry.status === "unmatched"),
+    };
+    vi.mocked(analyzePsdReimport).mockReturnValue(preview);
+    render(<ReimportDialog onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "PSD ファイルを選択" }));
+    await screen.findByText("PSDから消失 (1)");
+    expect(screen.queryByRole("button", { name: "適用" })).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "New" })).toBeDisabled();
+  });
+
+  it("shows no changes for an empty preview", async () => {
+    vi.mocked(analyzePsdReimport).mockReturnValue({
+      documentWidth: 800,
+      documentHeight: 600,
+      entries: [],
+      removed: [],
+    });
+    render(<ReimportDialog onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "PSD ファイルを選択" }));
+    expect(await screen.findByText("変更はありません。")).toBeInTheDocument();
+  });
+
+  it("keeps decoder and file errors out of notifications", async () => {
+    vi.mocked(window.electronAPI.openPsdFile).mockRejectedValue(
+      new Error("C:/synthetic-secret/token-canary.psd"),
+    );
+    render(<ReimportDialog onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "PSD ファイルを選択" }));
+    await waitFor(() =>
+      expect(
+        useNotificationStore.getState().addNotification,
+      ).toHaveBeenCalledExactlyOnceWith(
+        "error",
+        "PSDの解析に失敗しました。ファイルを選び直してください。",
+      ),
+    );
+  });
+
+  it("discards a failed Apply preview, reports a fixed error and requires reanalysis", async () => {
+    const preview = createPreview();
+    vi.mocked(analyzePsdReimport).mockReturnValue(preview);
+    vi.mocked(applyPsdReimport).mockImplementation(() => {
+      throw new Error("C:/synthetic-secret/token-canary.psd");
+    });
+    const onClose = vi.fn();
+    render(<ReimportDialog onClose={onClose} />);
+    await selectFile();
+    fireEvent.click(screen.getByRole("button", { name: "適用" }));
+    expect(
+      useNotificationStore.getState().addNotification,
+    ).toHaveBeenCalledExactlyOnceWith(
+      "error",
+      "PSDの再読み込みに失敗しました。ファイルを選び直して再試行してください。",
+    );
+    expect(disposePsdReimport).toHaveBeenCalledExactlyOnceWith(preview);
+    expect(screen.queryByRole("button", { name: "適用" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "PSD ファイルを選択" })).toBeEnabled();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

@@ -1,14 +1,25 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { t } from "@/lib/i18n";
+import {
+  clearTextures,
+  getTexture,
+  getTextureStoreRevision,
+  setTexture,
+  snapshotTextureCanvas,
+  type TextureHistoryEffect,
+} from "@/lib/texture-store";
 import { useEditorStore } from "@/stores/editorStore";
 import {
   _resetCallbacks,
   _resetMergeTimer,
+  prepareHistorySnapshot,
   registerHistoryCallbacks,
   useHistoryStore,
 } from "@/stores/historyStore";
+import { useNotificationStore } from "@/stores/notificationStore";
 import { createProject } from "@/test/fixtures";
+import { installRasterCanvas } from "@/test/raster-canvas";
 import { resetAllStores, resetEditorStore, resetHistoryStore } from "@/test/store-reset";
-
 
 describe("historyStore", () => {
   beforeEach(() => {
@@ -18,21 +29,261 @@ describe("historyStore", () => {
     vi.restoreAllMocks();
   });
 
+  describe("atomic texture history", () => {
+    let raster: ReturnType<typeof installRasterCanvas>;
+    beforeEach(() => {
+      clearTextures();
+      raster = installRasterCanvas();
+    });
+    afterEach(() => {
+      clearTextures();
+      vi.restoreAllMocks();
+    });
+
+    function committedEffect(id: string): TextureHistoryEffect {
+      const oldCanvas = raster.create(1, 1, 10);
+      const canvas = raster.create(2, 2, 20);
+      const before = snapshotTextureCanvas(id, oldCanvas);
+      const after = snapshotTextureCanvas(id, canvas);
+      setTexture(id, canvas);
+      return {
+        kind: "texture",
+        undo: {
+          createdTextureIds: [],
+          restoredTextures: [before],
+          expectedCurrentHash: { [id]: after.hash },
+          expectedCurrentDimensions: { [id]: { width: 2, height: 2 } },
+        },
+        redo: {
+          promotedTextures: [{ textureId: id, canvas, snapshot: after }],
+          expectedCurrentHash: { [id]: before.hash },
+          expectedCurrentDimensions: { [id]: { width: 1, height: 1 } },
+        },
+        rendererInvalidation: "projectStructureVersion",
+      };
+    }
+
+    it("restores exact old/new project, pixels, and dimensions through one undo/redo", () => {
+      const effect = committedEffect("layer");
+      useHistoryStore
+        .getState()
+        .pushState(createProject({ name: "before" }), undefined, [effect]);
+      useEditorStore.setState({
+        project: createProject({ name: "after" }),
+        projectStructureVersion: 20,
+      });
+      const retained = getTexture("layer")!;
+      useHistoryStore.getState().undo();
+      expect(useEditorStore.getState().project!.name).toBe("before");
+      expect(useEditorStore.getState().projectStructureVersion).toBe(21);
+      expect(getTexture("layer")!.width).toBe(1);
+      expect(raster.read(getTexture("layer")!)).toEqual([10, 10, 10, 10]);
+      retained
+        .getContext("2d")!
+        .putImageData(new ImageData(new Uint8ClampedArray(16).fill(99), 2, 2), 0, 0);
+      useHistoryStore.getState().redo();
+      expect(useEditorStore.getState().project!.name).toBe("after");
+      expect(useEditorStore.getState().projectStructureVersion).toBe(22);
+      expect(getTexture("layer")!.width).toBe(2);
+      expect(getTexture("layer")!.height).toBe(2);
+      expect(raster.read(getTexture("layer")!)).toEqual(new Array(16).fill(20));
+      expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+      expect(useHistoryStore.getState().redoStack).toHaveLength(0);
+    });
+
+    it.each([
+      "undo",
+      "redo",
+    ] as const)("%s prepares all resources before changing live state", (direction) => {
+      const effects = [committedEffect("first"), committedEffect("second")];
+      useHistoryStore
+        .getState()
+        .pushState(createProject({ name: "before" }), undefined, effects);
+      useEditorStore.setState({ project: createProject({ name: "after" }) });
+      if (direction === "redo") useHistoryStore.getState().undo();
+      const editor = useEditorStore.getState();
+      const history = useHistoryStore.getState();
+      const first = getTexture("first");
+      const second = getTexture("second");
+      const revision = getTextureStoreRevision();
+      const notify = vi.spyOn(useNotificationStore.getState(), "addNotification");
+      const createElement = document.createElement.bind(document);
+      vi.spyOn(document, "createElement")
+        .mockImplementationOnce(createElement)
+        .mockImplementationOnce(() => {
+          throw new Error("C:/private/source.psd decoder detail");
+        });
+      useHistoryStore.getState()[direction]();
+      expect(useEditorStore.getState().project).toBe(editor.project);
+      expect(useEditorStore.getState().projectStructureVersion).toBe(
+        editor.projectStructureVersion,
+      );
+      expect(useHistoryStore.getState().undoStack).toBe(history.undoStack);
+      expect(useHistoryStore.getState().redoStack).toBe(history.redoStack);
+      expect(getTexture("first")).toBe(first);
+      expect(getTexture("second")).toBe(second);
+      expect(getTextureStoreRevision()).toBe(revision);
+      expect(notify).toHaveBeenCalledWith(
+        "error",
+        t(direction === "undo" ? "notify.undoFailed" : "notify.redoFailed"),
+      );
+    });
+
+    it("rolls back project, renderer version, textures, and history after a store subscriber throws", () => {
+      const effect = committedEffect("layer");
+      useHistoryStore
+        .getState()
+        .pushState(createProject({ name: "before" }), undefined, [effect]);
+      useEditorStore.setState({
+        project: createProject({ name: "after" }),
+        projectVersion: 7,
+        projectStructureVersion: 20,
+      });
+      const editor = useEditorStore.getState();
+      const history = useHistoryStore.getState();
+      const canvas = getTexture("layer");
+      const revision = getTextureStoreRevision();
+      const setState = useEditorStore.setState;
+      vi.spyOn(useEditorStore, "setState").mockImplementationOnce(
+        (...args: Parameters<typeof setState>) => {
+          setState(...args);
+          throw new Error("private source metadata");
+        },
+      );
+      const notify = vi.spyOn(useNotificationStore.getState(), "addNotification");
+      useHistoryStore.getState().undo();
+      expect(useEditorStore.getState().project).toBe(editor.project);
+      expect(useEditorStore.getState().projectVersion).toBe(7);
+      expect(useEditorStore.getState().projectStructureVersion).toBe(20);
+      expect(useHistoryStore.getState().undoStack).toBe(history.undoStack);
+      expect(useHistoryStore.getState().redoStack).toBe(history.redoStack);
+      expect(getTexture("layer")).toBe(canvas);
+      expect(getTextureStoreRevision()).toBe(revision);
+      expect(notify).toHaveBeenCalledWith("error", t("notify.undoFailed"));
+    });
+
+    it("rolls back an already installed history position when its subscriber throws", () => {
+      const effect = committedEffect("layer");
+      useHistoryStore
+        .getState()
+        .pushState(createProject({ name: "before" }), undefined, [effect]);
+      useEditorStore.setState({
+        project: createProject({ name: "after" }),
+        projectStructureVersion: 20,
+      });
+      const editor = useEditorStore.getState();
+      const history = useHistoryStore.getState();
+      const canvas = getTexture("layer");
+      const revision = getTextureStoreRevision();
+      const setState = useHistoryStore.setState;
+      vi.spyOn(useHistoryStore, "setState").mockImplementationOnce(
+        (...args: Parameters<typeof setState>) => {
+          setState(...args);
+          throw new Error("history subscriber failure");
+        },
+      );
+      useHistoryStore.getState().undo();
+      expect(useEditorStore.getState().project).toBe(editor.project);
+      expect(useEditorStore.getState().projectStructureVersion).toBe(20);
+      expect(useHistoryStore.getState().undoStack).toBe(history.undoStack);
+      expect(useHistoryStore.getState().redoStack).toBe(history.redoStack);
+      expect(getTexture("layer")).toBe(canvas);
+      expect(getTextureStoreRevision()).toBe(revision);
+    });
+
+    it("finishes reverse-project snapshot preparation before touching textures", () => {
+      const effect = committedEffect("layer");
+      useHistoryStore
+        .getState()
+        .pushState(createProject({ name: "before" }), undefined, [effect]);
+      useEditorStore.setState({ project: createProject({ name: "after" }) });
+      const editor = useEditorStore.getState();
+      const history = useHistoryStore.getState();
+      const canvas = getTexture("layer");
+      const revision = getTextureStoreRevision();
+      vi.spyOn(globalThis, "structuredClone").mockImplementationOnce(() => {
+        throw new Error("snapshot preparation failure");
+      });
+      useHistoryStore.getState().undo();
+      expect(useEditorStore.getState().project).toBe(editor.project);
+      expect(useHistoryStore.getState().undoStack).toBe(history.undoStack);
+      expect(useHistoryStore.getState().redoStack).toBe(history.redoStack);
+      expect(getTexture("layer")).toBe(canvas);
+      expect(getTextureStoreRevision()).toBe(revision);
+    });
+
+    it("prepares a bounded snapshot entry and restores exact stack identities on rollback", () => {
+      for (let index = 0; index < 50; index += 1) {
+        useHistoryStore.getState().pushState(createProject({ name: String(index) }));
+      }
+      const before = useHistoryStore.getState();
+      const project = createProject({ name: "prepared" });
+      const prepared = prepareHistorySnapshot(project, []);
+      project.name = "changed after preparation";
+      expect(useHistoryStore.getState().undoStack).toBe(before.undoStack);
+      prepared.commit();
+      expect(useHistoryStore.getState().undoStack).toHaveLength(50);
+      expect(useHistoryStore.getState().undoStack[49]).toMatchObject({
+        snapshot: { name: "prepared" },
+      });
+      prepared.rollback();
+      expect(useHistoryStore.getState().undoStack).toBe(before.undoStack);
+      expect(useHistoryStore.getState().redoStack).toBe(before.redoStack);
+    });
+
+    it("restores merge timers even when a rollback subscriber throws", () => {
+      vi.spyOn(Date, "now").mockReturnValue(1_000_000);
+      useHistoryStore.getState().pushState(createProject({ name: "before" }), "gesture");
+      const prepared = prepareHistorySnapshot(createProject({ name: "prepared" }), []);
+      prepared.commit();
+      const setState = useHistoryStore.setState;
+      vi.spyOn(useHistoryStore, "setState").mockImplementationOnce(
+        (...args: Parameters<typeof setState>) => {
+          setState(...args);
+          throw new Error("rollback subscriber failure");
+        },
+      );
+      expect(() => prepared.rollback()).toThrow(/subscriber/);
+      useHistoryStore
+        .getState()
+        .pushState(createProject({ name: "continuation" }), "gesture");
+      expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+      expect(useHistoryStore.getState().undoStack[0]).toMatchObject({
+        snapshot: { name: "before" },
+      });
+    });
+  });
+
   // ----------------------------------------------------------
   // pushState
   // ----------------------------------------------------------
 
   describe("pushState", () => {
-    it("スナップショットが undoStack に追加される", () => {
-      const project = createProject({ name: "プロジェクトA" });
-      useHistoryStore.getState().pushState(project);
-
-      const { undoStack } = useHistoryStore.getState();
-      expect(undoStack).toHaveLength(1);
-      expect(undoStack[0]!).toMatchObject({
-        kind: "snapshot",
-        snapshot: { name: "プロジェクトA" },
-      });
+    it("snapshotの保存・undo・redoは途中の両stackとプロジェクトを保持する", () => {
+      // The module import registers editorStore\'s production callback; no test callback is installed here.
+      useEditorStore.setState({ projectStructureVersion: 11, projectVersion: 7 });
+      const before = createProject({ name: "変更前" });
+      useHistoryStore.getState().pushState(before);
+      expect(useHistoryStore.getState().undoStack).toMatchObject([
+        { kind: "snapshot", snapshot: { name: "変更前" } },
+      ]);
+      useEditorStore.setState({ project: createProject({ name: "変更後" }) });
+      useHistoryStore.getState().undo();
+      expect(useEditorStore.getState().project!.name).toBe("変更前");
+      expect(useEditorStore.getState().projectStructureVersion).toBe(12);
+      expect(useEditorStore.getState().projectVersion).toBe(7);
+      expect(useHistoryStore.getState().undoStack).toEqual([]);
+      expect(useHistoryStore.getState().redoStack).toMatchObject([
+        { kind: "snapshot", snapshot: { name: "変更後" } },
+      ]);
+      useHistoryStore.getState().redo();
+      expect(useEditorStore.getState().project!.name).toBe("変更後");
+      expect(useEditorStore.getState().projectStructureVersion).toBe(13);
+      expect(useEditorStore.getState().projectVersion).toBe(7);
+      expect(useHistoryStore.getState().redoStack).toEqual([]);
+      expect(useHistoryStore.getState().undoStack).toMatchObject([
+        { kind: "snapshot", snapshot: { name: "変更前" } },
+      ]);
     });
 
     it("pushState で redoStack がクリアされる", () => {
@@ -89,42 +340,6 @@ describe("historyStore", () => {
   // ----------------------------------------------------------
 
   describe("undo", () => {
-    it("前の状態に戻る", () => {
-      const projectBefore = createProject({ name: "変更前" });
-      const projectAfter = createProject({ name: "変更後" });
-
-      useHistoryStore.getState().pushState(projectBefore);
-
-      useEditorStore.setState((s) => {
-        s.project = projectAfter;
-      });
-
-      useHistoryStore.getState().undo();
-
-      const restored = useEditorStore.getState().project;
-      expect(restored).not.toBeNull();
-      expect(restored!.name).toBe("変更前");
-    });
-
-    it("redoStack に現在の状態が積まれる", () => {
-      const projectBefore = createProject({ name: "変更前" });
-      const projectCurrent = createProject({ name: "現在" });
-
-      useHistoryStore.getState().pushState(projectBefore);
-      useEditorStore.setState((s) => {
-        s.project = projectCurrent;
-      });
-
-      useHistoryStore.getState().undo();
-
-      const { redoStack } = useHistoryStore.getState();
-      expect(redoStack).toHaveLength(1);
-      expect(redoStack[0]!).toMatchObject({
-        kind: "snapshot",
-        snapshot: { name: "現在" },
-      });
-    });
-
     it("空の undoStack で undo しても何も起きない", () => {
       const project = createProject({ name: "そのまま" });
       useEditorStore.setState((s) => {
@@ -145,22 +360,6 @@ describe("historyStore", () => {
   // ----------------------------------------------------------
 
   describe("redo", () => {
-    it("元に戻す操作を再適用する", () => {
-      const projectBefore = createProject({ name: "変更前" });
-      const projectAfter = createProject({ name: "変更後" });
-
-      useHistoryStore.getState().pushState(projectBefore);
-      useEditorStore.setState((s) => {
-        s.project = projectAfter;
-      });
-
-      useHistoryStore.getState().undo();
-      expect(useEditorStore.getState().project!.name).toBe("変更前");
-
-      useHistoryStore.getState().redo();
-      expect(useEditorStore.getState().project!.name).toBe("変更後");
-    });
-
     it("空の redoStack で redo しても何も起きない", () => {
       const project = createProject({ name: "そのまま" });
       useEditorStore.setState((s) => {
@@ -184,24 +383,17 @@ describe("historyStore", () => {
     it("両スタックがクリアされる", () => {
       const projectA = createProject({ name: "A" });
       const projectB = createProject({ name: "B" });
-
       useHistoryStore.getState().pushState(projectA);
-      useEditorStore.setState((s) => {
-        s.project = projectB;
-      });
-
+      useHistoryStore.getState().pushState(projectB);
+      useEditorStore.setState({ project: createProject({ name: "C" }) });
       useHistoryStore.getState().undo();
-
-      expect(useHistoryStore.getState().undoStack.length).toBeGreaterThanOrEqual(0);
-      expect(useHistoryStore.getState().redoStack.length).toBeGreaterThan(0);
-
+      expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+      expect(useHistoryStore.getState().redoStack).toHaveLength(1);
       useHistoryStore.getState().clear();
-
-      expect(useHistoryStore.getState().undoStack).toHaveLength(0);
-      expect(useHistoryStore.getState().redoStack).toHaveLength(0);
+      expect(useHistoryStore.getState().undoStack).toEqual([]);
+      expect(useHistoryStore.getState().redoStack).toEqual([]);
     });
   });
-
 
   describe("デバウンス", () => {
     it("mergeKey 無しの連続 pushState は毎回新規エントリとして積まれる（異種操作の折り畳み防止）", () => {
@@ -280,59 +472,27 @@ describe("historyStore", () => {
 
     it("undo後のpushStateはマージされない（lastPushTime = 0にリセット済み）", () => {
       const baseTime = 1000000;
-      vi.spyOn(Date, "now").mockReturnValue(baseTime);
-
+      const clock = vi.spyOn(Date, "now").mockReturnValue(baseTime);
       const projectA = createProject({ name: "A" });
       const projectB = createProject({ name: "B" });
-
-      // pushState -> undo
-      useHistoryStore.getState().pushState(projectA);
-      useEditorStore.setState((s) => {
-        s.project = projectB;
-      });
+      useHistoryStore.getState().pushState(projectA, "same-key");
+      clock.mockReturnValue(baseTime + 1000);
+      useHistoryStore.getState().pushState(projectB, "same-key");
+      useEditorStore.setState({ project: createProject({ name: "current" }) });
       useHistoryStore.getState().undo();
-
-      vi.spyOn(Date, "now").mockReturnValue(baseTime);
-      const projectC = createProject({ name: "C" });
-      useHistoryStore.getState().pushState(projectC);
-
       expect(useHistoryStore.getState().undoStack).toHaveLength(1);
-      expect(useHistoryStore.getState().undoStack[0]!).toMatchObject({
-        kind: "snapshot",
-        snapshot: { name: "C" },
-      });
+      // Still inside the previous push's merge interval with the same merge key.
+      useHistoryStore.getState().pushState(createProject({ name: "C" }), "same-key");
+      expect(useHistoryStore.getState().undoStack).toMatchObject([
+        { kind: "snapshot", snapshot: { name: "A" } },
+        { kind: "snapshot", snapshot: { name: "C" } },
+      ]);
+      expect(useHistoryStore.getState().redoStack).toEqual([]);
     });
   });
 });
 
-
 describe("historyStore — エッジケース", () => {
-  it("undoStack が空の時に undo しても例外にならない", () => {
-    resetAllStores();
-    expect(() => useHistoryStore.getState().undo()).not.toThrow();
-  });
-
-  it("redoStack が空の時に redo しても例外にならない", () => {
-    resetAllStores();
-    expect(() => useHistoryStore.getState().redo()).not.toThrow();
-  });
-
-  it("undo後に新しい変更を加えると redo が消える", () => {
-    resetAllStores();
-    const project1 = createProject({ name: "v1" });
-    const project2 = createProject({ name: "v2" });
-    const project3 = createProject({ name: "v3" });
-    useEditorStore.setState({ project: project1 });
-
-    useHistoryStore.getState().pushState(project1);
-    useHistoryStore.getState().pushState(project2);
-    useHistoryStore.getState().undo();
-    expect(useHistoryStore.getState().redoStack.length).toBeGreaterThan(0);
-
-    useHistoryStore.getState().pushState(project3);
-    expect(useHistoryStore.getState().redoStack).toHaveLength(0);
-  });
-
   it("プロジェクトが null の状態で undo しても何もしない", () => {
     resetAllStores();
     const project = createProject({ name: "test" });
@@ -464,104 +624,7 @@ describe("historyStore — エッジケース", () => {
     });
   });
 
-  describe("バージョン整合性", () => {
-    beforeEach(() => {
-      registerHistoryCallbacks({
-        getCurrentProject: () => useEditorStore.getState().project,
-        restoreProject: (snapshot) => {
-          useEditorStore.setState((s) => {
-            s.project = structuredClone(snapshot);
-            s.projectStructureVersion += 1;
-          });
-        },
-      });
-    });
-
-    it("Undo で projectStructureVersion が bump される", () => {
-      const projectA = createProject({ name: "A" });
-      const projectB = createProject({ name: "B" });
-
-      useEditorStore.setState({
-        project: structuredClone(projectA),
-        projectStructureVersion: 0,
-        projectVersion: 0,
-      });
-
-      useHistoryStore.getState().pushState(structuredClone(projectA));
-      useEditorStore.setState({ project: structuredClone(projectB) });
-      const beforeUndoStructure = useEditorStore.getState().projectStructureVersion;
-
-      useHistoryStore.getState().undo();
-
-      const afterUndo = useEditorStore.getState();
-      expect(afterUndo.projectStructureVersion).toBe(beforeUndoStructure + 1);
-      expect(afterUndo.project?.name).toBe("A");
-    });
-
-    it("Redo で projectStructureVersion が bump される", () => {
-      const projectA = createProject({ name: "A" });
-      const projectB = createProject({ name: "B" });
-
-      useEditorStore.setState({
-        project: structuredClone(projectA),
-        projectStructureVersion: 0,
-        projectVersion: 0,
-      });
-
-      useHistoryStore.getState().pushState(structuredClone(projectA));
-      useEditorStore.setState({ project: structuredClone(projectB) });
-      useHistoryStore.getState().undo();
-      const beforeRedoStructure = useEditorStore.getState().projectStructureVersion;
-
-      useHistoryStore.getState().redo();
-
-      const afterRedo = useEditorStore.getState();
-      expect(afterRedo.projectStructureVersion).toBe(beforeRedoStructure + 1);
-      expect(afterRedo.project?.name).toBe("B");
-    });
-
-    it("Undo/Redo で projectVersion は変更されない（fit-to-view を避けるため）", () => {
-      const projectA = createProject({ name: "A" });
-      const projectB = createProject({ name: "B" });
-
-      useEditorStore.setState({
-        project: structuredClone(projectA),
-        projectStructureVersion: 0,
-        projectVersion: 7,
-      });
-
-      useHistoryStore.getState().pushState(structuredClone(projectA));
-      useEditorStore.setState({ project: structuredClone(projectB) });
-
-      useHistoryStore.getState().undo();
-      expect(useEditorStore.getState().projectVersion).toBe(7);
-
-      useHistoryStore.getState().redo();
-      expect(useEditorStore.getState().projectVersion).toBe(7);
-    });
-  });
-
   describe("ボーン操作のundo/redo", () => {
-    it("ボーン追加をundoで元に戻せる", async () => {
-      const { useBoneStore } = await import("@/stores/boneStore");
-
-      const projectBefore = createProject({ layers: [] });
-      useEditorStore.setState({ project: structuredClone(projectBefore) });
-
-      useHistoryStore.getState().pushState(structuredClone(projectBefore));
-
-      useBoneStore.getState().addRootBone("テストボーン", 100, 200);
-
-      const afterAdd = useEditorStore.getState().project!;
-      expect(afterAdd.layers.filter((l) => l.kind === "bone")).toHaveLength(1);
-
-      // undo
-      useHistoryStore.getState().undo();
-
-      const afterUndo = useEditorStore.getState().project!;
-      expect(afterUndo.layers.filter((l) => l.kind === "bone")).toHaveLength(0);
-    });
-
     it("ボーン追加のundo後にredoで復元できる", async () => {
       const { useBoneStore } = await import("@/stores/boneStore");
 
@@ -633,25 +696,20 @@ describe("historyStore — エッジケース", () => {
 
     it("復元されたプロジェクトは元オブジェクトと別参照", () => {
       const projectA = createProject({ name: "A" });
-      const projectB = createProject({ name: "B" });
-
       useEditorStore.setState({ project: structuredClone(projectA) });
-      useHistoryStore.getState().pushState(structuredClone(projectA));
-      useEditorStore.setState({ project: structuredClone(projectB) });
-
+      useHistoryStore.getState().pushState(projectA);
+      const entry = useHistoryStore.getState().undoStack[0]!;
+      if (entry.kind !== "snapshot") throw new Error("expected snapshot entry");
+      const storedSnapshot = entry.snapshot;
+      useEditorStore.setState({ project: createProject({ name: "B" }) });
       useHistoryStore.getState().undo();
-
       const restored = useEditorStore.getState().project!;
-      const entry = useHistoryStore.getState().redoStack[0]!;
-      if (entry.kind === "snapshot") {
-        expect(restored).not.toBe(entry.snapshot);
-      } else {
-        throw new Error("expected snapshot entry");
-      }
+      expect(restored).toEqual(projectA);
+      expect(restored).not.toBe(storedSnapshot);
+      expect(restored).not.toBe(projectA);
     });
   });
 });
-
 
 describe("historyStore — pushPatches / undo / redo", () => {
   beforeEach(() => {
@@ -689,49 +747,25 @@ describe("historyStore — pushPatches / undo / redo", () => {
     expect(useHistoryStore.getState().undoStack).toHaveLength(0);
   });
 
-  it("mutateProject 経由の undo は inversePatches で元の状態に戻る", async () => {
+  it("patchのforward/inverse値とundo/redoのentry種類を保持する", async () => {
     const { mutateProject } = await import("@/stores/projectMutator");
-    const project = createProject({ name: "before" });
-    useEditorStore.setState({ project: structuredClone(project) });
-
-    mutateProject((p) => {
-      p.name = "after";
+    useEditorStore.setState({ project: createProject({ name: "before" }) });
+    mutateProject((project) => {
+      project.name = "after";
     });
     expect(useEditorStore.getState().project!.name).toBe("after");
-
+    expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+    expect(useHistoryStore.getState().undoStack[0]!.kind).toBe("patch");
     useHistoryStore.getState().undo();
     expect(useEditorStore.getState().project!.name).toBe("before");
-  });
-
-  it("mutateProject → undo → redo で元の変更が再適用される", async () => {
-    const { mutateProject } = await import("@/stores/projectMutator");
-    const project = createProject({ name: "before" });
-    useEditorStore.setState({ project: structuredClone(project) });
-
-    mutateProject((p) => {
-      p.name = "after";
-    });
-
-    useHistoryStore.getState().undo();
-    expect(useEditorStore.getState().project!.name).toBe("before");
-
+    expect(useHistoryStore.getState().undoStack).toEqual([]);
+    expect(useHistoryStore.getState().redoStack).toHaveLength(1);
+    expect(useHistoryStore.getState().redoStack[0]!.kind).toBe("patch");
     useHistoryStore.getState().redo();
     expect(useEditorStore.getState().project!.name).toBe("after");
-  });
-
-  it("patch エントリの undo 後 redoStack にも patch エントリが積まれる", async () => {
-    const { mutateProject } = await import("@/stores/projectMutator");
-    const project = createProject({ name: "before" });
-    useEditorStore.setState({ project: structuredClone(project) });
-
-    mutateProject((p) => {
-      p.name = "after";
-    });
-    useHistoryStore.getState().undo();
-
-    const { redoStack } = useHistoryStore.getState();
-    expect(redoStack).toHaveLength(1);
-    expect(redoStack[0]!.kind).toBe("patch");
+    expect(useHistoryStore.getState().redoStack).toEqual([]);
+    expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+    expect(useHistoryStore.getState().undoStack[0]!.kind).toBe("patch");
   });
 
   it("mergeKey が同一な連続 mutateProject は 1 エントリにまとまる", async () => {

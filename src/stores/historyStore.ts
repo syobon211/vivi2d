@@ -3,7 +3,8 @@ import { applyPatches, type Patch } from "immer";
 import { create } from "zustand";
 import { t as tGlobal } from "@/lib/i18n";
 import {
-  applyTextureHistoryEffect,
+  type PreparedTextureHistoryEffects,
+  prepareTextureHistoryEffects,
   type TextureHistoryEffect,
 } from "@/lib/texture-store";
 import { withStandardMiddleware } from "./_middleware";
@@ -19,6 +20,10 @@ let lastMergeKey: string | null = null;
 interface HistoryCallbacks {
   getCurrentProject: () => ProjectData | null;
   restoreProject: (snapshot: ProjectData) => void;
+  prepareRestoreProject?: (snapshot: ProjectData) => {
+    commit: () => void;
+    rollback: () => void;
+  };
 }
 
 let callbacks: HistoryCallbacks | null = null;
@@ -46,11 +51,7 @@ interface HistoryStore {
   undoStack: HistoryEntry[];
   redoStack: HistoryEntry[];
 
-  pushState: (
-    project: ProjectData,
-    mergeKey?: string,
-    effects?: HistoryEffect[],
-  ) => void;
+  pushState: (project: ProjectData, mergeKey?: string, effects?: HistoryEffect[]) => void;
 
   pushPatches: (
     patches: Patch[],
@@ -141,92 +142,9 @@ export const useHistoryStore = create<HistoryStore>()(
         lastMergeKey = mergeKey ?? null;
       },
 
-      undo: () => {
-        const { undoStack } = get();
-        if (undoStack.length === 0 || !callbacks) return;
+      undo: () => restoreHistory("undo"),
 
-        const current = callbacks.getCurrentProject();
-        if (!current) return;
-
-        const entry = undoStack[undoStack.length - 1]!;
-        try {
-          applyHistoryEffects(entry.effects, "undo");
-          const prev =
-            entry.kind === "snapshot"
-              ? entry.snapshot
-              : applyPatches(current, entry.inversePatches);
-          callbacks.restoreProject(prev);
-        } catch (e) {
-          try {
-            applyHistoryEffects(entry.effects, "redo");
-          } catch {
-            // Keep the original undo failure visible; the next command should not
-            // silently overwrite partially restored external state.
-          }
-          const msg = e instanceof Error ? e.message : String(e);
-          useNotificationStore
-            .getState()
-            .addNotification("error", `${tGlobal("notify.undoFailed")}: ${msg}`);
-          return;
-        }
-        const redoEntry: HistoryEntry =
-          entry.kind === "patch"
-            ? entry
-            : {
-                kind: "snapshot",
-                snapshot: structuredClone(current),
-                effects: entry.effects,
-              };
-        set((s) => ({
-          undoStack: s.undoStack.slice(0, -1),
-          redoStack: [...s.redoStack, redoEntry],
-        }));
-        lastPushTime = 0;
-        lastMergeKey = null;
-      },
-
-      redo: () => {
-        const { redoStack } = get();
-        if (redoStack.length === 0 || !callbacks) return;
-
-        const current = callbacks.getCurrentProject();
-        if (!current) return;
-
-        const entry = redoStack[redoStack.length - 1]!;
-        try {
-          applyHistoryEffects(entry.effects, "redo");
-          const next =
-            entry.kind === "snapshot"
-              ? entry.snapshot
-              : applyPatches(current, entry.patches);
-          callbacks.restoreProject(next);
-        } catch (e) {
-          try {
-            applyHistoryEffects(entry.effects, "undo");
-          } catch {
-            // Keep the original redo failure visible.
-          }
-          const msg = e instanceof Error ? e.message : String(e);
-          useNotificationStore
-            .getState()
-            .addNotification("error", `${tGlobal("notify.redoFailed")}: ${msg}`);
-          return;
-        }
-        const undoEntry: HistoryEntry =
-          entry.kind === "patch"
-            ? entry
-            : {
-                kind: "snapshot",
-                snapshot: structuredClone(current),
-                effects: entry.effects,
-              };
-        set((s) => ({
-          redoStack: s.redoStack.slice(0, -1),
-          undoStack: [...s.undoStack, undoEntry],
-        }));
-        lastPushTime = 0;
-        lastMergeKey = null;
-      },
+      redo: () => restoreHistory("redo"),
 
       clear: () => {
         set({ undoStack: [], redoStack: [] });
@@ -238,18 +156,131 @@ export const useHistoryStore = create<HistoryStore>()(
   ),
 );
 
-function applyHistoryEffects(
-  effects: HistoryEffect[] | undefined,
-  direction: "undo" | "redo",
-): void {
-  const orderedEffects =
-    direction === "undo" ? [...(effects ?? [])].reverse() : (effects ?? []);
-  for (const effect of orderedEffects) {
-    switch (effect.kind) {
-      case "texture":
-        applyTextureHistoryEffect(effect, direction);
-        break;
+/** Preallocate a non-merged snapshot entry for a synchronous project/texture commit. */
+export function prepareHistorySnapshot(
+  project: ProjectData,
+  effects: HistoryEffect[],
+): { commit: () => void; rollback: () => void } {
+  const { undoStack, redoStack } = useHistoryStore.getState();
+  const pushTimeBefore = lastPushTime;
+  const mergeKeyBefore = lastMergeKey;
+  const entry: HistoryEntry = {
+    kind: "snapshot",
+    snapshot: structuredClone(project),
+    effects,
+  };
+  const nextStacks = {
+    undoStack: [
+      ...(undoStack.length >= MAX_HISTORY ? undoStack.slice(1) : undoStack),
+      entry,
+    ],
+    redoStack: [] as HistoryEntry[],
+  };
+  const pushTime = Date.now();
+  let started = false;
+  return {
+    commit: () => {
+      if (started) return;
+      const current = useHistoryStore.getState();
+      if (current.undoStack !== undoStack || current.redoStack !== redoStack) {
+        throw new Error("History changed after preparation");
+      }
+      started = true;
+      useHistoryStore.setState(nextStacks);
+      lastPushTime = pushTime;
+      lastMergeKey = null;
+    },
+    rollback: () => {
+      if (!started) return;
+      try {
+        useHistoryStore.setState({ undoStack, redoStack });
+      } finally {
+        lastPushTime = pushTimeBefore;
+        lastMergeKey = mergeKeyBefore;
+        started = false;
+      }
+    },
+  };
+}
+
+function restoreHistory(direction: "undo" | "redo"): void {
+  const { undoStack, redoStack } = useHistoryStore.getState();
+  const source = direction === "undo" ? undoStack : redoStack;
+  const cb = callbacks;
+  if (!cb || source.length === 0) return;
+
+  let textures: PreparedTextureHistoryEffects | undefined;
+  let projectRestore: { commit: () => void; rollback: () => void } | undefined;
+  let projectStarted = false;
+  let historyStarted = false;
+  try {
+    const current = cb.getCurrentProject();
+    if (!current) return;
+    const entry = source[source.length - 1]!;
+    const nextProject =
+      entry.kind === "snapshot"
+        ? entry.snapshot
+        : applyPatches(
+            current,
+            direction === "undo" ? entry.inversePatches : entry.patches,
+          );
+    const reverseEntry: HistoryEntry =
+      entry.kind === "patch"
+        ? entry
+        : {
+            kind: "snapshot",
+            snapshot: structuredClone(current),
+            effects: entry.effects,
+          };
+    const nextStacks =
+      direction === "undo"
+        ? { undoStack: undoStack.slice(0, -1), redoStack: [...redoStack, reverseEntry] }
+        : { undoStack: [...undoStack, reverseEntry], redoStack: redoStack.slice(0, -1) };
+    if (cb.prepareRestoreProject) {
+      projectRestore = cb.prepareRestoreProject(nextProject);
+    } else {
+      const preparedProject = structuredClone(nextProject);
+      projectRestore = {
+        commit: () => cb.restoreProject(preparedProject),
+        rollback: () => cb.restoreProject(current),
+      };
     }
+    if (entry.effects && entry.effects.length > 0) {
+      textures = prepareTextureHistoryEffects(entry.effects, direction);
+      textures.commit();
+    }
+    projectStarted = true;
+    projectRestore.commit();
+    historyStarted = true;
+    useHistoryStore.setState(nextStacks);
+    lastPushTime = 0;
+    lastMergeKey = null;
+  } catch {
+    if (historyStarted) {
+      try {
+        useHistoryStore.setState({ undoStack, redoStack });
+      } catch {
+        // A failing subscriber must not prevent the remaining rollback steps.
+      }
+    }
+    try {
+      textures?.rollback();
+    } catch {
+      // Continue restoring the project even if an external texture write fails.
+    }
+    if (projectStarted) {
+      try {
+        projectRestore?.rollback();
+      } catch {
+        // Legacy callbacks may themselves fail; retain the fixed failure message.
+      }
+    }
+    useNotificationStore
+      .getState()
+      .addNotification(
+        "error",
+        tGlobal(direction === "undo" ? "notify.undoFailed" : "notify.redoFailed"),
+      );
   }
 }
 

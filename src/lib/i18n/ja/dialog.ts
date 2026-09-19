@@ -48,20 +48,49 @@ export const dialog = {
 
   "reimport.title": "PSD 再読み込み",
   "reimport.info1": "差分を確認する PSD ファイルを選択してください。",
-  "reimport.info2": "レイヤー名で対応付けし、テクスチャと位置を更新します。",
-  "reimport.info3": "パラメータ、制御ガイド、バインディングポイントは保持されます。",
+  "reimport.info2":
+    "一意に対応する既存レイヤーの画像だけを置き換えます。レイヤーは追加しません。",
+  "reimport.info3": "モデルのサイズ・配置・メッシュ・UV・リグは保持されます。",
   "reimport.analyzing": "解析中...",
   "reimport.selectPsd": "PSD ファイルを選択",
   "reimport.noChanges": "変更はありません。",
   "reimport.keptNote": "以下はプロジェクトに残ります（削除されません）",
-  "reimport.parseFailedPrefix": "PSD解析失敗:",
+  "reimport.parseFailedPrefix": "PSDの解析に失敗しました。ファイルを選び直してください。",
   "reimport.completedPrefix": "PSD再インポート完了:",
   "reimport.updatedCountSuffix": "件更新",
-  "reimport.addedCountSuffix": "件追加",
-  "reimport.failedPrefix": "再インポート失敗:",
-  "reimport.updated": "更新",
-  "reimport.added": "新規追加",
+  "reimport.failedPrefix":
+    "PSDの再読み込みに失敗しました。ファイルを選び直して再試行してください。",
   "reimport.removedFromPsd": "PSDから消失",
+  "reimport.preservedNotice":
+    "選択した画像だけを置き換えます。モデルのサイズ・配置・メッシュ・UV・リグは変更しません。",
+  "reimport.framingNotice":
+    "同じサイズでも画像のフレーム変更は自動検出できません。切り抜き・余白追加・回転・内容の移動や拡縮がある画像は選択から外し、元のフレームで書き出し直してください。",
+  "reimport.sourceDocumentSize": "入力 PSD のドキュメントサイズ",
+  "reimport.sourcePlacementNotice":
+    "PSD の位置とドキュメントサイズはモデルに反映しません。",
+  "reimport.texturePixels": "テクスチャの画素数（現在 → 入力）",
+  "reimport.sourcePosition": "入力 PSD 内の位置",
+  "reimport.sameSize": "同じ画像サイズ",
+  "reimport.needsConfirmation": "解像度の変更 — 確認が必要",
+  "reimport.held": "変更せず保持",
+  "reimport.notAdded": "対応する既存レイヤーなし — 追加しません",
+  "reimport.confirmResolutionTitle": "選択した解像度変更の確認",
+  "reimport.confirmResolutionNotice":
+    "以下のすべての画像で、フレームを保った均等な解像度変更だけを行い、切り抜き・余白追加・回転・内容の移動や拡縮がないことを確認してください。縦横比が同じだけでは保証できません。エディターは画像の再サンプリングや位置合わせを行いません。誤った置き換えは「元に戻す」で復元できます。",
+  "reimport.keepCurrent": "これらのレイヤーは現在の画像を保持",
+  "reimport.confirmSameFraming": "同じフレームであることを確認",
+  "reimport.resolutionConfirmed": "一覧の解像度変更だけを確認しました。",
+  "reimport.reason.incomingNameAmbiguous": "入力側のレイヤー名が一意ではありません。",
+  "reimport.reason.existingNameAmbiguous": "既存のレイヤー名が一意ではありません。",
+  "reimport.reason.tokenAmbiguous": "レイヤー識別子の対応が曖昧です。",
+  "reimport.reason.targetConflict":
+    "複数の入力レイヤーが同じ既存レイヤーに対応しています。",
+  "reimport.reason.unsupportedTarget":
+    "この既存レイヤーは画像の置き換えに対応していません。",
+  "reimport.reason.missingPixels": "入力レイヤーに画像データがありません。",
+  "reimport.reason.missingTexture": "既存のテクスチャがありません。",
+  "reimport.reason.invalidDimensions": "有効なテクスチャサイズを確認できません。",
+  "reimport.reason.aspectRatioChange": "テクスチャの縦横比が変わっています。",
 
   "ai.menuLabel": "ComfyUI",
   "ai.generate": "モデル生成...",
@@ -136,8 +165,10 @@ export const dialog = {
     "分割ウィザードを使う前に、手動 PNG レイヤーを選択するか PNG プロジェクトを開いてください。",
   "manualPngSplit.sourceLayer": "元レイヤー",
   "manualPngSplit.reviewTitle": "確認",
-  "manualPngSplit.reviewNeedMasks": "適用する前に、2つ以上の空でないマスクを作成してください。",
-  "manualPngSplit.reviewOverlap": "一部のマスクが重なっています。適用はできますが、自動セットアップ前に重なりを確認してください。",
+  "manualPngSplit.reviewNeedMasks":
+    "適用する前に、2つ以上の空でないマスクを作成してください。",
+  "manualPngSplit.reviewOverlap":
+    "一部のマスクが重なっています。適用はできますが、自動セットアップ前に重なりを確認してください。",
   "manualPngSplit.reviewReady": "非破壊の分割を適用できます。",
   "manualPngSplit.showSource": "元画像を表示",
   "manualPngSplit.showStressPreview": "動きの確認プレビューを表示",
@@ -273,8 +304,7 @@ export const dialog = {
   "autoSetup.readyToRig": "リグ準備を実行",
   "autoSetup.openDepthInspector": "深度インスペクターを開く",
   "autoSetup.openPhysicsPanel": "物理パネルを開く",
-  "autoSetup.planUnsupported":
-    "自動セットアップ計画に未対応の操作が含まれています。",
+  "autoSetup.planUnsupported": "自動セットアップ計画に未対応の操作が含まれています。",
   "autoSetup.previewStale":
     "除外設定が変更されたため、プレビューを更新しませんでした。もう一度プレビューしてください。",
   "autoSetup.unsupportedHost":
@@ -294,15 +324,15 @@ export const dialog = {
   "autoSetup.warning.faceHeadMissing": "顔または頭のレイヤーが見つかりません。",
   "autoSetup.warning.mouthMissing": "口レイヤーが見つかりません。",
   "autoSetup.warning.bodyMissing": "体レイヤーが見つかりません。",
-  "autoSetup.warning.eyeMissing": "左右どちらか、または両方の目レイヤーが見つかりません。",
+  "autoSetup.warning.eyeMissing":
+    "左右どちらか、または両方の目レイヤーが見つかりません。",
   "autoSetup.warning.readyNameEmpty":
     "取り込み名の整理をスキップしました: 「{layer}」は整理後の名前が空になります。",
   "autoSetup.warning.readyNameCollision":
     "取り込み名の整理をスキップしました: 「{layer}」を「{target}」にすると別レイヤー名と重複します。",
   "autoSetup.warning.readySingletonAmbiguous":
     "{role} は単一ロールですが、該当する取り込みレイヤーが {count} 件あるため自動割り当てをスキップしました。",
-  "autoSetup.warning.leftRightMultipleSide":
-    "{family}の{side}側が複数残っています。",
+  "autoSetup.warning.leftRightMultipleSide": "{family}の{side}側が複数残っています。",
   "autoSetup.warning.leftRightOnlyOneSide":
     "{family}の左右ロールが片側だけに偏っています。",
   "autoSetup.warning.leftRightLowConfidence":
@@ -476,10 +506,13 @@ export const dialog = {
   "autoSetup.motionStressCheck.restConsistency": "静止時の整合性",
   "autoSetup.motionStressCheck.incompleteCheck": "未完了チェック",
   "autoSetup.motionStressAction.pass": "追加の対応は不要です。",
-  "autoSetup.motionStressAction.protectedArea": "顔まわりを確認し、揺れを弱めてください。",
+  "autoSetup.motionStressAction.protectedArea":
+    "顔まわりを確認し、揺れを弱めてください。",
   "autoSetup.motionStressAction.duplicateOutline": "二重線対策の候補を確認してください。",
-  "autoSetup.motionStressAction.hiddenReveal": "下地補完を承認するか、揺れを弱めてください。",
-  "autoSetup.motionStressAction.restConsistency": "ハンドル位置か揺れ幅を見直してください。",
+  "autoSetup.motionStressAction.hiddenReveal":
+    "下地補完を承認するか、揺れを弱めてください。",
+  "autoSetup.motionStressAction.restConsistency":
+    "ハンドル位置か揺れ幅を見直してください。",
   "autoSetup.motionStressAction.incompleteCheck": "揺れを小さくして再確認してください。",
   "autoSetup.cleanupComparisonTitle": "クリーンアップ比較",
   "autoSetup.cleanupComparison.none": "処理なし",
@@ -760,8 +793,7 @@ export const dialog = {
     "読み込んだレイヤーが見える位置へ表示を移動しました。",
   "imageImportOptions.focusedViewportOnImportMultiple":
     "読み込んだレイヤー群が見える位置へ表示を移動しました。",
-  "imageImportOptions.emptyPngFolder":
-    "選択したフォルダに PNG ファイルがありません。",
+  "imageImportOptions.emptyPngFolder": "選択したフォルダに PNG ファイルがありません。",
   "imageImportOptions.projectRequiredForLayer":
     "画像レイヤーを読み込む前にプロジェクトを開いてください。",
   "imageImportOptions.projectRequiredForLayers":
@@ -776,4 +808,8 @@ export const dialog = {
   "imageImportOptions.reimportMismatch":
     "再読み込みした PNG は現在のレイヤー境界と一致しません。新しいレイヤーとして読み込んでください。",
   "imageImportOptions.reimportedPrefix": "再読み込みしました:",
+  "imageImportOptions.reimportFailed":
+    "PNGの再読み込みに失敗しました。再試行してください。",
+  "imageImportOptions.reimportStale":
+    "再読み込み中にプロジェクトまたは画像が変更されました。再試行してください。",
 } as const;

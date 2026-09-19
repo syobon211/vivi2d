@@ -50,20 +50,48 @@ export const dialog = {
 
   "reimport.title": "PSD Reimport",
   "reimport.info1": "Select a PSD file to preview differences.",
-  "reimport.info2": "Match by layer name and update textures and positions.",
-  "reimport.info3": "Parameters, motion controls, and binding points are preserved.",
+  "reimport.info2":
+    "Replace images only for uniquely matched existing layers; no layers are added.",
+  "reimport.info3": "Model size, placement, meshes, UVs, and rigging are preserved.",
   "reimport.analyzing": "Analyzing...",
   "reimport.selectPsd": "Select PSD File",
   "reimport.noChanges": "No changes found.",
   "reimport.keptNote": "These remain in the project (not deleted)",
-  "reimport.parseFailedPrefix": "PSD analysis failed:",
+  "reimport.parseFailedPrefix": "Failed to analyze PSD. Select the file again.",
   "reimport.completedPrefix": "PSD reimport complete:",
   "reimport.updatedCountSuffix": "updated",
-  "reimport.addedCountSuffix": "added",
-  "reimport.failedPrefix": "Reimport failed:",
-  "reimport.updated": "Updated",
-  "reimport.added": "Added",
+  "reimport.failedPrefix": "Failed to reimport PSD. Reanalyze the file and try again.",
   "reimport.removedFromPsd": "Missing from PSD",
+  "reimport.preservedNotice":
+    "Only the selected images are replaced. Model size, placement, meshes, UVs, and rigging stay unchanged.",
+  "reimport.framingNotice":
+    "Framing changes cannot be detected automatically, even at the same size. Exclude cropped, padded, rotated, offset, or internally scaled artwork and re-export it in its original frame.",
+  "reimport.sourceDocumentSize": "Source PSD document size",
+  "reimport.sourcePlacementNotice":
+    "PSD positions and document size are not imported into the model.",
+  "reimport.texturePixels": "Texture pixels (current → incoming)",
+  "reimport.sourcePosition": "Source PSD position",
+  "reimport.sameSize": "Same size",
+  "reimport.needsConfirmation": "Resolution change — confirmation required",
+  "reimport.held": "Kept unchanged",
+  "reimport.notAdded": "No existing match — not added",
+  "reimport.confirmResolutionTitle": "Confirm the selected resolution changes",
+  "reimport.confirmResolutionNotice":
+    "Confirm that every image listed here already has the same content frame, with only a uniform resolution change and no cropping, padding, rotation, or content movement/scaling. Matching aspect ratios do not prove this. The editor does not resample or align images; an incorrect replacement can be undone.",
+  "reimport.keepCurrent": "Keep current textures for these layers",
+  "reimport.confirmSameFraming": "Confirm same framing",
+  "reimport.resolutionConfirmed": "Confirmed for the listed resolution changes only.",
+  "reimport.reason.incomingNameAmbiguous": "The source layer name is not unique.",
+  "reimport.reason.existingNameAmbiguous": "The existing layer name is not unique.",
+  "reimport.reason.tokenAmbiguous": "The layer identifier is ambiguous.",
+  "reimport.reason.targetConflict":
+    "Multiple source layers match the same existing layer.",
+  "reimport.reason.unsupportedTarget":
+    "This existing layer cannot receive an image replacement.",
+  "reimport.reason.missingPixels": "The incoming layer has no raster pixels.",
+  "reimport.reason.missingTexture": "The existing texture is unavailable.",
+  "reimport.reason.invalidDimensions": "Valid texture dimensions are unavailable.",
+  "reimport.reason.aspectRatioChange": "The texture aspect ratio has changed.",
 
   "ai.menuLabel": "ComfyUI",
   "ai.generate": "Generate Model...",
@@ -137,8 +165,10 @@ export const dialog = {
     "Select a manual PNG layer, or open a PNG project, before using the split wizard.",
   "manualPngSplit.sourceLayer": "Source layer",
   "manualPngSplit.reviewTitle": "Review",
-  "manualPngSplit.reviewNeedMasks": "Create at least two non-empty masks before applying.",
-  "manualPngSplit.reviewOverlap": "Some masks overlap. You can still apply, but review the overlap before auto setup.",
+  "manualPngSplit.reviewNeedMasks":
+    "Create at least two non-empty masks before applying.",
+  "manualPngSplit.reviewOverlap":
+    "Some masks overlap. You can still apply, but review the overlap before auto setup.",
   "manualPngSplit.reviewReady": "Masks are ready for a non-destructive split.",
   "manualPngSplit.showSource": "Show source image",
   "manualPngSplit.showStressPreview": "Show movement stress preview",
@@ -434,8 +464,7 @@ export const dialog = {
     "Focused the viewport on the imported layer.",
   "imageImportOptions.focusedViewportOnImportMultiple":
     "Focused the viewport on the imported layers.",
-  "imageImportOptions.emptyPngFolder":
-    "Selected folder does not contain any PNG files.",
+  "imageImportOptions.emptyPngFolder": "Selected folder does not contain any PNG files.",
   "imageImportOptions.projectRequiredForLayer":
     "A project must be open before importing an image layer.",
   "imageImportOptions.projectRequiredForLayers":
@@ -450,6 +479,9 @@ export const dialog = {
   "imageImportOptions.reimportMismatch":
     "The reimported PNG no longer matches the current layer bounds. Import it as a new layer instead.",
   "imageImportOptions.reimportedPrefix": "Reimported",
+  "imageImportOptions.reimportFailed": "Failed to reimport PNG. Try again.",
+  "imageImportOptions.reimportStale":
+    "The project or image changed during reimport. Try again.",
 
   "autoSetup.detectDescription":
     "Analyze the current project and generate a starting point for bones, meshes, weights, and helper rig setup.",
@@ -534,8 +566,7 @@ export const dialog = {
     "Skipped automatic assignment for {role} because {count} imported layers match that singleton role.",
   "autoSetup.warning.leftRightMultipleSide":
     "{family} {side} still appears multiple times.",
-  "autoSetup.warning.leftRightOnlyOneSide":
-    "{family} roles still cover only one side.",
+  "autoSetup.warning.leftRightOnlyOneSide": "{family} roles still cover only one side.",
   "autoSetup.warning.leftRightLowConfidence":
     'Skipped left/right repair for "{layer}" because import confidence is below {threshold}.',
   "autoSetup.warning.leftRightSideConflict":
@@ -698,7 +729,8 @@ export const dialog = {
   "autoSetup.discardedPreviewCategories": "Discarded preview-only data",
   "autoSetup.motionStressChecks": "Motion stress checks",
   "autoSetup.discardedPreviewCategory.motionPreviewData": "motion preview",
-  "autoSetup.discardedPreviewCategory.previewGeometryData": "temporary preview information",
+  "autoSetup.discardedPreviewCategory.previewGeometryData":
+    "temporary preview information",
   "autoSetup.discardedPreviewCategory.internalAlgorithmData": "internal helper data",
   "autoSetup.discardedPreviewCategory.stressDiagnosticData": "stress diagnostics",
   "autoSetup.motionStressCheck.protectedArea": "Protected area",
@@ -707,7 +739,8 @@ export const dialog = {
   "autoSetup.motionStressCheck.restConsistency": "Rest consistency",
   "autoSetup.motionStressCheck.incompleteCheck": "Incomplete check",
   "autoSetup.motionStressAction.pass": "No extra action is needed.",
-  "autoSetup.motionStressAction.protectedArea": "Review face-adjacent motion or reduce motion.",
+  "autoSetup.motionStressAction.protectedArea":
+    "Review face-adjacent motion or reduce motion.",
   "autoSetup.motionStressAction.duplicateOutline": "Review duplicate-outline cleanup.",
   "autoSetup.motionStressAction.hiddenReveal": "Accept underpaint or reduce motion.",
   "autoSetup.motionStressAction.restConsistency": "Review handles or motion strength.",
@@ -716,7 +749,8 @@ export const dialog = {
   "autoSetup.cleanupComparison.none": "No cleanup",
   "autoSetup.cleanupComparison.lowerHoldout": "Lower holdout",
   "autoSetup.cleanupComparison.featherHoldout": "Feather holdout",
-  "autoSetup.cleanupComparison.duplicateOutlineSuppression": "Duplicate outline suppression",
+  "autoSetup.cleanupComparison.duplicateOutlineSuppression":
+    "Duplicate outline suppression",
   "autoSetup.cleanupComparison.acceptedUnderpaintReveal": "Accepted underpaint reveal",
   "autoSetup.cleanupComparisonStatus.preferred": "preferred",
   "autoSetup.cleanupComparisonStatus.recommended": "candidate",
