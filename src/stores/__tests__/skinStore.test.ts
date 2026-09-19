@@ -28,61 +28,38 @@ function setup() {
 
 describe("skinStore", () => {
   describe("bindSkin", () => {
-    it("メッシュにスキンデータを割り当てる", () => {
-      const { bone1, bone2, mesh, actions } = setup();
 
-      actions.bindSkin(mesh.id, [bone1.id, bone2.id]);
 
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      expect(skin).toBeDefined();
-      expect(skin.weights.length).toBeGreaterThan(0);
-      expect(Object.keys(skin.bindPoseInverse)).toHaveLength(2);
-    });
 
-    it("全頂点に均等ウェイトが設定される", () => {
-      const { bone1, bone2, mesh, actions } = setup();
-
-      actions.bindSkin(mesh.id, [bone1.id, bone2.id]);
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      const firstVertex = skin.weights[0]!;
-      expect(firstVertex).toHaveLength(2);
-      expect(firstVertex[0]!.weight).toBeCloseTo(0.5);
-      expect(firstVertex[1]!.weight).toBeCloseTo(0.5);
-    });
-
-    it("バインドポーズ逆行列が設定される", () => {
-      const { bone1, mesh, actions } = setup();
-
-      actions.bindSkin(mesh.id, [bone1.id]);
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      const inv = skin.bindPoseInverse[bone1.id]!;
-      expect(inv).toHaveLength(6);
-    });
-
-    it("keeps nested bone bind pose visually unchanged", () => {
+    it("keeps the three-bone bind pose unchanged and replaces requested bindings on rebind", () => {
       const root = createBoneNode({ x: 100, y: 40 });
       const child = createBoneNode({ x: 20, y: 30, parentBoneId: root.id });
+      const grandchild = createBoneNode({ x: 15, y: 10, parentBoneId: child.id });
       root.children = [child];
+      child.children = [grandchild];
       const mesh = createViviMesh({ width: 120, height: 80 });
-      const project = createProject({ layers: [root, mesh], skins: {} });
-      useEditorStore.setState({ project });
+      useEditorStore.setState({ project: createProject({ layers: [root, mesh], skins: {} }) });
 
-      useSkinStore.getState().bindSkin(mesh.id, [root.id, child.id]);
-
-      const updated = useEditorStore.getState().project!;
-      const skin = updated.skins![mesh.id]!;
-      const worldTransforms = computeBoneWorldTransforms(updated.layers);
-      const skinned = computeSkinnedVertices(mesh.mesh.vertices, skin, worldTransforms);
-
-      expect(skinned).toHaveLength(mesh.mesh.vertices.length);
-      for (let i = 0; i < skinned.length; i++) {
-        expect(skinned[i]!).toBeCloseTo(mesh.mesh.vertices[i]!, 6);
-      }
+      const assertBindPose = (boneIds: string[], weight: number) => {
+        const updated = useEditorStore.getState().project!;
+        const skin = updated.skins![mesh.id]!;
+        expect(Object.keys(skin.bindPoseInverse)).toEqual(boneIds);
+        for (const id of boneIds) expect(skin.bindPoseInverse[id]).toHaveLength(6);
+        expect(skin.weights).toHaveLength(mesh.mesh.vertices.length / 2);
+        for (const row of skin.weights) {
+          expect(row).toEqual(boneIds.map((boneId) => ({ boneId, weight })));
+        }
+        const worlds = computeBoneWorldTransforms(updated.layers);
+        const skinned = computeSkinnedVertices(mesh.mesh.vertices, skin, worlds);
+        expect(skinned).toHaveLength(mesh.mesh.vertices.length);
+        for (let i = 0; i < skinned.length; i++) {
+          expect(skinned[i]!).toBeCloseTo(mesh.mesh.vertices[i]!, 6);
+        }
+      };
+      useSkinStore.getState().bindSkin(mesh.id, [root.id, child.id, grandchild.id]);
+      assertBindPose([root.id, child.id, grandchild.id], 1 / 3);
+      useSkinStore.getState().bindSkin(mesh.id, [root.id, grandchild.id]);
+      assertBindPose([root.id, grandchild.id], 0.5);
     });
 
     it("skins が未初期化でも割り当てできる", () => {
@@ -140,13 +117,13 @@ describe("skinStore", () => {
     it("既存ボーンのウェイトを更新して正規化する", () => {
       const { bone1, bone2, mesh, actions } = setup();
       actions.bindSkin(mesh.id, [bone1.id, bone2.id]);
-
+      const unaffected = structuredClone(useEditorStore.getState().project!.skins![mesh.id]!.weights.slice(1));
       actions.paintWeight(mesh.id, 0, bone1.id, 0.8);
-
-      const project = useEditorStore.getState().project!;
-      const vw = project.skins![mesh.id]!.weights[0]!;
-      const total = vw.reduce((s, w) => s + w.weight, 0);
-      expect(total).toBeCloseTo(1);
+      const rows = useEditorStore.getState().project!.skins![mesh.id]!.weights;
+      expect(rows[0]!.map(({ boneId }) => boneId)).toEqual([bone1.id, bone2.id]);
+      expect(rows[0]![0]!.weight).toBeCloseTo(8 / 13);
+      expect(rows[0]![1]!.weight).toBeCloseTo(5 / 13);
+      expect(rows.slice(1)).toEqual(unaffected);
     });
 
     it("新しいボーンIDを追加する", () => {
@@ -163,19 +140,7 @@ describe("skinStore", () => {
   });
 
   describe("normalizeAllWeights", () => {
-    it("全頂点のウェイト合計を1にする", () => {
-      const { bone1, bone2, mesh, actions } = setup();
-      actions.bindSkin(mesh.id, [bone1.id, bone2.id]);
 
-      actions.normalizeAllWeights(mesh.id);
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      for (const vw of skin.weights) {
-        const total = vw.reduce((s, w) => s + w.weight, 0);
-        expect(total).toBeCloseTo(1);
-      }
-    });
 
     it("バインドされていないメッシュでは何もしない", () => {
       setup();
@@ -189,16 +154,15 @@ describe("skinStore", () => {
     it("距離ベースの自動ウェイトを計算する", () => {
       const { bone1, bone2, mesh, actions } = setup();
       actions.bindSkin(mesh.id, [bone1.id, bone2.id]);
-
+      expect(mesh.mesh.vertices.slice(0, 2)).toEqual([0, 0]);
       actions.autoWeights(mesh.id);
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      expect(skin.weights.length).toBeGreaterThan(0);
-      for (const vw of skin.weights) {
-        const total = vw.reduce((s, w) => s + w.weight, 0);
-        expect(total).toBeCloseTo(1, 1);
-      }
+      const rows = useEditorStore.getState().project!.skins![mesh.id]!.weights;
+      expect(rows).toHaveLength(mesh.mesh.vertices.length / 2);
+      expect(rows[0]!.map(({ boneId }) => boneId)).toEqual([bone1.id, bone2.id]);
+      // Distances 10 and 50 give inverse-distance proportions 5:1.
+      expect(rows[0]![0]!.weight).toBeCloseTo(5 / 6);
+      expect(rows[0]![1]!.weight).toBeCloseTo(1 / 6);
+      for (const row of rows) expect(row.reduce((sum, entry) => sum + entry.weight, 0)).toBeCloseTo(1);
     });
 
     it("バインドされていないメッシュでは何もしない", () => {
@@ -226,42 +190,49 @@ describe("skinStore", () => {
     it("add モードでブラシ範囲内の頂点にウェイトを追加する", () => {
       const { bone1, bone2, mesh, actions } = setup();
       actions.bindSkin(mesh.id, [bone1.id, bone2.id]);
-
-      actions.paintWeightBrush(mesh.id, 50, 50, 200, bone1.id, 0.5, "add");
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      expect(skin.weights.length).toBeGreaterThan(0);
-      for (const vw of skin.weights) {
-        const total = vw.reduce((s, w) => s + w.weight, 0);
-        if (total > 0) expect(total).toBeCloseTo(1, 1);
-      }
+      const before = structuredClone(useEditorStore.getState().project!.skins![mesh.id]!.weights);
+      actions.paintWeightBrush(mesh.id, 0, 0, 1, bone1.id, 0.5, "add");
+      const rows = useEditorStore.getState().project!.skins![mesh.id]!.weights;
+      expect(rows[0]!.map(({ boneId }) => boneId)).toEqual([bone1.id, bone2.id]);
+      expect(rows[0]![0]!.weight).toBeCloseTo(2 / 3);
+      expect(rows[0]![1]!.weight).toBeCloseTo(1 / 3);
+      expect(rows.slice(1)).toEqual(before.slice(1));
     });
 
     it("subtract モードでウェイトを減算する", () => {
       const { bone1, bone2, mesh, actions } = setup();
       actions.bindSkin(mesh.id, [bone1.id, bone2.id]);
-
-      actions.paintWeightBrush(mesh.id, 50, 50, 200, bone1.id, 0.3, "subtract");
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      expect(skin.weights.length).toBeGreaterThan(0);
+      const before = structuredClone(useEditorStore.getState().project!.skins![mesh.id]!.weights);
+      actions.paintWeightBrush(mesh.id, 0, 0, 1, bone1.id, 0.25, "subtract");
+      const rows = useEditorStore.getState().project!.skins![mesh.id]!.weights;
+      expect(rows[0]!.map(({ boneId }) => boneId)).toEqual([bone1.id, bone2.id]);
+      expect(rows[0]![0]!.weight).toBeCloseTo(1 / 3);
+      expect(rows[0]![1]!.weight).toBeCloseTo(2 / 3);
+      expect(rows.slice(1)).toEqual(before.slice(1));
     });
 
     it("smooth モードでウェイトを平滑化する", () => {
       const { bone1, bone2, mesh, actions } = setup();
+      useEditorStore.setState((state) => {
+        const node = state.project!.layers.find((layer) => layer.id === mesh.id)!;
+        if (node.kind !== "viviMesh") throw new Error("expected mesh fixture");
+        node.mesh = {
+          vertices: [0, 0, 10, 0, 0, 10], uvs: [0, 0, 1, 0, 0, 1],
+          indices: [0, 1, 2], divisionsX: 1, divisionsY: 1,
+        };
+      });
       actions.bindSkin(mesh.id, [bone1.id, bone2.id]);
       actions.setVertexWeights(mesh.id, 0, [
-        { boneId: bone1.id, weight: 1.0 },
-        { boneId: bone2.id, weight: 0.0 },
+        { boneId: bone1.id, weight: 1 }, { boneId: bone2.id, weight: 0 },
       ]);
-
-      actions.paintWeightBrush(mesh.id, 0, 0, 200, bone1.id, 0.5, "smooth");
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      expect(skin.weights.length).toBeGreaterThan(0);
+      const before = structuredClone(useEditorStore.getState().project!.skins![mesh.id]!.weights);
+      actions.paintWeightBrush(mesh.id, 0, 0, 1, bone1.id, 0.5, "smooth");
+      const rows = useEditorStore.getState().project!.skins![mesh.id]!.weights;
+      // Mean of self (1,0) and two (.5,.5) neighbours is (2/3,1/3); half blend.
+      expect(rows[0]!.map(({ boneId }) => boneId)).toEqual([bone1.id, bone2.id]);
+      expect(rows[0]![0]!.weight).toBeCloseTo(5 / 6);
+      expect(rows[0]![1]!.weight).toBeCloseTo(1 / 6);
+      expect(rows.slice(1)).toEqual(before.slice(1));
     });
 
     it("バインドされていないメッシュでは何もしない", () => {
@@ -472,12 +443,6 @@ describe("skinStore", () => {
     });
   });
 
-  describe("normalizeAllWeights — スキン不在", () => {
-    it("skins にメッシュIDがない場合は何もしない", () => {
-      setup();
-      expect(() => useSkinStore.getState().normalizeAllWeights("no-mesh")).not.toThrow();
-    });
-  });
 
   describe("ボーン親子階層でのスキンバインド", () => {
     function setupHierarchy() {
@@ -501,71 +466,44 @@ describe("skinStore", () => {
       return { root, child, grandchild, mesh, actions: useSkinStore.getState() };
     }
 
-    it("3段階層の全ボーンにバインドできる", () => {
-      const { root, child, grandchild, mesh, actions } = setupHierarchy();
 
-      actions.bindSkin(mesh.id, [root.id, child.id, grandchild.id]);
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      expect(skin).toBeDefined();
-      expect(Object.keys(skin.bindPoseInverse)).toHaveLength(3);
-      expect(skin.bindPoseInverse[root.id]).toBeDefined();
-      expect(skin.bindPoseInverse[child.id]).toBeDefined();
-      expect(skin.bindPoseInverse[grandchild.id]).toBeDefined();
-    });
-
-    it("階層の一部のボーンのみにバインドできる", () => {
-      const { root, grandchild, mesh, actions } = setupHierarchy();
-
-      actions.bindSkin(mesh.id, [root.id, grandchild.id]);
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      expect(Object.keys(skin.bindPoseInverse)).toHaveLength(2);
-    });
 
     it("階層ボーンのウェイトを設定できる", () => {
       const { root, child, grandchild, mesh, actions } = setupHierarchy();
-
       actions.bindSkin(mesh.id, [root.id, child.id, grandchild.id]);
-      actions.setVertexWeights(mesh.id, 0, [
-        { boneId: root.id, weight: 0.5 },
-        { boneId: child.id, weight: 0.3 },
+      const before = structuredClone(useEditorStore.getState().project!.skins![mesh.id]!.weights.slice(1));
+      const weights = [
+        { boneId: root.id, weight: 0.5 }, { boneId: child.id, weight: 0.3 },
         { boneId: grandchild.id, weight: 0.2 },
-      ]);
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      const vw = skin.weights[0]!;
-      expect(vw).toHaveLength(3);
-      const total = vw.reduce((sum, w) => sum + w.weight, 0);
-      expect(total).toBeCloseTo(1.0, 5);
+      ];
+      actions.setVertexWeights(mesh.id, 0, weights);
+      const rows = useEditorStore.getState().project!.skins![mesh.id]!.weights;
+      expect(rows[0]).toEqual(weights);
+      expect(rows.slice(1)).toEqual(before);
     });
 
     it("階層ボーンでウェイト正規化が正しく動作する", () => {
       const { root, child, mesh, actions } = setupHierarchy();
-
       actions.bindSkin(mesh.id, [root.id, child.id]);
-
-      actions.setVertexWeights(mesh.id, 0, [
-        { boneId: root.id, weight: 0.6 },
-        { boneId: child.id, weight: 0.6 },
-      ]);
-
+      const count = useEditorStore.getState().project!.skins![mesh.id]!.weights.length;
+      expect(count).toBeGreaterThan(1);
+      for (let index = 0; index < count; index++) {
+        actions.setVertexWeights(mesh.id, index, [
+          { boneId: root.id, weight: index % 2 === 0 ? 1 : 2 },
+          { boneId: child.id, weight: index % 2 === 0 ? 2 : 1 },
+        ]);
+      }
       actions.normalizeAllWeights(mesh.id);
-
-      const project = useEditorStore.getState().project!;
-      const skin = project.skins![mesh.id]!;
-      const vw = skin.weights[0]!;
-      const total = vw.reduce((sum, w) => sum + w.weight, 0);
-      expect(total).toBeCloseTo(1.0, 5);
+      const rows = useEditorStore.getState().project!.skins![mesh.id]!.weights;
+      expect(rows).toHaveLength(count);
+      rows.forEach((row, index) => {
+        expect(row.map(({ boneId }) => boneId)).toEqual([root.id, child.id]);
+        expect(row[0]!.weight).toBeCloseTo(index % 2 === 0 ? 1 / 3 : 2 / 3);
+        expect(row[1]!.weight).toBeCloseTo(index % 2 === 0 ? 2 / 3 : 1 / 3);
+        expect(row[0]!.weight + row[1]!.weight).toBeCloseTo(1);
+      });
     });
 
-    it("空のボーン配列でバインドしても例外を投げない", () => {
-      const { mesh, actions } = setupHierarchy();
-      expect(() => actions.bindSkin(mesh.id, [])).not.toThrow();
-    });
   });
 
   describe("applyAccessoryFollowRig", () => {

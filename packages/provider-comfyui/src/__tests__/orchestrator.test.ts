@@ -75,6 +75,8 @@ describe("orchestrator", () => {
       const result = await decomposeImageToPsd(client, imageBuffer);
 
       expect(client.uploadImage).toHaveBeenCalledTimes(1);
+      const upload = (client.uploadImage as ReturnType<typeof vi.fn>).mock.calls[0]!;
+      expect(upload[1]).toMatch(/^vivi2d_input_\d+\.png$/);
       expect(client.enqueue).toHaveBeenCalledTimes(1);
       expect(client.waitForCompletion).toHaveBeenCalledWith(
         "p-123",
@@ -89,21 +91,6 @@ describe("orchestrator", () => {
       expect(result).toBe(psdBuffer);
     });
 
-    it("アップロードファイル名は vivi2d_input_ プレフィックスを持つ", async () => {
-      const client = makeClientStub({
-        waitForCompletion: vi.fn(async () => ({
-          outputs: {
-            n: { text: ["a.psd"] },
-          },
-          status: { completed: true },
-        })) as unknown as ComfyUIClient["waitForCompletion"],
-      });
-
-      await decomposeImageToPsd(client, new ArrayBuffer(8));
-      const call = (client.uploadImage as ReturnType<typeof vi.fn>).mock.calls[0]!;
-      const filename = call[1] as string;
-      expect(filename).toMatch(/^vivi2d_input_\d+\.png$/);
-    });
 
     it("進捗コールバックが各フェーズで呼ばれる", async () => {
       const client = makeClientStub({

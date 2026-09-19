@@ -133,9 +133,26 @@ describe("メッシュ編集フロー 統合", () => {
   });
   afterEach(resetAllStores);
 
-  it("投げ縄選択 → 頂点マージ → editorStore 反映の一連フロー", () => {
+  it("store selection is consumed by mesh merge and committed through editorStore", () => {
     const store = useMeshEditStore.getState();
 
+    // Direct store composition, not a pointer/Shift handler integration test.
+    store.startLasso();
+    expect(useMeshEditStore.getState().lassoActive).toBe(true);
+    for (const [x, y] of [[0, 0], [60, 0], [60, 60], [0, 60]]) {
+      store.addLassoPoint(x!, y!);
+    }
+    expect(useMeshEditStore.getState().lassoPoints).toEqual([0, 0, 60, 0, 60, 60, 0, 60]);
+    store.endLasso();
+    expect(useMeshEditStore.getState().lassoActive).toBe(false);
+    expect(useMeshEditStore.getState().lassoPoints).toEqual([]);
+    store.selectVertices([0, 2]);
+    store.toggleVertex(3);
+    expect(useMeshEditStore.getState().selectedVertices).toEqual([0, 2, 3]);
+    store.toggleVertex(0);
+    expect(useMeshEditStore.getState().selectedVertices).toEqual([2, 3]);
+    store.selectVertex(1);
+    expect(useMeshEditStore.getState().selectedVertices).toEqual([1]);
     store.selectVertices([0, 3]);
     expect(useMeshEditStore.getState().selectedVertices).toEqual([0, 3]);
 
@@ -144,7 +161,7 @@ describe("メッシュ編集フロー 統合", () => {
     expect(layer.kind).toBe("viviMesh");
     const mesh = (layer as { mesh: MeshData }).mesh;
 
-    const merged = mergeVertices(mesh, [0, 3]);
+    const merged = mergeVertices(mesh, useMeshEditStore.getState().selectedVertices);
     expect(merged).not.toBeNull();
     expect(merged!.vertices.length / 2).toBe(3);
 
@@ -245,51 +262,5 @@ describe("メッシュ編集フロー 統合", () => {
 
     const restored = getMesh();
     expect(restored.vertices).toEqual([0, 0, 100, 0, 100, 100, 0, 100]);
-  });
-});
-
-
-describe("投げ縄ワークフロー 統合", () => {
-  beforeEach(() => {
-    resetAllStores();
-  });
-  afterEach(resetAllStores);
-
-  it("startLasso → addLassoPoint → endLasso → selectVertices の完全フロー", () => {
-    const store = useMeshEditStore.getState();
-
-    store.startLasso();
-    expect(useMeshEditStore.getState().lassoActive).toBe(true);
-
-    store.addLassoPoint(0, 0);
-    store.addLassoPoint(60, 0);
-    store.addLassoPoint(60, 60);
-    store.addLassoPoint(0, 60);
-    expect(useMeshEditStore.getState().lassoPoints).toHaveLength(8);
-
-    store.endLasso();
-    expect(useMeshEditStore.getState().lassoActive).toBe(false);
-    expect(useMeshEditStore.getState().lassoPoints).toEqual([]);
-
-    useMeshEditStore.getState().selectVertices([0, 1]);
-    expect(useMeshEditStore.getState().selectedVertices).toEqual([0, 1]);
-  });
-
-  it("投げ縄選択後に Shift+toggleVertex で追加選択できる", () => {
-    useMeshEditStore.getState().selectVertices([0, 2]);
-
-    useMeshEditStore.getState().toggleVertex(3);
-    expect(useMeshEditStore.getState().selectedVertices).toEqual([0, 2, 3]);
-
-    useMeshEditStore.getState().toggleVertex(0);
-    expect(useMeshEditStore.getState().selectedVertices).toEqual([2, 3]);
-  });
-
-  it("selectVertex（単一選択）で投げ縄選択がクリアされる", () => {
-    useMeshEditStore.getState().selectVertices([0, 1, 2, 3]);
-    expect(useMeshEditStore.getState().selectedVertices).toHaveLength(4);
-
-    useMeshEditStore.getState().selectVertex(1);
-    expect(useMeshEditStore.getState().selectedVertices).toEqual([1]);
   });
 });

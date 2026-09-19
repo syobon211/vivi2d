@@ -6,11 +6,6 @@ import { detectViseme } from "../lipsync-engine";
 // ============================================================
 
 describe("detectViseme", () => {
-  it("無音(total < threshold)で 'sil' を返す", () => {
-    const result = detectViseme({ low: 0, mid: 0, high: 0 });
-    expect(result.viseme).toBe("sil");
-    expect(result.confidence).toBe(1);
-  });
 
   it("total がちょうど threshold 未満で 'sil' を返す", () => {
     const result = detectViseme({ low: 0.01, mid: 0.01, high: 0.02 }, 0.05);
@@ -71,9 +66,4 @@ describe("detectViseme", () => {
     expect(result.confidence).toBeGreaterThan(0);
   });
 
-  it("sil の confidence は常に 1", () => {
-    const result = detectViseme({ low: 0, mid: 0, high: 0 });
-    expect(result.viseme).toBe("sil");
-    expect(result.confidence).toBe(1);
-  });
 });

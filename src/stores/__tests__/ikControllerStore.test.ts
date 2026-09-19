@@ -26,32 +26,49 @@ describe("ikControllerStore", () => {
   // addIKController
   // ==============================================================
   describe("addIKController", () => {
-    it("追加して project.ikControllers に反映される", () => {
+    it("twoBoneとCCDの作成・編集・クランプ・mapping個別削除を保持する", () => {
       const actions = setup();
-
       const id = actions.addIKController("腕IK", "twoBone", testBoneChain);
-
-      const project = useEditorStore.getState().project!;
-      expect(project.ikControllers).toHaveLength(1);
-      const ctrl = project.ikControllers![0]!;
-      expect(ctrl.name).toBe("腕IK");
-      expect(ctrl.solverType).toBe("twoBone");
-      expect(ctrl.boneChain).toEqual(testBoneChain);
-      expect(ctrl.targetX).toBe(0);
-      expect(ctrl.targetY).toBe(0);
-      expect(ctrl.influence).toBe(1);
-      expect(ctrl.parameterMappings).toEqual([]);
+      const get = () => useEditorStore.getState().project!.ikControllers!.find((ctrl) => ctrl.id === id)!;
+      expect(useEditorStore.getState().project!.ikControllers).toHaveLength(1);
       expect(typeof id).toBe("string");
+      expect(get()).toMatchObject({
+        id, name: "腕IK", solverType: "twoBone", boneChain: testBoneChain,
+        targetX: 0, targetY: 0, influence: 1, parameterMappings: [],
+      });
+      actions.setTarget(id, 100, 200);
+      expect(get()).toMatchObject({ targetX: 100, targetY: 200 });
+      actions.setPoleTarget(id, 50, -30);
+      expect(get()).toMatchObject({ targetX: 100, targetY: 200, poleTargetX: 50, poleTargetY: -30 });
+      actions.setInfluence(id, -0.5);
+      expect(get().influence).toBe(0);
+      actions.setInfluence(id, 1.5);
+      expect(get().influence).toBe(1);
+      const ccd = actions.addIKController("脚IK", "ccd", []);
+      const getCcd = () => useEditorStore.getState().project!.ikControllers!.find((ctrl) => ctrl.id === ccd)!;
+      expect(getCcd()).toMatchObject({ id: ccd, name: "脚IK", solverType: "ccd", boneChain: [] });
+      actions.setMaxIterations(ccd, 0);
+      expect(getCcd().maxIterations).toBe(1);
+      actions.setMaxIterations(ccd, 5.7);
+      expect(getCcd().maxIterations).toBe(6);
+      const mapping: IKParameterMapping = {
+        boneId: "bone-1", parameterId: "param-1",
+        angleMin: -Math.PI, angleMax: Math.PI, paramMin: 0, paramMax: 1,
+      };
+      const other: IKParameterMapping = {
+        boneId: "bone-2", parameterId: "param-2",
+        angleMin: -2, angleMax: 2, paramMin: 0, paramMax: 1,
+      };
+      actions.addParameterMapping(id, mapping);
+      expect(get().parameterMappings).toEqual([mapping]);
+      actions.addParameterMapping(id, other);
+      actions.removeParameterMapping(id, 0);
+      expect(get().parameterMappings).toEqual([other]);
+      expect(getCcd().parameterMappings).toEqual([]);
+      expect(get()).toMatchObject({ targetX: 100, targetY: 200, poleTargetX: 50, poleTargetY: -30, influence: 1 });
     });
 
-    it("返り値のIDが正しい", () => {
-      const actions = setup();
 
-      const id = actions.addIKController("脚IK", "ccd", []);
-
-      const project = useEditorStore.getState().project!;
-      expect(project.ikControllers![0]!.id).toBe(id);
-    });
   });
 
   // ==============================================================
@@ -82,149 +99,28 @@ describe("ikControllerStore", () => {
   // ==============================================================
   // setTarget
   // ==============================================================
-  describe("setTarget", () => {
-    it("ターゲット座標が更新される", () => {
-      const actions = setup();
-      const id = actions.addIKController("テスト", "twoBone", []);
-
-      actions.setTarget(id, 100, 200);
-
-      const project = useEditorStore.getState().project!;
-      const ctrl = project.ikControllers!.find((c) => c.id === id)!;
-      expect(ctrl.targetX).toBe(100);
-      expect(ctrl.targetY).toBe(200);
-    });
-  });
 
   // ==============================================================
   // setPoleTarget
   // ==============================================================
-  describe("setPoleTarget", () => {
-    it("ポールターゲットが更新される", () => {
-      const actions = setup();
-      const id = actions.addIKController("テスト", "twoBone", []);
-
-      actions.setPoleTarget(id, 50, -30);
-
-      const project = useEditorStore.getState().project!;
-      const ctrl = project.ikControllers!.find((c) => c.id === id)!;
-      expect(ctrl.poleTargetX).toBe(50);
-      expect(ctrl.poleTargetY).toBe(-30);
-    });
-  });
 
   // ==============================================================
   // setInfluence
   // ==============================================================
-  describe("setInfluence", () => {
-    it("0-1にクランプされる（負の値は0になる）", () => {
-      const actions = setup();
-      const id = actions.addIKController("テスト", "twoBone", []);
-
-      actions.setInfluence(id, -0.5);
-
-      const project = useEditorStore.getState().project!;
-      const ctrl = project.ikControllers!.find((c) => c.id === id)!;
-      expect(ctrl.influence).toBe(0);
-    });
-
-    it("0-1にクランプされる（1を超える値は1になる）", () => {
-      const actions = setup();
-      const id = actions.addIKController("テスト", "twoBone", []);
-
-      actions.setInfluence(id, 1.5);
-
-      const project = useEditorStore.getState().project!;
-      const ctrl = project.ikControllers!.find((c) => c.id === id)!;
-      expect(ctrl.influence).toBe(1);
-    });
-  });
 
   // ==============================================================
   // setMaxIterations
   // ==============================================================
-  describe("setMaxIterations", () => {
-    it("1未満は1にクランプされる", () => {
-      const actions = setup();
-      const id = actions.addIKController("テスト", "ccd", []);
-
-      actions.setMaxIterations(id, 0);
-
-      const project = useEditorStore.getState().project!;
-      const ctrl = project.ikControllers!.find((c) => c.id === id)!;
-      expect(ctrl.maxIterations).toBe(1);
-    });
-
-    it("正の値は整数に丸められる", () => {
-      const actions = setup();
-      const id = actions.addIKController("テスト", "ccd", []);
-
-      actions.setMaxIterations(id, 5.7);
-
-      const project = useEditorStore.getState().project!;
-      const ctrl = project.ikControllers!.find((c) => c.id === id)!;
-      expect(ctrl.maxIterations).toBe(6);
-    });
-  });
 
   // ==============================================================
   // addParameterMapping
   // ==============================================================
-  describe("addParameterMapping", () => {
-    it("マッピングが追加される", () => {
-      const actions = setup();
-      const id = actions.addIKController("テスト", "twoBone", testBoneChain);
-      const mapping: IKParameterMapping = {
-        boneId: "bone-1",
-        parameterId: "param-1",
-        angleMin: -Math.PI,
-        angleMax: Math.PI,
-        paramMin: 0,
-        paramMax: 1,
-      };
-
-      actions.addParameterMapping(id, mapping);
-
-      const project = useEditorStore.getState().project!;
-      const ctrl = project.ikControllers!.find((c) => c.id === id)!;
-      expect(ctrl.parameterMappings).toHaveLength(1);
-      expect(ctrl.parameterMappings[0]).toEqual(mapping);
-    });
-  });
 
   // ==============================================================
   // removeParameterMapping
   // ==============================================================
   describe("removeParameterMapping", () => {
-    it("インデックス指定で削除する", () => {
-      const actions = setup();
-      const id = actions.addIKController("テスト", "twoBone", []);
-      const mapping1: IKParameterMapping = {
-        boneId: "bone-1",
-        parameterId: "param-1",
-        angleMin: -1,
-        angleMax: 1,
-        paramMin: 0,
-        paramMax: 1,
-      };
-      const mapping2: IKParameterMapping = {
-        boneId: "bone-2",
-        parameterId: "param-2",
-        angleMin: -2,
-        angleMax: 2,
-        paramMin: 0,
-        paramMax: 1,
-      };
-      actions.addParameterMapping(id, mapping1);
-      actions.addParameterMapping(id, mapping2);
 
-      actions.removeParameterMapping(id, 0);
-
-      const project = useEditorStore.getState().project!;
-      const ctrl = project.ikControllers!.find((c) => c.id === id)!;
-      expect(ctrl.parameterMappings).toHaveLength(1);
-      expect(ctrl.parameterMappings[0]!.boneId).toBe("bone-2");
-    });
 
     it("範囲外インデックスでもクラッシュしない", () => {
       const actions = setup();

@@ -9,7 +9,6 @@ import { createBoneNode, createEmptyProject, createPhysicsGroup } from "@/test/f
 import { resetEditorStore, resetPhysicsStore } from "@/test/store-reset";
 import { PhysicsIOList } from "../physics/PhysicsIOList";
 
-
 const testParams: ParameterDefinition[] = [
   { id: "p1", name: "角度X", minValue: -30, maxValue: 30, defaultValue: 0 },
   { id: "p2", name: "角度Y", minValue: -30, maxValue: 30, defaultValue: 0 },
@@ -29,7 +28,6 @@ function setupStores() {
   useSelectionStore.setState({ selectedLayerId: null, selectedLayerIds: [] });
 }
 
-
 describe("PhysicsIOList", () => {
   beforeEach(() => {
     vi.mocked(readPsd).mockReturnValue({
@@ -44,73 +42,6 @@ describe("PhysicsIOList", () => {
     resetPhysicsStore();
   });
 
-  it("入力セクションが表示される", () => {
-    const group = createPhysicsGroup();
-
-    render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    expect(screen.getByText("入力")).toBeInTheDocument();
-  });
-
-  it("出力セクションが表示される", () => {
-    const group = createPhysicsGroup();
-
-    render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    expect(screen.getByText("出力")).toBeInTheDocument();
-  });
-
-  it("入力追加ドロップダウンにパラメータが表示される", () => {
-    const group = createPhysicsGroup();
-
-    render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    expect(screen.getAllByText("角度X").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("角度Y").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("入力がある場合、入力マッピングが表示される", () => {
-    const group = createPhysicsGroup({
-      inputs: [{ parameterId: "p1", weight: 1, type: "x" }],
-    });
-
-    render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    const mappings = document.querySelectorAll(".physics-mapping");
-    expect(mappings.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("入力マッピングのタイプセレクトが表示される", () => {
-    const group = createPhysicsGroup({
-      inputs: [{ parameterId: "p1", weight: 1, type: "x" }],
-    });
-
-    render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    expect(screen.getByText("X")).toBeInTheDocument();
-  });
-
-  it("入力削除ボタンが表示される", () => {
-    const group = createPhysicsGroup({
-      inputs: [{ parameterId: "p1", weight: 1, type: "x" }],
-    });
-
-    render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    expect(screen.getByTitle("入力を削除")).toBeInTheDocument();
-  });
-
-  it("出力にパラメータ名が表示される", () => {
-    const group = createPhysicsGroup({
-      outputs: [{ parameterId: "p1", pendulumIndex: 0, weight: 10, type: "angle" }],
-    });
-
-    render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    const mappings = document.querySelectorAll(".physics-mapping");
-    expect(mappings.length).toBeGreaterThanOrEqual(1);
-  });
-
   it("ボーン出力がある場合にボーン名が表示される", () => {
     const group = createPhysicsGroup({
       outputs: [{ boneId: "bone-1", pendulumIndex: 0, weight: 2, type: "boneAngle" }],
@@ -120,39 +51,6 @@ describe("PhysicsIOList", () => {
 
     expect(screen.getByText("テストボーン (角度)")).toBeInTheDocument();
   });
-
-  it("出力にペンデュラムインデックスとウェイトが表示される", () => {
-    const group = createPhysicsGroup({
-      outputs: [{ parameterId: "p1", pendulumIndex: 0, weight: 10, type: "angle" }],
-    });
-
-    render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    expect(screen.getByText("#1")).toBeInTheDocument();
-    expect(screen.getByText("w:10")).toBeInTheDocument();
-  });
-
-  it("出力削除ボタンが表示される", () => {
-    const group = createPhysicsGroup({
-      outputs: [{ parameterId: "p1", pendulumIndex: 0, weight: 10, type: "angle" }],
-    });
-
-    render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    expect(screen.getByTitle("出力を削除")).toBeInTheDocument();
-  });
-
-  it("出力追加ドロップダウンにパラメータとボーンのoptgroupが存在する", () => {
-    const group = createPhysicsGroup();
-
-    const { container } = render(<PhysicsIOList group={group} parameters={testParams} />);
-
-    const optgroups = container.querySelectorAll("optgroup");
-    const labels = Array.from(optgroups).map((og) => og.getAttribute("label"));
-    expect(labels).toContain("パラメータ");
-    expect(labels).toContain("ボーン");
-  });
-
 
   it("入力追加ドロップダウンで選択すると addPhysicsInput が呼ばれる", () => {
     const group = createPhysicsGroup();
@@ -167,6 +65,10 @@ describe("PhysicsIOList", () => {
     const spy = vi.spyOn(usePhysicsStore.getState(), "addPhysicsInput");
 
     const { container } = render(<PhysicsIOList group={group} parameters={testParams} />);
+    expect(screen.getByText("入力")).toBeInTheDocument();
+    expect(screen.getByText("出力")).toBeInTheDocument();
+    expect(screen.getAllByText("角度X").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("角度Y").length).toBeGreaterThanOrEqual(1);
     const selects = container.querySelectorAll("select") as NodeListOf<HTMLSelectElement>;
     fireEvent.change(selects[0]!, { target: { value: "p1" } });
 
@@ -193,6 +95,10 @@ describe("PhysicsIOList", () => {
     const addSpy = vi.spyOn(usePhysicsStore.getState(), "addPhysicsInput");
 
     const { container } = render(<PhysicsIOList group={group} parameters={testParams} />);
+    expect(container.querySelectorAll(".physics-mapping").length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(screen.getByText("X")).toBeInTheDocument();
     const mappingSelects = container.querySelectorAll(
       ".physics-mapping select",
     ) as NodeListOf<HTMLSelectElement>;
@@ -265,6 +171,11 @@ describe("PhysicsIOList", () => {
     const spy = vi.spyOn(usePhysicsStore.getState(), "addPhysicsOutput");
 
     const { container } = render(<PhysicsIOList group={group} parameters={testParams} />);
+    const labels = Array.from(container.querySelectorAll("optgroup")).map((group) =>
+      group.getAttribute("label"),
+    );
+    expect(labels).toContain("パラメータ");
+    expect(labels).toContain("ボーン");
     const selects = container.querySelectorAll("select") as NodeListOf<HTMLSelectElement>;
     fireEvent.change(selects[1]!, { target: { value: `bone:${testBone.id}` } });
 
@@ -291,6 +202,11 @@ describe("PhysicsIOList", () => {
     const spy = vi.spyOn(usePhysicsStore.getState(), "removePhysicsOutput");
 
     render(<PhysicsIOList group={group} parameters={testParams} />);
+    expect(document.querySelectorAll(".physics-mapping").length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(screen.getByText("#1")).toBeInTheDocument();
+    expect(screen.getByText("w:10")).toBeInTheDocument();
     fireEvent.click(screen.getByTitle("出力を削除"));
 
     expect(spy).toHaveBeenCalledWith(group.id, 0);

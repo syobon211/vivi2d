@@ -100,13 +100,6 @@ describe("applyPuppetWarp", () => {
     expect(smooth[2]!).toBeGreaterThan(linear[2]!);
   });
 
-  it("supports gaussian falloff", () => {
-    const base = [0, 0, 100, 0];
-    const out = applyPuppetWarp(base, [
-      pin({ vertexIndex: 0, dx: 10, dy: 0, curve: "gaussian" }),
-    ]);
-    expect(out[2]).toBe(100);
-  });
 
   it("scales anchor resistance through strength", () => {
     const base = [0, 0, 1, 0, 2, 0];

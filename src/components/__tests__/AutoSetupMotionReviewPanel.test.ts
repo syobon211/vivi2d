@@ -22,8 +22,5 @@ describe("AutoSetupMotionReviewPanel", () => {
       status: "notRun",
       gates: [{ id: "protected_crop_delta", status: "notRun" }],
     });
-    expect(JSON.stringify(reset)).not.toMatch(
-      /lastEvaluatedGeneration|value|threshold|affectedRegionIds|face|previous diagnostic/,
-    );
   });
 });

@@ -11,28 +11,31 @@ describe("notificationStore", () => {
     vi.useRealTimers();
   });
 
-  it("通知を追加できる", () => {
-    useNotificationStore.getState().addNotification("error", "テストエラー");
-    const notifications = useNotificationStore.getState().notifications;
-    expect(notifications).toHaveLength(1);
-    expect(notifications[0]!.type).toBe("error");
-    expect(notifications[0]!.message).toBe("テストエラー");
-  });
-
-  it("複数の通知を追加できる", () => {
-    const { addNotification } = useNotificationStore.getState();
+  it("全通知種別の内容を保存し指定IDだけを消去する", () => {
+    const { addNotification, dismiss } = useNotificationStore.getState();
     addNotification("error", "エラー1");
+    expect(useNotificationStore.getState().notifications).toHaveLength(1);
     addNotification("warning", "警告1");
     addNotification("info", "情報1");
-    expect(useNotificationStore.getState().notifications).toHaveLength(3);
+    const notifications = useNotificationStore.getState().notifications;
+    expect(notifications.map(({ type, message }) => ({ type, message }))).toEqual([
+      { type: "error", message: "エラー1" },
+      { type: "warning", message: "警告1" },
+      { type: "info", message: "情報1" },
+    ]);
+    expect(new Set(notifications.map(({ id }) => id)).size).toBe(3);
+    dismiss(notifications[1]!.id);
+    expect(useNotificationStore.getState().notifications).toEqual([
+      notifications[0], notifications[2],
+    ]);
+    dismiss(notifications[0]!.id);
+    dismiss(notifications[2]!.id);
+    expect(useNotificationStore.getState().notifications).toEqual([]);
   });
 
-  it("通知を個別に消去できる", () => {
-    useNotificationStore.getState().addNotification("error", "エラー");
-    const id = useNotificationStore.getState().notifications[0]!.id;
-    useNotificationStore.getState().dismiss(id);
-    expect(useNotificationStore.getState().notifications).toHaveLength(0);
-  });
+
+
+
 
   it("5秒後に自動消去される", () => {
     useNotificationStore.getState().addNotification("info", "自動消去テスト");
@@ -42,9 +45,5 @@ describe("notificationStore", () => {
     expect(useNotificationStore.getState().notifications).toHaveLength(0);
   });
 
-  it("通知の type が正しく設定される", () => {
-    const { addNotification } = useNotificationStore.getState();
-    addNotification("warning", "警告");
-    expect(useNotificationStore.getState().notifications[0]!.type).toBe("warning");
-  });
+
 });

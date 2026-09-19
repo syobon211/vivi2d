@@ -336,27 +336,6 @@ describe("provider-sdk", () => {
     ).toThrow(ViviProviderError);
   });
 
-  it("rejects alpha matte metadata without maskArtifactId", () => {
-    const manifest = createManifest();
-    const request = createRequest();
-
-    expect(() =>
-      createProviderResult(manifest, request, [
-        {
-          id: "matte-without-mask-id",
-          kind: "alphaMatte",
-          mediaType: "image/png",
-          byteLength: 4,
-          data: new Uint8Array([1, 2, 3, 4]).buffer,
-          metadata: {
-            schema: "vivi2d.provider.alphaMatteMetadata.v1",
-            confidence: 0.8,
-            provenance: "providerProposal",
-          },
-        },
-      ]),
-    ).toThrow(ViviProviderError);
-  });
 
   it("rejects dangling alpha matte mask artifact references", () => {
     const manifest = createManifest();

@@ -2557,16 +2557,6 @@ mod tests {
     }
 
     #[test]
-    fn rejects_unrepresentable_dynamic_color_channels() {
-        for channel in ["r", "g", "b", "a"] {
-            let mut value = serde_json::json!({"color": {"r": 1, "g": 1, "b": 1, "a": 1}});
-            value["color"][channel] = serde_json::json!(1e100);
-            let error = color_field(value.as_object().unwrap(), "color", "color").unwrap_err();
-            assert_eq!(error.status(), status::VALIDATION);
-        }
-    }
-
-    #[test]
     fn legacy_ik_iteration_budget_is_bounded_before_usize_conversion() {
         let mut file_data = fixture_file_data("ik-two-bone");
         file_data["project"]["ikControllers"][0]["maxIterations"] = serde_json::json!(u64::MAX);

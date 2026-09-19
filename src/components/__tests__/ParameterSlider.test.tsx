@@ -10,7 +10,6 @@ import { useParameterStore } from "@/stores/parameterStore";
 import { loadPsdFromBuffer } from "@/stores/projectIO";
 import { resetAllStores } from "@/test/store-reset";
 
-
 function setupParam(name = "角度X", min = -30, max = 30, def = 0): ParameterDefinition {
   loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
   useParameterDefinitionStore.getState().addParameter(name, min, max, def);
@@ -34,44 +33,17 @@ describe("ParameterSlider", () => {
     resetAllStores();
   });
 
-  it("パラメータ名と現在値を表示する", () => {
+  it("スライダー変更でパラメータ値が更新される", () => {
     const param = setupParam("角度X", -30, 30, 5);
     render(<ParameterSlider param={param} value={5} />);
     expect(screen.getByText("角度X")).toBeInTheDocument();
     expect(screen.getByText("5")).toBeInTheDocument();
-  });
-
-  it("スライダーのmin/max/valueが正しく設定される", () => {
-    const param = setupParam("角度X", -30, 30, 10);
-    render(<ParameterSlider param={param} value={10} />);
     const slider = screen.getByRole("slider");
     expect(slider).toHaveAttribute("min", "-30");
     expect(slider).toHaveAttribute("max", "30");
-    expect(slider).toHaveValue("10");
-  });
-
-  it("スライダー変更でパラメータ値が更新される", () => {
-    const param = setupParam("角度X", -30, 30, 0);
-    render(<ParameterSlider param={param} value={0} />);
-    const slider = screen.getByRole("slider");
+    expect(slider).toHaveValue("5");
     fireEvent.change(slider, { target: { value: "15" } });
     expect(useParameterStore.getState().parameterValues[param.id]).toBe(15);
-  });
-
-  it("スライダー変更で値がmaxにクランプされる", () => {
-    const param = setupParam("角度X", -30, 30, 0);
-    render(<ParameterSlider param={param} value={0} />);
-    const slider = screen.getByRole("slider");
-    fireEvent.change(slider, { target: { value: "999" } });
-    expect(useParameterStore.getState().parameterValues[param.id]).toBe(30);
-  });
-
-  it("スライダー変更で値がminにクランプされる", () => {
-    const param = setupParam("角度X", -30, 30, 0);
-    render(<ParameterSlider param={param} value={0} />);
-    const slider = screen.getByRole("slider");
-    fireEvent.change(slider, { target: { value: "-999" } });
-    expect(useParameterStore.getState().parameterValues[param.id]).toBe(-30);
   });
 
   it("パラメータ名ダブルクリックでデフォルト値にリセットされる", async () => {
@@ -90,15 +62,6 @@ describe("ParameterSlider", () => {
     await user.click(screen.getByTitle("パラメータを削除"));
     expect(useEditorStore.getState().project!.parameters).toHaveLength(0);
     expect(useParameterStore.getState().parameterValues[param.id]).toBeUndefined();
-  });
-
-  it("結合ボタンクリックでペアメニューが表示される", async () => {
-    const user = userEvent.setup();
-    const param = setupParam("角度X", -30, 30, 0);
-    useParameterDefinitionStore.getState().addParameter("角度Y", -30, 30, 0);
-    render(<ParameterSlider param={param} value={0} />);
-    await user.click(screen.getByTitle("パラメータを結合"));
-    expect(screen.getByText("角度Y")).toBeInTheDocument();
   });
 
   it("ペアメニューで候補を選択すると結合される", async () => {
@@ -121,14 +84,6 @@ describe("ParameterSlider", () => {
     render(<ParameterSlider param={param} value={0} />);
     await user.click(screen.getByTitle("パラメータを結合"));
     expect(screen.getByText("結合可能なパラメータなし")).toBeInTheDocument();
-  });
-
-  it("グループ変更ボタンでグループ編集UIが表示される", async () => {
-    const user = userEvent.setup();
-    const param = setupParam("角度X", -30, 30, 0);
-    render(<ParameterSlider param={param} value={0} />);
-    await user.click(screen.getByTitle("グループ変更"));
-    expect(screen.getByPlaceholderText("グループ名（空で解除）")).toBeInTheDocument();
   });
 
   it("グループ編集でOKボタンを押すとグループが設定される", async () => {

@@ -53,17 +53,15 @@ test("起動画面のレイアウト確認", async () => {
 
   await window.screenshot({ path: path.join(screenshotDir, "01-launch.png") });
 
-  const openBtn = window.locator("label", { hasText: /モデルを開く/ });
+  const openBtn = window.getByRole("button", { name: "モデルを開く", exact: true });
   await expect(openBtn).toBeVisible({ timeout: 5_000 });
 
-  const toolbarBox = await openBtn.evaluate((el) => {
-    const toolbar = el.closest('div[style]');
-    if (!toolbar) return null;
-    const rect = toolbar.getBoundingClientRect();
-    return { height: rect.height, y: rect.y };
-  });
+  const toolbarBox = await window.getByTestId("main-toolbar").boundingBox();
   expect(toolbarBox).not.toBeNull();
-  expect(toolbarBox!.height).toBeLessThan(100);
+  const stageBox = await window.getByRole("main").boundingBox();
+  expect(stageBox).not.toBeNull();
+  expect(stageBox!.y).toBeGreaterThanOrEqual(toolbarBox!.y + toolbarBox!.height);
+  expect(stageBox!.height).toBeGreaterThan(toolbarBox!.height);
 
   const placeholder = window.locator("p", { hasText: /.viviファイル/ });
   await expect(placeholder).toBeVisible();

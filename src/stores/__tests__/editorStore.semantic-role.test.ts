@@ -73,8 +73,8 @@ describe("editorStore semantic role actions", () => {
   });
 
   it("batch-updates ViviMeshes and skips non-viviMesh nodes", () => {
-    const meshA = createViviMesh({ id: "mesh-a" });
-    const meshB = createViviMesh({ id: "mesh-b", semanticRole: "mouth" });
+    const meshA = createViviMesh({ id: "mesh-a", importMetadata: createSeeThroughImportMetadata("hair_front") });
+    const meshB = createViviMesh({ id: "mesh-b", semanticRole: "mouth", importMetadata: createSeeThroughImportMetadata("mouth") });
     const group: GroupNode = {
       id: "group-a",
       name: "Group",
@@ -93,6 +93,7 @@ describe("editorStore semantic role actions", () => {
       project: createProject({ layers: [meshA, meshB, group] }),
     });
 
+    const before = structuredClone(useEditorStore.getState().project);
     useEditorStore
       .getState()
       .setLayerSemanticRoleBatch([meshA.id, group.id, meshB.id], "eyeLeft");
@@ -102,26 +103,11 @@ describe("editorStore semantic role actions", () => {
     expect(findLayerById(project.layers, meshA.id)?.semanticRoleSource).toBe("manual");
     expect(findLayerById(project.layers, meshB.id)?.semanticRole).toBe("eyeLeft");
     expect(findLayerById(project.layers, meshB.id)?.semanticRoleSource).toBe("manual");
-    expect(findLayerById(project.layers, group.id)?.semanticRole).toBeUndefined();
-  });
-
-  it("records batch apply as a single undo step", () => {
-    const meshA = createViviMesh({ id: "mesh-a" });
-    const meshB = createViviMesh({ id: "mesh-b" });
-    useEditorStore.setState({
-      project: createProject({ layers: [meshA, meshB] }),
-    });
-
-    useEditorStore.getState().setLayerSemanticRoleBatch([meshA.id, meshB.id], "hairBack");
-
+    expect(findLayerById(project.layers, group.id)).toEqual(group);
     expect(useHistoryStore.getState().undoStack).toHaveLength(1);
-
     useHistoryStore.getState().undo();
-
-    const project = useEditorStore.getState().project!;
-    expect(findLayerById(project.layers, meshA.id)?.semanticRole).toBeUndefined();
-    expect(findLayerById(project.layers, meshA.id)?.semanticRoleSource).toBeUndefined();
-    expect(findLayerById(project.layers, meshB.id)?.semanticRole).toBeUndefined();
-    expect(findLayerById(project.layers, meshB.id)?.semanticRoleSource).toBeUndefined();
+    expect(useEditorStore.getState().project).toEqual(before);
+    expect(useHistoryStore.getState().undoStack).toHaveLength(0);
   });
+
 });

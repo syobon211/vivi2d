@@ -60,14 +60,6 @@ describe("useIKOverlay", () => {
     vi.clearAllMocks();
   });
 
-  it("returns stable interaction handlers", () => {
-    const { result } = renderHook(() => useIKOverlay());
-
-    expect(result.current.onPointerDown).toBeTypeOf("function");
-    expect(result.current.onPointerMove).toBeTypeOf("function");
-    expect(result.current.onPointerUp).toBeTypeOf("function");
-    expect(result.current.isInteracting()).toBe(false);
-  });
 
   it("ignores pointer down when there is no project IK state", () => {
     const { result } = renderHook(() => useIKOverlay());
@@ -173,8 +165,19 @@ describe("useIKOverlay", () => {
       result.current.onPointerMove(createPointerEvent({ offsetX: 180, offsetY: 210 }));
     });
 
+    const pendingId = vi.mocked(requestAnimationFrame).mock.results.at(-1)!.value;
+    expect(pendingId).toBeGreaterThan(0);
+    expect(rafCallbacks).toHaveLength(1);
+    expect(useIKRuntimeStore.getState().runtimeTargets.size).toBe(0);
+    vi.mocked(cancelAnimationFrame).mockClear();
+    vi.mocked(cancelAnimationFrame).mockImplementationOnce((id) => {
+      if (id === pendingId) rafCallbacks = [];
+    });
+
     unmount();
 
-    expect(cancelAnimationFrame).toHaveBeenCalled();
+    expect(cancelAnimationFrame).toHaveBeenCalledExactlyOnceWith(pendingId);
+    flushRaf();
+    expect(useIKRuntimeStore.getState().runtimeTargets.size).toBe(0);
   });
 });

@@ -1,6 +1,6 @@
 import type { ProjectData } from "@vivi2d/core/types";
 import { parsePsd } from "@/lib/psd-loader";
-import { assertPsdBufferWithinLimit } from "@/lib/psd-security";
+import { assertPsdBufferWithinLimit, PSD_PARSE_ERROR_MESSAGE } from "@/lib/psd-security";
 import { clearTextures, setTextureFromImageData } from "@/lib/texture-store";
 import { runWorker } from "@/lib/workers/worker-runner";
 import type { PsdParseRequest, PsdParseResult } from "@/workers/psd-parse.worker";
@@ -28,11 +28,17 @@ export function parsePsdAsync(
   options?: ParsePsdOptions,
 ): Promise<ParsedPsdResult> {
   assertPsdBufferWithinLimit(buffer);
+  const rejectParse = (): never => {
+    if (options?.signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    throw new Error(PSD_PARSE_ERROR_MESSAGE);
+  };
   if (!isWorkerSupported()) {
-    return Promise.resolve().then(() => {
-      const project = parsePsd(buffer, fileName);
-      return { project, commitTextures: () => {} };
-    });
+    return Promise.resolve()
+      .then(() => {
+        const project = parsePsd(buffer, fileName);
+        return { project, commitTextures: () => {} };
+      })
+      .catch(rejectParse);
   }
 
   const bufferToSend = options?.transferInput === true ? buffer : buffer.slice(0);
@@ -44,15 +50,17 @@ export function parsePsdAsync(
     transfer: [bufferToSend],
     signal: options?.signal,
     errorLabel: "PSD parse worker error",
-  }).then((result) => ({
-    project: result.project,
-    commitTextures: () => {
-      clearTextures();
-      for (const tex of result.textures) {
-        const data = new Uint8ClampedArray(tex.buffer);
-        const imageData = new ImageData(data, tex.width, tex.height);
-        setTextureFromImageData(tex.layerId, imageData);
-      }
-    },
-  }));
+  })
+    .then((result) => ({
+      project: result.project,
+      commitTextures: () => {
+        clearTextures();
+        for (const tex of result.textures) {
+          const data = new Uint8ClampedArray(tex.buffer);
+          const imageData = new ImageData(data, tex.width, tex.height);
+          setTextureFromImageData(tex.layerId, imageData);
+        }
+      },
+    }))
+    .catch(rejectParse);
 }

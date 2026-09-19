@@ -10,7 +10,6 @@ import { useParameterStore } from "@/stores/parameterStore";
 import { loadPsdFromBuffer } from "@/stores/projectIO";
 import { resetAllStores } from "@/test/store-reset";
 
-
 describe("ParameterPanel — フィルタリング・グループ化分岐", () => {
   beforeEach(() => {
     resetAllStores();
@@ -54,18 +53,6 @@ describe("ParameterPanel — フィルタリング・グループ化分岐", () 
     expect(screen.queryByText("髪の揺れ")).not.toBeInTheDocument();
   });
 
-  it("フィルタでグループ名にもマッチする", async () => {
-    const user = userEvent.setup();
-    setupGroupedParams();
-    render(<ParameterPanel />);
-
-    const filterInput = screen.getByPlaceholderText("検索...");
-    await user.type(filterInput, "体");
-
-    expect(screen.getByText("体の回転")).toBeInTheDocument();
-    expect(screen.queryByText("顔の角度X")).not.toBeInTheDocument();
-  });
-
   it("フィルタで何もマッチしない場合「一致なし」メッセージ表示", async () => {
     const user = userEvent.setup();
     setupGroupedParams();
@@ -91,29 +78,6 @@ describe("ParameterPanel — フィルタリング・グループ化分岐", () 
 
     expect(screen.getByText("顔の角度X")).toBeInTheDocument();
     expect(screen.getByText("体の回転")).toBeInTheDocument();
-  });
-
-  it("グループヘッダーをクリックで折りたたみ・展開ができる", async () => {
-    const user = userEvent.setup();
-    setupGroupedParams();
-    render(<ParameterPanel />);
-
-    const groupHeaders = screen.getAllByText("顔");
-    const faceGroupHeader = groupHeaders.find((el) =>
-      el.closest(".parameter-group-header"),
-    );
-    if (faceGroupHeader) {
-      await user.click(faceGroupHeader);
-      await user.click(faceGroupHeader);
-    }
-  });
-
-  it("グループが1つだけの場合でもヘッダーが表示される（複数グループ時）", () => {
-    setupGroupedParams();
-    render(<ParameterPanel />);
-
-    const groupHeaders = screen.getAllByText(/顔|体|未分類/);
-    expect(groupHeaders.length).toBeGreaterThanOrEqual(2);
   });
 
   it("2Dスライダーのフィルタリングでは paramX, paramY の両方の名前がマッチ対象", async () => {

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import type { AutoMeshRequest } from "../auto-mesh.worker";
 import { handleAutoMeshRequest } from "../auto-mesh.worker";
 
-
 function makeRequest(partial?: Partial<AutoMeshRequest>): AutoMeshRequest {
   const texWidth = 4;
   const texHeight = 4;
@@ -87,10 +86,18 @@ describe("handleAutoMeshRequest", () => {
     if (response.type !== "result") {
       throw new Error(`unexpected response type: ${response.type}`);
     }
-    if (response.result !== null) {
-      expect(response.result.vertices.length).toBeGreaterThan(0);
-      expect(response.result.indices.length).toBeGreaterThan(0);
-      expect(response.result.uvs.length).toBe(response.result.vertices.length);
-    }
+    expect(response.result).not.toBeNull();
+    const mesh = response.result!;
+    expect(mesh.vertices.length).toBeGreaterThanOrEqual(6);
+    expect(mesh.indices.length).toBeGreaterThanOrEqual(3);
+    expect(mesh.indices.length % 3).toBe(0);
+    expect(mesh.uvs).toHaveLength(mesh.vertices.length);
+    expect(mesh.vertices.every(Number.isFinite)).toBe(true);
+    expect(
+      mesh.indices.every(
+        (index) =>
+          Number.isInteger(index) && index >= 0 && index < mesh.vertices.length / 2,
+      ),
+    ).toBe(true);
   });
 });

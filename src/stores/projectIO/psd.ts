@@ -1,5 +1,5 @@
-import type { ViviSeeThroughManifest } from "@vivi2d/provider-comfyui";
 import type { ProjectData } from "@vivi2d/core/types";
+import type { ViviSeeThroughManifest } from "@vivi2d/provider-comfyui";
 import { cancelE2EPerfProbe, startE2EPerfProbe } from "@/lib/e2e-perf-probe";
 import { t as tGlobal } from "@/lib/i18n";
 import { parsePsd } from "@/lib/psd-loader";
@@ -78,7 +78,7 @@ export async function loadPsd(): Promise<boolean> {
       if (isAbortError(e)) return false;
       useNotificationStore
         .getState()
-        .addNotification("error", e instanceof Error ? e.message : String(e));
+        .addNotification("error", tGlobal("notify.psdLoadFailed"));
       return false;
     }
 
@@ -89,16 +89,11 @@ export async function loadPsd(): Promise<boolean> {
     parsed.commitTextures();
     applyLoadedProject(parsed.project, null, "psd");
     return true;
-  } catch (e) {
+  } catch {
     cancelCanvasOpenProbes();
     useNotificationStore
       .getState()
-      .addNotification(
-        "error",
-        e instanceof Error
-          ? `${tGlobal("notify.psdLoadFailed")}: ${e.message}`
-          : tGlobal("notify.psdLoadFailed"),
-      );
+      .addNotification("error", tGlobal("notify.psdLoadFailed"));
     return false;
   }
 }
@@ -112,11 +107,11 @@ export function loadPsdFromBuffer(
   let project: ProjectData;
   try {
     project = parsePsd(buffer, fileName);
-  } catch (e) {
+  } catch {
     cancelCanvasOpenProbes();
     useNotificationStore
       .getState()
-      .addNotification("error", e instanceof Error ? e.message : String(e));
+      .addNotification("error", tGlobal("notify.psdLoadFailed"));
     return false;
   }
 
@@ -146,7 +141,7 @@ export async function loadPsdFromBufferAsync(
     if (isAbortError(e)) return false;
     useNotificationStore
       .getState()
-      .addNotification("error", e instanceof Error ? e.message : String(e));
+      .addNotification("error", tGlobal("notify.psdLoadFailed"));
     return false;
   }
 

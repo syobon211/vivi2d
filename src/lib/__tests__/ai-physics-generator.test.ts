@@ -57,13 +57,6 @@ describe("generatePhysicsGroups", () => {
     expect(hairGroup?.name).toBe("Front Hair Sway");
   });
 
-  it("各グループに推奨物理パラメータが設定される", () => {
-    const parts = [makePart("tail")];
-    const groups = generatePhysicsGroups(parts);
-    expect(groups[0]!.stiffness).toBeGreaterThan(0);
-    expect(groups[0]!.gravity).toBeGreaterThan(0);
-    expect(groups[0]!.damping).toBeGreaterThan(0);
-  });
 
   it("揺れパーツがない場合は空配列を返す", () => {
     const parts = [makePart("body"), makePart("head")];

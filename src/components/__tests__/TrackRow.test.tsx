@@ -15,7 +15,6 @@ import {
 } from "@/test/store-reset";
 import { TrackRow } from "../timeline/TrackRow";
 
-
 function setupStores(clipId: string) {
   const project = {
     ...createEmptyProject(),
@@ -64,7 +63,6 @@ function createTestTrack(): AnimationTrack {
   };
 }
 
-
 describe("TrackRow", () => {
   const clipId = "clip-1";
 
@@ -82,19 +80,6 @@ describe("TrackRow", () => {
     resetParameterStore();
   });
 
-  it("キーフレームマーカーを表示する", () => {
-    render(<TrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    const markers = document.querySelectorAll(".tl-keyframe");
-    expect(markers).toHaveLength(3);
-  });
-
-  it("キーフレーム追加ボタンが表示される", () => {
-    render(<TrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    expect(screen.getByTitle("現在のフレームにキーフレーム追加")).toBeInTheDocument();
-  });
-
   it("キーフレーム追加ボタンでクリップにキーフレームが追加される", async () => {
     const user = userEvent.setup();
     useTimelineStore.setState({ currentFrame: 10 });
@@ -102,6 +87,9 @@ describe("TrackRow", () => {
 
     render(<TrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
 
+    expect(
+      screen.queryByTitle("現在のフレームのキーフレーム削除"),
+    ).not.toBeInTheDocument();
     const addBtn = screen.getByTitle("現在のフレームにキーフレーム追加");
     await user.click(addBtn);
 
@@ -112,30 +100,14 @@ describe("TrackRow", () => {
     expect(kf!.value).toBe(5);
   });
 
-  it("現在のフレームにキーフレームがある場合、削除ボタンが表示される", () => {
-    useTimelineStore.setState({ currentFrame: 0 });
-
-    render(<TrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    expect(screen.getByTitle("現在のフレームのキーフレーム削除")).toBeInTheDocument();
-  });
-
-  it("現在のフレームにキーフレームがない場合、削除ボタンは表示されない", () => {
-    useTimelineStore.setState({ currentFrame: 10 });
-
-    render(<TrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    expect(
-      screen.queryByTitle("現在のフレームのキーフレーム削除"),
-    ).not.toBeInTheDocument();
-  });
-
   it("削除ボタンでキーフレームが削除される", async () => {
     const user = userEvent.setup();
     useTimelineStore.setState({ currentFrame: 45 });
 
     render(<TrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
 
+    expect(document.querySelectorAll(".tl-keyframe")).toHaveLength(3);
+    expect(document.querySelectorAll(".tl-keyframe.active")).toHaveLength(1);
     const removeBtn = screen.getByTitle("現在のフレームのキーフレーム削除");
     await user.click(removeBtn);
 
@@ -144,20 +116,12 @@ describe("TrackRow", () => {
     expect(track.keyframes.find((k) => k.frame === 45)).toBeUndefined();
   });
 
-  it("現在のフレーム上のキーフレームに active クラスが付く", () => {
-    useTimelineStore.setState({ currentFrame: 45 });
-
-    render(<TrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    const markers = document.querySelectorAll(".tl-keyframe");
-    const activeMarkers = document.querySelectorAll(".tl-keyframe.active");
-    expect(markers).toHaveLength(3);
-    expect(activeMarkers).toHaveLength(1);
-  });
-
   it("キーフレームのツールチップにフレーム番号と値を表示する", () => {
     render(<TrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
 
+    expect(screen.getByTitle("現在のフレームにキーフレーム追加")).toBeInTheDocument();
+    expect(screen.getByTitle("現在のフレームのキーフレーム削除")).toBeInTheDocument();
+    expect(document.querySelectorAll(".tl-keyframe")).toHaveLength(3);
     const markers = document.querySelectorAll(".tl-keyframe");
     expect(markers[0]!.getAttribute("title")).toContain("F0");
     expect(markers[0]!.getAttribute("title")).toContain("-30.00");

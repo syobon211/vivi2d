@@ -52,6 +52,48 @@ describe("parsePsdAsync", () => {
     expect(clearTextures).not.toHaveBeenCalled();
   });
 
+  it("redacts worker and fallback failures before exposing the rejected promise", async () => {
+    for (const worker of [false, true]) {
+      if (worker) (globalThis as any).Worker = class StubWorker {};
+      else delete (globalThis as any).Worker;
+      const inspect = vi.fn(() => {
+        throw new Error("inspection must not happen");
+      });
+      const accessorError = new Error();
+      Object.defineProperty(accessorError, "message", { get: inspect });
+      for (const thrown of [
+        new Error("C:/synthetic-secret/token-canary.psd"),
+        accessorError,
+        { toString: inspect },
+      ]) {
+        if (worker) vi.mocked(runWorker).mockRejectedValueOnce(thrown);
+        else
+          vi.mocked(parsePsd).mockImplementationOnce(() => {
+            throw thrown;
+          });
+        await expect(parsePsdAsync(new ArrayBuffer(8), "safe.psd")).rejects.toEqual(
+          new Error("Failed to load PSD file."),
+        );
+      }
+      expect(inspect).not.toHaveBeenCalled();
+    }
+    expect(clearTextures).not.toHaveBeenCalled();
+    expect(setTextureFromImageData).not.toHaveBeenCalled();
+  });
+
+  it("preserves cancellation without echoing its reason or committing textures", async () => {
+    (globalThis as any).Worker = class StubWorker {};
+    const controller = new AbortController();
+    controller.abort("C:/synthetic-secret/token-canary.psd");
+    vi.mocked(runWorker).mockRejectedValueOnce(
+      new DOMException("token-canary", "AbortError"),
+    );
+    await expect(
+      parsePsdAsync(new ArrayBuffer(8), "safe.psd", { signal: controller.signal }),
+    ).rejects.toEqual(new DOMException("Aborted", "AbortError"));
+    expect(clearTextures).not.toHaveBeenCalled();
+  });
+
   it("Worker 対応環境では runWorker を呼び commitTextures で texture-store に反映", async () => {
     (globalThis as any).Worker =
       originalWorker ??

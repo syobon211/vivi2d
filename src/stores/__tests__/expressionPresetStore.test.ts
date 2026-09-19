@@ -18,27 +18,26 @@ describe("expressionPresetStore", () => {
 
   describe("createPreset", () => {
     it("現在のパラメータ値からプリセットを作成する", () => {
-      useParameterStore.getState().setParameterValue("p-eye-open", 0.3);
-      useParameterStore.getState().setParameterValue("p-mouth", 0.8);
-      useParameterStore.getState().setParameterValue("p-brow", 15);
+          useParameterStore.getState().setParameterValue("p-eye-open", 0.3);
+          useParameterStore.getState().setParameterValue("p-mouth", 0.8);
+          useParameterStore.getState().setParameterValue("p-brow", 15);
 
-      const presetId = useExpressionPresetStore.getState().createPreset("笑顔");
+          const presetId = useExpressionPresetStore.getState().createPreset("笑顔");
 
-      const project = useEditorStore.getState().project!;
-      expect(project.expressionPresets).toBeDefined();
-      expect(project.expressionPresets!.length).toBe(1);
+          const project = useEditorStore.getState().project!;
+          expect(project.expressionPresets).toBeDefined();
+          expect(project.expressionPresets!.length).toBe(1);
 
-      const preset = project.expressionPresets![0]!;
-      expect(preset.id).toBe(presetId);
-      expect(preset.values["p-eye-open"]).toBe(0.3);
-      expect(preset.values["p-mouth"]).toBe(0.8);
-      expect(preset.values["p-brow"]).toBe(15);
-    });
+          const preset = project.expressionPresets![0]!;
+          expect(preset.id).toBe(presetId);
+          expect(presetId).toMatch(UUID_RE);
+          expect(preset.name).toBe("笑顔");
+          expect(preset.values["p-eye-open"]).toBe(0.3);
+          expect(preset.values["p-mouth"]).toBe(0.8);
+          expect(preset.values["p-brow"]).toBe(15);
+        });
 
-    it("返されるIDがUUID形式である", () => {
-      const presetId = useExpressionPresetStore.getState().createPreset("テスト");
-      expect(presetId).toMatch(UUID_RE);
-    });
+
 
     it("returns an empty id when no project is loaded", () => {
       useEditorStore.setState({ project: null });
@@ -48,13 +47,7 @@ describe("expressionPresetStore", () => {
       expect(presetId).toBe("");
     });
 
-    it("名前が正しく設定される", () => {
-      useExpressionPresetStore.getState().createPreset("怒り顔");
 
-      const project = useEditorStore.getState().project!;
-      const preset = project.expressionPresets![0]!;
-      expect(preset.name).toBe("怒り顔");
-    });
   });
 
 
@@ -138,14 +131,7 @@ describe("expressionPresetStore", () => {
 
 
   describe("setHotkey", () => {
-    it("ホットキーが設定される", () => {
-      const presetId = useExpressionPresetStore.getState().createPreset("ホットキー設定");
 
-      useExpressionPresetStore.getState().setHotkey(presetId, 3);
-
-      const preset = useEditorStore.getState().project!.expressionPresets![0]!;
-      expect(preset.hotkey).toBe(3);
-    });
 
     it("同じホットキーが他のプリセットから解除される", () => {
       const idA = useExpressionPresetStore.getState().createPreset("プリセットA");

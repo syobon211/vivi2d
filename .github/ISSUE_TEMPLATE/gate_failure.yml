@@ -53,7 +53,8 @@ body:
         - check:secrets
         - check:history-secrets
         - check:source-comments
-        - check:viewer-tests
+        - check:viewer-types
+        - check:viewer-test-text
         - check:viewer-mediapipe-assets
         - check:provider-conformance
         - check:provider-sdk-samples

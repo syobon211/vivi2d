@@ -93,14 +93,29 @@ describe("useOverlayContext", () => {
     expect(notifications[0]!.message).toBe("テスト警告");
   });
 
-  it("ctx のフィールドに非購読の store が影響しない", () => {
-    const { result } = renderHook(() => useOverlayContext());
+  it("非購読の選択更新では再描画せず、購読フィールドの更新を反映する", () => {
+    let renders = 0;
+    const { result } = renderHook(() => {
+      renders += 1;
+      return useOverlayContext();
+    });
+    const before = renders;
     const initialSelectedLayerIds = result.current.selectedLayerIds;
 
     act(() => {
       useSelectionStore.setState({ soloLayerIds: ["s1", "s2"] });
     });
 
+    expect(renders).toBe(before);
     expect(result.current.selectedLayerIds).toBe(initialSelectedLayerIds);
+    act(() => {
+      useSelectionStore.setState({
+        selectedLayerId: "selected",
+        selectedLayerIds: ["selected"],
+      });
+    });
+    expect(renders).toBeGreaterThan(before);
+    expect(result.current.selectedLayerId).toBe("selected");
+    expect(result.current.selectedLayerIds).toEqual(["selected"]);
   });
 });

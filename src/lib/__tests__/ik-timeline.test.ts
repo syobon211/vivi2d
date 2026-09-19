@@ -8,7 +8,7 @@ describe("evaluateIKControllerTracksAtFrame", () => {
       {
         controllerId: "ik-1",
         targetXKeyframes: [
-          { frame: 0, value: 0, interpolation: "linear" },
+          { frame: 0, value: 50, interpolation: "linear" },
           { frame: 10, value: 100, interpolation: "linear" },
         ],
         targetYKeyframes: [
@@ -20,8 +20,12 @@ describe("evaluateIKControllerTracksAtFrame", () => {
 
     const result = evaluateIKControllerTracksAtFrame(tracks, 5);
     expect(result["ik-1"]).toBeDefined();
-    expect(result["ik-1"]!.targetX).toBeCloseTo(50, 3);
+    expect(result["ik-1"]!.targetX).toBeCloseTo(75, 3);
     expect(result["ik-1"]!.targetY).toBeCloseTo(100, 3);
+    const start = evaluateIKControllerTracksAtFrame(tracks, 0)["ik-1"]!;
+    const end = evaluateIKControllerTracksAtFrame(tracks, 10)["ik-1"]!;
+    expect([start.targetX, result["ik-1"]!.targetX, end.targetX]).toEqual([50, 75, 100]);
+    expect([start.targetY, result["ik-1"]!.targetY, end.targetY]).toEqual([0, 100, 200]);
   });
 
   it("フレーム0で開始値を返す", () => {

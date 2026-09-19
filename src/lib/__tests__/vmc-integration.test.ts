@@ -1,13 +1,11 @@
-
 import type { OSCMessage } from "@vivi2d/core/vmc-protocol";
 import {
   parseOSCMessage,
-  parseVMCFaceChannel,
   parseVMCBonePos,
+  parseVMCFaceChannel,
   serializeOSCMessage,
 } from "@vivi2d/core/vmc-protocol";
 import { beforeEach, describe, expect, it } from "vitest";
-import type { VMCMapping } from "@/stores/vmcStore";
 import { useVMCStore } from "@/stores/vmcStore";
 import { resetAllStores } from "@/test/store-reset";
 
@@ -39,20 +37,6 @@ function createBonePosOSC(
       { type: "f", value: rot[3] },
     ],
   };
-}
-
-function applyVMCMappings(
-  faceChannelBuffer: Record<string, number>,
-  mappings: VMCMapping[],
-): Record<string, number> {
-  const result: Record<string, number> = {};
-  for (const mapping of mappings) {
-    const vmcValue = faceChannelBuffer[mapping.vmcName];
-    if (vmcValue !== undefined) {
-      result[mapping.parameterId] = vmcValue * mapping.scale + mapping.offset;
-    }
-  }
-  return result;
 }
 
 describe("VMC連携統合テスト", () => {
@@ -108,45 +92,6 @@ describe("VMC連携統合テスト", () => {
       expect(bonePos!.posZ).toBeCloseTo(0.3, 2);
       expect(bonePos!.rotY).toBeCloseTo(Math.SQRT1_2, 2);
       expect(bonePos!.rotW).toBeCloseTo(Math.SQRT1_2, 2);
-    });
-  });
-
-  describe("ブレンドシェイプ値の受信→バッファ更新→マッピング経由でパラメータ変換", () => {
-    it("マッピングを設定してブレンドシェイプ値をパラメータ値に変換する", () => {
-      const vmcStore = useVMCStore.getState();
-
-      vmcStore.addMapping({
-        vmcName: "Joy",
-        parameterId: "param-mouth-open",
-        scale: 30,
-        offset: 0,
-      });
-
-      vmcStore.updateFaceChannelBuffer({ Joy: 0.5 });
-
-      const state = useVMCStore.getState();
-      const params = applyVMCMappings(state.faceChannelBuffer, state.mappings);
-
-      expect(params["param-mouth-open"]).toBeCloseTo(15, 1); // 0.5 * 30 + 0 = 15
-    });
-
-    it("スケールとオフセットが正しく適用される", () => {
-      const vmcStore = useVMCStore.getState();
-
-      vmcStore.addMapping({
-        vmcName: "A",
-        parameterId: "param-a",
-        scale: 2,
-        offset: -1,
-      });
-
-      vmcStore.updateFaceChannelBuffer({ A: 0.75 });
-
-      const state = useVMCStore.getState();
-      const params = applyVMCMappings(state.faceChannelBuffer, state.mappings);
-
-      // 0.75 * 2 + (-1) = 0.5
-      expect(params["param-a"]).toBeCloseTo(0.5, 4);
     });
   });
 
@@ -233,29 +178,6 @@ describe("VMC連携統合テスト", () => {
   });
 
   describe("マッピング設定変更後の値変換", () => {
-    it("マッピング設定変更後の値変換が正しい", () => {
-      const vmcStore = useVMCStore.getState();
-
-      vmcStore.addMapping({
-        vmcName: "Joy",
-        parameterId: "param-joy",
-        scale: 1,
-        offset: 0,
-      });
-
-      vmcStore.updateFaceChannelBuffer({ Joy: 0.5 });
-
-      let state = useVMCStore.getState();
-      let params = applyVMCMappings(state.faceChannelBuffer, state.mappings);
-      expect(params["param-joy"]).toBeCloseTo(0.5, 4);
-
-      vmcStore.updateMapping(0, { scale: 2, offset: 0.1 });
-
-      state = useVMCStore.getState();
-      params = applyVMCMappings(state.faceChannelBuffer, state.mappings);
-      expect(params["param-joy"]).toBeCloseTo(1.1, 4);
-    });
-
     it("マッピングの追加・削除が正しく動作する", () => {
       const vmcStore = useVMCStore.getState();
 

@@ -15,56 +15,44 @@ describe("sceneBlendStore", () => {
   });
 
   describe("createSceneBlend", () => {
-    it("デフォルト設定でシーンブレンドを作成する", () => {
-      const blendId = useSceneBlendStore
-        .getState()
-        .createSceneBlend("scene-1" as never, "scene-2" as never);
-
-      expect(blendId).toBeDefined();
-      const project = useEditorStore.getState().project!;
-      expect(project.sceneBlends).toBeDefined();
-      expect(project.sceneBlends!.length).toBe(1);
-
-      const blend = project.sceneBlends![0]!;
-      expect(blend.id).toBe(blendId);
-      expect(blend.sourceSceneId).toBe("scene-1");
-      expect(blend.targetSceneId).toBe("scene-2");
-      expect(blend.mode).toBe("crossfade");
-      expect(blend.transitionFrames).toBe(30);
-      expect(blend.easing).toBe("linear");
+    it("既定・カスタム作成と全field/部分field更新で他blendを保持する", () => {
+      const { createSceneBlend, updateSceneBlend } = useSceneBlendStore.getState();
+      const id = createSceneBlend("scene-1" as never, "scene-2" as never);
+      const defaults = { id, sourceSceneId: "scene-1", targetSceneId: "scene-2",
+        mode: "crossfade", transitionFrames: 30, easing: "linear" };
+      expect(id).toBeDefined();
+      expect(useEditorStore.getState().project!.sceneBlends).toEqual([defaults]);
+      const customId = createSceneBlend("scene-1" as never, "scene-2" as never, {
+        mode: "additive", transitionFrames: 60, easing: "bezier",
+      });
+      const overrideId = createSceneBlend("scene-2" as never, "scene-1" as never, { mode: "override" });
+      const created = useEditorStore.getState().project!.sceneBlends!;
+      expect(created).toHaveLength(3);
+      expect(created[1]).toEqual({
+        id: customId, sourceSceneId: "scene-1", targetSceneId: "scene-2",
+        mode: "additive", transitionFrames: 60, easing: "bezier",
+      });
+      expect(created[2]).toMatchObject({ id: overrideId, sourceSceneId: "scene-2",
+        targetSceneId: "scene-1", mode: "override" });
+      updateSceneBlend(id, { mode: "override", transitionFrames: 90, easing: "sns" });
+      expect(useEditorStore.getState().project!.sceneBlends![0]).toEqual({
+        ...defaults, mode: "override", transitionFrames: 90, easing: "sns",
+      });
+      updateSceneBlend(id, { mode: "additive" });
+      expect(useEditorStore.getState().project!.sceneBlends![0]).toEqual({
+        ...defaults, mode: "additive", transitionFrames: 90, easing: "sns",
+      });
+      updateSceneBlend(id, { transitionFrames: 120 });
+      updateSceneBlend(id, { easing: "bezier" });
+      expect(useEditorStore.getState().project!.sceneBlends![0]).toEqual({
+        ...defaults, mode: "additive", transitionFrames: 120, easing: "bezier",
+      });
+      expect(useEditorStore.getState().project!.sceneBlends!.slice(1)).toEqual(created.slice(1));
     });
 
-    it("カスタム設定でシーンブレンドを作成する", () => {
-      const blendId = useSceneBlendStore
-        .getState()
-        .createSceneBlend("scene-1" as never, "scene-2" as never, {
-          mode: "additive",
-          transitionFrames: 60,
-          easing: "bezier",
-        });
 
-      const blend = useEditorStore.getState().project!.sceneBlends![0]!;
-      expect(blend.id).toBe(blendId);
-      expect(blend.mode).toBe("additive");
-      expect(blend.transitionFrames).toBe(60);
-      expect(blend.easing).toBe("bezier");
-    });
 
-    it("複数のシーンブレンドを作成できる", () => {
-      useSceneBlendStore
-        .getState()
-        .createSceneBlend("scene-1" as never, "scene-2" as never);
-      useSceneBlendStore
-        .getState()
-        .createSceneBlend("scene-2" as never, "scene-1" as never, {
-          mode: "override",
-        });
 
-      const blends = useEditorStore.getState().project!.sceneBlends!;
-      expect(blends.length).toBe(2);
-      expect(blends[0]!.mode).toBe("crossfade");
-      expect(blends[1]!.mode).toBe("override");
-    });
 
     it("returns an empty id when no project is loaded", () => {
       useEditorStore.setState({ project: null });
@@ -107,51 +95,13 @@ describe("sceneBlendStore", () => {
   });
 
   describe("updateSceneBlend", () => {
-    it("モードを更新する", () => {
-      const blendId = useSceneBlendStore
-        .getState()
-        .createSceneBlend("scene-1" as never, "scene-2" as never);
-      useSceneBlendStore.getState().updateSceneBlend(blendId, { mode: "additive" });
 
-      const blend = useEditorStore.getState().project!.sceneBlends![0]!;
-      expect(blend.mode).toBe("additive");
-    });
 
-    it("遷移フレーム数を更新する", () => {
-      const blendId = useSceneBlendStore
-        .getState()
-        .createSceneBlend("scene-1" as never, "scene-2" as never);
-      useSceneBlendStore.getState().updateSceneBlend(blendId, { transitionFrames: 120 });
 
-      const blend = useEditorStore.getState().project!.sceneBlends![0]!;
-      expect(blend.transitionFrames).toBe(120);
-    });
 
-    it("イージングを更新する", () => {
-      const blendId = useSceneBlendStore
-        .getState()
-        .createSceneBlend("scene-1" as never, "scene-2" as never);
-      useSceneBlendStore.getState().updateSceneBlend(blendId, { easing: "bezier" });
 
-      const blend = useEditorStore.getState().project!.sceneBlends![0]!;
-      expect(blend.easing).toBe("bezier");
-    });
 
-    it("複数フィールドを同時に更新できる", () => {
-      const blendId = useSceneBlendStore
-        .getState()
-        .createSceneBlend("scene-1" as never, "scene-2" as never);
-      useSceneBlendStore.getState().updateSceneBlend(blendId, {
-        mode: "override",
-        transitionFrames: 90,
-        easing: "sns",
-      });
 
-      const blend = useEditorStore.getState().project!.sceneBlends![0]!;
-      expect(blend.mode).toBe("override");
-      expect(blend.transitionFrames).toBe(90);
-      expect(blend.easing).toBe("sns");
-    });
 
     it("存在しないIDでは変更しない", () => {
       const _blendId = useSceneBlendStore

@@ -9,7 +9,6 @@ import { useParameterStore } from "@/stores/parameterStore";
 import { loadPsdFromBuffer } from "@/stores/projectIO";
 import { resetEditorStore, resetParameterStore } from "@/test/store-reset";
 
-
 describe("ExpressionPresetPanel", () => {
   beforeEach(() => {
     resetEditorStore();
@@ -29,30 +28,6 @@ describe("ExpressionPresetPanel", () => {
   it("プロジェクトなしでは何も表示しない", () => {
     const { container } = render(<ExpressionPresetPanel />);
     expect(container.innerHTML).toBe("");
-  });
-
-  it("パネルタイトル「表情プリセット」が表示される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ExpressionPresetPanel />);
-    expect(screen.getByText("表情プリセット")).toBeInTheDocument();
-  });
-
-  it("プリセットなし時に「プリセットなし」メッセージが表示される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ExpressionPresetPanel />);
-    expect(screen.getByText("プリセットなし")).toBeInTheDocument();
-  });
-
-  it("プリセット一覧が正しく表示される", () => {
-    setupWithPresets([
-      { id: "p1", name: "笑顔", values: { "param-1": 0.5 } },
-      { id: "p2", name: "怒り", values: { "param-1": 0.8 } },
-    ]);
-    render(<ExpressionPresetPanel />);
-
-    expect(screen.getByText("笑顔")).toBeInTheDocument();
-    expect(screen.getByText("怒り")).toBeInTheDocument();
-    expect(screen.queryByText("プリセットなし")).not.toBeInTheDocument();
   });
 
   it("適用ボタンクリックでapplyPresetが呼ばれる", async () => {
@@ -84,32 +59,17 @@ describe("ExpressionPresetPanel", () => {
     expect(useEditorStore.getState().project!.expressionPresets!.length).toBe(0);
   });
 
-  it("「現在の値を保存」ボタンが表示される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ExpressionPresetPanel />);
-    expect(screen.getByText("現在の値を保存")).toBeInTheDocument();
-  });
-
-  it("保存ボタンクリックで名前入力が表示される", async () => {
-    const user = userEvent.setup();
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<ExpressionPresetPanel />);
-
-    await user.click(screen.getByText("現在の値を保存"));
-
-    expect(screen.getByPlaceholderText("プリセット名")).toBeInTheDocument();
-    expect(screen.getByText(/OK|確認/)).toBeInTheDocument();
-    expect(screen.getByText("キャンセル")).toBeInTheDocument();
-    expect(screen.queryByText("現在の値を保存")).not.toBeInTheDocument();
-  });
-
   it("名前を入力してOKクリックでプリセットが作成される", async () => {
     const user = userEvent.setup();
     loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
     useParameterStore.setState({ parameterValues: { eye: 0.5 } });
     render(<ExpressionPresetPanel />);
 
+    expect(screen.getByText("表情プリセット")).toBeInTheDocument();
+    expect(screen.getByText("プリセットなし")).toBeInTheDocument();
     await user.click(screen.getByText("現在の値を保存"));
+    expect(screen.getByText("キャンセル")).toBeInTheDocument();
+    expect(screen.queryByText("現在の値を保存")).not.toBeInTheDocument();
     await user.type(screen.getByPlaceholderText("プリセット名"), "新表情");
     await user.click(screen.getByText(/OK|確認/));
 
@@ -133,30 +93,7 @@ describe("ExpressionPresetPanel", () => {
     expect(screen.getByText("現在の値を保存")).toBeInTheDocument();
   });
 
-  it("ホットキーバッジが表示される", () => {
-    setupWithPresets([
-      { id: "hk1", name: "表情A", values: {}, hotkey: 3 },
-      { id: "hk2", name: "表情B", values: {} },
-    ]);
-    render(<ExpressionPresetPanel />);
-
-    expect(screen.getByText("3")).toBeInTheDocument();
-    expect(screen.getByText("-")).toBeInTheDocument();
-  });
-
-
   describe("インライン名前編集", () => {
-    it("プリセット名をダブルクリックすると編集モードになる", async () => {
-      const user = userEvent.setup();
-      setupWithPresets([{ id: "edit-1", name: "元の名前", values: {} }]);
-      render(<ExpressionPresetPanel />);
-
-      await user.dblClick(screen.getByText("元の名前"));
-
-      const input = screen.getByDisplayValue("元の名前");
-      expect(input).toBeInTheDocument();
-    });
-
     it("編集モードでEnterを押すと名前が変更される", async () => {
       const user = userEvent.setup();
       setupWithPresets([{ id: "edit-2", name: "旧名前", values: {} }]);
@@ -222,9 +159,8 @@ describe("ExpressionPresetPanel", () => {
     });
   });
 
-
   describe("ホットキーバッジのサイクル", () => {
-    it("ホットキーなし→1に変更される", async () => {
+    it("ホットキーなし→1→2に変更される", async () => {
       const user = userEvent.setup();
       setupWithPresets([{ id: "hk-cycle-1", name: "サイクル", values: {} }]);
       render(<ExpressionPresetPanel />);
@@ -233,6 +169,8 @@ describe("ExpressionPresetPanel", () => {
 
       const presets = useEditorStore.getState().project!.expressionPresets!;
       expect(presets[0]!.hotkey).toBe(1);
+      await user.click(screen.getByText("1"));
+      expect(useEditorStore.getState().project!.expressionPresets![0]!.hotkey).toBe(2);
     });
 
     it("ホットキー9→なし(undefined)に変更される", async () => {
@@ -245,19 +183,7 @@ describe("ExpressionPresetPanel", () => {
       const presets = useEditorStore.getState().project!.expressionPresets!;
       expect(presets[0]!.hotkey).toBeUndefined();
     });
-
-    it("ホットキー1→2に変更される", async () => {
-      const user = userEvent.setup();
-      setupWithPresets([{ id: "hk-cycle-2", name: "サイクル12", values: {}, hotkey: 1 }]);
-      render(<ExpressionPresetPanel />);
-
-      await user.click(screen.getByText("1"));
-
-      const presets = useEditorStore.getState().project!.expressionPresets!;
-      expect(presets[0]!.hotkey).toBe(2);
-    });
   });
-
 
   describe("保存フォームの入力バリデーション", () => {
     it("空文字でOKを押してもプリセットは作成されない", async () => {
@@ -316,11 +242,10 @@ describe("ExpressionPresetPanel", () => {
     });
   });
 
-
   describe("複数ホットキー付きプリセット一覧", () => {
     it("複数のホットキー付きプリセットが正しく表示される", () => {
       setupWithPresets([
-        { id: "multi-1", name: "表情1", values: {}, hotkey: 1 },
+        { id: "multi-1", name: "表情1", values: {}, hotkey: 3 },
         { id: "multi-2", name: "表情2", values: {}, hotkey: 5 },
         { id: "multi-3", name: "表情3", values: {} },
       ]);
@@ -329,9 +254,10 @@ describe("ExpressionPresetPanel", () => {
       expect(screen.getByText("表情1")).toBeInTheDocument();
       expect(screen.getByText("表情2")).toBeInTheDocument();
       expect(screen.getByText("表情3")).toBeInTheDocument();
-      expect(screen.getByText("1")).toBeInTheDocument();
+      expect(screen.getByText("3")).toBeInTheDocument();
       expect(screen.getByText("5")).toBeInTheDocument();
       expect(screen.getByText("-")).toBeInTheDocument();
+      expect(screen.queryByText("プリセットなし")).not.toBeInTheDocument();
     });
   });
 });

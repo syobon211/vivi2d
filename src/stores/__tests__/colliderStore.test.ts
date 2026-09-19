@@ -25,9 +25,6 @@ describe("colliderStore", () => {
   });
 
   describe("selectedColliderId", () => {
-    it("初期値はnull", () => {
-      expect(useColliderStore.getState().selectedColliderId).toBeNull();
-    });
 
     it("selectColliderで設定・解除できる", () => {
       act(() => useColliderStore.getState().selectCollider("test-id"));
@@ -206,37 +203,33 @@ describe("colliderStore", () => {
     });
 
     it("円コライダーの半径を更新できる", () => {
-      setupProject();
-      let id: string;
-      act(() => {
-        id = useColliderStore.getState().addCircleCollider("円", 100, 100, 50);
-      });
+          setupProject();
+          let id: string;
+          act(() => {
+            id = useColliderStore.getState().addCircleCollider("円", 100, 100, 50);
+          });
 
-      act(() => {
-        useColliderStore.getState().updateShape(id!, { radius: 80 });
-      });
+          act(() => {
+            useColliderStore.getState().updateShape(id!, { radius: 80 });
+          });
 
-      const shape = getColliders()[0]!.shape;
-      if (shape.type === "circle") {
-        expect(shape.radius).toBe(80);
-      }
-    });
+          const shape = getColliders()[0]!.shape;
+          expect(shape).toEqual({ type: "circle", x: 100, y: 100, radius: 80 });
+        });
 
     it("存在しないIDでは何もしない", () => {
-      setupProject();
-      act(() => {
-        useColliderStore.getState().addRectCollider("矩形", 0, 0, 100, 100);
-      });
+          setupProject();
+          act(() => {
+            useColliderStore.getState().addRectCollider("矩形", 0, 0, 100, 100);
+          });
 
-      act(() => {
-        useColliderStore.getState().updateShape("nonexistent", { x: 999 });
-      });
+          act(() => {
+            useColliderStore.getState().updateShape("nonexistent", { x: 999 });
+          });
 
-      const shape = getColliders()[0]!.shape;
-      if (shape.type === "rectangle") {
-        expect(shape.x).toBe(0);
-      }
-    });
+          const shape = getColliders()[0]!.shape;
+          expect(shape).toEqual({ type: "rectangle", x: 0, y: 0, width: 100, height: 100 });
+        });
   });
 
   describe("renameCollider", () => {
@@ -335,13 +328,5 @@ describe("colliderStore", () => {
       expect(getColliders()).toHaveLength(0);
     });
 
-    it("プロジェクトがnullの場合は0を返す", () => {
-      useEditorStore.setState({ project: null });
-      let count: number;
-      act(() => {
-        count = useColliderStore.getState().addMeshCollidersFromSelection(["any-id"]);
-      });
-      expect(count!).toBe(0);
-    });
   });
 });

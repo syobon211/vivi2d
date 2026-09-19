@@ -34,10 +34,6 @@ describe("findNearestVertex", () => {
     expect(findNearestVertex(verts, -12, -22, 10)).toBe(1);
   });
 
-  it("非常に大きい閾値では最も近い頂点を返す", () => {
-    const verts = [0, 0, 1000, 0];
-    expect(findNearestVertex(verts, 500, 0, 99999)).toBe(0);
-  });
 
   it("閾値 0 では完全一致もヒットしない（strictLessThan）", () => {
     const verts = [10, 20, 30, 40];

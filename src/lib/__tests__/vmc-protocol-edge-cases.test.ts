@@ -1,8 +1,8 @@
 import {
   type OSCMessage,
   parseOSCMessage,
-  parseVMCFaceChannel,
   parseVMCBonePos,
+  parseVMCFaceChannel,
   serializeOSCMessage,
 } from "@vivi2d/core/vmc-protocol";
 import { describe, expect, it } from "vitest";
@@ -31,28 +31,6 @@ describe("VMC パーサー: 不正なアドレス", () => {
     const binary = serializeOSCMessage(msg);
     const parsed = parseOSCMessage(binary);
     expect(parsed).toBeNull();
-  });
-});
-
-describe("VMC パーサー: 型タグの互換性", () => {
-  it("型タグが , で始まる場合は正常にパース", () => {
-    const msg: OSCMessage = {
-      address: "/test",
-      args: [{ type: "i", value: 10 }],
-    };
-    const binary = serializeOSCMessage(msg);
-    const parsed = parseOSCMessage(binary);
-    expect(parsed).not.toBeNull();
-    expect(parsed!.args).toHaveLength(1);
-  });
-
-  it("引数なしメッセージの型タグは , のみ", () => {
-    const msg: OSCMessage = { address: "/ping", args: [] };
-    const binary = serializeOSCMessage(msg);
-    const parsed = parseOSCMessage(binary);
-    expect(parsed).not.toBeNull();
-    expect(parsed!.address).toBe("/ping");
-    expect(parsed!.args).toHaveLength(0);
   });
 });
 
@@ -152,25 +130,44 @@ describe("VMC パーサー: 多数の引数", () => {
 });
 
 describe("VMC パーサー: 不完全なバイナリ", () => {
-  it("正常なメッセージの途中で切ったバッファで null を返す", () => {
-    const msg: OSCMessage = {
-      address: "/test/int",
-      args: [{ type: "i", value: 42 }],
-    };
-    const binary = serializeOSCMessage(msg);
-    const half = binary.slice(0, Math.floor(binary.byteLength / 2));
-    const parsed = parseOSCMessage(half);
-    expect(parsed === null || parsed !== null).toBe(true);
-  });
-
-  it("アドレスだけ有効で引数データがないバッファ", () => {
-    const msg: OSCMessage = {
-      address: "/test",
-      args: [{ type: "i", value: 99 }],
-    };
-    const full = serializeOSCMessage(msg);
-    const partial = full.slice(0, 8);
-    const _parsed = parseOSCMessage(partial);
+  it("完全な型タグの後で数値・blobデータが不足すると null を返す", () => {
+    // Raw OSC: padded "/t", a complete type tag, then argument bytes.
+    // Do not infer rejection from cuts in strings, unknown tags or blob padding.
+    const cases: {
+      tag: string;
+      bytes: number[];
+      args: OSCMessage["args"];
+      incompleteLengths: number[];
+    }[] = [
+      {
+        tag: "i",
+        bytes: [0x2f, 0x74, 0, 0, 0x2c, 0x69, 0, 0, 0, 0, 0, 42],
+        args: [{ type: "i", value: 42 }],
+        incompleteLengths: [8, 9, 10, 11],
+      },
+      {
+        tag: "f",
+        bytes: [0x2f, 0x74, 0, 0, 0x2c, 0x66, 0, 0, 0x3f, 0, 0, 0],
+        args: [{ type: "f", value: 0.5 }],
+        incompleteLengths: [8, 9, 10, 11],
+      },
+      {
+        tag: "b",
+        bytes: [0x2f, 0x74, 0, 0, 0x2c, 0x62, 0, 0, 0, 0, 0, 3, 1, 2, 3, 0],
+        args: [{ type: "b", value: new Uint8Array([1, 2, 3]) }],
+        incompleteLengths: [8, 9, 10, 11, 12, 13, 14],
+      },
+    ];
+    for (const { tag, bytes, args, incompleteLengths } of cases) {
+      const full = new Uint8Array(bytes).buffer;
+      expect(parseOSCMessage(full), `complete ${tag}`).toEqual({ address: "/t", args });
+      for (const length of incompleteLengths) {
+        expect(
+          parseOSCMessage(full.slice(0, length)),
+          `${tag} truncated at ${length}`,
+        ).toBeNull();
+      }
+    }
   });
 });
 

@@ -3,9 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ValidationDialog } from "@/components/ValidationDialog";
 import { useEditorStore } from "@/stores/editorStore";
 import { useSelectionStore } from "@/stores/selectionStore";
-import { createViviMesh, createBoneNode, createEmptyProject } from "@/test/fixtures";
+import { createBoneNode, createEmptyProject, createViviMesh } from "@/test/fixtures";
 import { resetEditorStore, resetSelectionStore } from "@/test/store-reset";
-
 
 describe("ValidationDialog", () => {
   beforeEach(() => {
@@ -18,25 +17,7 @@ describe("ValidationDialog", () => {
     resetSelectionStore();
   });
 
-  it("ダイアログタイトルが表示される", () => {
-    useEditorStore.setState({
-      project: createEmptyProject(),
-      projectVersion: 1,
-    });
-    render(<ValidationDialog onClose={vi.fn()} />);
-    expect(screen.getByText("モデル検証")).toBeInTheDocument();
-  });
-
   it("プロジェクトなしで問題なしメッセージが表示される", () => {
-    render(<ValidationDialog onClose={vi.fn()} />);
-    expect(screen.getByText("問題は見つかりませんでした")).toBeInTheDocument();
-  });
-
-  it("問題のない空プロジェクトで問題なしメッセージが表示される", () => {
-    useEditorStore.setState({
-      project: createEmptyProject(),
-      projectVersion: 1,
-    });
     render(<ValidationDialog onClose={vi.fn()} />);
     expect(screen.getByText("問題は見つかりませんでした")).toBeInTheDocument();
   });
@@ -48,6 +29,8 @@ describe("ValidationDialog", () => {
     });
     const onClose = vi.fn();
     render(<ValidationDialog onClose={onClose} />);
+    expect(screen.getByText("モデル検証")).toBeInTheDocument();
+    expect(screen.getByText("問題は見つかりませんでした")).toBeInTheDocument();
     fireEvent.click(screen.getByText("閉じる"));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -59,21 +42,11 @@ describe("ValidationDialog", () => {
     });
     const onClose = vi.fn();
     render(<ValidationDialog onClose={onClose} />);
+    fireEvent.click(document.querySelector(".modal-content")!);
+    expect(onClose).not.toHaveBeenCalled();
     const overlay = document.querySelector(".modal-overlay")!;
     fireEvent.click(overlay);
     expect(onClose).toHaveBeenCalledTimes(1);
-  });
-
-  it("モーダルコンテンツクリックではonCloseが呼ばれない", () => {
-    useEditorStore.setState({
-      project: createEmptyProject(),
-      projectVersion: 1,
-    });
-    const onClose = vi.fn();
-    render(<ValidationDialog onClose={onClose} />);
-    const content = document.querySelector(".modal-content")!;
-    fireEvent.click(content);
-    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("検証問題があるプロジェクトでサマリーが表示される", () => {
@@ -169,54 +142,5 @@ describe("ValidationDialog", () => {
     fireEvent.click(item);
 
     expect(useSelectionStore.getState().selectedLayerId).toBe("bone-select");
-  });
-
-  it("layerIdを持つ問題をクリックするとレイヤーが選択される", () => {
-    const mesh = createViviMesh({
-      id: "mesh-1",
-      name: "テストメッシュ",
-      mesh: {
-        vertices: [0, 0, 100, 0, 100, 100, 0, 100],
-        uvs: [0, 0, 1, 0, 1, 1, 0, 1],
-        indices: [0, 1, 2, 0, 2, 3],
-        divisionsX: 1,
-        divisionsY: 1,
-      },
-    });
-    useEditorStore.setState({
-      project: {
-        ...createEmptyProject(),
-        layers: [mesh],
-        physicsGroups: [
-          {
-            id: "pg-1",
-            name: "物理グループ",
-            enabled: true,
-            pendulums: [{ length: 1, mass: 1, damping: 0.05 }],
-            inputs: [],
-            outputs: [
-              {
-                type: "angle",
-                parameterId: "nonexistent-param",
-                pendulumIndex: 0,
-                weight: 1,
-              },
-            ],
-            gravityDirection: 0,
-            gravityStrength: 9.8,
-            wind: 0,
-          },
-        ],
-      },
-      projectVersion: 1,
-    });
-    render(<ValidationDialog onClose={vi.fn()} />);
-
-    const items = document.querySelectorAll(".validation-item:not([disabled])");
-    if (items.length > 0) {
-      fireEvent.click(items[0]!);
-      const selected = useSelectionStore.getState().selectedLayerId;
-      expect(selected).not.toBeNull();
-    }
   });
 });

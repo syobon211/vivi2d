@@ -123,17 +123,12 @@ describe("IKPanel", () => {
     expect(container.querySelector(".ik-panel")).not.toBeInTheDocument();
   });
 
-  it("renders an existing IK controller", () => {
-    setupWithTwoBoneIK();
-    render(<IKPanel />);
-    expect(screen.getByText("Arm IK")).toBeInTheDocument();
-    expect(screen.getByText("twoBone")).toBeInTheDocument();
-    expect(screen.getByText(/Upper Arm -> Forearm/)).toBeInTheDocument();
-  });
-
   it("updates controller influence from the slider", () => {
     setupWithTwoBoneIK();
     const { container } = render(<IKPanel />);
+    expect(screen.getByText("Arm IK")).toBeInTheDocument();
+    expect(screen.getByText("twoBone")).toBeInTheDocument();
+    expect(screen.getByText(/Upper Arm -> Forearm/)).toBeInTheDocument();
     const slider = container.querySelector(
       '.ik-slider-row input[type="range"]',
     ) as HTMLInputElement;
@@ -165,28 +160,6 @@ describe("IKPanel", () => {
     expect(screen.queryByText("Apply Profile")).not.toBeInTheDocument();
   });
 
-  it("opens the add form and requires exactly two bones for two-bone IK", async () => {
-    setupEmpty();
-    const user = userEvent.setup();
-    render(<IKPanel />);
-
-    await user.click(screen.getByText("+ Add IK Controller"));
-    await user.type(screen.getByPlaceholderText("IK controller name"), "Test IK");
-
-    const createButton = screen.getByText("Create");
-    expect(createButton).toBeDisabled();
-
-    const checkboxes = screen.getAllByRole("checkbox");
-    await user.click(checkboxes[0]!);
-    expect(createButton).toBeDisabled();
-
-    await user.click(checkboxes[1]!);
-    expect(createButton).not.toBeDisabled();
-
-    await user.click(checkboxes[2]!);
-    expect(createButton).toBeDisabled();
-  });
-
   it("creates a two-bone controller with a selected bend profile", async () => {
     setupEmpty();
     const user = userEvent.setup();
@@ -196,9 +169,17 @@ describe("IKPanel", () => {
     await user.type(screen.getByPlaceholderText("IK controller name"), "Profiled IK");
     await user.selectOptions(screen.getByLabelText("Initial Bend Profile"), "standard");
 
+    const createButton = screen.getByText("Create");
+    expect(createButton).toBeDisabled();
     const checkboxes = screen.getAllByRole("checkbox");
     await user.click(checkboxes[0]!);
+    expect(createButton).toBeDisabled();
     await user.click(checkboxes[1]!);
+    expect(createButton).not.toBeDisabled();
+    await user.click(checkboxes[2]!);
+    expect(createButton).toBeDisabled();
+    await user.click(checkboxes[2]!);
+    expect(createButton).not.toBeDisabled();
     await user.click(screen.getByText("Create"));
 
     const controller = useEditorStore

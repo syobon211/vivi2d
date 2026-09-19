@@ -13,54 +13,37 @@ describe("physicsStore", () => {
   beforeEach(resetPhysicsStore);
 
 
-  it("初期状態が正しい", () => {
-    const state = usePhysicsStore.getState();
-    expect(state.runtimeStates).toEqual({});
-    expect(state.previousParamValues).toEqual({});
-    expect(state.accumulators).toEqual({});
-    expect(state.isActive).toBe(true);
-  });
 
   // --- initialize ---
 
-  it("物理グループからランタイム状態を初期化する", () => {
-    const group = createPhysicsGroup({
-      pendulums: [
-        { length: 1, mass: 1, damping: 0.05 },
-        { length: 0.8, mass: 0.5, damping: 0.1 },
-      ],
-    });
-    usePhysicsStore.getState().initialize([group]);
-
-    const state = usePhysicsStore.getState();
-    expect(state.runtimeStates[group.id]).toHaveLength(2);
-    expect(state.runtimeStates[group.id]![0]).toEqual({ angle: 0, angularVelocity: 0 });
-    expect(state.runtimeStates[group.id]![1]).toEqual({ angle: 0, angularVelocity: 0 });
-    expect(state.accumulators[group.id]).toBe(0);
-  });
-
-  it("複数グループを初期化できる", () => {
-    const g1 = createPhysicsGroup({ name: "髪" });
-    const g2 = createPhysicsGroup({
-      name: "リボン",
+  it("initializes both groups and clears stale runtime, accumulators and parameter history", () => {
+    const first = createPhysicsGroup({ id: "first" });
+    const second = createPhysicsGroup({
+      id: "second",
       pendulums: [
         { length: 1, mass: 1, damping: 0.05 },
         { length: 0.5, mass: 0.3, damping: 0.1 },
         { length: 0.3, mass: 0.2, damping: 0.15 },
       ],
     });
-    usePhysicsStore.getState().initialize([g1, g2]);
-
-    const state = usePhysicsStore.getState();
-    expect(state.runtimeStates[g1.id]).toHaveLength(1);
-    expect(state.runtimeStates[g2.id]).toHaveLength(3);
-  });
-
-  it("initialize は previousParamValues をクリアする", () => {
+    usePhysicsStore.getState().initialize([createPhysicsGroup({ id: "stale" })]);
+    usePhysicsStore.getState().setAccumulator("stale", 0.01);
     usePhysicsStore.getState().snapshotParamValues({ p1: 5 });
-    usePhysicsStore.getState().initialize([createPhysicsGroup()]);
-    expect(usePhysicsStore.getState().previousParamValues).toEqual({});
+    usePhysicsStore.getState().initialize([first, second]);
+    const state = usePhysicsStore.getState();
+    expect(state.runtimeStates).toEqual({
+      first: [{ angle: 0, angularVelocity: 0 }],
+      second: [
+        { angle: 0, angularVelocity: 0 },
+        { angle: 0, angularVelocity: 0 },
+        { angle: 0, angularVelocity: 0 },
+      ],
+    });
+    expect(state.accumulators).toEqual({ first: 0, second: 0 });
+    expect(state.previousParamValues).toEqual({});
   });
+
+
 
   // --- reset ---
 
@@ -72,35 +55,24 @@ describe("physicsStore", () => {
     states[0]!.angle = 1.5;
     states[0]!.angularVelocity = 3.2;
 
+    usePhysicsStore.getState().setAccumulator(group.id, 0.005);
+    usePhysicsStore.getState().snapshotParamValues({ p1: 10 });
     usePhysicsStore.getState().reset();
 
     const resetStates = usePhysicsStore.getState().runtimeStates[group.id]!;
-    expect(resetStates[0]!).toEqual({ angle: 0, angularVelocity: 0 });
-  });
-
-  it("reset はアキュムレータもゼロにする", () => {
-    const group = createPhysicsGroup();
-    usePhysicsStore.getState().initialize([group]);
-    usePhysicsStore.getState().setAccumulator(group.id, 0.005);
-    usePhysicsStore.getState().reset();
-    expect(usePhysicsStore.getState().accumulators[group.id]).toBe(0);
-  });
-
-  it("reset は previousParamValues もクリアする", () => {
-    usePhysicsStore.getState().snapshotParamValues({ p1: 10 });
-    usePhysicsStore.getState().reset();
+    expect(resetStates).toEqual([{ angle: 0, angularVelocity: 0 }]);
+    expect(usePhysicsStore.getState().accumulators).toEqual({ [group.id]: 0 });
     expect(usePhysicsStore.getState().previousParamValues).toEqual({});
   });
 
+
+
   // --- setActive ---
 
-  it("シミュレーションを無効にできる", () => {
-    usePhysicsStore.getState().setActive(false);
-    expect(usePhysicsStore.getState().isActive).toBe(false);
-  });
 
   it("シミュレーションを再有効化できる", () => {
     usePhysicsStore.getState().setActive(false);
+    expect(usePhysicsStore.getState().isActive).toBe(false);
     usePhysicsStore.getState().setActive(true);
     expect(usePhysicsStore.getState().isActive).toBe(true);
   });
@@ -111,21 +83,14 @@ describe("physicsStore", () => {
     const values = { p1: 5, p2: 10 };
     usePhysicsStore.getState().snapshotParamValues(values);
     expect(usePhysicsStore.getState().previousParamValues).toEqual(values);
+    expect(usePhysicsStore.getState().previousParamValues).not.toBe(values);
+    values.p1 = 999;
+    expect(usePhysicsStore.getState().previousParamValues).toEqual({ p1: 5, p2: 10 });
   });
 
-  it("スナップショットは元のオブジェクトの参照を保持しない", () => {
-    const values = { p1: 5 };
-    usePhysicsStore.getState().snapshotParamValues(values);
-    values.p1 = 999;
-    expect(usePhysicsStore.getState().previousParamValues.p1).toBe(5);
-  });
 
   // --- setAccumulator ---
 
-  it("アキュムレータを更新する", () => {
-    usePhysicsStore.getState().setAccumulator("g1", 0.005);
-    expect(usePhysicsStore.getState().accumulators.g1).toBe(0.005);
-  });
 
   it("他のグループのアキュムレータに影響しない", () => {
     usePhysicsStore.getState().setAccumulator("g1", 0.005);
@@ -155,9 +120,12 @@ describe("physicsStore — CRUD", () => {
       expect(group).toBeDefined();
       expect(group!.name).toBe("髪揺れ");
       expect(group!.enabled).toBe(true);
+      expect(group!.gravityStrength).toBe(9.8);
       expect(group!.pendulums).toHaveLength(1);
       expect(group!.inputs).toEqual([]);
       expect(group!.outputs).toEqual([]);
+      expect(usePhysicsStore.getState().runtimeStates[id]).toEqual([{ angle: 0, angularVelocity: 0 }]);
+      expect(usePhysicsStore.getState().accumulators[id]).toBe(0);
     });
 
     it("複数回呼び出すと異なるIDのグループが追加される", () => {
@@ -169,14 +137,6 @@ describe("physicsStore — CRUD", () => {
       expect(project.physicsGroups).toHaveLength(2);
     });
 
-    it("syncs runtime state when adding a physics group", () => {
-      const id = usePhysicsStore.getState().addPhysicsGroup("runtime");
-
-      const state = usePhysicsStore.getState();
-      expect(state.runtimeStates[id]).toHaveLength(1);
-      expect(state.runtimeStates[id]![0]).toEqual({ angle: 0, angularVelocity: 0 });
-      expect(state.accumulators[id]).toBe(0);
-    });
   });
 
   // --- removePhysicsGroup ---
@@ -184,13 +144,24 @@ describe("physicsStore — CRUD", () => {
   describe("removePhysicsGroup", () => {
     it("指定IDのグループを削除する", () => {
       const id = usePhysicsStore.getState().addPhysicsGroup("削除対象");
-      usePhysicsStore.getState().addPhysicsGroup("残留");
+      const retained = usePhysicsStore.getState().addPhysicsGroup("残留");
+      usePhysicsStore.getState().setAccumulator(retained, 0.01);
 
       usePhysicsStore.getState().removePhysicsGroup(id);
 
       const project = useEditorStore.getState().project!;
       expect(project.physicsGroups).toHaveLength(1);
       expect(project.physicsGroups[0]!.name).toBe("残留");
+      expect(project.physicsGroups[0]!.id).toBe(retained);
+      const state = usePhysicsStore.getState();
+      expect(state.runtimeStates[id]).toBeUndefined();
+      expect(state.accumulators[id]).toBeUndefined();
+      expect(state.runtimeStates[retained]).toEqual([{ angle: 0, angularVelocity: 0 }]);
+      expect(state.accumulators[retained]).toBe(0.01);
+      usePhysicsStore.getState().removePhysicsGroup(retained);
+      expect(useEditorStore.getState().project!.physicsGroups).toEqual([]);
+      expect(usePhysicsStore.getState().runtimeStates[retained]).toBeUndefined();
+      expect(usePhysicsStore.getState().accumulators[retained]).toBeUndefined();
     });
 
     it("存在しないIDでは何もしない", () => {
@@ -203,78 +174,25 @@ describe("physicsStore — CRUD", () => {
       expect(project.physicsGroups).toHaveLength(1);
     });
 
-    it("clears runtime state when removing a physics group", () => {
-      const id = usePhysicsStore.getState().addPhysicsGroup("runtime");
-
-      usePhysicsStore.getState().removePhysicsGroup(id);
-
-      const state = usePhysicsStore.getState();
-      expect(state.runtimeStates[id]).toBeUndefined();
-      expect(state.accumulators[id]).toBeUndefined();
-    });
   });
 
   // --- updatePhysicsGroup ---
 
   describe("updatePhysicsGroup", () => {
-    it("名前を更新する", () => {
+
+
+
+
+
+    it("updates all group fields then preserves them during a name-only change", () => {
       const id = usePhysicsStore.getState().addPhysicsGroup("旧名");
-      usePhysicsStore.getState().updatePhysicsGroup(id, { name: "新名" });
-
-      const project = useEditorStore.getState().project!;
-      const group = project.physicsGroups.find((g) => g.id === id)!;
-      expect(group.name).toBe("新名");
-    });
-
-    it("enabled を更新する", () => {
-      const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-      usePhysicsStore.getState().updatePhysicsGroup(id, { enabled: false });
-
-      const project = useEditorStore.getState().project!;
-      const group = project.physicsGroups.find((g) => g.id === id)!;
-      expect(group.enabled).toBe(false);
-    });
-
-    it("gravityDirection を更新する", () => {
-      const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-      usePhysicsStore.getState().updatePhysicsGroup(id, { gravityDirection: 90 });
-
-      const project = useEditorStore.getState().project!;
-      const group = project.physicsGroups.find((g) => g.id === id)!;
-      expect(group.gravityDirection).toBe(90);
-    });
-
-    it("gravityStrength を更新する", () => {
-      const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-      usePhysicsStore.getState().updatePhysicsGroup(id, { gravityStrength: 20 });
-
-      const project = useEditorStore.getState().project!;
-      const group = project.physicsGroups.find((g) => g.id === id)!;
-      expect(group.gravityStrength).toBe(20);
-    });
-
-    it("wind を更新する", () => {
-      const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-      usePhysicsStore.getState().updatePhysicsGroup(id, { wind: 5 });
-
-      const project = useEditorStore.getState().project!;
-      const group = project.physicsGroups.find((g) => g.id === id)!;
-      expect(group.wind).toBe(5);
-    });
-
-    it("複数フィールドを同時に更新する", () => {
-      const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-      usePhysicsStore.getState().updatePhysicsGroup(id, {
-        name: "更新済み",
-        enabled: false,
-        wind: 3,
-      });
-
-      const project = useEditorStore.getState().project!;
-      const group = project.physicsGroups.find((g) => g.id === id)!;
-      expect(group.name).toBe("更新済み");
-      expect(group.enabled).toBe(false);
-      expect(group.wind).toBe(3);
+      const values = { name: "更新済み", enabled: false, gravityDirection: 90, gravityStrength: 20, wind: 5 };
+      usePhysicsStore.getState().updatePhysicsGroup(id, values);
+      const read = () => useEditorStore.getState().project!.physicsGroups.find((g) => g.id === id)!;
+      expect(read()).toMatchObject(values);
+      const beforePartial = structuredClone(read());
+      usePhysicsStore.getState().updatePhysicsGroup(id, { name: "部分更新" });
+      expect(read()).toEqual({ ...beforePartial, name: "部分更新" });
     });
 
     it("存在しないグループIDでは何もしない", () => {
@@ -435,6 +353,8 @@ describe("physicsStore — CRUD", () => {
       const group = project.physicsGroups.find((g) => g.id === id)!;
       expect(group.inputs).toHaveLength(1);
       expect(group.inputs[0]!.parameterId).toBe("p2");
+      usePhysicsStore.getState().removePhysicsInput(id, 0);
+      expect(useEditorStore.getState().project!.physicsGroups.find((g) => g.id === id)!.inputs).toEqual([]);
     });
 
     it("負のインデックスでは何もしない", () => {
@@ -520,6 +440,8 @@ describe("physicsStore — CRUD", () => {
       const group = project.physicsGroups.find((g) => g.id === id)!;
       expect(group.outputs).toHaveLength(1);
       expect(group.outputs[0]!.parameterId).toBe("p2");
+      usePhysicsStore.getState().removePhysicsOutput(id, 0);
+      expect(useEditorStore.getState().project!.physicsGroups.find((g) => g.id === id)!.outputs).toEqual([]);
     });
 
     it("負のインデックスでは何もしない", () => {
@@ -557,59 +479,19 @@ describe("physicsStore — CRUD", () => {
   // --- setLipSyncConfig ---
 
   describe("setLipSyncConfig", () => {
-    it("enabled を更新する", () => {
-      usePhysicsStore.getState().setLipSyncConfig({ enabled: true });
 
-      const project = useEditorStore.getState().project!;
-      expect(project.lipsyncConfig.enabled).toBe(true);
-    });
 
-    it("targetParameterId を更新する", () => {
-      usePhysicsStore.getState().setLipSyncConfig({ targetParameterId: "p1" });
 
-      const project = useEditorStore.getState().project!;
-      expect(project.lipsyncConfig.targetParameterId).toBe("p1");
-    });
 
-    it("source を更新する", () => {
-      usePhysicsStore.getState().setLipSyncConfig({ source: "file" });
 
-      const project = useEditorStore.getState().project!;
-      expect(project.lipsyncConfig.source).toBe("file");
-    });
 
-    it("threshold を更新する", () => {
-      usePhysicsStore.getState().setLipSyncConfig({ threshold: 0.1 });
-
-      const project = useEditorStore.getState().project!;
-      expect(project.lipsyncConfig.threshold).toBe(0.1);
-    });
-
-    it("smoothing を更新する", () => {
-      usePhysicsStore.getState().setLipSyncConfig({ smoothing: 0.8 });
-
-      const project = useEditorStore.getState().project!;
-      expect(project.lipsyncConfig.smoothing).toBe(0.8);
-    });
-
-    it("gain を更新する", () => {
-      usePhysicsStore.getState().setLipSyncConfig({ gain: 2 });
-
-      const project = useEditorStore.getState().project!;
-      expect(project.lipsyncConfig.gain).toBe(2);
-    });
-
-    it("複数フィールドを同時に更新する", () => {
-      usePhysicsStore.getState().setLipSyncConfig({
-        enabled: true,
-        threshold: 0.2,
-        gain: 3,
-      });
-
-      const project = useEditorStore.getState().project!;
-      expect(project.lipsyncConfig.enabled).toBe(true);
-      expect(project.lipsyncConfig.threshold).toBe(0.2);
-      expect(project.lipsyncConfig.gain).toBe(3);
+    it("updates all lipsync fields then preserves the others during a gain-only change", () => {
+      const values = { enabled: true, targetParameterId: "p1", source: "file" as const, threshold: 0.1, smoothing: 0.8, gain: 3 };
+      usePhysicsStore.getState().setLipSyncConfig(values);
+      expect(useEditorStore.getState().project!.lipsyncConfig).toMatchObject(values);
+      const beforePartial = structuredClone(useEditorStore.getState().project!.lipsyncConfig);
+      usePhysicsStore.getState().setLipSyncConfig({ gain: 4 });
+      expect(useEditorStore.getState().project!.lipsyncConfig).toEqual({ ...beforePartial, gain: 4 });
     });
   });
 

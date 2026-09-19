@@ -14,25 +14,21 @@ import {
 } from "../reset";
 
 describe("buildResetPlan", () => {
-  it("空でないプランを返す", () => {
+  it("非空のプランは名前と実行関数を持ちステップ名が重複しない", () => {
     const plan = buildResetPlan();
     expect(plan.steps.length).toBeGreaterThan(0);
-  });
-
-  it("各ステップは name と run を持つ", () => {
-    const plan = buildResetPlan();
     for (const step of plan.steps) {
       expect(typeof step.name).toBe("string");
       expect(step.name.length).toBeGreaterThan(0);
       expect(typeof step.run).toBe("function");
     }
-  });
-
-  it("ステップ名はユニークである（重複は構築ミスを示す）", () => {
-    const plan = buildResetPlan();
-    const names = plan.steps.map((s) => s.name);
+    const names = plan.steps.map((step) => step.name);
     expect(new Set(names).size).toBe(names.length);
   });
+
+
+
+
 });
 
 describe("applyResetPlan (純粋検証: fake plan)", () => {
@@ -116,8 +112,11 @@ describe("resetRelatedStores (結合: 代表 store の実リセット)", () => {
   });
 
   it("historyStore の undo/redo を clear する", () => {
+    const entry = { kind: "patch" as const, patches: [], inversePatches: [] };
+    useHistoryStore.setState({ undoStack: [entry], redoStack: [entry] });
+    expect(useHistoryStore.getState().undoStack).toHaveLength(1);
+    expect(useHistoryStore.getState().redoStack).toHaveLength(1);
     resetRelatedStores();
-
     expect(useHistoryStore.getState().undoStack).toEqual([]);
     expect(useHistoryStore.getState().redoStack).toEqual([]);
   });

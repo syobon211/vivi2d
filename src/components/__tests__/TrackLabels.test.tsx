@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type {
   AnimationTrack,
   AudioTrack,
@@ -9,6 +9,7 @@ import type {
   ParameterDefinition,
 } from "@vivi2d/core/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useI18nStore } from "@/lib/i18n";
 import { useClipStore } from "@/stores/clipStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useSelectionStore } from "@/stores/selectionStore";
@@ -18,7 +19,6 @@ import { TEST_AUDIO_PATH } from "@/test/path-fixtures";
 import { resetEditorStore, resetTimelineStore } from "@/test/store-reset";
 import {
   AudioTrackLabel,
-  BONE_PROPERTY_LABELS,
   BoneTrackLabel,
   ImageSequenceTrackLabel,
   LipSyncTrackLabel,
@@ -77,12 +77,6 @@ describe("TrackLabels", () => {
     vi.restoreAllMocks();
   });
 
-  it("maps bone property labels to readable English names", () => {
-    expect(BONE_PROPERTY_LABELS.angle).toBe("Angle");
-    expect(BONE_PROPERTY_LABELS.scaleX).toBe("Scale X");
-    expect(BONE_PROPERTY_LABELS.scaleY).toBe("Scale Y");
-  });
-
   it("renders and removes a parameter track label", () => {
     const removeTrackSpy = vi.spyOn(useClipStore.getState(), "removeTrack");
     const track: AnimationTrack = { parameterId: "p1", keyframes: [] };
@@ -121,21 +115,34 @@ describe("TrackLabels", () => {
 
   it("renders and removes a bone track label", () => {
     const bone = createBoneNode({ id: "bone-1", name: "Arm" });
-    const removeBoneTrackSpy = vi.spyOn(
-      useClipStore.getState(),
-      "removeBoneTrack",
-    );
+    const removeBoneTrackSpy = vi.spyOn(useClipStore.getState(), "removeBoneTrack");
     const track: BoneTrack = {
       boneId: bone.id,
       property: "angle",
       keyframes: [],
     };
 
-    render(<BoneTrackLabel track={track} clipId={clipId} layers={[bone]} />);
+    const { rerender } = render(
+      <BoneTrackLabel track={track} clipId={clipId} layers={[bone]} />,
+    );
 
     expect(screen.getByText("Arm:角度")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button"));
     expect(removeBoneTrackSpy).toHaveBeenCalledWith(clipId, bone.id, "angle");
+    act(() => useI18nStore.getState().setLocale("en"));
+    for (const [property, label] of [
+      ["angle", "Angle"],
+      ["scaleX", "Scale X"],
+      ["scaleY", "Scale Y"],
+    ] as const) {
+      rerender(
+        <BoneTrackLabel track={{ ...track, property }} clipId={clipId} layers={[bone]} />,
+      );
+      expect(screen.getByText(`Arm:${label}`)).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button"));
+      expect(removeBoneTrackSpy).toHaveBeenLastCalledWith(clipId, bone.id, property);
+    }
+    act(() => useI18nStore.getState().setLocale("ja"));
   });
 
   it("renders and removes an image sequence track label", () => {
@@ -168,9 +175,7 @@ describe("TrackLabels", () => {
     ];
     const track: ImageSequenceTrack = { targetMeshId: "mesh-1", entries: [] };
 
-    render(
-      <ImageSequenceTrackLabel track={track} clipId={clipId} layers={layers} />,
-    );
+    render(<ImageSequenceTrackLabel track={track} clipId={clipId} layers={layers} />);
 
     expect(screen.getByText("画像シーケンス: Face")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button"));
@@ -178,14 +183,8 @@ describe("TrackLabels", () => {
   });
 
   it("renders and updates an audio track label", () => {
-    const updateAudioTrackSpy = vi.spyOn(
-      useClipStore.getState(),
-      "updateAudioTrack",
-    );
-    const removeAudioTrackSpy = vi.spyOn(
-      useClipStore.getState(),
-      "removeAudioTrack",
-    );
+    const updateAudioTrackSpy = vi.spyOn(useClipStore.getState(), "updateAudioTrack");
+    const removeAudioTrackSpy = vi.spyOn(useClipStore.getState(), "removeAudioTrack");
     const track: AudioTrack = {
       id: "audio-1",
       name: "voice.wav",
@@ -224,14 +223,8 @@ describe("TrackLabels", () => {
   });
 
   it("renders and updates a lip sync track label", () => {
-    const updateLipSyncTrackSpy = vi.spyOn(
-      useClipStore.getState(),
-      "updateLipSyncTrack",
-    );
-    const removeLipSyncTrackSpy = vi.spyOn(
-      useClipStore.getState(),
-      "removeLipSyncTrack",
-    );
+    const updateLipSyncTrackSpy = vi.spyOn(useClipStore.getState(), "updateLipSyncTrack");
+    const removeLipSyncTrackSpy = vi.spyOn(useClipStore.getState(), "removeLipSyncTrack");
     const clipAudioTracks: AudioTrack[] = [
       {
         id: "audio-1",
@@ -281,12 +274,9 @@ describe("TrackLabels", () => {
       gain: 0.9,
     });
 
-    fireEvent.change(
-      screen.getByLabelText("対象パラメータ Lip Sync: voice.wav"),
-      {
-        target: { value: "p2" },
-      },
-    );
+    fireEvent.change(screen.getByLabelText("対象パラメータ Lip Sync: voice.wav"), {
+      target: { value: "p2" },
+    });
     expect(updateLipSyncTrackSpy).toHaveBeenCalledWith(clipId, "lipsync-1", {
       targetParameterId: "p2",
     });

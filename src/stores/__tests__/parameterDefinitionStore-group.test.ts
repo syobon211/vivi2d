@@ -31,40 +31,31 @@ describe("parameterDefinitionStore — グループ機能", () => {
     useEditorStore.setState({ project });
   });
 
-  it("addParameter でグループ付きのパラメータを追加できる", () => {
-    useParameterDefinitionStore.getState().addParameter("角度X", -30, 30, 0, "頭");
-    const params = useEditorStore.getState().project!.parameters;
-    expect(params).toHaveLength(1);
-    expect(params[0]!.group).toBe("頭");
+  it("グループの指定・省略・変更と二種類の解除入力を保持する", () => {
+    const { addParameter, setParameterGroup } = useParameterDefinitionStore.getState();
+    addParameter("角度X", -30, 30, 0, "頭");
+    addParameter("角度Y", -30, 30, 0);
+    const parameters = useEditorStore.getState().project!.parameters;
+    expect(parameters).toHaveLength(2);
+    expect(parameters[0]!.group).toBe("頭");
+    expect(parameters[1]!.group).toBeUndefined();
+    const id = parameters[1]!.id;
+    setParameterGroup(id, "目");
+    expect(useEditorStore.getState().project!.parameters[1]!.group).toBe("目");
+    setParameterGroup(id, "");
+    expect(useEditorStore.getState().project!.parameters[1]!.group).toBeUndefined();
+    setParameterGroup(id, "頭");
+    expect(useEditorStore.getState().project!.parameters[1]!.group).toBe("頭");
+    setParameterGroup(id, undefined);
+    expect(useEditorStore.getState().project!.parameters[1]!.group).toBeUndefined();
+    expect(useEditorStore.getState().project!.parameters[0]!.group).toBe("頭");
   });
 
-  it("addParameter でグループ未指定は undefined", () => {
-    useParameterDefinitionStore.getState().addParameter("角度X", -30, 30, 0);
-    const params = useEditorStore.getState().project!.parameters;
-    expect(params[0]!.group).toBeUndefined();
-  });
 
-  it("setParameterGroup でグループを変更できる", () => {
-    useParameterDefinitionStore.getState().addParameter("角度X", -30, 30, 0);
-    const paramId = useEditorStore.getState().project!.parameters[0]!.id;
 
-    useParameterDefinitionStore.getState().setParameterGroup(paramId, "目");
-    expect(useEditorStore.getState().project!.parameters[0]!.group).toBe("目");
-  });
 
-  it("setParameterGroup で空文字はグループ解除", () => {
-    useParameterDefinitionStore.getState().addParameter("角度X", -30, 30, 0, "頭");
-    const paramId = useEditorStore.getState().project!.parameters[0]!.id;
 
-    useParameterDefinitionStore.getState().setParameterGroup(paramId, "");
-    expect(useEditorStore.getState().project!.parameters[0]!.group).toBeUndefined();
-  });
 
-  it("setParameterGroup で undefined はグループ解除", () => {
-    useParameterDefinitionStore.getState().addParameter("角度X", -30, 30, 0, "頭");
-    const paramId = useEditorStore.getState().project!.parameters[0]!.id;
 
-    useParameterDefinitionStore.getState().setParameterGroup(paramId, undefined);
-    expect(useEditorStore.getState().project!.parameters[0]!.group).toBeUndefined();
-  });
+
 });

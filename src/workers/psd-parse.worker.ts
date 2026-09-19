@@ -8,18 +8,20 @@ import {
 import { flattenLayers } from "@vivi2d/core/layer-utils";
 import { generateGridMesh } from "@vivi2d/core/mesh-utils";
 import type {
-  ViviMeshNode,
   BlendMode,
   GroupNode,
   LayerNode,
   ProjectData,
+  ViviMeshNode,
 } from "@vivi2d/core/types";
 import type { Layer } from "ag-psd";
-import { initializeCanvas, readPsd } from "ag-psd";
+import { initializeCanvas } from "ag-psd";
 import { isValidBlendMode } from "@/lib/blend-modes";
 import {
   assertPsdBufferWithinLimit,
   PSD_METADATA_READ_OPTIONS,
+  PSD_PARSE_ERROR_MESSAGE,
+  readPsdSafely,
   validateParsedPsdDocument,
 } from "@/lib/psd-security";
 import { normalizeToRgba8 } from "./psd-parse-utils";
@@ -148,9 +150,9 @@ export function handlePsdParseRequest(request: PsdParseRequest): {
   const { buffer, fileName } = request;
   try {
     assertPsdBufferWithinLimit(buffer);
-    const metadata = readPsd(buffer, PSD_METADATA_READ_OPTIONS);
+    const metadata = readPsdSafely(buffer, PSD_METADATA_READ_OPTIONS);
     validateParsedPsdDocument(metadata);
-    const psd = readPsd(buffer, { useImageData: true });
+    const psd = readPsdSafely(buffer, { useImageData: true });
     validateParsedPsdDocument(psd);
     const textures: PsdTextureData[] = [];
     const layers = psd.children?.map((c) => convertLayer(c, textures)) ?? [];
@@ -183,12 +185,11 @@ export function handlePsdParseRequest(request: PsdParseRequest): {
       response: { type: "result", result: { project, textures } },
       transfer,
     };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+  } catch {
     return {
       response: {
         type: "error",
-        message: `Failed to load PSD file: ${msg}`,
+        message: PSD_PARSE_ERROR_MESSAGE,
       },
       transfer: [],
     };

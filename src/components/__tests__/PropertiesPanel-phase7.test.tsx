@@ -5,9 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PropertiesPanel } from "@/components/PropertiesPanel";
 import { useEditorStore } from "@/stores/editorStore";
 import { useSelectionStore } from "@/stores/selectionStore";
-import { createViviMesh, createEmptyProject, createGroup } from "@/test/fixtures";
+import { createEmptyProject, createGroup, createViviMesh } from "@/test/fixtures";
 import { resetEditorStore } from "@/test/store-reset";
-
 
 function setupViviMeshLayer(overrides?: Partial<ViviMeshNode>) {
   const layer = createViviMesh({
@@ -56,7 +55,6 @@ function getMultiplyColorPicker() {
 function getScreenColorPicker() {
   return getColorPickers()[1]!;
 }
-
 
 describe("PropertiesPanel — 描画順", () => {
   beforeEach(resetEditorStore);
@@ -112,7 +110,6 @@ describe("PropertiesPanel — 描画順", () => {
   });
 });
 
-
 describe("PropertiesPanel — ブレンドモード", () => {
   beforeEach(resetEditorStore);
   afterEach(resetEditorStore);
@@ -154,7 +151,6 @@ describe("PropertiesPanel — ブレンドモード", () => {
   });
 });
 
-
 describe("PropertiesPanel — 乗算色", () => {
   beforeEach(resetEditorStore);
   afterEach(resetEditorStore);
@@ -188,7 +184,6 @@ describe("PropertiesPanel — 乗算色", () => {
   });
 });
 
-
 describe("PropertiesPanel — スクリーン色", () => {
   beforeEach(resetEditorStore);
   afterEach(resetEditorStore);
@@ -220,7 +215,6 @@ describe("PropertiesPanel — スクリーン色", () => {
     expect(updated.screenColor!.b).toBeCloseTo(1, 1);
   });
 });
-
 
 describe("PropertiesPanel — カリング", () => {
   beforeEach(resetEditorStore);
@@ -289,7 +283,6 @@ describe("PropertiesPanel — カリング", () => {
     expect(screen.queryByText("裏面を非表示")).not.toBeInTheDocument();
   });
 });
-
 
 describe("PropertiesPanel — 描画プロパティ全体", () => {
   beforeEach(resetEditorStore);
@@ -362,7 +355,6 @@ describe("PropertiesPanel — 描画プロパティ全体", () => {
   });
 });
 
-
 describe("PropertiesPanel — 複数選択時", () => {
   beforeEach(resetEditorStore);
   afterEach(resetEditorStore);
@@ -425,29 +417,7 @@ describe("PropertiesPanel — 複数選択時", () => {
     fireEvent.change(select, { target: { value: "fine" } });
     expect((select as HTMLSelectElement).value).toBe("fine");
   });
-
-  it("一括適用ボタンが動作する", () => {
-    const meshA = createViviMesh({ name: "メッシュA" });
-    const meshB = createViviMesh({ name: "メッシュB" });
-    useEditorStore.setState({
-      project: {
-        ...createEmptyProject(),
-        layers: [meshA, meshB],
-      },
-      projectVersion: 1,
-    });
-    useSelectionStore.setState({
-      selectedLayerId: meshA.id,
-      selectedLayerIds: [meshA.id, meshB.id],
-    });
-
-    render(<PropertiesPanel />);
-    const applyBtn = screen.getByRole("button", { name: "一括自動メッシュ適用" });
-    fireEvent.click(applyBtn);
-    expect(applyBtn).toBeInTheDocument();
-  });
 });
-
 
 describe("PropertiesPanel — クリッピングマスク", () => {
   beforeEach(resetEditorStore);

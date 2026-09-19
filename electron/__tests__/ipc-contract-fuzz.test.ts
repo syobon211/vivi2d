@@ -43,18 +43,29 @@ function randomPath(seed: number): string {
 describe("IPC payload and path canonicalization deterministic fuzz boundaries", () => {
   it("never accepts traversal, absolute, or reserved relative export paths", () => {
     const base = path.resolve("tmp", "ipc-fuzz-export");
+    for (const candidate of ["layers/body.png", "layers\\body.png"]) {
+      expect(validateSafeRelativePath(candidate)).toBe(candidate);
+      expect(assertWithinDirectory(base, candidate)).toBe(path.resolve(base, candidate));
+    }
     for (let seed = 1; seed <= 256; seed += 1) {
       const candidate = randomPath(seed);
+      let safeRelative: string;
       try {
-        const safeRelative = validateSafeRelativePath(candidate);
-        expect(safeRelative).not.toMatch(/(^|\/)\.\.(\/|$)/);
-        expect(safeRelative).not.toMatch(/[\\]/);
-        expect(path.isAbsolute(safeRelative)).toBe(false);
-        const resolved = assertWithinDirectory(base, safeRelative);
-        expect(resolved.startsWith(base)).toBe(true);
+        safeRelative = validateSafeRelativePath(candidate);
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
+        continue;
       }
+      expect(safeRelative).toBe(candidate);
+      expect(path.win32.isAbsolute(safeRelative)).toBe(false);
+      expect(safeRelative).not.toMatch(/^[a-zA-Z]:/);
+      for (const segment of safeRelative.split(/[\\/]+/)) {
+        expect(["", ".", ".."]).not.toContain(segment);
+        expect(segment).not.toMatch(/[<>:"|?*]|[. ]$/);
+        expect(segment).not.toMatch(/^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\.|$)/i);
+      }
+      const resolved = assertWithinDirectory(base, safeRelative);
+      expect(resolved.startsWith(`${base}${path.sep}`)).toBe(true);
     }
   });
 

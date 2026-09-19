@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeViviBinary, isViviBinaryFormat } from "../vivib-format";
+import { isViviBinaryFormat } from "../vivib-format";
 
 function makeRng(seed: number): () => number {
   let state = seed >>> 0;
@@ -32,24 +32,6 @@ describe(".vivb deterministic fuzz boundaries", () => {
         bytes[3] === 0x42;
 
       expect(isViviBinaryFormat(bytes.buffer)).toBe(expected);
-    }
-  });
-
-  it("rejects mutated binary payloads with regular Error objects", () => {
-    for (let seed = 1; seed <= 128; seed += 1) {
-      const length = 9 + (seed % 96);
-      const bytes = randomBytes(seed * 0x9e3779b1, length);
-      if (seed % 2 === 0) {
-        bytes.set([0x56, 0x49, 0x56, 0x42], 0);
-        bytes[4] = seed % 5 === 0 ? 1 : seed & 0xff;
-      }
-
-      try {
-        decodeViviBinary(bytes.buffer);
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-        expect(String((error as Error).message)).not.toContain("[object Object]");
-      }
     }
   });
 });

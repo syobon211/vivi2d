@@ -84,12 +84,6 @@ describe("ViviModelElement 新規API", () => {
   // ----------------------------------------------------------
   // scriptRunning
   // ----------------------------------------------------------
-  describe("scriptRunning", () => {
-    it("初期状態ではfalse", () => {
-      const el = document.createElement(TAG_NAME) as ViviModelElement;
-      expect(el.scriptRunning).toBe(false);
-    });
-  });
 
   // ----------------------------------------------------------
   // runScript
@@ -102,16 +96,6 @@ describe("ViviModelElement 新規API", () => {
       );
     });
 
-    it("モデル読み込み後にスクリプトを実行できる", async () => {
-      const el = document.createElement(TAG_NAME) as ViviModelElement;
-      document.body.appendChild(el);
-      await el.load("test.vivi");
-      expect(el.model).not.toBeNull();
-
-      await expect(el.runScript("smile → neutral")).resolves.toBeUndefined();
-
-      document.body.removeChild(el);
-    });
 
     it("runScript内のAPIオブジェクトが正しく構築される", async () => {
       const el = document.createElement(TAG_NAME) as ViviModelElement;
@@ -154,7 +138,7 @@ describe("ViviModelElement 新規API", () => {
         },
       );
 
-      await el.runScript("test-script");
+      await expect(el.runScript("test-script")).resolves.toBeUndefined();
 
       document.body.removeChild(el);
     });
@@ -166,6 +150,7 @@ describe("ViviModelElement 新規API", () => {
   describe("cancelScript", () => {
     it("スクリプト実行中でなければcancelScriptは何もしない", () => {
       const el = document.createElement(TAG_NAME) as ViviModelElement;
+      expect(el.scriptRunning).toBe(false);
       expect(() => el.cancelScript()).not.toThrow();
       expect(el.scriptRunning).toBe(false);
     });
@@ -236,12 +221,5 @@ describe("ViviModelElement 新規API", () => {
       );
     });
 
-    it("コンテキスト取得不可時に空文字列を返す", () => {
-      (generateThumbnail as ReturnType<typeof vi.fn>).mockReturnValueOnce("");
-
-      const el = document.createElement(TAG_NAME) as ViviModelElement;
-      const result = el.generateThumbnail();
-      expect(result).toBe("");
-    });
   });
 });

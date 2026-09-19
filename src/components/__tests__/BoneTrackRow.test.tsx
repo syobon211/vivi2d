@@ -10,7 +10,6 @@ import { createBoneNode, createEmptyProject } from "@/test/fixtures";
 import { resetEditorStore, resetTimelineStore } from "@/test/store-reset";
 import { BoneTrackRow } from "../timeline/BoneTrackRow";
 
-
 const boneNode = createBoneNode({ id: "bone-1", name: "テストボーン" });
 const clipId = "clip-1";
 
@@ -63,7 +62,6 @@ function createTestTrack(): BoneTrack {
   };
 }
 
-
 describe("BoneTrackRow", () => {
   beforeEach(() => {
     vi.mocked(readPsd).mockReturnValue({
@@ -78,49 +76,12 @@ describe("BoneTrackRow", () => {
     resetTimelineStore();
   });
 
-  it("キーフレームマーカーを表示する", () => {
-    render(<BoneTrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    const markers = document.querySelectorAll(".tl-keyframe-bone");
-    expect(markers).toHaveLength(3);
-  });
-
-  it("キーフレーム追加ボタンが表示される", () => {
-    render(<BoneTrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    expect(screen.getByTitle("現在のフレームにキーフレーム追加")).toBeInTheDocument();
-  });
-
-  it("現在のフレームにキーフレームがある場合、削除ボタンが表示される", () => {
-    useTimelineStore.setState({ currentFrame: 0 });
-
-    render(<BoneTrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    expect(screen.getByTitle("現在のフレームのキーフレーム削除")).toBeInTheDocument();
-  });
-
-  it("現在のフレームにキーフレームがない場合、削除ボタンは表示されない", () => {
-    useTimelineStore.setState({ currentFrame: 10 });
-
-    render(<BoneTrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    expect(
-      screen.queryByTitle("現在のフレームのキーフレーム削除"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("現在のフレーム上のキーフレームに active クラスが付く", () => {
-    useTimelineStore.setState({ currentFrame: 45 });
-
-    render(<BoneTrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
-
-    const activeMarkers = document.querySelectorAll(".tl-keyframe-bone.active");
-    expect(activeMarkers).toHaveLength(1);
-  });
-
   it("キーフレームのツールチップにフレーム番号と値が表示される", () => {
     render(<BoneTrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
 
+    expect(screen.getByTitle("現在のフレームにキーフレーム追加")).toBeInTheDocument();
+    expect(screen.getByTitle("現在のフレームのキーフレーム削除")).toBeInTheDocument();
+    expect(document.querySelectorAll(".tl-keyframe-bone")).toHaveLength(3);
     const markers = document.querySelectorAll(".tl-keyframe-bone");
     expect(markers[0]!.getAttribute("title")).toContain("F0");
     expect(markers[0]!.getAttribute("title")).toContain("0.00");
@@ -146,6 +107,9 @@ describe("BoneTrackRow", () => {
 
     render(<BoneTrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
 
+    expect(
+      screen.queryByTitle("現在のフレームのキーフレーム削除"),
+    ).not.toBeInTheDocument();
     const addBtn = screen.getByTitle("現在のフレームにキーフレーム追加");
     await user.click(addBtn);
 
@@ -164,6 +128,8 @@ describe("BoneTrackRow", () => {
 
     render(<BoneTrackRow track={createTestTrack()} clipId={clipId} duration={90} />);
 
+    expect(document.querySelectorAll(".tl-keyframe-bone")).toHaveLength(3);
+    expect(document.querySelectorAll(".tl-keyframe-bone.active")).toHaveLength(1);
     const removeBtn = screen.getByTitle("現在のフレームのキーフレーム削除");
     await user.click(removeBtn);
 

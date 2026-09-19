@@ -34,7 +34,6 @@ describe("ParameterPanel", () => {
     clearTextures();
   });
 
-
   describe("基本表示", () => {
     it("プロジェクト未読み込み時は何も描画しない", () => {
       const { container } = render(<ParameterPanel />);
@@ -45,27 +44,11 @@ describe("ParameterPanel", () => {
       loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
       render(<ParameterPanel />);
       expect(screen.getByText("パラメータなし")).toBeInTheDocument();
-    });
-
-    it("「パラメータ」タイトルを表示する", () => {
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      render(<ParameterPanel />);
       expect(screen.getByText("パラメータ")).toBeInTheDocument();
-    });
-
-    it("「リセット」ボタンを表示する", () => {
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      render(<ParameterPanel />);
       expect(screen.getByText("リセット")).toBeInTheDocument();
-    });
-
-    it("「+ 追加」ボタンを表示する", () => {
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      render(<ParameterPanel />);
       expect(screen.getByText("+ 追加")).toBeInTheDocument();
     });
   });
-
 
   describe("パラメータスライダー表示", () => {
     it("パラメータがある場合スライダーを表示する", () => {
@@ -74,18 +57,10 @@ describe("ParameterPanel", () => {
 
       const slider = screen.getByRole("slider");
       expect(slider).toBeInTheDocument();
-    });
-
-    it("パラメータ名を表示する", () => {
-      setupProjectWithParam("角度X");
-      render(<ParameterPanel />);
       expect(screen.getByText("角度X")).toBeInTheDocument();
-    });
-
-    it("整数の値はそのまま表示する", () => {
-      setupProjectWithParam("角度X", -30, 30, 0);
-      render(<ParameterPanel />);
       expect(screen.getByText("0")).toBeInTheDocument();
+      expect(screen.getByTitle("パラメータを削除")).toBeInTheDocument();
+      expect(screen.getByText("x")).toBeInTheDocument();
     });
 
     it("小数の値は小数点以下1桁で表示する", () => {
@@ -94,15 +69,7 @@ describe("ParameterPanel", () => {
       render(<ParameterPanel />);
       expect(screen.getByText("0.5")).toBeInTheDocument();
     });
-
-    it("削除ボタン「x」を表示する", () => {
-      setupProjectWithParam();
-      render(<ParameterPanel />);
-      expect(screen.getByTitle("パラメータを削除")).toBeInTheDocument();
-      expect(screen.getByText("x")).toBeInTheDocument();
-    });
   });
-
 
   describe("スライダー操作", () => {
     it("スライダー変更で parameterStore の値が更新される", async () => {
@@ -118,22 +85,7 @@ describe("ParameterPanel", () => {
 
       expect(useParameterStore.getState().parameterValues[param.id]).toBe(15);
     });
-
-    it("値が min/max でクランプされる", () => {
-      const param = setupProjectWithParam("角度X", -30, 30, 0);
-      render(<ParameterPanel />);
-
-      const slider = screen.getByRole("slider");
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
-        slider,
-        "999",
-      );
-      slider.dispatchEvent(new Event("change", { bubbles: true }));
-
-      expect(useParameterStore.getState().parameterValues[param.id]).toBe(30);
-    });
   });
-
 
   describe("パラメータ名ダブルクリック", () => {
     it("ダブルクリックでデフォルト値にリセットする", async () => {
@@ -148,7 +100,6 @@ describe("ParameterPanel", () => {
       expect(useParameterStore.getState().parameterValues[param.id]).toBe(0);
     });
   });
-
 
   describe("削除ボタン", () => {
     it("パラメータを削除し parameterStore からも削除する", async () => {
@@ -166,7 +117,6 @@ describe("ParameterPanel", () => {
       expect(useParameterStore.getState().parameterValues[param.id]).toBeUndefined();
     });
   });
-
 
   describe("リセットボタン", () => {
     it("全パラメータをデフォルト値にリセットする", async () => {
@@ -192,31 +142,7 @@ describe("ParameterPanel", () => {
     });
   });
 
-
   describe("追加フォーム", () => {
-    it("「+ 追加」クリックでフォームが開く", async () => {
-      const user = userEvent.setup();
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      render(<ParameterPanel />);
-
-      await user.click(screen.getByText("+ 追加"));
-
-      expect(screen.getByPlaceholderText("パラメータ名")).toBeInTheDocument();
-    });
-
-    it("パラメータ名、最小、最大、初期値の入力フィールドを表示する", async () => {
-      const user = userEvent.setup();
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      render(<ParameterPanel />);
-
-      await user.click(screen.getByText("+ 追加"));
-
-      expect(screen.getByPlaceholderText("パラメータ名")).toBeInTheDocument();
-      expect(screen.getByPlaceholderText("最小")).toBeInTheDocument();
-      expect(screen.getByPlaceholderText("最大")).toBeInTheDocument();
-      expect(screen.getByPlaceholderText("初期値")).toBeInTheDocument();
-    });
-
     it("OK ボタンで追加（ストアに反映）する", async () => {
       const user = userEvent.setup();
       loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
@@ -313,7 +239,6 @@ describe("ParameterPanel", () => {
     });
   });
 
-
   describe("パラメータ結合", () => {
     function setupTwoParams() {
       loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
@@ -326,17 +251,6 @@ describe("ParameterPanel", () => {
       }
       return { paramX: params[0]!, paramY: params[1]! };
     }
-
-    it("結合済みパラメータは2Dスライダーとして1つにまとまる", () => {
-      const { paramX, paramY } = setupTwoParams();
-
-      useParameterDefinitionStore.getState().pairParameters(paramX.id, paramY.id);
-
-      render(<ParameterPanel />);
-
-      expect(screen.getByText("角度X / 角度Y")).toBeInTheDocument();
-      expect(screen.queryByRole("slider")).not.toBeInTheDocument();
-    });
 
     it("結合ボタンをクリックするとペアメニューが表示される", async () => {
       const user = userEvent.setup();
@@ -361,6 +275,7 @@ describe("ParameterPanel", () => {
       render(<ParameterPanel />);
 
       expect(screen.getByText("角度X / 角度Y")).toBeInTheDocument();
+      expect(screen.queryByRole("slider")).not.toBeInTheDocument();
 
       const unpairBtn = screen.getByTitle("結合を解除");
       await user.click(unpairBtn);

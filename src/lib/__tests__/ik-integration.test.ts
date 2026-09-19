@@ -1,8 +1,8 @@
-
 import type { Affine2D } from "@vivi2d/core/bone-utils";
 import { computeBoneWorldTransforms } from "@vivi2d/core/bone-utils";
 import type { IKSolution } from "@vivi2d/core/ik-solver";
 import { mapIKToParameters, solveIKController } from "@vivi2d/core/ik-solver";
+import { PublicViviModel } from "@vivi2d/core/public-model";
 import { evaluateIKControllerTracksAtFrame } from "@vivi2d/core/timeline-utils";
 import type {
   IKBoneConstraint,
@@ -227,39 +227,42 @@ describe("IK統合テスト", () => {
       expect(solution.solvedAngles.size).toBe(2);
       expect(solution.reached).toBe(true);
     });
-
-    it("複数フレームで連続的にIKを解いてターゲット追従を確認", () => {
-      const tracks: IKControllerTrack[] = [
-        {
-          controllerId: "ik-seq",
-          targetXKeyframes: [
-            { frame: 0, value: 50, interpolation: "linear" },
-            { frame: 10, value: 100, interpolation: "linear" },
-          ],
-          targetYKeyframes: [
-            { frame: 0, value: 0, interpolation: "linear" },
-            { frame: 10, value: 0, interpolation: "linear" },
-          ],
-        },
-      ];
-
-      const frames = [0, 5, 10];
-      const targetXValues: number[] = [];
-
-      for (const frame of frames) {
-        const values = evaluateIKControllerTracksAtFrame(tracks, frame);
-        targetXValues.push(values["ik-seq"]!.targetX);
-      }
-
-      expect(targetXValues[0]!).toBeCloseTo(50, 1);
-      expect(targetXValues[1]!).toBeCloseTo(75, 1);
-      expect(targetXValues[2]!).toBeCloseTo(100, 1);
-      expect(targetXValues[0]!).toBeLessThan(targetXValues[1]!);
-      expect(targetXValues[1]!).toBeLessThan(targetXValues[2]!);
-    });
   });
 
   describe("influenceブレンド", () => {
+    it.each([
+      [0, 0.6],
+      [0.5, 0.3],
+      [1, 0],
+    ])("実モデルで influence=%s が非zero FKとIKの角度を合成する", (influence, expected) => {
+      const bone = createBoneNode({
+        id: "blend-bone",
+        x: 0,
+        y: 0,
+        bone: { angle: 0.6, length: 100, scaleX: 1, scaleY: 1 },
+      });
+      const project = structuredClone(useEditorStore.getState().project!);
+      project.layers = [bone];
+      project.parameterBindings = [];
+      project.physicsGroups = [];
+      project.ikControllers = [
+        {
+          id: "blend-ik",
+          name: "Blend",
+          solverType: "ccd",
+          boneChain: [{ boneId: "blend-bone", minAngle: -Math.PI, maxAngle: Math.PI }],
+          targetX: 100,
+          targetY: 0,
+          influence,
+          parameterMappings: [],
+        },
+      ];
+      const model = PublicViviModel.fromFileData({ version: 1, project, atlases: [] });
+      const result = model.project.layers[0]!;
+      expect(result.kind).toBe("bone");
+      if (result.kind !== "bone") throw new Error("Expected bone");
+      expect(result.bone.angle).toBeCloseTo(expected, 12);
+    });
     it("influence=0 の場合はFK角度が維持される", () => {
       const store = useIKControllerStore.getState();
       const boneChain: IKBoneConstraint[] = [

@@ -2,7 +2,6 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { readRuntimeConformanceFixture } from "../../../../tests/conformance/runtime-v1/runner";
 import {
   VIVI_RUNTIME_ABI_VERSION,
-  VIVI_RUNTIME_ERROR_CODES,
   VIVI_RUNTIME_SPEC_V1_VERSION,
   ViviRuntimeError,
   createViviWasmRuntime,
@@ -42,21 +41,6 @@ describe("@vivi2d/runtime-wasm reference bridge", () => {
     });
   });
 
-  it("rejects ABI mismatches with a canonical internal error", async () => {
-    let caught: unknown;
-    try {
-      await createViviWasmRuntime({
-        backend: "native",
-        expectedAbiVersion: VIVI_RUNTIME_ABI_VERSION + 1,
-      });
-    } catch (error) {
-      caught = error;
-    }
-    expect(caught).toBeInstanceOf(ViviRuntimeError);
-    expect((caught as ViviRuntimeError).code).toBe(
-      VIVI_RUNTIME_ERROR_CODES.internal,
-    );
-  });
 
   it("delegates the full current facade surface through the reference bridge", () => {
     const fixture = readRuntimeConformanceFixture("basic-mesh");

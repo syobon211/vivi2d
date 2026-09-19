@@ -1,10 +1,8 @@
 import { render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useEditorStore } from "@/stores/editorStore";
 import { useMultiViewStore } from "@/stores/multiViewStore";
 import { resetAllStores } from "@/test/store-reset";
 import { MultiViewCanvas } from "../MultiViewCanvas";
-
 
 class MockResizeObserver {
   observe = vi.fn();
@@ -32,20 +30,6 @@ describe("MultiViewCanvas", () => {
     expect(container.querySelector(".layout-split-vertical")).toBeInTheDocument();
   });
 
-  it("views の数だけサブビューがレンダリングされる", () => {
-    useMultiViewStore.setState({
-      layout: "grid-2x2",
-      views: [
-        { id: "v1", zoom: 1, panX: 0, panY: 0, parameterOverrides: {} },
-        { id: "v2", zoom: 1, panX: 0, panY: 0, parameterOverrides: {} },
-      ],
-    } as any);
-    const { container } = render(<MultiViewCanvas />);
-
-    const panes = container.querySelectorAll(".multi-view-pane");
-    expect(panes).toHaveLength(2);
-  });
-
   it("activeViewId と一致するビューに active クラスが付与される", () => {
     useMultiViewStore.setState({
       layout: "grid-2x2",
@@ -58,6 +42,7 @@ describe("MultiViewCanvas", () => {
     const { container } = render(<MultiViewCanvas />);
 
     const panes = container.querySelectorAll(".multi-view-pane");
+    expect(panes).toHaveLength(2);
     expect(panes[0]?.className).toContain("active");
     expect(panes[1]?.className).not.toContain("active");
   });
@@ -76,16 +61,6 @@ describe("MultiViewCanvas", () => {
     pane.click();
 
     expect(setActiveView).toHaveBeenCalledWith("v2");
-  });
-
-  it("project が null でもクラッシュしない", () => {
-    useEditorStore.setState({ project: null, projectVersion: 0 });
-    useMultiViewStore.setState({
-      layout: "grid-2x2",
-      views: [{ id: "v1", zoom: 1, panX: 0, panY: 0, parameterOverrides: {} }],
-    } as any);
-
-    expect(() => render(<MultiViewCanvas />)).not.toThrow();
   });
 
   it("views が空の場合パネルはレンダリングされない", () => {

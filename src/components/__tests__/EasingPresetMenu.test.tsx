@@ -10,7 +10,6 @@ import { createEmptyProject } from "@/test/fixtures";
 import { resetEditorStore, resetTimelineStore } from "@/test/store-reset";
 import { EasingPresetMenu } from "../timeline/EasingPresetMenu";
 
-
 function setupStores() {
   const project = {
     ...createEmptyProject(),
@@ -55,86 +54,37 @@ describe("EasingPresetMenu", () => {
     resetTimelineStore();
   });
 
-  it("イージングセレクトが表示される", () => {
-    render(<EasingPresetMenu clipId="clip-1" parameterId="p1" frame={0} />);
-
-    expect(screen.getByTitle("イージングプリセット")).toBeInTheDocument();
-  });
-
-  it("4つのプリセットオプションが存在する", () => {
-    render(<EasingPresetMenu clipId="clip-1" parameterId="p1" frame={0} />);
-
-    expect(screen.getByText("リニア")).toBeInTheDocument();
-    expect(screen.getByText("イーズイン")).toBeInTheDocument();
-    expect(screen.getByText("イーズアウト")).toBeInTheDocument();
-    expect(screen.getByText("イーズイン・アウト")).toBeInTheDocument();
-  });
-
-  it("プリセット選択でストアに反映される", async () => {
+  it("各プリセットの制御点を対象フレームだけに適用する", async () => {
     const user = userEvent.setup();
-
     render(<EasingPresetMenu clipId="clip-1" parameterId="p1" frame={0} />);
-
     const select = screen.getByTitle("イージングプリセット");
-    await user.selectOptions(select, "easeIn");
-
-    const clip = useEditorStore.getState().project!.clips[0]!;
-    const track = clip.tracks.find((t) => t.parameterId === "p1")!;
-    const kf = track.keyframes.find((k) => k.frame === 0)!;
-    expect(kf.interpolation).toBe("bezier");
-  });
-
-  it("デフォルト選択は空（プレースホルダー）", () => {
-    render(<EasingPresetMenu clipId="clip-1" parameterId="p1" frame={0} />);
-
-    const select = screen.getByTitle("イージングプリセット") as HTMLSelectElement;
-    expect(select.value).toBe("");
-  });
-
-  it("easeOut プリセットを適用できる", async () => {
-    const user = userEvent.setup();
-
-    render(<EasingPresetMenu clipId="clip-1" parameterId="p1" frame={0} />);
-
-    const select = screen.getByTitle("イージングプリセット");
-    await user.selectOptions(select, "easeOut");
-
-    const clip = useEditorStore.getState().project!.clips[0]!;
-    const track = clip.tracks.find((t) => t.parameterId === "p1")!;
-    const kf = track.keyframes.find((k) => k.frame === 0)!;
-    expect(kf.interpolation).toBe("bezier");
-  });
-
-  it("easeInOut プリセットを適用できる", async () => {
-    const user = userEvent.setup();
-
-    render(<EasingPresetMenu clipId="clip-1" parameterId="p1" frame={0} />);
-
-    const select = screen.getByTitle("イージングプリセット");
-    await user.selectOptions(select, "easeInOut");
-
-    const clip = useEditorStore.getState().project!.clips[0]!;
-    const track = clip.tracks.find((t) => t.parameterId === "p1")!;
-    const kf = track.keyframes.find((k) => k.frame === 0)!;
-    expect(kf.interpolation).toBe("bezier");
-  });
-
-  it("linear プリセットを適用できる（bezier として適用される）", async () => {
-    const user = userEvent.setup();
-
-    render(<EasingPresetMenu clipId="clip-1" parameterId="p1" frame={0} />);
-
-    const select = screen.getByTitle("イージングプリセット");
-    await user.selectOptions(select, "linear");
-
-    const clip = useEditorStore.getState().project!.clips[0]!;
-    const track = clip.tracks.find((t) => t.parameterId === "p1")!;
-    const kf = track.keyframes.find((k) => k.frame === 0)!;
-    expect(kf.interpolation).toBe("bezier");
-    expect(kf.cp1x).toBe(0);
-    expect(kf.cp1y).toBe(0);
-    expect(kf.cp2x).toBe(1);
-    expect(kf.cp2y).toBe(1);
+    expect(select).toHaveValue("");
+    for (const label of ["リニア", "イーズイン", "イーズアウト", "イーズイン・アウト"]) {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    }
+    const presets = [
+      ["easeIn", [0.42, 0, 1, 1]],
+      ["easeOut", [0, 0, 0.58, 1]],
+      ["easeInOut", [0.42, 0, 0.58, 1]],
+      ["linear", [0, 0, 1, 1]],
+    ] as const;
+    for (const [preset, controls] of presets) {
+      await user.selectOptions(select, preset);
+      const track = useEditorStore
+        .getState()
+        .project!.clips[0]!.tracks.find((t) => t.parameterId === "p1")!;
+      const keyframe = track.keyframes.find((k) => k.frame === 0)!;
+      expect(keyframe.interpolation, preset).toBe("bezier");
+      expect(
+        [keyframe.cp1x, keyframe.cp1y, keyframe.cp2x, keyframe.cp2y],
+        preset,
+      ).toEqual(controls);
+      expect(track.keyframes.find((k) => k.frame === 45)).toEqual({
+        frame: 45,
+        value: 15,
+        interpolation: "linear",
+      });
+    }
   });
 
   it("空文字の change イベントでは applyEasingPreset が呼ばれない", () => {
@@ -160,6 +110,17 @@ describe("EasingPresetMenu", () => {
     const clip = useEditorStore.getState().project!.clips[0]!;
     const track = clip.tracks.find((t) => t.parameterId === "p1")!;
     const kf = track.keyframes.find((k) => k.frame === 45)!;
-    expect(kf.interpolation).toBe("bezier");
+    expect(kf).toMatchObject({
+      interpolation: "bezier",
+      cp1x: 0.42,
+      cp1y: 0,
+      cp2x: 1,
+      cp2y: 1,
+    });
+    expect(track.keyframes.find((k) => k.frame === 0)).toEqual({
+      frame: 0,
+      value: 0,
+      interpolation: "linear",
+    });
   });
 });

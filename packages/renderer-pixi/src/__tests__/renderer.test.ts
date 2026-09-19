@@ -179,16 +179,11 @@ describe("ViviPixiRenderer", () => {
       expect(vi.mocked(Application).mock.calls.length).toBe(count);
     });
 
-    it("Applicationが初期化されレンダラーが返される", async () => {
+    it("オプションなしでデフォルト設定が使われる", async () => {
       const renderer = await ViviPixiRenderer.create(canvas);
       expect(renderer).toBeInstanceOf(ViviPixiRenderer);
       expect(renderer.pixiApp).toBeDefined();
       expect(renderer.pixiApp.init).toHaveBeenCalledTimes(1);
-      renderer.destroy();
-    });
-
-    it("オプションなしでデフォルト設定が使われる", async () => {
-      const renderer = await ViviPixiRenderer.create(canvas);
       expect(renderer.pixiApp.init).toHaveBeenCalledWith(
         expect.objectContaining({
           canvas,
@@ -380,68 +375,40 @@ describe("ViviPixiRenderer", () => {
   });
 
   // --- pixiApp getter ---
-  describe("pixiApp", () => {
-    it("Applicationインスタンスを返す", async () => {
-      const renderer = await ViviPixiRenderer.create(canvas);
-
-      const app = renderer.pixiApp;
-
-      expect(app).toBeDefined();
-      expect(app.init).toBeDefined();
-      expect(app.render).toBeDefined();
-      renderer.destroy();
-    });
-  });
 
   describe("applyMeshState() スクリーンカラーフィルター", () => {
-    it("screenColorが設定されるとフィルターが作成される", async () => {
+    it("creates, updates in place, and removes the screen-color filter", async () => {
       const renderer = await ViviPixiRenderer.create(canvas);
-      const state = createMockMeshState({
-        screenColor: [0.5, 0.3, 0.1, 1],
-      });
-      const model = createMockModel(new Map([["mesh-1", state]]));
-      const textures = new Map([["mesh-1", document.createElement("canvas")]]);
-      renderer.setModel(model, textures);
-
+      const state = createMockMeshState({ screenColor: [0.5, 0.25, 0.125, 1] });
+      renderer.setModel(
+        createMockModel(new Map([["mesh-1", state]])),
+        new Map([["mesh-1", document.createElement("canvas")]]),
+      );
       renderer.render();
-
-      expect(renderer.pixiApp.render).toHaveBeenCalled();
-      renderer.destroy();
-    });
-
-    it("screenColorが更新されるとフィルターが更新される", async () => {
-      const renderer = await ViviPixiRenderer.create(canvas);
-      const state = createMockMeshState({
-        screenColor: [0.5, 0.3, 0.1, 1],
-      });
-      const model = createMockModel(new Map([["mesh-1", state]]));
-      const textures = new Map([["mesh-1", document.createElement("canvas")]]);
-      renderer.setModel(model, textures);
-
+      const mesh = renderer.pixiApp.stage.children[0]!.children[0] as unknown as {
+        filters: Array<{
+          resources: {
+            screenColorUniforms: { uniforms: { uScreenColor: Float32Array } };
+          };
+          destroy: ReturnType<typeof vi.fn>;
+        }>;
+      };
+      expect(mesh.filters).toHaveLength(1);
+      const filter = mesh.filters[0]!;
+      expect([...filter.resources.screenColorUniforms.uniforms.uScreenColor]).toEqual([
+        0.5, 0.25, 0.125,
+      ]);
+      state.screenColor = [0.75, 0.5, 0.25, 1];
       renderer.render();
-
-      state.screenColor = [0.8, 0.6, 0.4, 1];
-      renderer.render();
-
-      expect(renderer.pixiApp.render).toHaveBeenCalledTimes(2);
-      renderer.destroy();
-    });
-
-    it("screenColorがnullになるとフィルターが削除される", async () => {
-      const renderer = await ViviPixiRenderer.create(canvas);
-      const state = createMockMeshState({
-        screenColor: [0.5, 0.3, 0.1, 1],
-      });
-      const model = createMockModel(new Map([["mesh-1", state]]));
-      const textures = new Map([["mesh-1", document.createElement("canvas")]]);
-      renderer.setModel(model, textures);
-
-      renderer.render();
-
+      expect(mesh.filters).toEqual([filter]);
+      expect([...filter.resources.screenColorUniforms.uniforms.uScreenColor]).toEqual([
+        0.75, 0.5, 0.25,
+      ]);
+      expect(filter.destroy).not.toHaveBeenCalled();
       state.screenColor = null;
       renderer.render();
-
-      expect(renderer.pixiApp.render).toHaveBeenCalledTimes(2);
+      expect(mesh.filters).toEqual([]);
+      expect(filter.destroy).toHaveBeenCalledTimes(1);
       renderer.destroy();
     });
   });

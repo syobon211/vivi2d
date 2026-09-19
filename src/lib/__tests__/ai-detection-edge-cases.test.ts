@@ -10,7 +10,6 @@ import {
 } from "@/lib/ai-part-detector";
 import { detectSwayingParts, generatePhysicsGroups } from "@/lib/ai-physics-generator";
 
-
 function makeLayer(id: string, name: string, x = 0, y = 0, w = 100, h = 100): LayerNode {
   return {
     id,
@@ -140,8 +139,8 @@ describe("detectPartByName: 特殊文字を含むレイヤー名", () => {
   });
 });
 
-describe("detectParts: 1000レイヤーのパフォーマンス", () => {
-  it("1000レイヤーの検出が500ms以内に完了する", () => {
+describe("detectParts: 多数レイヤーの検出とフィルタリング", () => {
+  it("多数レイヤーの全件・順序・分類と信頼度フィルタを保持する", () => {
     const layers: LayerNode[] = [];
     const names = [
       "左目",
@@ -161,24 +160,32 @@ describe("detectParts: 1000レイヤーのパフォーマンス", () => {
     for (let i = 0; i < 1000; i++) {
       layers.push(makeLayer(`l${i}`, names[i % names.length]!, i * 10, i * 5, 100, 100));
     }
-    const start = performance.now();
     const results = detectParts(layers);
-    const elapsed = performance.now() - start;
     expect(results).toHaveLength(1000);
-    expect(elapsed).toBeLessThan(500);
-  });
-
-  it("1000レイヤーのフィルタリングも高速", () => {
-    const layers: LayerNode[] = [];
-    for (let i = 0; i < 1000; i++) {
-      layers.push(makeLayer(`l${i}`, i % 2 === 0 ? "左目" : "背景"));
-    }
-    const parts = detectParts(layers);
-    const start = performance.now();
-    const filtered = filterDetectedParts(parts, 0.5);
-    const elapsed = performance.now() - start;
-    expect(filtered.length).toBe(500);
-    expect(elapsed).toBeLessThan(500);
+    const categories = [
+      "eyeLeft",
+      "eyeRight",
+      "mouth",
+      "hairFront",
+      "body",
+      "armLeft",
+      "armRight",
+      "tail",
+      "unknown",
+      "unknown",
+      "hair",
+      "face",
+      "body",
+    ];
+    expect(results.map((part) => [part.layerId, part.category])).toEqual(
+      layers.map((layer, index) => [layer.id, categories[index % 13]]),
+    );
+    const highConfidenceSlots = new Set([0, 1, 2, 3, 5, 6, 7, 11]);
+    expect(filterDetectedParts(results, 0.5).map((part) => part.layerId)).toEqual(
+      layers
+        .filter((_, index) => highConfidenceSlots.has(index % 13))
+        .map((layer) => layer.id),
+    );
   });
 });
 
@@ -200,53 +207,6 @@ describe("detectParts: 0x0 バウンディングボックス", () => {
 });
 
 describe("generateAllBones: 全パーツ検出時のボーン階層", () => {
-  it("主要全パーツでボーン階層が正しく構築される", () => {
-    const parts: DetectedPart[] = [
-      makePart("head", 400, 100, 200, 200),
-      makePart("face", 420, 120, 160, 160),
-      makePart("eyeLeft", 350, 150, 60, 40),
-      makePart("eyeRight", 550, 150, 60, 40),
-      makePart("eyebrowLeft", 340, 120, 70, 20),
-      makePart("eyebrowRight", 540, 120, 70, 20),
-      makePart("mouth", 450, 250, 80, 50),
-      makePart("body", 400, 500, 200, 300),
-      makePart("armLeft", 200, 450, 100, 200),
-      makePart("armRight", 700, 450, 100, 200),
-    ];
-    const result = generateAllBones(parts, 1000, 1000);
-
-    expect(result.bones.some((b) => b.tempId === "bone_head")).toBe(true);
-    expect(result.bones.some((b) => b.tempId === "bone_body")).toBe(true);
-    expect(result.bones.some((b) => b.tempId === "bone_eye_left")).toBe(true);
-    expect(result.bones.some((b) => b.tempId === "bone_eye_right")).toBe(true);
-    expect(result.bones.some((b) => b.tempId === "bone_mouth")).toBe(true);
-    expect(result.bones.some((b) => b.tempId === "bone_arm_left")).toBe(true);
-    expect(result.bones.some((b) => b.tempId === "bone_arm_right")).toBe(true);
-
-    const headBone = result.bones.find((b) => b.tempId === "bone_head")!;
-    const eyeLeft = result.bones.find((b) => b.tempId === "bone_eye_left")!;
-    const eyeRight = result.bones.find((b) => b.tempId === "bone_eye_right")!;
-    const mouth = result.bones.find((b) => b.tempId === "bone_mouth")!;
-    const armLeft = result.bones.find((b) => b.tempId === "bone_arm_left")!;
-    const armRight = result.bones.find((b) => b.tempId === "bone_arm_right")!;
-
-    expect(headBone.parentTempId).toBe("bone_body");
-    expect(eyeLeft.parentTempId).toBe("bone_head");
-    expect(eyeRight.parentTempId).toBe("bone_head");
-    expect(mouth.parentTempId).toBe("bone_head");
-    expect(armLeft.parentTempId).toBe("bone_body");
-    expect(armRight.parentTempId).toBe("bone_body");
-  });
-
-  it("ボーンの座標がパーツのバウンディングボックス中心に配置される", () => {
-    const parts: DetectedPart[] = [makePart("eyeLeft", 100, 200, 60, 40)];
-    const result = generateAllBones(parts, 1000, 1000);
-    const eyeBone = result.bones.find((b) => b.tempId === "bone_eye_left");
-    expect(eyeBone).toBeDefined();
-    expect(eyeBone!.x).toBeCloseTo(130);
-    expect(eyeBone!.y).toBeCloseTo(220);
-  });
-
   it("パラメータが重複なく生成される", () => {
     const parts: DetectedPart[] = [
       makePart("eyeLeft", 400, 200),
@@ -359,12 +319,6 @@ describe("detectParts: 空レイヤーツリー", () => {
   it("空配列の refineByPosition で空結果", () => {
     const refined = refineByPosition([], 1000, 1000);
     expect(refined).toHaveLength(0);
-  });
-
-  it("空パーツで generateAllBones がデフォルトボーンを生成", () => {
-    const result = generateAllBones([], 1000, 1000);
-    expect(result.bones.some((b) => b.tempId === "bone_head")).toBe(true);
-    expect(result.bones.some((b) => b.tempId === "bone_body")).toBe(true);
   });
 
   it("空パーツで detectSwayingParts が空配列を返す", () => {

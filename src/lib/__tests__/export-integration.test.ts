@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ExportedTexture } from "@/lib/export/texture-exporter";
 import {
   createAnimationClip,
-  createViviMesh,
   createBoneNode,
   createEmptyProject,
+  createViviMesh,
 } from "@/test/fixtures";
 
 vi.mock("@/lib/export/texture-exporter", () => ({
@@ -59,22 +59,6 @@ describe("exportForSpine（統合テスト）", () => {
     expect(textureFile!.content).toBeInstanceOf(Blob);
   });
 
-  it("アニメーションクリップ付きプロジェクトは json.animations にクリップが含まれる", async () => {
-    mockedExportTextures.mockResolvedValue([]);
-
-    const project = createEmptyProject();
-    project.name = "アニメモデル";
-
-    const clip = createAnimationClip({ name: "待機モーション" });
-    const result = await exportForSpine(project, [clip]);
-
-    const jsonFile = result.files.find((f) => f.path.endsWith(".spine.json"));
-    expect(jsonFile).toBeDefined();
-
-    const spineJson = JSON.parse(jsonFile!.content as string);
-    expect(spineJson.animations).toHaveProperty("待機モーション");
-  });
-
   it("layerIds フィルタで指定したViviMeshのみエクスポートされる", async () => {
     const fakeBlob = new Blob(["fake-png"], { type: "image/png" });
     mockedExportTextures.mockResolvedValue([
@@ -125,15 +109,15 @@ describe("exportForSpine（統合テスト）", () => {
     const project = createEmptyProject();
     project.name = "全件";
 
-    const clipA = createAnimationClip({ name: "A" });
-    const clipB = createAnimationClip({ name: "B" });
+    const clipA = createAnimationClip({ name: "待機モーション" });
+    const clipB = createAnimationClip({ name: "歩行" });
 
     const result = await exportForSpine(project, [clipA, clipB]);
 
     const jsonFile = result.files.find((f) => f.path.endsWith(".spine.json"));
     const spineJson = JSON.parse(jsonFile!.content as string);
 
-    expect(Object.keys(spineJson.animations)).toEqual(["A", "B"]);
+    expect(Object.keys(spineJson.animations)).toEqual(["待機モーション", "歩行"]);
     expect(mockedExportTextures).toHaveBeenCalledWith(project, undefined);
   });
 

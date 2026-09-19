@@ -13,32 +13,23 @@ async function readStoredSettings(page: Parameters<typeof openSettingsPanel>[0])
   return JSON.parse(stored!);
 }
 
-test("viewer-settings: persists smoothing changes", async () => {
+test("viewer-settings: persists smoothing and background changes", async () => {
   await withViewer(async ({ page }) => {
     await setViewerLocale(page, "ja");
     await openSettingsPanel(page);
 
     await page.locator('input[type="range"]').fill("0.8");
 
-    const settings = await readStoredSettings(page);
-    expect(settings.smoothing).toBe(0.8);
-  });
-});
-
-test("viewer-settings: persists background mode changes", async () => {
-  await withViewer(async ({ page }) => {
-    await setViewerLocale(page, "ja");
-    await openSettingsPanel(page);
-
     const bgSelect = page.locator("select").filter({
       hasText: /透明|グリーンバック|ブルーバック/,
     });
     await bgSelect.selectOption("green");
-
     const settings = await readStoredSettings(page);
+    expect(settings.smoothing).toBe(0.8);
     expect(settings.bgMode).toBe("green");
   });
 });
+
 
 test("viewer-settings: restores persisted settings after reload", async () => {
   await withViewer(async ({ page }) => {

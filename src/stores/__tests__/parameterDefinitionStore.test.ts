@@ -62,6 +62,10 @@ describe("parameterDefinitionStore", () => {
       const project = useEditorStore.getState().project!;
       expect(project.parameters).toHaveLength(3);
       expect(project.parameters.map((p) => p.name)).toEqual(["目X", "目Y", "口開き"]);
+      const beforeRemove = structuredClone(project.parameters);
+      expect(new Set(beforeRemove.map((p) => p.id)).size).toBe(3);
+      store.removeParameter(beforeRemove[1]!.id);
+      expect(useEditorStore.getState().project!.parameters).toEqual([beforeRemove[0], beforeRemove[2]]);
     });
   });
 
@@ -91,12 +95,12 @@ describe("parameterDefinitionStore", () => {
 
       useParameterDefinitionStore
         .getState()
-        .updateParameter(paramId, { name: "新しい名前" });
+        .updateParameter(paramId, { name: "新しい名前", maxValue: 20 });
 
       const param = useEditorStore.getState().project!.parameters[0]!;
       expect(param.name).toBe("新しい名前");
       expect(param.minValue).toBe(-10);
-      expect(param.maxValue).toBe(10);
+      expect(param.maxValue).toBe(20);
       expect(param.defaultValue).toBe(0);
     });
 
@@ -254,14 +258,6 @@ describe("parameterDefinitionStore", () => {
       expect(bindings[0]!.parameterId).toBe(otherId);
     });
 
-    it("バインディングがない場合もエラーにならない", () => {
-      setupProjectWithViviMesh();
-      const paramId = addParameterAndGetId("テスト", 0, 1, 0.5);
-
-      useParameterDefinitionStore.getState().removeParameter(paramId);
-
-      expect(useEditorStore.getState().project!.parameters).toHaveLength(0);
-    });
 
     it("parameterBindings が undefined でもエラーにならない", () => {
       const mesh = createViviMesh({ name: "テスト" });

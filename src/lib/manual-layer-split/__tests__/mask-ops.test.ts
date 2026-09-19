@@ -1,5 +1,9 @@
+import {
+  isProtectedLayerSemantic,
+  normalizeProviderSemantic,
+  toLayerGraphSemantic,
+} from "@vivi2d/editor-core/layer-graph";
 import { describe, expect, it } from "vitest";
-import { isProtectedLayerSemantic, normalizeProviderSemantic, toLayerGraphSemantic } from "@vivi2d/editor-core/layer-graph";
 import {
   applyCircleBrush,
   applyPolygonMask,
@@ -13,8 +17,8 @@ import {
   resolveOverlapToActive,
   shrinkMask,
 } from "../mask-ops";
-import { validateManualLayerSplitDraft } from "../validation";
 import type { ManualLayerMask } from "../types";
+import { validateManualLayerSplitDraft } from "../validation";
 
 function mask(id: string, maskBufferId: string, role = "hair"): ManualLayerMask {
   return {
@@ -37,18 +41,27 @@ describe("manual layer split mask operations", () => {
     const face = createMaskBuffer("face-buffer", 8, 8);
 
     applyCircleBrush(hair, 4, 4, 2, "add");
-    applyPolygonMask(face, [
-      { x: 3, y: 3 },
-      { x: 7, y: 3 },
-      { x: 7, y: 7 },
-      { x: 3, y: 7 },
-    ], "add");
+    applyPolygonMask(
+      face,
+      [
+        { x: 3, y: 3 },
+        { x: 7, y: 3 },
+        { x: 7, y: 7 },
+        { x: 3, y: 7 },
+      ],
+      "add",
+    );
 
-    expect(countMaskPixels(hair)).toBeGreaterThan(0);
-    expect(countMaskPixels(face)).toBeGreaterThan(0);
+    expect(countMaskPixels(hair)).toBe(12);
+    expect(countMaskPixels(face)).toBe(16);
+    const activeBefore = hair.alpha.slice();
 
     resolveOverlapToActive([hair, face], hair.id);
 
+    expect(hair.alpha).toEqual(activeBefore);
+    expect(
+      [...face.alpha.entries()].filter(([, value]) => value > 0).map(([index]) => index),
+    ).toEqual([30, 38, 45, 46, 51, 52, 53, 54]);
     for (let index = 0; index < hair.alpha.length; index += 1) {
       expect(hair.alpha[index]! > 0 && face.alpha[index]! > 0).toBe(false);
     }
@@ -57,14 +70,22 @@ describe("manual layer split mask operations", () => {
   it("replace mode clears pixels outside the new shape", () => {
     const buffer = createMaskBuffer("mask", 8, 8, 255);
     applyCircleBrush(buffer, 4, 4, 1, "replace");
-    expect(countMaskPixels(buffer)).toBeLessThan(64);
+    expect(countMaskPixels(buffer)).toBe(4);
     expect(buffer.alpha[0]).toBe(0);
+    expect(buffer.alpha[3 * buffer.width + 3]).toBe(255);
 
-    applyPolygonMask(buffer, [
-      { x: 0, y: 0 },
-      { x: 2, y: 0 },
-      { x: 0, y: 2 },
-    ], "replace");
+    applyPolygonMask(
+      buffer,
+      [
+        { x: 0, y: 0 },
+        { x: 2, y: 0 },
+        { x: 0, y: 2 },
+      ],
+      "replace",
+    );
+    expect(countMaskPixels(buffer)).toBe(1);
+    expect(buffer.alpha[0]).toBe(255);
+    expect(buffer.alpha[3 * buffer.width + 3]).toBe(0);
     expect(buffer.alpha[7 * buffer.width + 7]).toBe(0);
   });
 
@@ -72,9 +93,12 @@ describe("manual layer split mask operations", () => {
     const buffer = createMaskBuffer("mask", 5, 5);
     buffer.alpha[2 * buffer.width + 2] = 255;
     growMask(buffer, 1);
-    expect(countMaskPixels(buffer)).toBeGreaterThan(1);
+    expect([...buffer.alpha]).toEqual([
+      0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0,
+    ]);
     shrinkMask(buffer, 1);
-    expect(countMaskPixels(buffer)).toBeGreaterThanOrEqual(1);
+    expect(countMaskPixels(buffer)).toBe(1);
+    expect(buffer.alpha[12]).toBe(255);
 
     const island = createMaskBuffer("island", 5, 5);
     island.alpha[0] = 255;
@@ -88,12 +112,13 @@ describe("manual layer split mask operations", () => {
     expect(countMaskPixels(hole)).toBe(25);
 
     featherMask(buffer, 1);
-    expect(Math.max(...buffer.alpha)).toBeGreaterThan(0);
+    expect([...buffer.alpha]).toEqual([
+      0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 51, 51, 51, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0,
+    ]);
 
     const source = new ImageData(
       new Uint8ClampedArray([
-        10, 10, 10, 255, 10, 10, 10, 255,
-        200, 200, 200, 255, 200, 200, 200, 255,
+        10, 10, 10, 255, 10, 10, 10, 255, 200, 200, 200, 255, 200, 200, 200, 255,
       ]),
       2,
       2,

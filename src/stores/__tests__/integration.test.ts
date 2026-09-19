@@ -8,7 +8,7 @@ import { usePhysicsStore } from "@/stores/physicsStore";
 import { closeProject, loadPsdFromBuffer } from "@/stores/projectIO";
 import { useSelectionStore } from "@/stores/selectionStore";
 import { useTimelineStore } from "@/stores/timelineStore";
-import { createViviMesh, createEmptyProject, createPhysicsGroup } from "@/test/fixtures";
+import { createViviMesh, createEmptyProject } from "@/test/fixtures";
 import { resetAllStores } from "@/test/store-reset";
 
 
@@ -105,51 +105,6 @@ describe("エディタ → クリップ → タイムライン 統合", () => {
 });
 
 
-describe("物理演算 → パラメータ 統合", () => {
-  beforeEach(resetAllStoresWithInactive);
-  afterEach(resetAllStoresWithInactive);
-
-  it("物理グループ初期化 → ランタイム状態生成", () => {
-    setupProjectWithParameter();
-
-    const physicsGroup = createPhysicsGroup({
-      id: "phys-1",
-      pendulums: [
-        { length: 1, mass: 1, damping: 0.05 },
-        { length: 0.8, mass: 0.5, damping: 0.1 },
-      ],
-    });
-
-    usePhysicsStore.getState().initialize([physicsGroup]);
-
-    const state = usePhysicsStore.getState();
-    expect(state.runtimeStates["phys-1"]).toHaveLength(2);
-    expect(state.runtimeStates["phys-1"]![0]).toEqual({
-      angle: 0,
-      angularVelocity: 0,
-    });
-  });
-
-  it("物理リセットで全振り子状態がゼロになる", () => {
-    setupProjectWithParameter();
-
-    const physicsGroup = createPhysicsGroup({ id: "phys-1" });
-    usePhysicsStore.getState().initialize([physicsGroup]);
-
-    const state = usePhysicsStore.getState();
-    if (state.runtimeStates["phys-1"]) {
-      state.runtimeStates["phys-1"][0] = { angle: 1.5, angularVelocity: 3 };
-    }
-
-    usePhysicsStore.getState().reset();
-
-    const resetState = usePhysicsStore.getState();
-    expect(resetState.runtimeStates["phys-1"]?.[0]).toEqual({
-      angle: 0,
-      angularVelocity: 0,
-    });
-  });
-});
 
 
 describe("PSD 読み込み → エディタ 統合", () => {

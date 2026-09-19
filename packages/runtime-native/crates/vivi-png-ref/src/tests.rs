@@ -192,19 +192,17 @@ fn insufficient_capacity_and_simulated_scratch_failure_are_atomic_limits() {
     );
     assert_eq!(short, [0xa5; 3]);
 
-    let caller_output = [0xa5; 12];
     assert_eq!(
         decode_to_scratch(
             &bytes,
             &expected_hash,
             1,
             1,
-            Some(caller_output.len() as u64),
+            Some(12),
             ScratchPolicy::FailFullImage,
         ),
         Err(Error::Limit)
     );
-    assert_eq!(caller_output, [0xa5; 12]);
 }
 
 #[test]

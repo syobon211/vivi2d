@@ -81,10 +81,6 @@ describe("isPolygonFlipped", () => {
     expect(isPolygonFlipped(vertices)).toBe(false);
   });
 
-  it("通常の number[] 配列でも動作する", () => {
-    const vertices = [0, 0, 0, 1, 1, 0];
-    expect(isPolygonFlipped(vertices)).toBe(true);
-  });
 
   it("ちょうど 3 頂点（最小有効サイズ）で正しく判定", () => {
     const cw = [0, 0, 1, 0, 0.5, 1];

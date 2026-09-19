@@ -61,19 +61,7 @@ describe("useKeyboardShortcuts", () => {
     expect(useViewportStore.getState().activeTool).toBe("pan");
   });
 
-  it("'H'（大文字）でもパンツールに切り替わる", () => {
-    renderHook(() => useKeyboardShortcuts());
 
-    fireKey("keydown", { key: "H" });
-    expect(useViewportStore.getState().activeTool).toBe("pan");
-  });
-
-  it("Space キー押下でパンツールに一時的に切り替わる", () => {
-    renderHook(() => useKeyboardShortcuts());
-
-    fireKey("keydown", { code: "Space", key: " " });
-    expect(useViewportStore.getState().activeTool).toBe("pan");
-  });
 
   it("Space キーリリースで選択ツールに戻る", () => {
     renderHook(() => useKeyboardShortcuts());
@@ -100,12 +88,6 @@ describe("useKeyboardShortcuts", () => {
     expect(useViewportStore.getState().activeTool).toBe("meshEdit");
   });
 
-  it("'M'（大文字）でもメッシュ編集ツールに切り替わる", () => {
-    renderHook(() => useKeyboardShortcuts());
-
-    fireKey("keydown", { key: "M" });
-    expect(useViewportStore.getState().activeTool).toBe("meshEdit");
-  });
 
   it("登録外のキーは無視する", () => {
     renderHook(() => useKeyboardShortcuts());

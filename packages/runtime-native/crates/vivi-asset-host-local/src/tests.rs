@@ -985,7 +985,29 @@ fn referenced_manifest_ingestion_succeeds_reopens_and_is_idempotent() {
 
 #[test]
 fn closure_cardinality_syntax_and_case_collisions_are_zero_write_refset_failures() {
-    let bundle = manifest_bundle(large_valid_png());
+    // These failures precede chunk payload inspection. Keep a valid three-chunk
+    // manifest and its exact declared sizes, but do not build a 16 MiB PNG.
+    let chunks = (1..=3)
+        .map(|value| {
+            let bytes = vec![value];
+            let address = sha256(&bytes);
+            ManifestChunkFixture {
+                address,
+                wire_address: address.to_lower_hex(),
+                bytes,
+            }
+        })
+        .collect::<Vec<_>>();
+    let content = digest(4);
+    let contract = manifest_contract(
+        &chunks,
+        &[MANIFEST_CHUNK_BYTES as u64, MANIFEST_CHUNK_BYTES as u64, 1],
+        content,
+        "image/png",
+        content,
+        "image/png",
+    );
+    let bundle = ManifestBundleFixture { contract, chunks };
 
     let mut cases = Vec::new();
     let mut missing = closure_objects(&bundle.contract, &bundle.chunks);

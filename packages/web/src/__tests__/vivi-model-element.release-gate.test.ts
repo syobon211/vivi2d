@@ -120,6 +120,10 @@ describe("ViviModelElement release gate smoke", () => {
     el.setAttribute("src", "first.vivi");
     await firstLoad;
     expect(el.project?.name).toBe("release-gate");
+    const firstModel = el.model;
+    el.setAttribute("src", "first.vivi");
+    expect(el.model).toBe(firstModel);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 
     const secondLoad = new Promise<void>((resolve) => {
       el.addEventListener("load", () => resolve(), { once: true });

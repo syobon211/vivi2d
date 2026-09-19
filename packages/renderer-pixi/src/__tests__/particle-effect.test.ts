@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ParticleEffectType } from "../particle-effect";
 import { ParticleEffectRenderer } from "../particle-effect";
 
-
 vi.mock("pixi.js", () => ({
   Container: class MockContainer {
     children: unknown[] = [];
@@ -61,148 +60,72 @@ function createMockApp(): Application {
   } as unknown as Application;
 }
 
-describe("ParticleEffectRenderer", () => {
-  let app: Application;
-  let renderer: ParticleEffectRenderer;
-
-  beforeEach(() => {
-    app = createMockApp();
-    renderer = new ParticleEffectRenderer(app);
-  });
-
-  it("コンストラクタでstageにコンテナが追加される", () => {
-    expect(app.stage.addChild).toHaveBeenCalledTimes(1);
-  });
-
-  const effectTypes: ParticleEffectType[] = ["confetti", "hearts", "stars", "sparkles"];
-
-  for (const type of effectTypes) {
-    it(`play("${type}")でパーティクルが生成される`, () => {
-      renderer.play(type);
-      renderer.update(0);
-    });
-  }
-
-  it("update(dt)でパーティクルが移動する", () => {
-    renderer.play("confetti");
-    for (let i = 0; i < 10; i++) {
-      renderer.update(1 / 60);
+describe("ParticleEffectRenderer lifecycle", () => {
+  it("creates, moves, appends, and clears every effect at the requested origin", () => {
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
+    const cases: Array<[ParticleEffectType, number]> = [
+      ["confetti", 80],
+      ["hearts", 20],
+      ["stars", 30],
+      ["sparkles", 50],
+    ];
+    try {
+      for (const [type, count] of cases) {
+        const app = createMockApp();
+        const renderer = new ParticleEffectRenderer(app);
+        expect(app.stage.addChild).toHaveBeenCalledTimes(1);
+        const container = vi.mocked(app.stage.addChild).mock.calls[0]![0] as Container;
+        renderer.update(1);
+        expect(container.children).toHaveLength(0);
+        renderer.play(type, { x: 100, y: 200 });
+        expect(container.children, type).toHaveLength(count);
+        const sprites = [...container.children] as Sprite[];
+        renderer.update(0);
+        expect(
+          sprites.every(
+            (sprite) => sprite.x === 100 && sprite.y === 200 && sprite.alpha === 1,
+          ),
+          type,
+        ).toBe(true);
+        renderer.update(0.1);
+        expect(
+          sprites.some((sprite) => sprite.x !== 100 || sprite.y !== 200),
+          type,
+        ).toBe(true);
+        renderer.play(type);
+        expect(container.children, type).toHaveLength(count * 2);
+        renderer.clear();
+        expect(container.children, type).toHaveLength(0);
+        renderer.update(1);
+        expect(container.children, type).toHaveLength(0);
+        renderer.destroy();
+        expect(app.stage.removeChild).toHaveBeenCalledExactlyOnceWith(container);
+        expect(() => renderer.update(1)).not.toThrow();
+      }
+    } finally {
+      random.mockRestore();
     }
   });
 
-  it("十分な時間が経過するとパーティクルが自然消滅する", () => {
-    renderer.play("sparkles");
-    for (let i = 0; i < 180; i++) {
-      renderer.update(1 / 60);
+  it("fades living particles before expiry removes them", () => {
+    const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
+    const app = createMockApp();
+    const renderer = new ParticleEffectRenderer(app);
+    try {
+      renderer.play("sparkles");
+      const container = vi.mocked(app.stage.addChild).mock.calls[0]![0] as Container;
+      renderer.update(1);
+      expect(container.children).toHaveLength(50);
+      for (const sprite of container.children as Sprite[]) {
+        expect(sprite.alpha).toBeGreaterThan(0);
+        expect(sprite.alpha).toBeLessThan(1);
+      }
+      renderer.update(0.5);
+      expect(container.children).toHaveLength(0);
+    } finally {
+      renderer.destroy();
+      random.mockRestore();
     }
-  });
-
-  it("clear()で全パーティクルが即座に消去される", () => {
-    renderer.play("confetti");
-    renderer.play("hearts");
-    renderer.clear();
-    renderer.update(1 / 60);
-  });
-
-  it("destroy()でリソースが破棄される", () => {
-    renderer.play("stars");
-    renderer.destroy();
-    expect(app.stage.removeChild).toHaveBeenCalled();
-  });
-
-  it("複数回play()を呼んでもクラッシュしない", () => {
-    for (let i = 0; i < 5; i++) {
-      renderer.play("confetti");
-    }
-    renderer.update(1 / 60);
-  });
-
-  it("play()にカスタム座標を指定できる", () => {
-    renderer.play("hearts", { x: 100, y: 200 });
-    renderer.update(1 / 60);
-  });
-
-  it("update(0)でもクラッシュしない（dt=0）", () => {
-    renderer.play("sparkles");
-    renderer.update(0);
-  });
-
-  it("play()なしでupdate()してもクラッシュしない", () => {
-    renderer.update(1 / 60);
-    renderer.update(1);
-  });
-
-  it("destroy()後にplay()してもクラッシュしない", () => {
-    renderer.destroy();
-    expect(() => renderer.update(1 / 60)).not.toThrow();
-  });
-});
-
-
-describe("ParticleEffectRenderer エフェクト設定値の検証", () => {
-  let app: Application;
-
-  beforeEach(() => {
-    app = createMockApp();
-  });
-
-  it("confettiの設定値が正しい", () => {
-    const renderer = new ParticleEffectRenderer(app);
-    renderer.play("confetti");
-    const container = (app.stage.addChild as ReturnType<typeof vi.fn>).mock
-      .calls[0]![0] as Container;
-    expect(container.children.length).toBe(80);
-    renderer.destroy();
-  });
-
-  it("heartsの設定値が正しい", () => {
-    const renderer = new ParticleEffectRenderer(app);
-    renderer.play("hearts");
-    const container = (app.stage.addChild as ReturnType<typeof vi.fn>).mock
-      .calls[0]![0] as Container;
-    expect(container.children.length).toBe(20);
-    renderer.destroy();
-  });
-
-  it("starsの設定値が正しい", () => {
-    const renderer = new ParticleEffectRenderer(app);
-    renderer.play("stars");
-    const container = (app.stage.addChild as ReturnType<typeof vi.fn>).mock
-      .calls[0]![0] as Container;
-    expect(container.children.length).toBe(30);
-    renderer.destroy();
-  });
-
-  it("sparklesの設定値が正しい", () => {
-    const renderer = new ParticleEffectRenderer(app);
-    renderer.play("sparkles");
-    const container = (app.stage.addChild as ReturnType<typeof vi.fn>).mock
-      .calls[0]![0] as Container;
-    expect(container.children.length).toBe(50);
-    renderer.destroy();
-  });
-});
-
-describe("ParticleEffectRenderer フェードアウト計算", () => {
-  let app: Application;
-
-  beforeEach(() => {
-    app = createMockApp();
-  });
-
-  it("lifeRatio < fadeStart の時、alpha = lifeRatio / fadeStart", () => {
-    const renderer = new ParticleEffectRenderer(app);
-    // sparkles: lifetime=1.5, fadeStart=0.3
-    renderer.play("sparkles");
-
-    for (let i = 0; i < 70; i++) {
-      renderer.update(1 / 60);
-    }
-
-    for (let i = 0; i < 30; i++) {
-      renderer.update(1 / 60);
-    }
-    renderer.destroy();
   });
 });
 

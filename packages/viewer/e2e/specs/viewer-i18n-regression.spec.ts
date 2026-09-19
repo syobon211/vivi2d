@@ -104,7 +104,7 @@ async function assertNoModelSurface(
   locale: "ja" | "en",
 ): Promise<void> {
   await setViewerLocale(page, locale);
-  const root = page.locator('[aria-label="Vivi viewer"], [aria-label="Vivi ビューア"]');
+  const root = page.getByTestId("viewer-shell");
   const text = await root.innerText();
   assertReadableText(text);
 

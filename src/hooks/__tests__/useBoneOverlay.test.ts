@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useEditorStore } from "@/stores/editorStore";
 import { useSelectionStore } from "@/stores/selectionStore";
 import { createViviMesh, createBoneNode, createProject } from "@/test/fixtures";
-import { createMockPixiRefs } from "@/test/pixi-mocks";
 import {
   resetEditorStore,
   resetSelectionStore,
@@ -73,81 +72,12 @@ describe("useBoneOverlay フック", () => {
     resetViewportStore();
   });
 
-  it("プロジェクトが null の場合はエラーなく動作する", () => {
-    useEditorStore.setState({ project: null });
-    expect(() => renderHook(() => useBoneOverlay())).not.toThrow();
-  });
 
-  it("ボーン付きプロジェクトでエラーなく描画される", () => {
-    const bone = createBoneNode({ name: "テスト", x: 100, y: 100 });
-    const project = createProject({ layers: [bone] });
-    useEditorStore.setState({ project });
-    useSelectionStore.setState({ selectedLayerId: bone.id });
 
-    expect(() => renderHook(() => useBoneOverlay())).not.toThrow();
-  });
 
-  it("ボーン未選択でも描画される", () => {
-    const bone = createBoneNode({ name: "テスト" });
-    const project = createProject({ layers: [bone] });
-    useEditorStore.setState({ project });
-    useSelectionStore.setState({ selectedLayerId: null });
 
-    expect(() => renderHook(() => useBoneOverlay())).not.toThrow();
-  });
 
-  it("ネストされたボーン構造でも描画される", () => {
-    const child = createBoneNode({ name: "子", x: 50, y: 50 });
-    const parent = createBoneNode({ name: "親", x: 0, y: 0, children: [child] });
-    const project = createProject({ layers: [parent] });
-    useEditorStore.setState({ project });
 
-    expect(() => renderHook(() => useBoneOverlay())).not.toThrow();
-  });
-
-  it("ハンドラを返す", () => {
-    const bone = createBoneNode({ name: "テスト" });
-    const project = createProject({ layers: [bone] });
-    useEditorStore.setState({ project });
-
-    const { result } = renderHook(() => useBoneOverlay());
-    expect(result.current.onPointerDown).toBeTypeOf("function");
-    expect(result.current.onPointerMove).toBeTypeOf("function");
-    expect(result.current.onPointerUp).toBeTypeOf("function");
-  });
-
-  it("選択中のボーンは SELECTED_COLOR で描画される", () => {
-    const bone = createBoneNode({
-      name: "選択ボーン",
-      x: 50,
-      y: 50,
-      bone: { angle: 0, length: 100, scaleX: 1, scaleY: 1 },
-    });
-    const project = createProject({ layers: [bone] });
-    useEditorStore.setState({ project });
-    useSelectionStore.setState({ selectedLayerId: bone.id });
-
-    const mockRefs = createMockPixiRefs();
-    renderHook(() => useBoneOverlay());
-
-    const _g = mockRefs.current as unknown as {
-      app: unknown;
-      world: unknown;
-      overlay: { addChild: ReturnType<typeof vi.fn>; children: unknown[] };
-    };
-    expect(mockRefs.current).not.toBeNull();
-  });
-
-  it("空の children を持つボーンでも再帰描画が動作する", () => {
-    const bone = createBoneNode({
-      name: "リーフ",
-      children: [],
-    });
-    const project = createProject({ layers: [bone] });
-    useEditorStore.setState({ project });
-
-    expect(() => renderHook(() => useBoneOverlay())).not.toThrow();
-  });
 
   it("onPointerDown でボーンでないノード選択時は何もしない", () => {
     const mesh = createViviMesh({ name: "メッシュ" });
@@ -238,15 +168,67 @@ describe("useBoneOverlay フック", () => {
     expect(() => result.current.onPointerUp()).not.toThrow();
   });
 
-  it("アンマウント時に cancelAnimationFrame が呼ばれる", () => {
-    const bone = createBoneNode({ name: "テスト" });
-    const project = createProject({ layers: [bone] });
-    useEditorStore.setState({ project });
+  it("pointerUp と unmount は pending RAF を取り消し、終了後の角度更新を残さない", async () => {
+    const { useBoneStore } = await import("@/stores/boneStore");
+    const bone = createBoneNode({
+      x: 0,
+      y: 0,
+      bone: { angle: 0, length: 100, scaleX: 1, scaleY: 1 },
+    });
+    useEditorStore.setState({ project: createProject({ layers: [bone] }) });
+    useSelectionStore.setState({ selectedLayerId: bone.id });
+    const pending = new Map<number, FrameRequestCallback>();
+    let nextId = 40;
+    const request = vi.spyOn(globalThis, "requestAnimationFrame").mockImplementation((cb) => {
+      const id = ++nextId;
+      pending.set(id, cb);
+      return id;
+    });
+    const cancel = vi.spyOn(globalThis, "cancelAnimationFrame").mockImplementation((id) => {
+      pending.delete(id);
+    });
+    const setAngle = vi.spyOn(useBoneStore.getState(), "setBoneAngle");
+    const { result, unmount } = renderHook(() => useBoneOverlay());
+    const target = document.createElement("div");
+    vi.spyOn(target, "setPointerCapture").mockImplementation(() => {});
+    const down = {
+      target,
+      pointerId: 9,
+      nativeEvent: { offsetX: 100, offsetY: 0 },
+      stopPropagation: vi.fn(),
+    } as unknown as React.PointerEvent;
+    const move = {
+      ...down,
+      nativeEvent: { offsetX: 0, offsetY: 100 },
+    } as unknown as React.PointerEvent;
 
-    const { unmount } = renderHook(() => useBoneOverlay());
-    unmount();
+    try {
+      result.current.onPointerDown(down);
+      expect(result.current.isInteracting()).toBe(true);
+      result.current.onPointerMove(move);
+      expect([...pending.keys()]).toEqual([41]);
+      cancel.mockClear();
+      result.current.onPointerUp();
+      expect(cancel).toHaveBeenCalledExactlyOnceWith(41);
+      expect(result.current.isInteracting()).toBe(false);
+      expect(pending.size).toBe(0);
+      result.current.onPointerMove(move);
+      expect(request).toHaveBeenCalledTimes(1);
 
-    expect(true).toBe(true);
+      result.current.onPointerDown(down);
+      result.current.onPointerMove(move);
+      expect([...pending.keys()]).toEqual([42]);
+      cancel.mockClear();
+      unmount();
+      expect(cancel).toHaveBeenCalledExactlyOnceWith(42);
+      expect(pending.size).toBe(0);
+      expect(setAngle).not.toHaveBeenCalled();
+    } finally {
+      unmount();
+      request.mockRestore();
+      cancel.mockRestore();
+      setAngle.mockRestore();
+    }
   });
 
 
@@ -337,22 +319,7 @@ describe("useBoneOverlay フック", () => {
   });
 
 
-  it("プロジェクトがnullでもフックがクラッシュしない", () => {
-    useEditorStore.setState({ project: null });
-    const { result } = renderHook(() => useBoneOverlay());
-    expect(result.current.onPointerDown).toBeDefined();
-    expect(result.current.onPointerMove).toBeDefined();
-    expect(result.current.onPointerUp).toBeDefined();
-  });
 
-  it("ボーンがないプロジェクトでもフックがクラッシュしない", () => {
-    const mesh = createViviMesh({ name: "メッシュ" });
-    const project = createProject({ layers: [mesh] });
-    useEditorStore.setState({ project });
-
-    const { result } = renderHook(() => useBoneOverlay());
-    expect(result.current.onPointerDown).toBeDefined();
-  });
 
 
   describe("ドラッグ操作", () => {
@@ -458,30 +425,6 @@ describe("useBoneOverlay フック", () => {
       useBoneStore.setState({ setBoneAngle: original } as any);
     });
 
-    it("ドラッグ中に pointerUp でドラッグ終了する", () => {
-      const bone = createBoneNode({
-        name: "テスト",
-        x: 0,
-        y: 0,
-        bone: { angle: 0, length: 100, scaleX: 1, scaleY: 1 },
-      });
-      const project = createProject({ layers: [bone] });
-      useEditorStore.setState({ project });
-      useSelectionStore.setState({ selectedLayerId: bone.id });
-
-      const { result } = renderHook(() => useBoneOverlay());
-
-      const target = document.createElement("div");
-      vi.spyOn(target, "setPointerCapture").mockImplementation(() => {});
-      result.current.onPointerDown({
-        target,
-        pointerId: 1,
-        nativeEvent: { offsetX: 100, offsetY: 0 },
-        stopPropagation: vi.fn(),
-      } as unknown as React.PointerEvent);
-
-      expect(() => result.current.onPointerUp()).not.toThrow();
-    });
 
     it("デフォルトフォームロック時に先端ヒットしても通知のみでドラッグ開始しない", async () => {
       const { useViewportStore } = await import("@/stores/viewportStore");

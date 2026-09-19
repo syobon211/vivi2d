@@ -121,12 +121,6 @@ describe("setMultiplyColor", () => {
   beforeEach(resetEditorStore);
   afterEach(resetEditorStore);
 
-  it("乗算色を設定できる", () => {
-    const { viviMeshId } = setupProject();
-    useEditorStore.getState().setMultiplyColor(viviMeshId, { r: 0.5, g: 0.3, b: 0.8 });
-    const layer = getLayer(viviMeshId);
-    expect(layer.multiplyColor).toEqual({ r: 0.5, g: 0.3, b: 0.8 });
-  });
 
   it("白（デフォルト相当）を設定できる", () => {
     const { viviMeshId } = setupProject();
@@ -163,11 +157,6 @@ describe("setScreenColor", () => {
   beforeEach(resetEditorStore);
   afterEach(resetEditorStore);
 
-  it("スクリーン色を設定できる", () => {
-    const { viviMeshId } = setupProject();
-    useEditorStore.getState().setScreenColor(viviMeshId, { r: 0.2, g: 0.4, b: 0.6 });
-    expect(getLayer(viviMeshId).screenColor).toEqual({ r: 0.2, g: 0.4, b: 0.6 });
-  });
 
   it("黒（デフォルト相当）を設定できる", () => {
     const { viviMeshId } = setupProject();
@@ -190,16 +179,11 @@ describe("setCulling", () => {
   beforeEach(resetEditorStore);
   afterEach(resetEditorStore);
 
-  it("viviMesh にカリングを有効化できる", () => {
-    const { viviMeshId } = setupProject();
-    useEditorStore.getState().setCulling(viviMeshId, true);
-    const layer = getLayer(viviMeshId) as ViviMeshNode;
-    expect(layer.culling).toBe(true);
-  });
 
   it("viviMesh のカリングを無効化できる", () => {
     const { viviMeshId } = setupProject();
     useEditorStore.getState().setCulling(viviMeshId, true);
+    expect((getLayer(viviMeshId) as ViviMeshNode).culling).toBe(true);
     useEditorStore.getState().setCulling(viviMeshId, false);
     const layer = getLayer(viviMeshId) as ViviMeshNode;
     expect(layer.culling).toBe(false);

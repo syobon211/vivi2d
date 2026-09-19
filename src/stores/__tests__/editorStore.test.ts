@@ -1,12 +1,14 @@
 import { findLayerById } from "@vivi2d/core/layer-utils";
 import { readPsd } from "ag-psd";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { clearTextures } from "@/lib/texture-store";
+import * as autoMesh from "@/lib/auto-mesh";
+import { clearTextures, setTexture } from "@/lib/texture-store";
 import { useEditorStore } from "@/stores/editorStore";
 import { useParameterDefinitionStore } from "@/stores/parameterDefinitionStore";
 import { usePhysicsStore } from "@/stores/physicsStore";
 import { closeProject, loadPsdFromBuffer } from "@/stores/projectIO";
 import { useSelectionStore } from "@/stores/selectionStore";
+import { createGroup, createProject, createViviMesh } from "@/test/fixtures";
 import { resetEditorStore, resetSelectionStore } from "@/test/store-reset";
 
 describe("editorStore", () => {
@@ -42,13 +44,6 @@ describe("editorStore", () => {
     clearTextures();
   });
 
-  describe("初期状態", () => {
-    it("プロジェクト未読み込み状態", () => {
-      const state = useEditorStore.getState();
-      expect(state.project).toBeNull();
-      expect(useSelectionStore.getState().selectedLayerId).toBeNull();
-    });
-  });
 
   describe("loadPsdFromBuffer", () => {
     it("PSD を読み込んでプロジェクトを設定する", () => {
@@ -104,21 +99,6 @@ describe("editorStore", () => {
     });
   });
 
-  describe("selectLayer", () => {
-    it("レイヤーを選択できる", () => {
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      const layerId = useEditorStore.getState().project!.layers[0]!.id;
-
-      useSelectionStore.getState().selectLayer(layerId);
-      expect(useSelectionStore.getState().selectedLayerId).toBe(layerId);
-    });
-
-    it("null で選択を解除できる", () => {
-      useSelectionStore.getState().selectLayer("some-id");
-      useSelectionStore.getState().selectLayer(null);
-      expect(useSelectionStore.getState().selectedLayerId).toBeNull();
-    });
-  });
 
   describe("toggleVisibility", () => {
     it("レイヤーの表示/非表示を切り替える", () => {
@@ -303,32 +283,9 @@ describe("editorStore", () => {
   });
 
   describe("Phase 3: パラメータシステム", () => {
-    it("addParameter でパラメータを追加しデフォルト値を設定する", () => {
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      useParameterDefinitionStore.getState().addParameter("角度X", -30, 30, 0);
 
-      const params = useEditorStore.getState().project!.parameters;
-      expect(params).toHaveLength(1);
-      expect(params[0]!.name).toBe("角度X");
-      expect(params[0]!.minValue).toBe(-30);
-      expect(params[0]!.maxValue).toBe(30);
-      expect(params[0]!.defaultValue).toBe(0);
-    });
 
-    it("updateParameter でパラメータ属性を更新する", () => {
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      useParameterDefinitionStore.getState().addParameter("旧名", 0, 10, 5);
-      const paramId = useEditorStore.getState().project!.parameters[0]!.id;
 
-      useParameterDefinitionStore
-        .getState()
-        .updateParameter(paramId, { name: "新名", maxValue: 20 });
-
-      const param = useEditorStore.getState().project!.parameters[0]!;
-      expect(param.name).toBe("新名");
-      expect(param.maxValue).toBe(20);
-      expect(param.minValue).toBe(0);
-    });
 
     it("プロジェクト未読み込み時の全パラメータ操作が安全", () => {
       expect(() => {
@@ -339,49 +296,11 @@ describe("editorStore", () => {
       }).not.toThrow();
     });
 
-    it("updateParameter で存在しないパラメータIDは何もしない", () => {
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      useParameterDefinitionStore.getState().addParameter("テスト", 0, 10, 5);
 
-      expect(() => {
-        useParameterDefinitionStore
-          .getState()
-          .updateParameter("nonexistent", { name: "新名" });
-      }).not.toThrow();
 
-      expect(useEditorStore.getState().project!.parameters[0]!.name).toBe("テスト");
-    });
 
-    it("addParameter で複数パラメータを追加できる", () => {
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      useParameterDefinitionStore.getState().addParameter("P1", 0, 10, 5);
-      useParameterDefinitionStore.getState().addParameter("P2", -30, 30, 0);
-      useParameterDefinitionStore.getState().addParameter("P3", 0, 1, 0.5);
 
-      const params = useEditorStore.getState().project!.parameters;
-      expect(params).toHaveLength(3);
-      expect(params[0]!.name).toBe("P1");
-      expect(params[1]!.name).toBe("P2");
-      expect(params[2]!.name).toBe("P3");
 
-      const ids = new Set(params.map((p) => p.id));
-      expect(ids.size).toBe(3);
-    });
-
-    it("removeParameter で中間のパラメータを削除しても他は残る", () => {
-      loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-      useParameterDefinitionStore.getState().addParameter("P1", 0, 10, 5);
-      useParameterDefinitionStore.getState().addParameter("P2", -30, 30, 0);
-      useParameterDefinitionStore.getState().addParameter("P3", 0, 1, 0.5);
-
-      const p2Id = useEditorStore.getState().project!.parameters[1]!.id;
-      useParameterDefinitionStore.getState().removeParameter(p2Id);
-
-      const params = useEditorStore.getState().project!.parameters;
-      expect(params).toHaveLength(2);
-      expect(params[0]!.name).toBe("P1");
-      expect(params[1]!.name).toBe("P3");
-    });
   });
 });
 
@@ -406,119 +325,27 @@ describe("editorStore — 物理グループ管理", () => {
     expect(config.source).toBe("microphone");
   });
 
-  it("addPhysicsGroup で物理グループを追加できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("髪揺れ");
-    const groups = useEditorStore.getState().project!.physicsGroups;
-    expect(groups).toHaveLength(1);
-    expect(groups[0]!.id).toBe(id);
-    expect(groups[0]!.name).toBe("髪揺れ");
-    expect(groups[0]!.enabled).toBe(true);
-    expect(groups[0]!.pendulums).toHaveLength(1);
-  });
 
-  it("removePhysicsGroup で物理グループを削除できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore.getState().removePhysicsGroup(id);
-    expect(useEditorStore.getState().project!.physicsGroups).toHaveLength(0);
-  });
 
-  it("updatePhysicsGroup でグループのプロパティを更新できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore.getState().updatePhysicsGroup(id, {
-      name: "更新後",
-      enabled: false,
-      gravityDirection: 45,
-      gravityStrength: 5,
-      wind: 2,
-    });
-    const group = useEditorStore.getState().project!.physicsGroups[0]!;
-    expect(group.name).toBe("更新後");
-    expect(group.enabled).toBe(false);
-    expect(group.gravityDirection).toBe(45);
-    expect(group.gravityStrength).toBe(5);
-    expect(group.wind).toBe(2);
-  });
 
-  it("updatePhysicsGroup で一部のプロパティだけ更新できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore.getState().updatePhysicsGroup(id, { name: "名前のみ" });
-    const group = useEditorStore.getState().project!.physicsGroups[0]!;
-    expect(group.name).toBe("名前のみ");
-    expect(group.enabled).toBe(true);
-    expect(group.gravityStrength).toBe(9.8);
-  });
 
-  it("addPendulum で振り子を追加できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore.getState().addPendulum(id);
-    expect(useEditorStore.getState().project!.physicsGroups[0]!.pendulums).toHaveLength(
-      2,
-    );
-  });
 
-  it("removePendulum で振り子を削除できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore.getState().addPendulum(id);
-    usePhysicsStore.getState().removePendulum(id, 0);
-    expect(useEditorStore.getState().project!.physicsGroups[0]!.pendulums).toHaveLength(
-      1,
-    );
-  });
 
-  it("updatePendulum で振り子のプロパティを更新できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore
-      .getState()
-      .updatePendulum(id, 0, { length: 2, mass: 0.5, damping: 0.1 });
-    const p = useEditorStore.getState().project!.physicsGroups[0]!.pendulums[0]!;
-    expect(p.length).toBe(2);
-    expect(p.mass).toBe(0.5);
-    expect(p.damping).toBe(0.1);
-  });
 
-  it("addPhysicsInput で入力マッピングを追加できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore
-      .getState()
-      .addPhysicsInput(id, { parameterId: "p1", weight: 1, type: "x" });
-    const group = useEditorStore.getState().project!.physicsGroups[0]!;
-    expect(group.inputs).toHaveLength(1);
-    expect(group.inputs[0]!.parameterId).toBe("p1");
-  });
 
-  it("removePhysicsInput で入力マッピングを削除できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore
-      .getState()
-      .addPhysicsInput(id, { parameterId: "p1", weight: 1, type: "x" });
-    usePhysicsStore.getState().removePhysicsInput(id, 0);
-    expect(useEditorStore.getState().project!.physicsGroups[0]!.inputs).toHaveLength(0);
-  });
 
-  it("addPhysicsOutput で出力マッピングを追加できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore.getState().addPhysicsOutput(id, {
-      parameterId: "hair-x",
-      pendulumIndex: 0,
-      weight: 10,
-      type: "angle",
-    });
-    const group = useEditorStore.getState().project!.physicsGroups[0]!;
-    expect(group.outputs).toHaveLength(1);
-    expect(group.outputs[0]!.parameterId).toBe("hair-x");
-  });
 
-  it("removePhysicsOutput で出力マッピングを削除できる", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore.getState().addPhysicsOutput(id, {
-      parameterId: "hair-x",
-      pendulumIndex: 0,
-      weight: 10,
-      type: "angle",
-    });
-    usePhysicsStore.getState().removePhysicsOutput(id, 0);
-    expect(useEditorStore.getState().project!.physicsGroups[0]!.outputs).toHaveLength(0);
-  });
+
+
+
+
+
+
+
+
+
+
+
 
   it("存在しないグループIDでは何もしない", () => {
     usePhysicsStore.getState().updatePhysicsGroup("nonexistent", { name: "test" });
@@ -527,13 +354,7 @@ describe("editorStore — 物理グループ管理", () => {
     expect(useEditorStore.getState().project!.physicsGroups).toHaveLength(0);
   });
 
-  it("範囲外のインデックスでは振り子を削除しない", () => {
-    const id = usePhysicsStore.getState().addPhysicsGroup("テスト");
-    usePhysicsStore.getState().removePendulum(id, 99);
-    expect(useEditorStore.getState().project!.physicsGroups[0]!.pendulums).toHaveLength(
-      1,
-    );
-  });
+
 });
 
 
@@ -546,34 +367,13 @@ describe("editorStore — リップシンク設定", () => {
 
   afterEach(clearTextures);
 
-  it("setLipSyncConfig で enabled を変更できる", () => {
-    usePhysicsStore.getState().setLipSyncConfig({ enabled: true });
-    expect(useEditorStore.getState().project!.lipsyncConfig.enabled).toBe(true);
-  });
 
-  it("setLipSyncConfig で targetParameterId を変更できる", () => {
-    usePhysicsStore.getState().setLipSyncConfig({ targetParameterId: "mouth-open" });
-    expect(useEditorStore.getState().project!.lipsyncConfig.targetParameterId).toBe(
-      "mouth-open",
-    );
-  });
 
-  it("setLipSyncConfig で source を変更できる", () => {
-    usePhysicsStore.getState().setLipSyncConfig({ source: "file" });
-    expect(useEditorStore.getState().project!.lipsyncConfig.source).toBe("file");
-  });
 
-  it("setLipSyncConfig で数値パラメータを変更できる", () => {
-    usePhysicsStore.getState().setLipSyncConfig({
-      threshold: 0.05,
-      smoothing: 0.8,
-      gain: 3.0,
-    });
-    const config = useEditorStore.getState().project!.lipsyncConfig;
-    expect(config.threshold).toBe(0.05);
-    expect(config.smoothing).toBe(0.8);
-    expect(config.gain).toBe(3.0);
-  });
+
+
+
+
 
   it("プロジェクトなしでは何もしない", () => {
     closeProject();
@@ -602,69 +402,59 @@ describe("editorStore — メッシュ操作の分岐カバレッジ", () => {
     });
   });
 
-  it("setMeshVertices でボーン/グループには適用されない（isViviMesh 分岐）", () => {
+  it.each(["setMeshVertices", "setMeshData", "setMeshDivisions"] as const)("%s は既存グループとプロジェクト全体を変更しない", (operation) => {
     loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
     const project = useEditorStore.getState().project!;
-    const group = project.layers.find((l) => l.kind === "group");
-    if (!group) return;
-
-    expect(() => {
-      useEditorStore.getState().setMeshVertices(group.id, [0, 0]);
-    }).not.toThrow();
-  });
-
-  it("setMeshData でグループノードには適用されない", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    const project = useEditorStore.getState().project!;
-    const group = project.layers.find((l) => l.kind === "group");
-    if (!group) return;
-
-    expect(() => {
-      useEditorStore.getState().setMeshData(group.id, {
-        vertices: [0, 0],
-        uvs: [0, 0],
-        indices: [0],
-        divisionsX: 1,
-        divisionsY: 1,
+    const group = project.layers.find((layer) => layer.kind === "group");
+    expect(group).toBeDefined();
+    if (!group) throw new Error("Expected fixture group");
+    const before = structuredClone(project);
+    const actions = useEditorStore.getState();
+    if (operation === "setMeshVertices") actions.setMeshVertices(group.id, [0, 0]);
+    else if (operation === "setMeshData") {
+      actions.setMeshData(group.id, {
+        vertices: [0, 0], uvs: [0, 0], indices: [0], divisionsX: 1, divisionsY: 1,
       });
-    }).not.toThrow();
+    } else actions.setMeshDivisions(group.id, 3, 3);
+    expect(useEditorStore.getState().project).toEqual(before);
   });
 
-  it("setMeshDivisions でグループノードには適用されない", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    const project = useEditorStore.getState().project!;
-    const group = project.layers.find((l) => l.kind === "group");
-    if (!group) return;
 
-    expect(() => {
-      useEditorStore.getState().setMeshDivisions(group.id, 3, 3);
-    }).not.toThrow();
+
+
+
+
+  it("setAutoMeshBatch はテクスチャありだけ更新し、欠落ID・グループ・テクスチャなしを保持する", () => {
+    const textured = createViviMesh({ id: "textured", width: 20, height: 30 });
+    const untextured = createViviMesh({ id: "untextured" });
+    const group = createGroup({ id: "group", children: [untextured] });
+    useEditorStore.setState({ project: createProject({ layers: [textured, group] }) });
+    const before = structuredClone(useEditorStore.getState().project!);
+    const canvas = document.createElement("canvas");
+    setTexture(textured.id, canvas);
+    const mesh = { vertices: [0, 0, 20, 0, 0, 30], uvs: [0, 0, 1, 0, 0, 1], indices: [0, 1, 2], divisionsX: 1, divisionsY: 1 };
+    // This checks store routing and resulting state, not the mesh generator algorithm.
+    const generate = vi.spyOn(autoMesh, "generateAutoMesh").mockReturnValue(mesh);
+    try {
+      useEditorStore.getState().setAutoMeshBatch(
+        ["missing", group.id, untextured.id, textured.id], "standard",
+      );
+      expect(generate).toHaveBeenCalledExactlyOnceWith(canvas, 20, 30, "standard");
+      const expected = structuredClone(before);
+      const expectedMesh = expected.layers[0]!;
+      if (expectedMesh.kind !== "viviMesh") throw new Error("Expected fixture mesh");
+      expectedMesh.mesh = mesh;
+      expect(useEditorStore.getState().project).toEqual(expected);
+    } finally {
+      generate.mockRestore();
+      clearTextures();
+    }
   });
 
-  it("setAutoMesh でテクスチャが無い場合は何もしない", () => {
+  it("reorderLayer で存在しないIDの場合はプロジェクト全体を変更しない", () => {
     loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    const layerId = useEditorStore.getState().project!.layers[0]!.id;
-
-    expect(() => {
-      useEditorStore.getState().setAutoMesh(layerId, "standard");
-    }).not.toThrow();
-  });
-
-  it("setAutoMeshBatch でテクスチャが無いレイヤーはスキップされる", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    const project = useEditorStore.getState().project!;
-    const allIds = project.layers.map((l) => l.id);
-
-    expect(() => {
-      useEditorStore.getState().setAutoMeshBatch(allIds, "standard");
-    }).not.toThrow();
-  });
-
-  it("reorderLayer で存在しないIDの場合は何もしない", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-
-    expect(() => {
-      useEditorStore.getState().reorderLayer("nonexistent", "also-nonexistent", "before");
-    }).not.toThrow();
+    const before = structuredClone(useEditorStore.getState().project);
+    useEditorStore.getState().reorderLayer("nonexistent", "also-nonexistent", "before");
+    expect(useEditorStore.getState().project).toEqual(before);
   });
 });

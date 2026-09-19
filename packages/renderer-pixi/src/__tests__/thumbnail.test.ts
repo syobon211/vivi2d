@@ -177,25 +177,18 @@ describe("generateThumbnailBlob", () => {
     createElementSpy?.mockRestore();
   });
 
-  it("Promiseを返す", () => {
-    const { canvas: thumbCanvas } = createMockCanvas(256, 256);
-    createElementSpy = mockCreateElement(thumbCanvas);
-
-    const source = createMockCanvas(100, 100);
-    const result = generateThumbnailBlob(source.canvas as unknown as HTMLCanvasElement);
-
-    expect(result).toBeInstanceOf(Promise);
-  });
 
   it("Blobを正常に生成する", async () => {
     const { canvas: thumbCanvas, mockCtx } = createMockCanvas(256, 256);
     createElementSpy = mockCreateElement(thumbCanvas);
 
     const source = createMockCanvas(100, 100);
-    const blob = await generateThumbnailBlob(
+    const pending = generateThumbnailBlob(
       source.canvas as unknown as HTMLCanvasElement,
     );
 
+    expect(pending).toBeInstanceOf(Promise);
+    const blob = await pending;
     expect(blob).toBeInstanceOf(Blob);
     expect(mockCtx.clearRect).toHaveBeenCalled();
     expect(mockCtx.drawImage).toHaveBeenCalled();

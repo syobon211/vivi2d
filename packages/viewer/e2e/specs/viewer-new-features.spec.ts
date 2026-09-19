@@ -11,11 +11,21 @@ test.beforeAll(() => {
   if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
 });
 
+const activeApps = new Set<Awaited<ReturnType<typeof electron.launch>>>();
+
+test.afterEach(async () => {
+  for (const app of activeApps) await app.close();
+  activeApps.clear();
+});
+
 async function launchViewer() {
   const app = await electron.launch({
     args: [path.join(viewerRoot, "electron/main.cjs")],
     cwd: viewerRoot,
   });
+  activeApps.add(app);
+  const close = app.close.bind(app);
+  app.close = async () => { try { return await close(); } finally { activeApps.delete(app); } };
   const window = await app.firstWindow();
   await window.waitForLoadState("domcontentloaded");
   await window.evaluate(() => {
@@ -58,7 +68,7 @@ test("メインツールバーが1段で正しく表示される", async () => {
   const { app, window } = await launchViewer();
   await loadModel(window);
 
-  await expect(window.locator("label", { hasText: /モデルを開く/ })).toBeVisible();
+  await expect(window.getByRole("button", { name: "モデルを変更", exact: true })).toBeVisible();
   await expect(window.locator('[data-testid="workflow-primary-action"]')).toBeVisible();
   await expect(window.locator('[data-testid="context-toolbar"]')).toContainText("顔");
   await expect(window.locator('[data-testid="context-toolbar"]')).toContainText("手");
@@ -88,6 +98,9 @@ test("⚙ボタンで設定パネルが展開/折りたたみされる", async (
   await gearBtn.click();
   await expect(panel).not.toBeVisible();
 
+  await gearBtn.click();
+  await expect(panel).toBeVisible();
+
   await app.close();
 });
 
@@ -96,19 +109,23 @@ test("設定パネル内の全要素が表示される", async () => {
   await loadModel(window);
   await openPanel(window);
 
-  await expect(window.locator("button", { hasText: "⏺" })).toBeVisible();
-  await expect(window.locator("button", { hasText: "📷" })).toBeVisible();
-  await expect(window.locator("button", { hasText: /設定エクスポート/ })).toBeVisible();
-  await expect(window.locator("button", { hasText: /設定インポート/ })).toBeVisible();
+  await expect(window.getByRole("button", { name: "録画開始", exact: true })).toBeVisible();
+  await expect(window.getByRole("button", { name: "サムネイル保存", exact: true })).toBeVisible();
+  await expect(window.locator("button", { hasText: /設定をエクスポート/ })).toBeVisible();
+  await expect(window.locator("button", { hasText: /設定をインポート/ })).toBeVisible();
   await expect(window.locator('[data-testid="session-toggle-hud"]')).toBeVisible();
-  await expect(window.locator("button", { hasText: /URLから開く/ })).toBeVisible();
+  await expect(window.locator("button", { hasText: /URLを開く/ })).toBeVisible();
 
   await openPanel(window, "input-effects");
-  await expect(window.locator("button", { hasText: /反応 ON/ })).toBeVisible();
+  await expect(window.locator("button", { hasText: /リアクション ON/ })).toBeVisible();
   await expect(window.locator("button", { hasText: "紙吹雪" })).toBeVisible();
-  await expect(window.locator("button", { hasText: /🎮/ })).toBeVisible();
-  await expect(window.locator("button", { hasText: /🎹/ })).toBeVisible();
-  await expect(window.locator("button", { hasText: /スクリプト/ })).toBeVisible();
+  for (const label of ["ハート", "星", "きらめき"]) {
+    await expect(window.getByRole("button", { name: label, exact: true })).toBeVisible();
+  }
+  await expect(window.getByTestId("input-effects-panel").locator('input[type="text"]')).toBeVisible();
+  await expect(window.locator("button", { hasText: /ゲームパッド/ })).toBeVisible();
+  await expect(window.locator("button", { hasText: /MIDI/ })).toBeVisible();
+  await expect(window.getByTestId("viewer-script-run-button")).toBeVisible();
 
   await window.screenshot({ path: path.join(screenshotDir, "nf-03-panel-contents.png") });
   await app.close();
@@ -118,10 +135,10 @@ test("モデル読込後にマッピングバッジが表示される", async ()
   const { app, window } = await launchViewer();
   await loadModel(window);
 
-  const modelInfo = window.locator("span", { hasText: /Test Model/ });
+  const modelInfo = window.locator('[data-testid="context-toolbar"]');
   await expect(modelInfo).toBeVisible({ timeout: 5_000 });
 
-  const faceBadge = window.locator("span").filter({ hasText: /顔:\d+/ }).last();
+  const faceBadge = window.getByLabel("マッピング概要").locator("span").filter({ hasText: /^顔2$/ });
   await expect(faceBadge).toBeVisible({ timeout: 5_000 });
 
   await app.close();
@@ -132,7 +149,7 @@ test("コライダー反応エフェクトのON/OFF切替", async () => {
   await loadModel(window);
   await openPanel(window, "input-effects");
 
-  const reactBtn = window.locator("button").filter({ hasText: /反応/ });
+  const reactBtn = window.locator("button").filter({ hasText: /リアクション/ });
   const initialText = await reactBtn.textContent();
   expect(initialText).toContain("ON");
 
@@ -172,7 +189,7 @@ test("録画を開始・停止できる", async () => {
   await loadModel(window);
   await openPanel(window);
 
-  const recBtn = window.locator("button", { hasText: "⏺" });
+  const recBtn = window.getByRole("button", { name: "録画開始", exact: true });
   await recBtn.click();
 
   await window.waitForTimeout(1_500);
@@ -182,7 +199,7 @@ test("録画を開始・停止できる", async () => {
   await window.screenshot({ path: path.join(screenshotDir, "nf-07-recording.png") });
 
   await stopBtn.click();
-  await expect(window.locator("button", { hasText: "⏺" })).toBeVisible({ timeout: 15_000 });
+  await expect(window.getByRole("button", { name: "録画開始", exact: true })).toBeVisible({ timeout: 15_000 });
 
   expect(errors).toHaveLength(0);
   await app.close();
@@ -213,7 +230,7 @@ test("スクリプト入力欄に入力して実行ボタンが機能する", as
   const scriptInput = window.locator('input[type="text"]');
   await scriptInput.fill("Smile -> wait(200) -> reset");
 
-  const runBtn = window.locator("button", { hasText: /スクリプト/ });
+  const runBtn = window.getByTestId("viewer-script-run-button");
   await runBtn.click();
   await window.waitForTimeout(500);
 
@@ -243,10 +260,10 @@ test("設定エクスポート/インポートボタンがクリック可能", a
   window.on("pageerror", (error) => errors.push(error.message));
   await openPanel(window);
 
-  await window.locator("button", { hasText: /設定エクスポート/ }).click();
+  await window.locator("button", { hasText: /設定をエクスポート/ }).click();
   await window.waitForTimeout(300);
 
-  await window.locator("button", { hasText: /設定インポート/ }).click();
+  await window.locator("button", { hasText: /設定をインポート/ }).click();
   await window.waitForTimeout(300);
 
   expect(errors).toHaveLength(0);
@@ -260,7 +277,7 @@ test("サムネイル保存ボタンがクリック可能でエラーがない",
   await loadModel(window);
   await openPanel(window);
 
-  await window.locator("button", { hasText: "📷" }).click();
+  await window.getByRole("button", { name: "サムネイル保存", exact: true }).click();
   await window.waitForTimeout(500);
 
   expect(errors).toHaveLength(0);
@@ -274,11 +291,11 @@ test("ゲームパッドボタンがクリック可能でエラーがない", as
   await loadModel(window);
   await openPanel(window, "input-effects");
 
-  const gpBtn = window.locator("button").filter({ hasText: /🎮 開始/ });
+  const gpBtn = window.locator("button").filter({ hasText: /ゲームパッド開始/ });
   await gpBtn.click();
   await window.waitForTimeout(500);
 
-  const gpStopBtn = window.locator("button").filter({ hasText: /🎮 停止/ });
+  const gpStopBtn = window.locator("button").filter({ hasText: /ゲームパッド停止/ });
   await expect(gpStopBtn).toBeVisible({ timeout: 3_000 });
   await gpStopBtn.click();
 
@@ -286,21 +303,13 @@ test("ゲームパッドボタンがクリック可能でエラーがない", as
   await app.close();
 });
 
-test("MIDIボタンが表示される", async () => {
-  const { app, window } = await launchViewer();
-  await loadModel(window);
-  await openPanel(window, "input-effects");
-
-  await expect(window.locator("button").filter({ hasText: /🎹/ })).toBeVisible();
-  await app.close();
-});
 
 test("新機能ワークフロー: 起動→読込→パネル展開→各機能操作→パネル折りたたみ", async () => {
   const { app, window } = await launchViewer();
   const errors: string[] = [];
   window.on("pageerror", (error) => errors.push(error.message));
 
-  await expect(window.locator("label", { hasText: /モデルを開く/ })).toBeVisible({ timeout: 10_000 });
+  await expect(window.getByRole("button", { name: "モデルを開く", exact: true })).toBeVisible({ timeout: 10_000 });
   await expect(window.locator('[data-testid="settings-panel"]')).not.toBeVisible();
   await window.screenshot({ path: path.join(screenshotDir, "nf-wf-01-launch.png") });
 
@@ -329,10 +338,10 @@ test("新機能ワークフロー: 起動→読込→パネル展開→各機能
   await window.screenshot({ path: path.join(screenshotDir, "nf-wf-05-script.png") });
 
   await openPanel(window);
-  await window.locator("button", { hasText: "📷" }).click();
+  await window.getByRole("button", { name: "サムネイル保存", exact: true }).click();
   await window.waitForTimeout(300);
 
-  await window.locator("button", { hasText: /設定エクスポート/ }).click();
+  await window.locator("button", { hasText: /設定をエクスポート/ }).click();
   await window.waitForTimeout(300);
 
   await window.locator('[data-testid="session-toggle-hud"]').click();
@@ -348,13 +357,12 @@ test("新機能ワークフロー: 起動→読込→パネル展開→各機能
 
   await openPanel(window);
 
-  await window.locator("button", { hasText: /^EN$/ }).click();
-  await expect(window.locator("label", { hasText: /Open Model/ })).toBeVisible({ timeout: 3_000 });
+  await window.getByTestId("viewer-session-locale-select").selectOption("en");
+  await expect(window.getByRole("button", { name: "Change Model", exact: true })).toBeVisible({ timeout: 3_000 });
   await window.screenshot({ path: path.join(screenshotDir, "nf-wf-08-english.png") });
 
-  const jaBtn = window.locator("button", { hasText: /^JA$/ });
-  await jaBtn.click();
-  await expect(window.locator("label", { hasText: /モデルを開く/ })).toBeVisible({ timeout: 3_000 });
+  await window.getByTestId("viewer-session-locale-select").selectOption("ja");
+  await expect(window.getByRole("button", { name: "モデルを変更", exact: true })).toBeVisible({ timeout: 3_000 });
 
   await window.locator('[data-testid="settings-toggle"]').click();
   await expect(window.locator('[data-testid="settings-panel"]')).not.toBeVisible();
@@ -374,7 +382,7 @@ test("録画中にパネルを閉じても録画が継続する", async () => {
   await loadModel(window);
   await openPanel(window);
 
-  await window.locator("button", { hasText: "⏺" }).click();
+  await window.getByRole("button", { name: "録画開始", exact: true }).click();
   await window.waitForTimeout(500);
 
   await window.locator('[data-testid="settings-toggle"]').click();
@@ -385,7 +393,7 @@ test("録画中にパネルを閉じても録画が継続する", async () => {
   const stopBtn = window.locator('[data-testid="viewer-recording-stop"]');
   await expect(stopBtn).toBeVisible({ timeout: 5_000 });
   await stopBtn.click();
-  await expect(window.locator("button", { hasText: "⏺" })).toBeVisible({ timeout: 15_000 });
+  await expect(window.getByRole("button", { name: "録画開始", exact: true })).toBeVisible({ timeout: 15_000 });
 
   expect(errors).toHaveLength(0);
   await app.close();
@@ -398,7 +406,7 @@ test("コライダー反応OFF時にクリックしてもエラーがない", as
   await loadModel(window);
   await openPanel(window, "input-effects");
 
-  const reactBtn = window.locator("button").filter({ hasText: /反応/ });
+  const reactBtn = window.locator("button").filter({ hasText: /リアクション/ });
   await reactBtn.click();
   await expect(reactBtn).toContainText("OFF");
 
@@ -440,14 +448,14 @@ test("HUDと録画を同時に使用してもエラーがない", async () => {
   await window.locator('[data-testid="session-toggle-hud"]').click();
   await window.waitForTimeout(500);
 
-  await window.locator("button", { hasText: "⏺" }).click();
+  await window.getByRole("button", { name: "録画開始", exact: true }).click();
   await window.waitForTimeout(1_000);
 
   await window.screenshot({ path: path.join(screenshotDir, "nf-19-hud-recording.png") });
 
   const stopBtn = window.locator('[data-testid="viewer-recording-stop"]');
   await stopBtn.click();
-  await expect(window.locator("button", { hasText: "⏺" })).toBeVisible({ timeout: 15_000 });
+  await expect(window.getByRole("button", { name: "録画開始", exact: true })).toBeVisible({ timeout: 15_000 });
 
   expect(errors).toHaveLength(0);
   await app.close();
@@ -463,14 +471,14 @@ test("スクリプト実行中に停止ボタンでキャンセルできる", as
   const scriptInput = window.locator('input[type="text"]');
   await scriptInput.fill("loop(100) { wait(100) }");
 
-  const runBtn = window.locator("button").filter({ hasText: /スクリプト/ });
+  const runBtn = window.getByTestId("viewer-script-run-button");
   await runBtn.click();
 
-  await expect(window.locator("button").filter({ hasText: /停止/ })).toBeVisible({ timeout: 3_000 });
-  await window.locator("button").filter({ hasText: /停止/ }).click();
+  await expect(window.getByTestId("viewer-script-run-button").filter({ hasText: /停止/ })).toBeVisible({ timeout: 3_000 });
+  await window.getByTestId("viewer-script-run-button").filter({ hasText: /停止/ }).click();
   await window.waitForTimeout(300);
 
-  await expect(window.locator("button").filter({ hasText: /スクリプト/ })).toBeVisible({ timeout: 3_000 });
+  await expect(window.getByTestId("viewer-script-run-button")).toBeVisible({ timeout: 3_000 });
 
   expect(errors).toHaveLength(0);
   await app.close();

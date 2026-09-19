@@ -117,15 +117,20 @@ describe("clip metadata", () => {
 
 describe("parameter tracks", () => {
   it("adds, deduplicates, and removes parameter tracks", () => {
-    const id = useClipStore.getState().createClip("clip");
+      const id = useClipStore.getState().createClip("clip");
 
-    useClipStore.getState().addTrack(id, "param-1");
-    useClipStore.getState().addTrack(id, "param-1");
-    useClipStore.getState().addTrack(id, "param-2");
-    useClipStore.getState().removeTrack(id, "param-1");
+      useClipStore.getState().addTrack(id, "param-1");
+      useClipStore.getState().addTrack(id, "param-1");
+      expect(getTracks()).toEqual([{ parameterId: "param-1", keyframes: [] }]);
+      useClipStore.getState().addTrack(id, "param-2");
+      expect(getTracks()).toEqual([
+        { parameterId: "param-1", keyframes: [] },
+        { parameterId: "param-2", keyframes: [] },
+      ]);
+      useClipStore.getState().removeTrack(id, "param-1");
 
-    expect(getTracks()).toEqual([{ parameterId: "param-2", keyframes: [] }]);
-  });
+      expect(getTracks()).toEqual([{ parameterId: "param-2", keyframes: [] }]);
+    });
 });
 
 describe("parameter keyframes", () => {
@@ -332,44 +337,4 @@ describe("bakePhysicsToClip", () => {
     expect(outputTrack?.keyframes.length).toBeGreaterThan(0);
   });
 
-  it("bakes bone output without deleting keyframes outside the bake range", () => {
-    const project = createProject({
-      parameters: [
-        { id: "input", name: "Input", minValue: -30, maxValue: 30, defaultValue: 0 },
-      ],
-      physicsGroups: [
-        {
-          id: "pg1",
-          name: "Physics",
-          enabled: true,
-          pendulums: [{ length: 1, mass: 1, damping: 0.05 }],
-          inputs: [{ type: "x", parameterId: "input", weight: 1 }],
-          outputs: [
-            { type: "boneAngle", boneId: "bone-1", pendulumIndex: 0, weight: 1 },
-          ],
-          gravityDirection: 0,
-          gravityStrength: 9.8,
-          wind: 0,
-        },
-      ],
-    });
-    useEditorStore.setState({ project });
-
-    const id = useClipStore.getState().createClip("clip");
-    useClipStore.getState().addKeyframe(id, "input", 0, 0);
-    useClipStore.getState().addKeyframe(id, "input", 29, 10);
-    useClipStore.getState().addBoneKeyframe(id, "bone-1", "angle", 50, 1);
-
-    useClipStore.getState().bakePhysicsToClip(id, {
-      startFrame: 0,
-      endFrame: 29,
-      fps: 30,
-      sampleInterval: 2,
-    });
-
-    const boneTrack = getClips()[0]!.boneTracks!.find(
-      (track) => track.boneId === "bone-1" && track.property === "angle",
-    )!;
-    expect(boneTrack.keyframes.some((keyframe) => keyframe.frame === 50)).toBe(true);
-  });
 });

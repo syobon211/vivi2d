@@ -72,22 +72,13 @@ class ManifestValidationTests(unittest.TestCase):
         try:
             vivi_manifest.read_manifest(manifest_path)
         except RuntimeError as error:
+            self.assertRegex(str(error), "expected schema")
             rendered = "".join(traceback.format_exception(type(error), error, error.__traceback__))
             self.assertNotIn(marker, rendered)
             self.assertNotIn("ValidationError", rendered)
             self.assertIsNone(error.__cause__)
         else:
             self.fail("Invalid manifest was accepted")
-
-    def test_read_manifest_rejects_unknown_top_level_fields(self) -> None:
-        temp_dir = self._create_temp_dir()
-        manifest = _minimal_manifest()
-        manifest["unexpected"] = "private path C:/Users/example/secret.png"
-        manifest_path = temp_dir / "manifest.json"
-        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
-
-        with self.assertRaisesRegex(RuntimeError, "expected schema"):
-            vivi_manifest.read_manifest(manifest_path)
 
     def test_read_manifest_rejects_oversized_manifest_before_schema(self) -> None:
         temp_dir = self._create_temp_dir()

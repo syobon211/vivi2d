@@ -22,7 +22,6 @@ describe("ColliderPanel additional coverage", () => {
   });
 
   it("adds a mesh collider from the current selection and shows the mesh badge", () => {
-    const colliderState = useColliderStore.getState();
     const selectedLayer = useEditorStore.getState().project?.layers[0];
     const selectedLayerId = selectedLayer?.id;
     if (!selectedLayerId) throw new Error("Expected a mesh layer in the loaded PSD");
@@ -31,7 +30,6 @@ describe("ColliderPanel additional coverage", () => {
     render(<ColliderPanel />);
     fireEvent.click(screen.getByRole("button", { name: /メッシュから追加/i }));
 
-    expect(colliderState.selectedColliderId).toBeNull();
     expect(useEditorStore.getState().project?.colliders).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

@@ -36,15 +36,7 @@ describe("sceneStore", () => {
     expect(getScenes()).toHaveLength(0);
   });
 
-  it("シーンを複製できる", () => {
-    const id = useSceneStore.getState().createScene("元シーン");
-    const newId = useSceneStore.getState().duplicateScene(id);
-    expect(newId).toMatch(/\S/);
-    expect(newId).not.toBe(id);
-    const scenes = getScenes();
-    expect(scenes).toHaveLength(2);
-    expect(scenes[1]!.name).toBe("元シーン (コピー)");
-  });
+
 
   it("シーン名を変更できる", () => {
     const id = useSceneStore.getState().createScene("旧名");
@@ -76,43 +68,46 @@ describe("シーン管理 — エッジケース", () => {
   });
 
   it("複製シーンはクリップも含めてディープコピーされる", () => {
-    const sceneId = useSceneStore.getState().createScene("元シーン");
+      const sceneId = useSceneStore.getState().createScene("元シーン");
 
-    mutateScene(sceneId, (scene) => {
-      scene.clips.push({
-        id: "clip-1",
-        name: "テストクリップ",
-        duration: 60,
-        fps: 30,
-        tracks: [
-          {
-            parameterId: "param1",
-            keyframes: [{ frame: 0, value: 10, interpolation: "linear" as const }],
-          },
-        ],
+      mutateScene(sceneId, (scene) => {
+        scene.clips.push({
+          id: "clip-1",
+          name: "テストクリップ",
+          duration: 60,
+          fps: 30,
+          tracks: [
+            {
+              parameterId: "param1",
+              keyframes: [{ frame: 0, value: 10, interpolation: "linear" as const }],
+            },
+          ],
+        });
       });
+
+      const newId = useSceneStore.getState().duplicateScene(sceneId);
+      expect(newId).toMatch(/\S/);
+      expect(newId).not.toBe(sceneId);
+      const scenes = getScenes();
+      expect(scenes).toHaveLength(2);
+
+      const original = scenes.find((s) => s.id === sceneId)!;
+      const copy = scenes.find((s) => s.id === newId)!;
+
+      expect(copy.name).toBe("元シーン (コピー)");
+      expect(copy.clips).toHaveLength(1);
+      expect(copy.clips[0]!.name).toBe("テストクリップ");
+      expect(copy.clips[0]!.duration).toBe(60);
+
+      expect(copy.clips[0]!.id).not.toBe(original.clips[0]!.id);
+
+      expect(copy.clips[0]!.tracks).toHaveLength(1);
+      expect(copy.clips[0]!.tracks[0]!.parameterId).toBe("param1");
+      expect(copy.clips[0]!.tracks[0]!.keyframes).toHaveLength(1);
+      expect(copy.clips[0]!.tracks[0]!.keyframes[0]!.value).toBe(10);
+
+      expect(copy.clips[0]!.tracks[0]!.keyframes[0]).not.toBe(
+        original.clips[0]!.tracks[0]!.keyframes[0],
+      );
     });
-
-    const newId = useSceneStore.getState().duplicateScene(sceneId);
-    const scenes = getScenes();
-    expect(scenes).toHaveLength(2);
-
-    const original = scenes.find((s) => s.id === sceneId)!;
-    const copy = scenes.find((s) => s.id === newId)!;
-
-    expect(copy.clips).toHaveLength(1);
-    expect(copy.clips[0]!.name).toBe("テストクリップ");
-    expect(copy.clips[0]!.duration).toBe(60);
-
-    expect(copy.clips[0]!.id).not.toBe(original.clips[0]!.id);
-
-    expect(copy.clips[0]!.tracks).toHaveLength(1);
-    expect(copy.clips[0]!.tracks[0]!.parameterId).toBe("param1");
-    expect(copy.clips[0]!.tracks[0]!.keyframes).toHaveLength(1);
-    expect(copy.clips[0]!.tracks[0]!.keyframes[0]!.value).toBe(10);
-
-    expect(copy.clips[0]!.tracks[0]!.keyframes[0]).not.toBe(
-      original.clips[0]!.tracks[0]!.keyframes[0],
-    );
-  });
 });

@@ -47,15 +47,19 @@ describe("Playhead extra coverage", () => {
   });
 
   it("seeks one frame with Arrow keys and ten frames with Shift+Arrow", () => {
-    render(<Playhead frame={10} duration={90} clipId={clipId} />);
+    const { rerender } = render(<Playhead frame={10} duration={90} clipId={clipId} />);
 
     const playhead = screen.getByRole("slider", { name: /Playhead|再生ヘッド/ });
 
+    fireEvent.keyDown(playhead, { key: "ArrowUp" });
+    expect(useTimelineStore.getState().currentFrame).toBe(10);
+    expect(syncParametersAtFrameMock).not.toHaveBeenCalled();
     fireEvent.keyDown(playhead, { key: "ArrowRight", shiftKey: true });
     expect(useTimelineStore.getState().currentFrame).toBe(20);
 
+    rerender(<Playhead frame={20} duration={90} clipId={clipId} />);
     fireEvent.keyDown(playhead, { key: "ArrowLeft" });
-    expect(useTimelineStore.getState().currentFrame).toBe(9);
+    expect(useTimelineStore.getState().currentFrame).toBe(19);
 
     expect(syncParametersAtFrameMock).toHaveBeenNthCalledWith(
       1,
@@ -65,7 +69,7 @@ describe("Playhead extra coverage", () => {
     expect(syncParametersAtFrameMock).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ id: clipId }),
-      9,
+      19,
     );
   });
 
@@ -87,15 +91,5 @@ describe("Playhead extra coverage", () => {
     rerender(<Playhead frame={89} duration={90} clipId={clipId} />);
     fireEvent.keyDown(playhead, { key: "Home" });
     expect(useTimelineStore.getState().currentFrame).toBe(0);
-  });
-
-  it("ignores unrelated keys", () => {
-    render(<Playhead frame={10} duration={90} clipId={clipId} />);
-
-    const playhead = screen.getByRole("slider", { name: /Playhead|再生ヘッド/ });
-    fireEvent.keyDown(playhead, { key: "ArrowUp" });
-
-    expect(useTimelineStore.getState().currentFrame).toBe(10);
-    expect(syncParametersAtFrameMock).not.toHaveBeenCalled();
   });
 });

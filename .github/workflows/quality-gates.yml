@@ -202,7 +202,9 @@ jobs:
       - run: npm run check:secrets
       - run: npm run check:history-secrets
       - run: npm run check:source-comments
-      - run: npm run check:viewer-tests
+      # Viewer unit tests are already included in the root test step above.
+      - run: npm run check:viewer-types
+      - run: npm run check:viewer-test-text
       - run: npm run check:viewer-mediapipe-assets
       - run: npm run check:provider-conformance
       - run: npm run check:provider-sdk-samples

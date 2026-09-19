@@ -25,31 +25,26 @@ describe("stateMachineStore", () => {
 
   describe("addStateMachine", () => {
     it("新しいステートマシンを追加する", () => {
-      setupProject();
-      const store = useStateMachineStore.getState();
+          setupProject();
+          const store = useStateMachineStore.getState();
 
-      act(() => {
-        store.addStateMachine("テストマシン");
-      });
+          let id: string;
+          act(() => {
+            id = store.addStateMachine("テストマシン");
+          });
 
-      const machines = getMachines();
-      expect(machines).toHaveLength(1);
-      expect(machines[0]!.name).toBe("テストマシン");
-      expect(machines[0]!.enabled).toBe(true);
-      expect(machines[0]!.states).toHaveLength(1);
-      expect(machines[0]!.states[0]!.name).toBe("idle");
-      expect(machines[0]!.initialStateId).toBe(machines[0]!.states[0]!.id);
-    });
+          const machines = getMachines();
+          expect(machines).toHaveLength(1);
+          expect(id!).toMatch(/\S/);
+          expect(machines[0]!.id).toBe(id!);
+          expect(machines[0]!.name).toBe("テストマシン");
+          expect(machines[0]!.enabled).toBe(true);
+          expect(machines[0]!.states).toHaveLength(1);
+          expect(machines[0]!.states[0]!.name).toBe("idle");
+          expect(machines[0]!.initialStateId).toBe(machines[0]!.states[0]!.id);
+        });
 
-    it("IDを返す", () => {
-      setupProject();
-      let id: string;
-      act(() => {
-        id = useStateMachineStore.getState().addStateMachine("テスト");
-      });
-      expect(id!).toMatch(/\S/);
-      expect(getMachines()[0]!.id).toBe(id!);
-    });
+
   });
 
   describe("removeStateMachine", () => {
@@ -68,12 +63,32 @@ describe("stateMachineStore", () => {
       expect(getMachines()).toHaveLength(0);
     });
 
-    it("存在しないIDは無視する", () => {
+    it("不在マシン/遷移の操作は既存状態・遷移・条件を破壊しない", () => {
       setupProject();
+      const store = useStateMachineStore.getState();
+      let machineId: string;
       act(() => {
-        useStateMachineStore.getState().removeStateMachine("nonexistent");
+        machineId = store.addStateMachine("保持対象");
+        const initial = getMachines()[0]!.initialStateId;
+        const next = store.addState(machineId, "walk");
+        const transition = store.addTransition(machineId, initial, next);
+        store.addCondition(machineId, transition, {
+          parameterId: "p", operator: ">", threshold: 0.5,
+        });
       });
-      expect(getMachines()).toHaveLength(0);
+      const before = structuredClone(getMachines());
+      expect(before).toHaveLength(1);
+      expect(before[0]!.states).toHaveLength(2);
+      expect(before[0]!.transitions).toHaveLength(1);
+      expect(before[0]!.transitions[0]!.conditions).toHaveLength(1);
+      act(() => store.removeStateMachine("nonexistent"));
+      expect(getMachines()).toEqual(before);
+      act(() => store.removeTransition(machineId!, "nonexistent"));
+      expect(getMachines()).toEqual(before);
+      act(() => store.addCondition(machineId!, "nonexistent", {
+        parameterId: "p", operator: ">", threshold: 0,
+      }));
+      expect(getMachines()).toEqual(before);
     });
   });
 
@@ -417,30 +432,9 @@ describe("stateMachineStore", () => {
       expect(getMachines()[0]!.states).toHaveLength(1);
     });
 
-    it("存在しない遷移IDでremoveTransitionしてもクラッシュしない", () => {
-      let machineId: string;
-      act(() => {
-        machineId = useStateMachineStore.getState().addStateMachine("テスト");
-      });
-      act(() => {
-        useStateMachineStore.getState().removeTransition(machineId!, "nonexistent");
-      });
-      expect(getMachines()[0]!.transitions).toHaveLength(0);
-    });
 
-    it("存在しない遷移IDでaddConditionしてもクラッシュしない", () => {
-      let machineId: string;
-      act(() => {
-        machineId = useStateMachineStore.getState().addStateMachine("テスト");
-      });
-      act(() => {
-        useStateMachineStore.getState().addCondition(machineId!, "nonexistent", {
-          parameterId: "p",
-          operator: ">",
-          threshold: 0,
-        });
-      });
-    });
+
+
   });
 
   describe("エッジケース: 最後の状態は削除不可", () => {

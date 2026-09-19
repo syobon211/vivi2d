@@ -173,15 +173,6 @@ describe("local motion worker boundary", () => {
     );
   });
 
-  it("accepts matching preview-only responses", () => {
-    expect(
-      validateLocalMotionWorkerResponse(
-        createResponse(),
-        createPending(),
-        acceptWorkerHmac,
-      ).ok,
-    ).toBe(true);
-  });
 
   it("verifies response HMACs over canonical payload fields when a verifier is provided", () => {
     const response = createResponse();

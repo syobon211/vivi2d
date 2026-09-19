@@ -2,45 +2,43 @@ import { readPsd } from "ag-psd";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { handlePsdParseRequest } from "../psd-parse.worker";
 
-function makeRng(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = Math.imul(state ^ (state >>> 15), 0x2c1b3c6d) >>> 0;
-    state = Math.imul(state ^ (state >>> 12), 0x297a2d39) >>> 0;
-    return (state ^ (state >>> 15)) >>> 0;
-  };
-}
-
-function randomBuffer(seed: number): ArrayBuffer {
-  const next = makeRng(seed);
-  const bytes = new Uint8Array(next() % 4096);
-  for (let index = 0; index < bytes.length; index += 1) {
-    bytes[index] = next() & 0xff;
-  }
-  return bytes.buffer;
-}
-
 beforeEach(() => {
   vi.mocked(readPsd).mockImplementation(() => {
     throw new Error("invalid PSD fixture");
   });
 });
 
-describe("PSD parse worker deterministic fuzz boundaries", () => {
-  it("turns malformed byte payloads into bounded error responses", () => {
-    for (let seed = 1; seed <= 128; seed += 1) {
-      const { response, transfer } = handlePsdParseRequest({
-        buffer: randomBuffer(seed),
-        fileName: `fuzz-${seed}.psd`,
-      });
-
-      expect(response.type).toBe("error");
-      expect(transfer).toEqual([]);
-      if (response.type === "error") {
-        expect(response.message).toMatch(/^Failed to load PSD file:/);
-        expect(response.message.length).toBeLessThan(256);
+describe("PSD parse worker request filename isolation", () => {
+  it("redacts arbitrary decoder throws in both passes without reading or coercing them", () => {
+    const inspect = vi.fn(() => {
+      throw new Error("inspection must not happen");
+    });
+    const accessorError = new Error();
+    Object.defineProperty(accessorError, "message", { get: inspect });
+    const throws = [
+      new Error("C:/synthetic-secret/token-canary.psd"),
+      "token-canary",
+      accessorError,
+      { toString: inspect },
+    ];
+    for (const pass of [0, 1]) {
+      for (const thrown of throws) {
+        vi.mocked(readPsd).mockReset();
+        if (pass === 1)
+          vi.mocked(readPsd).mockReturnValueOnce({ width: 1, height: 1, children: [] });
+        vi.mocked(readPsd).mockImplementationOnce(() => {
+          throw thrown;
+        });
+        expect(
+          handlePsdParseRequest({ buffer: new ArrayBuffer(8), fileName: "safe.psd" }),
+        ).toEqual({
+          response: { type: "error", message: "Failed to load PSD file." },
+          transfer: [],
+        });
+        expect(readPsd).toHaveBeenCalledTimes(pass + 1);
       }
     }
+    expect(inspect).not.toHaveBeenCalled();
   });
 
   it("does not echo hostile file names into parse errors", () => {

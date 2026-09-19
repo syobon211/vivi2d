@@ -8,7 +8,6 @@ import {
   triangulate,
 } from "../auto-mesh";
 
-
 class MockImageData {
   data: Uint8ClampedArray;
   width: number;
@@ -22,7 +21,6 @@ class MockImageData {
 if (typeof globalThis.ImageData === "undefined") {
   (globalThis as any).ImageData = MockImageData;
 }
-
 
 function createImageData(
   w: number,
@@ -94,12 +92,6 @@ describe("extractContour", () => {
     }
   });
 
-  it("円形画像から輪郭を抽出できる", () => {
-    const img = circleImageData(30, 30, 15, 15, 10);
-    const contour = extractContour(img);
-    expect(contour.length).toBeGreaterThanOrEqual(6);
-  });
-
   it("全面不透明画像から輪郭を抽出できる", () => {
     const img = opaqueImageData(10, 10);
     const contour = extractContour(img);
@@ -132,12 +124,6 @@ describe("extractContour", () => {
     expect(pointInPolygon(64, 65, contour)).toBe(true);
     expect(pointInPolygon(0, 0, contour)).toBe(false);
     expect(pointInPolygon(127, 129, contour)).toBe(false);
-  });
-
-  it("閾値以下のアルファは透明扱い", () => {
-    const img = createImageData(10, 10, () => 5);
-    const contour = extractContour(img, 10);
-    expect(contour.length).toBeLessThan(6);
   });
 
   it("L字型の凹形状で凹部分が保持される", () => {
@@ -244,13 +230,19 @@ describe("generateInteriorPoints", () => {
   });
 
   it("輪郭頂点に近すぎる点は除外される", () => {
-    const contour = [0, 0, 100, 0, 100, 100, 0, 100];
+    const contour = [0, 0, 100, 0, 100, 100, 12, 100, 12, 12, 0, 12];
     const points = generateInteriorPoints(contour, 10, {
       x: 0,
       y: 0,
       w: 100,
       h: 100,
     });
+    expect(points.length).toBeGreaterThan(0);
+    const pairs = Array.from({ length: points.length / 2 }, (_, i) =>
+      points.slice(i * 2, i * 2 + 2),
+    );
+    expect(pairs).not.toContainEqual([10, 10]);
+    expect(pairs).toContainEqual([20, 10]);
     for (let i = 0; i < points.length; i += 2) {
       for (let j = 0; j < contour.length; j += 2) {
         const dx = points[i]! - contour[j]!;
@@ -284,6 +276,8 @@ describe("triangulate", () => {
   it("輪郭外の三角形は除去される", () => {
     const contour = [0, 0, 10, 0, 10, 5, 5, 5, 5, 10, 0, 10];
     const indices = triangulate(contour, contour);
+    expect(indices.length).toBeGreaterThan(0);
+    expect(indices.length % 3).toBe(0);
     for (let i = 0; i < indices.length; i += 3) {
       const a = indices[i]!;
       const b = indices[i + 1]!;

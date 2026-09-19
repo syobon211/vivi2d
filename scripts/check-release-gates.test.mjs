@@ -155,13 +155,16 @@ describe("source review archive gate", () => {
     );
   });
 
-  it("rejects tracked symlinks when the platform permits creating them", () => {
+  it("rejects tracked symlinks when the platform permits creating them", ({ skip }) => {
     const root = makeTempRepo();
     writeFile(root, "outside.txt", "outside\n");
     try {
       fs.symlinkSync(path.join(root, "outside.txt"), path.join(root, "linked.txt"));
-    } catch {
-      return;
+    } catch (error) {
+      if (["EPERM", "EACCES", "ENOSYS", "ENOTSUP"].includes(error.code)) {
+        skip("Creating symlinks is unavailable in this environment.");
+      }
+      throw error;
     }
     runGit(root, ["add", "."]);
 

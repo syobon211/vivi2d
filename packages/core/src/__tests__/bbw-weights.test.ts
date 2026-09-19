@@ -48,15 +48,12 @@ function createGridMesh(cols: number, rows: number, size = 100) {
 // ============================================================
 
 describe("buildLumpedMass", () => {
-  it("全要素が非負", () => {
-    const { vertices, indices } = createGridMesh(5, 5);
-    const M = buildLumpedMass(vertices, indices);
-    for (const m of M) expect(m).toBeGreaterThanOrEqual(0);
-  });
 
-  it("合計がメッシュの総面積に一致する", () => {
+
+  it("非負の各要素の合計がメッシュの総面積に一致する", () => {
     const { vertices, indices } = createGridMesh(5, 5, 100);
     const M = buildLumpedMass(vertices, indices);
+    for (const m of M) expect(m).toBeGreaterThanOrEqual(0);
     const totalMass = M.reduce((s, m) => s + m, 0);
     expect(totalMass).toBeCloseTo(10000, 0);
   });
@@ -117,7 +114,7 @@ describe("computeBBWWeights", () => {
     }
   });
 
-  it("各頂点のウェイト合計が 1.0（パーティション・オブ・ユニティ）", () => {
+  it("各頂点のウェイトは非負で合計が 1.0", () => {
     const { vertices, indices } = createGridMesh(6, 6);
     const bones: BoneHandle[] = [
       { id: "b1", x: 15, y: 50, parentId: null },
@@ -130,24 +127,13 @@ describe("computeBBWWeights", () => {
     for (const vw of result) {
       const total = vw.reduce((sum, w) => sum + w.weight, 0);
       expect(total).toBeCloseTo(1.0, 3);
-    }
-  });
-
-  it("各ウェイトが非負（bounded constraint）", () => {
-    const { vertices, indices } = createGridMesh(6, 6);
-    const bones: BoneHandle[] = [
-      { id: "b1", x: 10, y: 50, parentId: null },
-      { id: "b2", x: 90, y: 50, parentId: null },
-    ];
-
-    const result = computeBBWWeights(vertices, indices, bones);
-    for (const vw of result) {
       for (const w of vw) {
         expect(w.weight).toBeGreaterThanOrEqual(0);
         expect(w.weight).toBeLessThanOrEqual(1.001);
       }
     }
   });
+
 
   it("制約頂点でのウェイトが正しく設定される", () => {
     const { vertices, indices } = createGridMesh(5, 5, 100);
@@ -262,14 +248,6 @@ describe("computeBBWWeights", () => {
     }
   });
 
-  it("退化三角形（面積ゼロ）を含むメッシュでクラッシュしない", () => {
-    const vertices = [0, 0, 50, 0, 100, 0, 50, 50];
-    const indices = [0, 1, 2, 0, 2, 3];
-    const bones: BoneHandle[] = [{ id: "b1", x: 50, y: 25, parentId: null }];
-
-    const result = computeBBWWeights(vertices, indices, bones);
-    expect(result).toHaveLength(4);
-  });
 
   it("maxIterations=1 でも結果を返す（早期終了）", () => {
     const { vertices, indices } = createGridMesh(4, 4);

@@ -18,32 +18,22 @@ describe("StateMachinePanel", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("プロジェクトありでパネルヘッダーが表示される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<StateMachinePanel />);
-    expect(screen.getByText("ステートマシン")).toBeInTheDocument();
-  });
-
   it("追加ボタンでステートマシンを追加できる", async () => {
     loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
     render(<StateMachinePanel />);
+    expect(screen.getByText("ステートマシン")).toBeInTheDocument();
 
     fireEvent.click(screen.getByText(/ステートマシン追加/));
 
     await waitFor(() => {
       expect(useEditorStore.getState().project!.stateMachines).toHaveLength(1);
       expect(screen.getByDisplayValue("ステートマシン 1")).toBeInTheDocument();
-    });
-  });
-
-  it("追加時にidle状態が自動作成される", async () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<StateMachinePanel />);
-
-    fireEvent.click(screen.getByText(/ステートマシン追加/));
-
-    await waitFor(() => {
       expect(screen.getByDisplayValue("idle")).toBeInTheDocument();
+      expect(screen.getByText("初期")).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByText(/ステートマシン追加/));
+    await waitFor(() => {
+      expect(useEditorStore.getState().project!.stateMachines).toHaveLength(2);
     });
   });
 
@@ -84,16 +74,6 @@ describe("StateMachinePanel", () => {
     });
   });
 
-  it("状態追加ボタンでフォームが表示される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    useStateMachineStore.getState().addStateMachine("テスト");
-
-    render(<StateMachinePanel />);
-    fireEvent.click(screen.getByText(/状態追加/));
-
-    expect(screen.getByPlaceholderText("状態名")).toBeInTheDocument();
-  });
-
   it("状態を追加できる", async () => {
     loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
     useStateMachineStore.getState().addStateMachine("テスト");
@@ -121,28 +101,6 @@ describe("StateMachinePanel", () => {
     expect(screen.queryByPlaceholderText("状態名")).not.toBeInTheDocument();
   });
 
-  it("初期状態に「初期」バッジが表示される", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    useStateMachineStore.getState().addStateMachine("テスト");
-
-    render(<StateMachinePanel />);
-    expect(screen.getByText("初期")).toBeInTheDocument();
-  });
-
-  it("状態が1つの場合、削除ボタンが無効になる", () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    useStateMachineStore.getState().addStateMachine("テスト");
-
-    render(<StateMachinePanel />);
-    const stateSectionBtns = screen
-      .getByDisplayValue("idle")
-      .closest(".sm-state")
-      ?.querySelectorAll(".physics-btn-danger");
-    if (stateSectionBtns && stateSectionBtns.length > 0) {
-      expect(stateSectionBtns[0]).toBeDisabled();
-    }
-  });
-
   it("ループチェックボックスが機能する", () => {
     loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
     useStateMachineStore.getState().addStateMachine("テスト");
@@ -158,17 +116,5 @@ describe("StateMachinePanel", () => {
     expect(useEditorStore.getState().project!.stateMachines[0]!.states[0]!.loop).toBe(
       false,
     );
-  });
-
-  it("複数ステートマシンを追加できる", async () => {
-    loadPsdFromBuffer(new ArrayBuffer(0), "test.psd");
-    render(<StateMachinePanel />);
-
-    fireEvent.click(screen.getByText(/ステートマシン追加/));
-    fireEvent.click(screen.getByText(/ステートマシン追加/));
-
-    await waitFor(() => {
-      expect(useEditorStore.getState().project!.stateMachines).toHaveLength(2);
-    });
   });
 });

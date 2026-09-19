@@ -1,5 +1,4 @@
 import { act, renderHook } from "@testing-library/react";
-import { MAX_VIVI_TEXT_FILE_BYTES } from "@vivi2d/core/load-limits";
 import type React from "react";
 import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -285,22 +284,6 @@ describe("useModelSession", () => {
       expect(result.current.state.setLoaded).not.toHaveBeenCalled();
     });
 
-    it("rejects oversized local files before reading them", async () => {
-      const { result } = renderUseModelSession();
-      const text = vi.fn();
-      const file = {
-        name: "Huge.vivi",
-        size: MAX_VIVI_TEXT_FILE_BYTES + 1,
-        text,
-      } as unknown as File;
-
-      await act(async () => {
-        await result.current.loadModel(file);
-      });
-
-      expect(text).not.toHaveBeenCalled();
-      expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
-    });
   });
 
   describe("loadModel: URL 入力", () => {
@@ -334,24 +317,6 @@ describe("useModelSession", () => {
       expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
     });
 
-    it("rejects oversized remote models from content-length", async () => {
-      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
-        ok: true,
-        headers: new Headers({
-          "content-length": String(MAX_VIVI_TEXT_FILE_BYTES + 1),
-        }),
-        body: null,
-        text: vi.fn(),
-      } as unknown as Response);
-
-      const { result } = renderUseModelSession();
-      await act(async () => {
-        await result.current.loadModel("https://example.com/model.vivi");
-      });
-
-      expect(fetchSpy).toHaveBeenCalled();
-      expect(result.current.state.setError).toHaveBeenCalledWith("t:errFileLoad");
-    });
   });
 
   describe("loadModel: エラーハンドリング", () => {

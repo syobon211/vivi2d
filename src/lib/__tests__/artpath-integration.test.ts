@@ -148,9 +148,6 @@ describe("ArtPath統合テスト", () => {
       expect(flat[3]!.kind).toBe("artPath");
     });
 
-    it('nodeKindLabel("artPath") が "アートパス" を返す', () => {
-      expect(nodeKindLabel("artPath")).toBe("アートパス");
-    });
 
     it("全ノード種別のラベルが正しく返る", () => {
       expect(nodeKindLabel("viviMesh")).toBe("ViviMesh");
@@ -173,15 +170,6 @@ describe("ArtPath統合テスト", () => {
       expect(mesh.vertices.length).toBe(0);
     });
 
-    it("幅が0の制御点でもクラッシュしない", () => {
-      const controlPoints = [
-        createControlPoint({ x: 0, y: 0, width: 0 }),
-        createControlPoint({ x: 100, y: 0, width: 0 }),
-      ];
-
-      const mesh = artPathToMesh(controlPoints, false, defaultStyle);
-      expect(mesh.vertices.length).toBeGreaterThan(0);
-    });
 
     it("ハンドル付きベジェ曲線が滑らかにテッセレーションされる", () => {
       const controlPoints = [

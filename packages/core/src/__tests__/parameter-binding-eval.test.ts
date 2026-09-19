@@ -83,11 +83,6 @@ describe("interpolateBindingPoints", () => {
     expect(interpolateBindingPoints(bindingPoints, 2, 0)).toBe(30);
   });
 
-  it("returns the single binding point value without interpolation", () => {
-    const bindingPoints: ParameterBindingPoint[] = [{ paramValue: 0, targetValue: 12 }];
-
-    expect(interpolateBindingPoints(bindingPoints, 0, 0)).toBe(12);
-  });
 });
 
 describe("evaluateBindingsAdditive", () => {

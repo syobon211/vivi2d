@@ -42,18 +42,6 @@ describe("computeBBWWeightsAsync", () => {
     expect(result).toEqual([[{ boneIndex: 0, weight: 1 }]]);
   });
 
-  it("Worker 対応環境では runWorker 経由で結果を返す", async () => {
-    (globalThis as any).Worker =
-      originalWorker ??
-      class StubWorker {
-        terminate() {}
-      };
-    const result = await computeBBWWeightsAsync([0, 0], [0], []);
-    expect(runWorker).toHaveBeenCalledOnce();
-    expect(computeBBWWeights).not.toHaveBeenCalled();
-    expect(result).toEqual([[{ boneIndex: 0, weight: 1 }]]);
-  });
-
   it("options と signal を request 経由で Worker に伝達する", async () => {
     (globalThis as any).Worker =
       originalWorker ??
@@ -61,15 +49,20 @@ describe("computeBBWWeightsAsync", () => {
         terminate() {}
       };
     const signal = new AbortController().signal;
-    await computeBBWWeightsAsync(
-      [0, 0, 1, 0],
-      [0, 1, 0],
-      [],
-      { heatDiffusion: true } as any,
-      { signal },
-    );
+    const vertices = [0, 0, 1, 0];
+    const indices = [0, 1, 0];
+    const bones = [{ id: "b1", x: 0, y: 0, parentId: null }];
+    const options = { heatDiffusion: true } as any;
+    const expected = [[{ boneIndex: 0, weight: 0.75 }]];
+    vi.mocked(runWorker).mockResolvedValueOnce(expected);
+    const result = await computeBBWWeightsAsync(vertices, indices, bones, options, {
+      signal,
+    });
+    expect(runWorker).toHaveBeenCalledOnce();
+    expect(computeBBWWeights).not.toHaveBeenCalled();
+    expect(result).toBe(expected);
     const call = (runWorker as any).mock.calls[0][0];
-    expect(call.request.options.heatDiffusion).toBe(true);
+    expect(call.request).toEqual({ vertices, indices, bones, options });
     expect(call.signal).toBe(signal);
   });
 });

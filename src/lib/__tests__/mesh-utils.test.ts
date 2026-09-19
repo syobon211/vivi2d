@@ -12,70 +12,55 @@ describe("generateGridMesh", () => {
     expect(mesh.indices.length).toBe(6);
   });
 
-  it("3x3 分割で 16 頂点・18 三角形を生成する", () => {
-    const mesh = generateGridMesh(200, 150, 3, 3);
-
+  it("非対称3x2グリッドの全座標・UV・有効三角形を生成する", () => {
+    const mesh = generateGridMesh(300, 200, 3, 2);
     expect(mesh.divisionsX).toBe(3);
-    expect(mesh.divisionsY).toBe(3);
-    expect(mesh.vertices.length).toBe(16 * 2);
-    expect(mesh.uvs.length).toBe(16 * 2);
-    expect(mesh.indices.length).toBe(54);
-  });
-
-  it("頂点座標が 0 から width/height の範囲に収まる", () => {
-    const mesh = generateGridMesh(200, 100, 2, 2);
-
-    for (let i = 0; i < mesh.vertices.length; i += 2) {
-      expect(mesh.vertices[i]).toBeGreaterThanOrEqual(0);
-      expect(mesh.vertices[i]).toBeLessThanOrEqual(200);
-      expect(mesh.vertices[i + 1]).toBeGreaterThanOrEqual(0);
-      expect(mesh.vertices[i + 1]).toBeLessThanOrEqual(100);
+    expect(mesh.divisionsY).toBe(2);
+    expect(mesh.vertices).toEqual([
+      0, 0, 100, 0, 200, 0, 300, 0, 0, 100, 100, 100, 200, 100, 300, 100, 0, 200, 100,
+      200, 200, 200, 300, 200,
+    ]);
+    expect(mesh.uvs).toEqual([
+      0,
+      0,
+      1 / 3,
+      0,
+      2 / 3,
+      0,
+      1,
+      0,
+      0,
+      0.5,
+      1 / 3,
+      0.5,
+      2 / 3,
+      0.5,
+      1,
+      0.5,
+      0,
+      1,
+      1 / 3,
+      1,
+      2 / 3,
+      1,
+      1,
+      1,
+    ]);
+    expect(mesh.indices).toHaveLength(36);
+    for (const index of mesh.indices) {
+      expect(Number.isInteger(index)).toBe(true);
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(index).toBeLessThan(12);
     }
-  });
-
-  it("UV 座標が 0..1 の範囲に収まる", () => {
-    const mesh = generateGridMesh(100, 100, 4, 3);
-
-    for (let i = 0; i < mesh.uvs.length; i++) {
-      expect(mesh.uvs[i]).toBeGreaterThanOrEqual(0);
-      expect(mesh.uvs[i]).toBeLessThanOrEqual(1);
-    }
-  });
-
-  it("四隅の頂点とUVが正確に配置される", () => {
-    const mesh = generateGridMesh(200, 100, 2, 2);
-    const cols = 3; // divisionsX + 1
-
-    expect(mesh.vertices[0]).toBe(0);
-    expect(mesh.vertices[1]).toBe(0);
-    expect(mesh.uvs[0]).toBe(0);
-    expect(mesh.uvs[1]).toBe(0);
-
-    expect(mesh.vertices[(cols - 1) * 2]).toBe(200);
-    expect(mesh.vertices[(cols - 1) * 2 + 1]).toBe(0);
-    expect(mesh.uvs[(cols - 1) * 2]).toBe(1);
-    expect(mesh.uvs[(cols - 1) * 2 + 1]).toBe(0);
-
-    const blIdx = cols * 2 * 2; // row=2, col=0
-    expect(mesh.vertices[blIdx]).toBe(0);
-    expect(mesh.vertices[blIdx + 1]).toBe(100);
-    expect(mesh.uvs[blIdx]).toBe(0);
-    expect(mesh.uvs[blIdx + 1]).toBe(1);
-
-    const brIdx = (cols * 2 + cols - 1) * 2;
-    expect(mesh.vertices[brIdx]).toBe(200);
-    expect(mesh.vertices[brIdx + 1]).toBe(100);
-    expect(mesh.uvs[brIdx]).toBe(1);
-    expect(mesh.uvs[brIdx + 1]).toBe(1);
-  });
-
-  it("インデックスが頂点数の範囲内に収まる", () => {
-    const mesh = generateGridMesh(100, 100, 5, 4);
-    const vertCount = mesh.vertices.length / 2;
-
-    for (const idx of mesh.indices) {
-      expect(idx).toBeGreaterThanOrEqual(0);
-      expect(idx).toBeLessThan(vertCount);
+    for (let i = 0; i < mesh.indices.length; i += 3) {
+      const [a, b, c] = mesh.indices.slice(i, i + 3);
+      const ax = mesh.vertices[a! * 2]!,
+        ay = mesh.vertices[a! * 2 + 1]!;
+      const bx = mesh.vertices[b! * 2]!,
+        by = mesh.vertices[b! * 2 + 1]!;
+      const cx = mesh.vertices[c! * 2]!,
+        cy = mesh.vertices[c! * 2 + 1]!;
+      expect(Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay))).toBe(10_000);
     }
   });
 
@@ -92,15 +77,6 @@ describe("generateGridMesh", () => {
 
     expect(mesh.divisionsX).toBe(3);
     expect(mesh.divisionsY).toBe(3);
-  });
-
-  it("大きなグリッド (10x10) で正しい頂点数と三角形数を生成する", () => {
-    const mesh = generateGridMesh(500, 500, 10, 10);
-
-    expect(mesh.divisionsX).toBe(10);
-    expect(mesh.divisionsY).toBe(10);
-    expect(mesh.vertices.length).toBe(121 * 2);
-    expect(mesh.indices.length).toBe(600);
   });
 
   it("非対称分割 (1x5) で正しい頂点数を生成する", () => {
@@ -121,39 +97,6 @@ describe("generateGridMesh", () => {
       expect(mesh.uvs[i]).toBeLessThanOrEqual(1);
     }
   });
-
-  it("三角形の面積が正（退化三角形がない）", () => {
-    const mesh = generateGridMesh(100, 100, 2, 2);
-    const { vertices, indices } = mesh;
-
-    for (let i = 0; i < indices.length; i += 3) {
-      const a = indices[i];
-      const b = indices[i + 1];
-      const c = indices[i + 2];
-
-      const ax = vertices[a! * 2]!;
-      const ay = vertices[a! * 2 + 1]!;
-      const bx = vertices[b! * 2]!;
-      const by = vertices[b! * 2 + 1]!;
-      const cx = vertices[c! * 2]!;
-      const cy = vertices[c! * 2 + 1]!;
-
-      const crossProduct = Math.abs((bx - ax) * (cy - ay) - (cx - ax) * (by - ay));
-      expect(crossProduct).toBeGreaterThan(0);
-    }
-  });
-
-  it("中間頂点の座標が等間隔に配置される", () => {
-    const mesh = generateGridMesh(300, 200, 3, 2);
-
-    const cols = 4; // divisionsX + 1
-    expect(mesh.vertices[(1 * cols + 0) * 2]).toBeCloseTo(0);
-    expect(mesh.vertices[(1 * cols + 1) * 2]).toBeCloseTo(100);
-    expect(mesh.vertices[(1 * cols + 2) * 2]).toBeCloseTo(200);
-    expect(mesh.vertices[(1 * cols + 3) * 2]).toBeCloseTo(300);
-
-    expect(mesh.vertices[(1 * cols + 0) * 2 + 1]).toBeCloseTo(100);
-  });
 });
 
 describe("meshDataToTypedArrays", () => {
@@ -167,17 +110,8 @@ describe("meshDataToTypedArrays", () => {
     expect(typed.vertices.length).toBe(mesh.vertices.length);
     expect(typed.uvs.length).toBe(mesh.uvs.length);
     expect(typed.indices.length).toBe(mesh.indices.length);
-  });
-
-  it("値が正確に保持される", () => {
-    const mesh = generateGridMesh(50, 30, 2, 2);
-    const typed = meshDataToTypedArrays(mesh);
-
-    for (let i = 0; i < mesh.vertices.length; i++) {
-      expect(typed.vertices[i]).toBeCloseTo(mesh.vertices[i]!);
-    }
-    for (let i = 0; i < mesh.indices.length; i++) {
-      expect(typed.indices[i]).toBe(mesh.indices[i]);
-    }
+    expect(Array.from(typed.vertices)).toEqual(mesh.vertices);
+    expect(Array.from(typed.uvs)).toEqual(mesh.uvs);
+    expect(Array.from(typed.indices)).toEqual(mesh.indices);
   });
 });

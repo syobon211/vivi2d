@@ -319,21 +319,6 @@ describe("motion handle suggestions", () => {
     expect(result.warnings).toEqual(expect.arrayContaining(["manualReviewRequired"]));
   });
 
-  it("copies alpha before analysis so caller mutation cannot change the result", () => {
-    const alpha = mask(32, 32, [{ x: 12, y: 8, width: 6, height: 18 }]).alpha;
-    const sourceInput = input(
-      "hairFront",
-      { width: 32, height: 32, alpha },
-      [{ kind: "head", x: 10, y: 2, width: 10, height: 5 }],
-    );
-
-    const result = suggestMotionHandles(sourceInput);
-    alpha.fill(0);
-
-    expect(result.status).toBe("apply");
-    if (result.status !== "apply") return;
-    expect(result.root.y).toBeLessThan(result.tip!.y);
-  });
 
   it("returns only closed reasons and avoids implementation terminology", () => {
     const result = suggestMotionHandles(

@@ -4,11 +4,7 @@ import { useI18nStore } from "@/lib/i18n";
 import { useEditorStore } from "@/stores/editorStore";
 import { useSelectionStore } from "@/stores/selectionStore";
 import { useTimelineStore } from "@/stores/timelineStore";
-import {
-  createAnimationClip,
-  createBoneNode,
-  createEmptyProject,
-} from "@/test/fixtures";
+import { createAnimationClip, createBoneNode, createEmptyProject } from "@/test/fixtures";
 import { TEST_AUDIO_PATH } from "@/test/path-fixtures";
 import { resetEditorStore, resetTimelineStore } from "@/test/store-reset";
 import { TimelineBody } from "../timeline/TimelineBody";
@@ -157,13 +153,6 @@ describe("TimelineBody", () => {
       screen.getByText("Lip Sync: voice.wav", { selector: ".tl-track-name" }),
     ).toBeInTheDocument();
     expect(container.querySelector(".tl-add-track-select")).toBeInTheDocument();
-  });
-
-  it("renders audio blocks in the dope sheet rows", () => {
-    setupStoresWithClip();
-
-    const { container } = render(<TimelineBody />);
-
     expect(container.querySelector(".tl-ruler")).toBeInTheDocument();
     expect(container.querySelector(".tl-playhead")).toBeInTheDocument();
     expect(container.querySelector(".tl-audio-block")).toBeInTheDocument();
@@ -179,13 +168,9 @@ describe("TimelineBody", () => {
 
     const { container } = render(<TimelineBody />);
 
-    expect(
-      container.querySelector(".graph-editor-container"),
-    ).toBeInTheDocument();
+    expect(container.querySelector(".graph-editor-container")).toBeInTheDocument();
     expect(container.querySelector(".tl-ruler")).not.toBeInTheDocument();
-    expect(
-      container.querySelector(".tl-track-label-selected"),
-    ).toBeInTheDocument();
+    expect(container.querySelector(".tl-track-label-selected")).toBeInTheDocument();
   });
 
   it("reads clips from the active scene when a scene is selected", () => {

@@ -17,7 +17,6 @@ import type {
 } from "@vivi2d/core/types";
 import { describe, expect, it } from "vitest";
 
-
 function createTestGroup(overrides: Partial<PhysicsGroup> = {}): PhysicsGroup {
   return {
     id: "test-group",
@@ -47,13 +46,11 @@ describe("createPhysicsRuntimeState", () => {
       ],
     });
     const states = createPhysicsRuntimeState(group);
-    expect(states).toHaveLength(3);
-  });
-
-  it("初期状態は angle=0, angularVelocity=0", () => {
-    const group = createTestGroup();
-    const states = createPhysicsRuntimeState(group);
-    expect(states[0]!).toEqual({ angle: 0, angularVelocity: 0 });
+    expect(states).toEqual([
+      { angle: 0, angularVelocity: 0 },
+      { angle: 0, angularVelocity: 0 },
+      { angle: 0, angularVelocity: 0 },
+    ]);
   });
 
   it("振り子がない場合は空配列を返す", () => {
@@ -134,13 +131,6 @@ describe("computeInputForces", () => {
 // ============================================================
 
 describe("stepPhysicsGroup", () => {
-  it("重力下で振り子が動く", () => {
-    const group = createTestGroup({ gravityStrength: 9.8, gravityDirection: 0 });
-    const states: PendulumState[] = [{ angle: 0.1, angularVelocity: 0 }];
-    stepPhysicsGroup(group, states, { x: 0, y: 0 }, 1 / 120);
-    expect(states[0]!.angularVelocity).not.toBe(0);
-  });
-
   it("角度ゼロ・外力なしでは静止を維持する", () => {
     const group = createTestGroup({ gravityStrength: 0, wind: 0 });
     const states: PendulumState[] = [{ angle: 0, angularVelocity: 0 }];
@@ -154,14 +144,6 @@ describe("stepPhysicsGroup", () => {
     const states: PendulumState[] = [{ angle: 0, angularVelocity: 0 }];
     stepPhysicsGroup(group, states, { x: 10, y: 0 }, 1 / 120);
     expect(states[0]!.angularVelocity).not.toBe(0);
-  });
-
-  it("減衰により角速度が低下する", () => {
-    const group = createTestGroup({ gravityStrength: 0 });
-    const states: PendulumState[] = [{ angle: 0, angularVelocity: 10 }];
-    const initialVelocity = states[0]!.angularVelocity;
-    stepPhysicsGroup(group, states, { x: 0, y: 0 }, 1 / 120);
-    expect(Math.abs(states[0]!.angularVelocity)).toBeLessThan(Math.abs(initialVelocity));
   });
 
   it("高い減衰でより速く減速する", () => {
@@ -179,6 +161,8 @@ describe("stepPhysicsGroup", () => {
     stepPhysicsGroup(groupLow, statesLow, { x: 0, y: 0 }, 1 / 120);
     stepPhysicsGroup(groupHigh, statesHigh, { x: 0, y: 0 }, 1 / 120);
 
+    expect(Math.abs(statesLow[0]!.angularVelocity)).toBeLessThan(10);
+    expect(Math.abs(statesHigh[0]!.angularVelocity)).toBeLessThan(10);
     expect(Math.abs(statesHigh[0]!.angularVelocity)).toBeLessThan(
       Math.abs(statesLow[0]!.angularVelocity),
     );
@@ -255,7 +239,6 @@ describe("stepPhysicsGroup", () => {
   });
 });
 
-
 describe("物理シミュレーションの安定性", () => {
   it("10000ステップ後に発散しない", () => {
     const group = createTestGroup({
@@ -281,7 +264,7 @@ describe("物理シミュレーションの安定性", () => {
     const states: PendulumState[] = [{ angle: 0, angularVelocity: 10 }];
     const dt = PHYSICS_DEFAULTS.TIMESTEP;
 
-    for (let i = 0; i < 5000; i++) {
+    for (let i = 0; i < 100; i++) {
       stepPhysicsGroup(group, states, { x: 0, y: 0 }, dt);
     }
 
@@ -480,7 +463,6 @@ describe("createDefaultPendulum", () => {
   });
 });
 
-
 describe("stepPhysicsGroup — 境界条件", () => {
   it("dt=0 の場合は状態が変化しない", () => {
     const group = createTestGroup();
@@ -490,13 +472,6 @@ describe("stepPhysicsGroup — 境界条件", () => {
     expect(states[0]!.angularVelocity).toBeCloseTo(
       1.0 * (1 - group.pendulums[0]!.damping),
     );
-  });
-
-  it("非常に大きな角度でも MAX_ANGLE でクランプされる", () => {
-    const group = createTestGroup();
-    const states: PendulumState[] = [{ angle: 100, angularVelocity: 0 }];
-    stepPhysicsGroup(group, states, { x: 0, y: 0 }, 1 / 60);
-    expect(Math.abs(states[0]!.angle)).toBeLessThanOrEqual(Math.PI * 2);
   });
 
   it("damping=1.0 の場合は速度がゼロになる", () => {

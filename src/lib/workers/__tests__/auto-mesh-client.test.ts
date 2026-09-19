@@ -111,29 +111,34 @@ describe("generateAutoMeshAsync", () => {
   });
 
   it("Worker 対応環境では runWorker に request と transfer を渡す", async () => {
-    (globalThis as any).Worker =
-      originalWorker ??
-      class StubWorker {
-        terminate() {}
-      };
-    (runWorker as any).mockResolvedValueOnce({
-      vertices: [0, 0, 1, 0, 1, 1],
-      indices: [0, 1, 2],
-      uvs: [0, 0, 1, 0, 1, 1],
-      divisionsX: 1,
-      divisionsY: 1,
-    });
-    const canvas = makeCanvas(4, 4);
-    stubCanvasContext(canvas);
-    const result = await generateAutoMeshAsync(canvas, 4, 4, "standard");
+    (globalThis as any).Worker = originalWorker ?? class StubWorker { terminate() {} };
+    const expected = {
+      vertices: [0, 0, 1, 0, 1, 1], indices: [0, 1, 2], uvs: [0, 0, 1, 0, 1, 1],
+      divisionsX: 1, divisionsY: 1,
+    };
+    vi.mocked(runWorker).mockResolvedValueOnce(expected);
+    const canvas = makeCanvas(2, 3);
+    const pixels = new Uint8ClampedArray(2 * 3 * 4);
+    pixels.set([10, 20, 30, 255]);
+    pixels[pixels.length - 1] = 128;
+    const getImageData = vi.fn(() => new ImageData(pixels, 2, 3));
+    const canvas2d: {
+      getContext(contextId: "2d"): CanvasRenderingContext2D | null;
+    } = canvas;
+    vi.spyOn(canvas2d, "getContext").mockReturnValue({ getImageData } as unknown as CanvasRenderingContext2D);
+    const result = await generateAutoMeshAsync(canvas, 7, 11, "standard");
+    expect(getImageData).toHaveBeenCalledWith(0, 0, 2, 3);
     expect(runWorker).toHaveBeenCalledOnce();
-    const call = (runWorker as any).mock.calls[0][0];
-    expect(call.request.texWidth).toBe(4);
-    expect(call.request.texHeight).toBe(4);
-    expect(call.request.layerWidth).toBe(4);
-    expect(call.request.layerHeight).toBe(4);
-    expect(call.request.preset).toBe("standard");
-    expect(Array.isArray(call.transfer)).toBe(true);
-    expect(result).not.toBeNull();
+    const call = vi.mocked(runWorker).mock.calls[0]![0];
+    expect(call.request).toEqual({
+      buffer: expect.any(ArrayBuffer), texWidth: 2, texHeight: 3,
+      layerWidth: 7, layerHeight: 11, preset: "standard",
+    });
+    const request = call.request as { buffer: ArrayBuffer };
+    expect(new Uint8ClampedArray(request.buffer)).toEqual(pixels);
+    expect(request.buffer).not.toBe(pixels.buffer);
+    expect(call.transfer).toHaveLength(1);
+    expect(call.transfer![0]).toBe(request.buffer);
+    expect(result).toBe(expected);
   });
 });

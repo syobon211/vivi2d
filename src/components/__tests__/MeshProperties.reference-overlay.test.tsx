@@ -4,7 +4,7 @@ import { MeshProperties } from "@/components/properties/MeshProperties";
 import { useI18nStore } from "@/lib/i18n";
 import { useEditorStore } from "@/stores/editorStore";
 import { useViewportStore } from "@/stores/viewportStore";
-import { createViviMesh, createProject } from "@/test/fixtures";
+import { createProject, createViviMesh } from "@/test/fixtures";
 import { resetAllStores } from "@/test/store-reset";
 
 describe("MeshProperties reference overlay", () => {
@@ -13,70 +13,24 @@ describe("MeshProperties reference overlay", () => {
     useI18nStore.getState().setLocale("en");
   });
 
-  it("toggles the reference overlay viewport setting", () => {
+  it("updates overlay enablement, opacity and each bounds mode", () => {
     const mesh = createViviMesh({ id: "mesh-reference-overlay" });
     useEditorStore.setState({ project: createProject({ layers: [mesh] }) });
 
     render(<MeshProperties layer={mesh} />);
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: "Enable reference overlay" }),
-    );
+    fireEvent.click(screen.getByRole("checkbox", { name: "Enable reference overlay" }));
 
     expect(useViewportStore.getState().referenceOverlay.enabled).toBe(true);
-  });
-
-  it("updates the reference overlay opacity", () => {
-    const mesh = createViviMesh({ id: "mesh-reference-overlay" });
-    useEditorStore.setState({ project: createProject({ layers: [mesh] }) });
-
-    render(<MeshProperties layer={mesh} />);
     fireEvent.change(screen.getByLabelText("Reference overlay opacity"), {
       target: { value: "0.55" },
     });
-
     expect(useViewportStore.getState().referenceOverlay.opacity).toBe(0.55);
-  });
-
-  it("updates the reference overlay mode", () => {
-    const mesh = createViviMesh({ id: "mesh-reference-overlay" });
-    useEditorStore.setState({ project: createProject({ layers: [mesh] }) });
-
-    render(<MeshProperties layer={mesh} />);
-    fireEvent.change(screen.getByLabelText("Reference overlay mode"), {
-      target: { value: "currentBounds" },
-    });
-
-    expect(useViewportStore.getState().referenceOverlay.mode).toBe(
-      "currentBounds",
-    );
-  });
-
-  it("supports the imported-bounds overlay mode", () => {
-    const mesh = createViviMesh({ id: "mesh-reference-overlay" });
-    useEditorStore.setState({ project: createProject({ layers: [mesh] }) });
-
-    render(<MeshProperties layer={mesh} />);
-    fireEvent.change(screen.getByLabelText("Reference overlay mode"), {
-      target: { value: "importedBounds" },
-    });
-
-    expect(useViewportStore.getState().referenceOverlay.mode).toBe(
-      "importedBounds",
-    );
-  });
-
-  it("supports the bounds-compare overlay mode", () => {
-    const mesh = createViviMesh({ id: "mesh-reference-overlay" });
-    useEditorStore.setState({ project: createProject({ layers: [mesh] }) });
-
-    render(<MeshProperties layer={mesh} />);
-    fireEvent.change(screen.getByLabelText("Reference overlay mode"), {
-      target: { value: "compareBounds" },
-    });
-
-    expect(useViewportStore.getState().referenceOverlay.mode).toBe(
-      "compareBounds",
-    );
+    for (const mode of ["currentBounds", "importedBounds", "compareBounds"] as const) {
+      fireEvent.change(screen.getByLabelText("Reference overlay mode"), {
+        target: { value: mode },
+      });
+      expect(useViewportStore.getState().referenceOverlay.mode).toBe(mode);
+    }
   });
 
   it("updates compare A/B modes and difference highlighting", () => {
@@ -97,27 +51,20 @@ describe("MeshProperties reference overlay", () => {
     fireEvent.change(screen.getByLabelText("Reference compare primary mode"), {
       target: { value: "source" },
     });
-    fireEvent.change(
-      screen.getByLabelText("Reference compare secondary mode"),
-      {
-        target: { value: "currentBounds" },
-      },
-    );
+    fireEvent.change(screen.getByLabelText("Reference compare secondary mode"), {
+      target: { value: "currentBounds" },
+    });
     fireEvent.click(
       screen.getByRole("checkbox", {
         name: "Highlight reference overlay differences",
       }),
     );
 
-    expect(useViewportStore.getState().referenceOverlay.comparePrimary).toBe(
-      "source",
-    );
+    expect(useViewportStore.getState().referenceOverlay.comparePrimary).toBe("source");
     expect(useViewportStore.getState().referenceOverlay.compareSecondary).toBe(
       "currentBounds",
     );
-    expect(
-      useViewportStore.getState().referenceOverlay.highlightDifferences,
-    ).toBe(false);
+    expect(useViewportStore.getState().referenceOverlay.highlightDifferences).toBe(false);
   });
 
   it("applies compare presets from the panel", () => {
@@ -151,9 +98,7 @@ describe("MeshProperties reference overlay", () => {
     render(<MeshProperties layer={mesh} />);
     fireEvent.click(screen.getByRole("button", { name: "Source vs Imported" }));
 
-    expect(useViewportStore.getState().referenceOverlay.comparePrimary).toBe(
-      "source",
-    );
+    expect(useViewportStore.getState().referenceOverlay.comparePrimary).toBe("source");
     expect(useViewportStore.getState().referenceOverlay.compareSecondary).toBe(
       "importedBounds",
     );
@@ -294,9 +239,7 @@ describe("MeshProperties reference overlay", () => {
     expect(useViewportStore.getState().referenceOverlay.comparePrimary).toBe(
       "importedBounds",
     );
-    expect(useViewportStore.getState().referenceOverlay.compareSecondary).toBe(
-      "source",
-    );
+    expect(useViewportStore.getState().referenceOverlay.compareSecondary).toBe("source");
   });
 
   it("offers inline compare-summary controls for swapping and pinning", () => {
@@ -332,17 +275,13 @@ describe("MeshProperties reference overlay", () => {
 
     expect(screen.getByText(/Source vs Imported\./)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Pin Summary" }));
-    expect(useViewportStore.getState().referenceOverlay.pinCompareSummary).toBe(
-      true,
-    );
+    expect(useViewportStore.getState().referenceOverlay.pinCompareSummary).toBe(true);
 
     fireEvent.click(screen.getAllByRole("button", { name: "Swap A/B" })[1]!);
     expect(useViewportStore.getState().referenceOverlay.comparePrimary).toBe(
       "importedBounds",
     );
-    expect(useViewportStore.getState().referenceOverlay.compareSecondary).toBe(
-      "source",
-    );
+    expect(useViewportStore.getState().referenceOverlay.compareSecondary).toBe("source");
   });
 
   it("pins the compare summary outside compare mode", () => {

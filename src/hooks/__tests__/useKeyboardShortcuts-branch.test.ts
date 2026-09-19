@@ -160,121 +160,52 @@ describe("useKeyboardShortcuts — 表情プリセットホットキー", () => 
     spy.mockRestore();
   });
 
-  it("Ctrl+数字キーでは applyByHotkey が呼ばれない", () => {
+  it.each([
+    ["Ctrl", "ctrlKey", 1],
+    ["Meta", "metaKey", 2],
+    ["Alt", "altKey", 3],
+    ["Shift", "shiftKey", 4],
+  ] as const)("%s+数字キーでは applyByHotkey が呼ばれない", (_label, modifier, hotkey) => {
+    useEditorStore.setState({
+      project: createProject({
+        expressionPresets: [createExpressionPreset({ hotkey })],
+      }),
+      projectVersion: 1,
+    });
+    const spy = vi.spyOn(useExpressionPresetStore.getState(), "applyByHotkey");
+    renderHook(() => useKeyboardShortcuts());
+    fireKey("keydown", { key: String(hotkey), [modifier]: true });
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+
+
+
+
+
+
+  it.each(["input", "textarea"] as const)("%s要素にフォーカス中は applyByHotkey が呼ばれない", (tagName) => {
     useEditorStore.setState({
       project: createProject({
         expressionPresets: [createExpressionPreset({ hotkey: 1 })],
       }),
       projectVersion: 1,
     });
-
     const spy = vi.spyOn(useExpressionPresetStore.getState(), "applyByHotkey");
     renderHook(() => useKeyboardShortcuts());
-
-    fireKey("keydown", { key: "1", ctrlKey: true });
-    expect(spy).not.toHaveBeenCalled();
-    spy.mockRestore();
-  });
-
-  it("Meta+数字キーでは applyByHotkey が呼ばれない", () => {
-    useEditorStore.setState({
-      project: createProject({
-        expressionPresets: [createExpressionPreset({ hotkey: 2 })],
-      }),
-      projectVersion: 1,
-    });
-
-    const spy = vi.spyOn(useExpressionPresetStore.getState(), "applyByHotkey");
-    renderHook(() => useKeyboardShortcuts());
-
-    fireKey("keydown", { key: "2", metaKey: true });
-    expect(spy).not.toHaveBeenCalled();
-    spy.mockRestore();
-  });
-
-  it("Alt+数字キーでは applyByHotkey が呼ばれない", () => {
-    useEditorStore.setState({
-      project: createProject({
-        expressionPresets: [createExpressionPreset({ hotkey: 3 })],
-      }),
-      projectVersion: 1,
-    });
-
-    const spy = vi.spyOn(useExpressionPresetStore.getState(), "applyByHotkey");
-    renderHook(() => useKeyboardShortcuts());
-
-    fireKey("keydown", { key: "3", altKey: true });
-    expect(spy).not.toHaveBeenCalled();
-    spy.mockRestore();
-  });
-
-  it("Shift+数字キーでは applyByHotkey が呼ばれない", () => {
-    useEditorStore.setState({
-      project: createProject({
-        expressionPresets: [createExpressionPreset({ hotkey: 4 })],
-      }),
-      projectVersion: 1,
-    });
-
-    const spy = vi.spyOn(useExpressionPresetStore.getState(), "applyByHotkey");
-    renderHook(() => useKeyboardShortcuts());
-
-    fireKey("keydown", { key: "4", shiftKey: true });
-    expect(spy).not.toHaveBeenCalled();
-    spy.mockRestore();
-  });
-
-  it("INPUT要素にフォーカス中は applyByHotkey が呼ばれない", () => {
-    useEditorStore.setState({
-      project: createProject({
-        expressionPresets: [createExpressionPreset({ hotkey: 1 })],
-      }),
-      projectVersion: 1,
-    });
-
-    const spy = vi.spyOn(useExpressionPresetStore.getState(), "applyByHotkey");
-    renderHook(() => useKeyboardShortcuts());
-
-    const input = document.createElement("input");
-    document.body.appendChild(input);
-    input.focus();
-    const event = new KeyboardEvent("keydown", {
-      key: "1",
-      bubbles: true,
-    });
-    Object.defineProperty(event, "target", { value: input });
+    const target = document.createElement(tagName);
+    document.body.appendChild(target);
+    target.focus();
+    const event = new KeyboardEvent("keydown", { key: "1", bubbles: true });
+    Object.defineProperty(event, "target", { value: target });
     window.dispatchEvent(event);
-
     expect(spy).not.toHaveBeenCalled();
-    document.body.removeChild(input);
+    document.body.removeChild(target);
     spy.mockRestore();
   });
 
-  it("TEXTAREA要素にフォーカス中は applyByHotkey が呼ばれない", () => {
-    useEditorStore.setState({
-      project: createProject({
-        expressionPresets: [createExpressionPreset({ hotkey: 1 })],
-      }),
-      projectVersion: 1,
-    });
 
-    const spy = vi.spyOn(useExpressionPresetStore.getState(), "applyByHotkey");
-    renderHook(() => useKeyboardShortcuts());
-
-    const textarea = document.createElement("textarea");
-    document.body.appendChild(textarea);
-    textarea.focus();
-    const event = new KeyboardEvent("keydown", {
-      key: "1",
-      bubbles: true,
-    });
-    Object.defineProperty(event, "target", { value: textarea });
-    window.dispatchEvent(event);
-
-    expect(spy).not.toHaveBeenCalled();
-    document.body.removeChild(textarea);
-    spy.mockRestore();
-  });
 
   it("数字キー 9 で applyByHotkey(9) が呼ばれる", () => {
     useEditorStore.setState({

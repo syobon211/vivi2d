@@ -64,27 +64,21 @@ describe("useColliderOverlay", () => {
     resetColliderStore();
   });
 
-  it("returns stable interaction handlers", () => {
-    const { result } = renderHook(() => useColliderOverlay());
 
-    expect(result.current.onPointerDown).toBeTypeOf("function");
-    expect(result.current.onPointerMove).toBeTypeOf("function");
-    expect(result.current.onPointerUp).toBeTypeOf("function");
-    expect(result.current.isInteracting()).toBe(false);
-  });
 
   it("selects and starts dragging a rectangle collider body", () => {
-    const rect = makeRectCollider();
-    useEditorStore.setState({ project: createProject({ colliders: [rect] }) });
+      const rect = makeRectCollider();
+      useEditorStore.setState({ project: createProject({ colliders: [rect] }) });
 
-    const { result } = renderHook(() => useColliderOverlay());
-    const event = createPointerEvent(200, 175);
-    result.current.onPointerDown(event);
+      const { result } = renderHook(() => useColliderOverlay());
+      expect(result.current.isInteracting()).toBe(false);
+      const event = createPointerEvent(200, 175);
+      result.current.onPointerDown(event);
 
-    expect(useColliderStore.getState().selectedColliderId).toBe(rect.id);
-    expect(event.stopPropagation).toHaveBeenCalled();
-    expect(result.current.isInteracting()).toBe(true);
-  });
+      expect(useColliderStore.getState().selectedColliderId).toBe(rect.id);
+      expect(event.stopPropagation).toHaveBeenCalled();
+      expect(result.current.isInteracting()).toBe(true);
+    });
 
   it("starts a handle drag when a selected rectangle corner is hit", () => {
     const rect = makeRectCollider();

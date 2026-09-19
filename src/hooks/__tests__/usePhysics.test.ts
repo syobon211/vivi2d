@@ -190,7 +190,9 @@ describe("stepAllPhysics", () => {
     const before = { ...useParameterStore.getState().parameterValues };
     const outputs = stepAllPhysics(1 / 60);
 
-    expect(Object.keys(outputs).length).toBeGreaterThan(0);
-    expect(useParameterStore.getState().parameterValues[paramId]).toBe(before[paramId]);
+    expect(Object.keys(outputs.parameters)).toEqual([paramId]);
+    expect(Number.isFinite(outputs.parameters[paramId])).toBe(true);
+    expect(outputs.bones).toEqual({});
+    expect(useParameterStore.getState().parameterValues).toEqual(before);
   });
 });

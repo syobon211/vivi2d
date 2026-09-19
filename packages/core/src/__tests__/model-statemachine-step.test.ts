@@ -227,33 +227,6 @@ describe("computeStateMachineUpdates", () => {
     expect(ctx.applyUpdates).not.toHaveBeenCalled();
   });
 
-  it("Override → Additive の順に評価し Additive は Override 後の値に加算する", () => {
-    const override = simpleMachine("ov", "clip-override");
-    const additive = simpleMachine("ad", "clip-additive", {
-      blendMode: "additive",
-    });
-    const ctx = prepare(
-      [override, additive],
-      [
-        constantClip("clip-override", "p1", 0.5),
-        constantClip("clip-additive", "p1", 0.8),
-      ],
-      { p1: 0 },
-      { p1: 0.3 },
-    );
-    computeStateMachineUpdates(
-      [override, additive],
-      ctx.runtimes,
-      ctx.clipMap,
-      1 / 60,
-      ctx.getCurrentParams,
-      ctx.getParamDefault,
-      ctx.applyUpdates,
-    );
-    // Additive: 0.5 + (0.8 - 0.3) * 1 = 1.0
-    expect(ctx.getParams().p1).toBeCloseTo(1.0);
-    expect(ctx.applyUpdates).toHaveBeenCalledTimes(2);
-  });
 
   it("配列順序が逆 (Additive が先) でも Override → Additive の順で評価する", () => {
     const additive = simpleMachine("ad", "clip-additive", {
@@ -279,5 +252,6 @@ describe("computeStateMachineUpdates", () => {
       ctx.applyUpdates,
     );
     expect(ctx.getParams().p1).toBeCloseTo(1.0);
+    expect(ctx.applyUpdates).toHaveBeenCalledTimes(2);
   });
 });

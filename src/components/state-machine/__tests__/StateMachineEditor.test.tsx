@@ -9,7 +9,6 @@ import { useStateMachineStore } from "@/stores/stateMachineStore";
 import { resetAllStores } from "@/test/store-reset";
 import { StateMachineEditor } from "../StateMachineEditor";
 
-
 function createMachine(
   overrides?: Partial<AnimationStateMachine>,
 ): AnimationStateMachine {
@@ -47,19 +46,6 @@ const mockClips: AnimationClip[] = [
 describe("StateMachineEditor", () => {
   beforeEach(() => {
     resetAllStores();
-  });
-
-  it("マシン名が表示される", () => {
-    render(
-      <StateMachineEditor
-        machine={createMachine()}
-        parameters={mockParams}
-        clips={mockClips}
-      />,
-    );
-
-    const nameInput = screen.getByDisplayValue("TestMachine");
-    expect(nameInput).toBeInTheDocument();
   });
 
   it("状態一覧が表示される", () => {
@@ -100,22 +86,6 @@ describe("StateMachineEditor", () => {
     expect(screen.getByText("★")).toBeInTheDocument();
   });
 
-  it("状態追加ボタンでフォームが表示される", () => {
-    render(
-      <StateMachineEditor
-        machine={createMachine()}
-        parameters={mockParams}
-        clips={mockClips}
-      />,
-    );
-
-    const addBtn = screen.getByText(/\+ 状態追加|\+ Add State/i);
-    fireEvent.click(addBtn);
-
-    expect(screen.getByPlaceholderText(/状態名|State Name/i)).toBeInTheDocument();
-    expect(screen.getByText(/OK|確認/)).toBeInTheDocument();
-  });
-
   it("遷移ヘッダーが表示される", () => {
     render(
       <StateMachineEditor
@@ -126,21 +96,6 @@ describe("StateMachineEditor", () => {
     );
 
     expect(screen.getByText(/\*.*→.*Walk/)).toBeInTheDocument();
-  });
-
-  it("遷移追加ボタンでフォームが表示される", () => {
-    render(
-      <StateMachineEditor
-        machine={createMachine()}
-        parameters={mockParams}
-        clips={mockClips}
-      />,
-    );
-
-    const addBtn = screen.getByText(/\+ 遷移追加|\+ Add Transition/i);
-    fireEvent.click(addBtn);
-
-    expect(screen.getByText("→")).toBeInTheDocument();
   });
 
   it("クリップ選択ドロップダウンにクリップが表示される", () => {
@@ -182,7 +137,6 @@ describe("StateMachineEditor", () => {
     expect(deleteButtons[0]).toBeDisabled();
   });
 
-
   it("状態追加フォームでOKクリックするとaddStateが呼ばれる", () => {
     const addStateSpy = vi.spyOn(useStateMachineStore.getState(), "addState");
     render(
@@ -201,6 +155,7 @@ describe("StateMachineEditor", () => {
     fireEvent.click(screen.getByText(/OK|確認/));
 
     expect(addStateSpy).toHaveBeenCalledWith("sm-1", "Run");
+    expect(screen.queryByPlaceholderText(/状態名|State Name/i)).not.toBeInTheDocument();
     addStateSpy.mockRestore();
   });
 
@@ -240,23 +195,6 @@ describe("StateMachineEditor", () => {
     addStateSpy.mockRestore();
   });
 
-  it("状態追加後にフォームが閉じる", () => {
-    render(
-      <StateMachineEditor
-        machine={createMachine()}
-        parameters={mockParams}
-        clips={mockClips}
-      />,
-    );
-
-    fireEvent.click(screen.getByText(/\+ 状態追加|\+ Add State/i));
-    const input = screen.getByPlaceholderText(/状態名|State Name/i);
-    fireEvent.change(input, { target: { value: "NewState" } });
-    fireEvent.click(screen.getByText(/OK|確認/));
-
-    expect(screen.queryByPlaceholderText(/状態名|State Name/i)).not.toBeInTheDocument();
-  });
-
   it("Enterキーで状態を追加できる", () => {
     const addStateSpy = vi.spyOn(useStateMachineStore.getState(), "addState");
     render(
@@ -294,9 +232,9 @@ describe("StateMachineEditor", () => {
 
   it("遷移追加フォームでOKクリックするとaddTransitionが呼ばれる", () => {
     const addTransitionSpy = vi.spyOn(useStateMachineStore.getState(), "addTransition");
-    render(
+    const { rerender } = render(
       <StateMachineEditor
-        machine={createMachine()}
+        machine={createMachine({ states: [], transitions: [] })}
         parameters={mockParams}
         clips={mockClips}
       />,
@@ -304,6 +242,18 @@ describe("StateMachineEditor", () => {
 
     fireEvent.click(screen.getByText(/\+ 遷移追加|\+ Add Transition/i));
 
+    expect(screen.getByText("→")).toBeInTheDocument();
+    const initialOk = screen.getAllByText(/OK|確認/).at(-1)!;
+    expect(initialOk).toBeDisabled();
+    fireEvent.click(initialOk);
+    expect(addTransitionSpy).not.toHaveBeenCalled();
+    rerender(
+      <StateMachineEditor
+        machine={createMachine()}
+        parameters={mockParams}
+        clips={mockClips}
+      />,
+    );
     const selects = screen.getAllByRole("combobox");
     const toSelect = selects[selects.length - 1]!;
     fireEvent.change(toSelect, { target: { value: "state-1" } });
@@ -313,23 +263,6 @@ describe("StateMachineEditor", () => {
 
     expect(addTransitionSpy).toHaveBeenCalledWith("sm-1", expect.any(String), "state-1");
     addTransitionSpy.mockRestore();
-  });
-
-  it("遷移追加で遷移先が未選択の場合はOKボタンが無効化される", () => {
-    render(
-      <StateMachineEditor
-        machine={createMachine()}
-        parameters={mockParams}
-        clips={mockClips}
-      />,
-    );
-
-    fireEvent.click(screen.getByText(/\+ 遷移追加|\+ Add Transition/i));
-    const transitionsBefore = createMachine().transitions.length;
-    const okButtons = screen.getAllByText(/OK|確認/);
-    fireEvent.click(okButtons[okButtons.length - 1]!);
-
-    expect(transitionsBefore).toBe(1);
   });
 
   it("★ボタンで初期状態を変更できる", () => {
@@ -363,7 +296,6 @@ describe("StateMachineEditor", () => {
     expect(toggleSpy).toHaveBeenCalledWith("sm-1");
     toggleSpy.mockRestore();
   });
-
 
   it("マシン名入力変更でrenameStateMachineが呼ばれる", () => {
     const spy = vi.spyOn(useStateMachineStore.getState(), "renameStateMachine");

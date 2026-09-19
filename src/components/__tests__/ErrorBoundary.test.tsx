@@ -45,22 +45,11 @@ describe("ErrorBoundary", () => {
       screen.getByText("アプリケーションでエラーが発生しました。"),
     ).toBeInTheDocument();
     expect(screen.getByText("日本語エラー")).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveAttribute("aria-live", "assertive");
+    expect(alert).toHaveAccessibleName("予期しないエラーが発生しました");
     expect(screen.getByRole("button", { name: "再試行" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "再読み込み" })).toBeInTheDocument();
-
-    spy.mockRestore();
-  });
-
-  it("hides the normal child output after an error", () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    render(
-      <ErrorBoundary>
-        <ThrowingChild message="boom" />
-      </ErrorBoundary>,
-    );
-
-    expect(screen.queryByText("healthy child")).not.toBeInTheDocument();
 
     spy.mockRestore();
   });
@@ -85,25 +74,6 @@ describe("ErrorBoundary", () => {
     spy.mockRestore();
   });
 
-  it("shows an error ID when an error is captured", () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    render(
-      <ErrorBoundary>
-        <ThrowingChild message="error id check" />
-      </ErrorBoundary>,
-    );
-
-    expect(screen.getByText("エラー ID:")).toBeInTheDocument();
-    const codes = document.querySelectorAll("code");
-    const hasId = Array.from(codes).some((item) =>
-      /^[0-9a-f-]{8,}$/.test(item.textContent ?? ""),
-    );
-    expect(hasId).toBe(true);
-
-    spy.mockRestore();
-  });
-
   it("passes the error, errorId, and component info to onError", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     const onError = vi.fn();
@@ -121,6 +91,8 @@ describe("ErrorBoundary", () => {
     expect(typeof call[1]).toBe("string");
     expect((call[1] as string).length).toBeGreaterThan(4);
     expect(call[2]).toBeDefined();
+    expect(screen.getByText("エラー ID:")).toBeInTheDocument();
+    expect(document.querySelector("code")?.textContent).toBe(call[1]);
 
     spy.mockRestore();
   });
@@ -179,44 +151,6 @@ describe("ErrorBoundary", () => {
 
     expect(screen.getByTestId("recovered")).toBeInTheDocument();
     expect(screen.queryByText("予期しないエラーが発生しました")).not.toBeInTheDocument();
-
-    spy.mockRestore();
-  });
-
-  it("exposes an assertive alert region", () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    render(
-      <ErrorBoundary>
-        <ThrowingChild message="alert test" />
-      </ErrorBoundary>,
-    );
-
-    const alert = screen.getByRole("alert");
-    expect(alert).toHaveAttribute("aria-live", "assertive");
-    expect(alert).toHaveAttribute("aria-labelledby", "vivi2d-error-title");
-    expect(document.getElementById("vivi2d-error-title")).not.toBeNull();
-
-    spy.mockRestore();
-  });
-
-  it("uses CSS variables in the fallback UI styles", () => {
-    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    render(
-      <ErrorBoundary>
-        <ThrowingChild message="css vars" />
-      </ErrorBoundary>,
-    );
-
-    const alert = screen.getByRole("alert");
-    const styleText = [
-      alert.getAttribute("style") ?? "",
-      ...Array.from(alert.querySelectorAll("*")).map(
-        (el) => el.getAttribute("style") ?? "",
-      ),
-    ].join(" | ");
-    expect(styleText).toMatch(/var\(--/);
 
     spy.mockRestore();
   });

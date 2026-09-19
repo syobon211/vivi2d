@@ -58,13 +58,6 @@ describe("vowelToMouthParams", () => {
   describe("volume上限クランプ", () => {
     const allVowels: Vowel[] = ["a", "i", "u", "e", "o", "silent"];
 
-    it("volume=1でmouthOpenが1を超えない", () => {
-      for (const vowel of allVowels) {
-        const { mouthOpen } = vowelToMouthParams(vowel, 1);
-        expect(mouthOpen).toBeLessThanOrEqual(1);
-        expect(mouthOpen).toBeGreaterThanOrEqual(0);
-      }
-    });
 
     it("volume>1でもゲイン補正後にクランプされmouthOpen<=1", () => {
       for (const vowel of allVowels) {

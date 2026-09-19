@@ -388,11 +388,21 @@ fn store_cause_mapping_is_typed_and_redacted() {
         Some(LocalStoreErrorKind::PathRejected)
     );
 
+    let plan = texture_plan(vec![
+        texture_binding("atlas:a", missing_blob(1), 1, 1),
+        texture_binding("atlas:b", missing_blob(2), 1, 1),
+    ]);
     let error = prepare_with(
         3,
-        candidate(3, &[]),
-        texture_plan(Vec::new()),
-        move |_, _| Err(host_error),
+        candidate(3, &[("a", 1, 1), ("b", 1, 1)]),
+        plan,
+        move |generation, received_plan| {
+            assert_eq!(generation, 3);
+            assert_eq!(received_plan.textures.len(), 2);
+            assert_eq!(received_plan.textures[0].id, "atlas:a");
+            assert_eq!(received_plan.textures[1].id, "atlas:b");
+            Err(host_error)
+        },
     )
     .expect_err("host store error propagates in redacted form");
     assert_eq!(error.kind(), EvaluationPreactivationErrorKind::Store);
@@ -402,44 +412,6 @@ fn store_cause_mapping_is_typed_and_redacted() {
     let display = error.to_string();
     assert!(!debug.contains("private-path-marker"));
     assert!(!display.contains("private-path-marker"));
-}
-
-#[test]
-fn host_store_hard_error_never_becomes_a_partial_missing_result() {
-    let temp = private_tempdir();
-    let missing_parent = temp
-        .path()
-        .join("private-store-marker")
-        .join("assets.sqlite3");
-    let host_error = match LocalAssetHost::open(missing_parent, principal()) {
-        Ok(_) => panic!("missing trusted parent must be rejected"),
-        Err(error) => error,
-    };
-    let plan = texture_plan(vec![
-        texture_binding("atlas:a", missing_blob(1), 1, 1),
-        texture_binding("atlas:b", missing_blob(2), 1, 1),
-    ]);
-    let error = prepare_with(
-        13,
-        candidate(13, &[("a", 1, 1), ("b", 1, 1)]),
-        plan,
-        move |_, received_plan| {
-            let mut accumulated_missing = Vec::new();
-            for binding in &received_plan.textures {
-                if binding.id == "atlas:a" {
-                    accumulated_missing.push(binding.id.as_str());
-                    continue;
-                }
-                assert_eq!(binding.id, "atlas:b");
-                assert_eq!(accumulated_missing, ["atlas:a"]);
-                return Err(host_error);
-            }
-            unreachable!("the second binding simulates a later Store hard error")
-        },
-    )
-    .expect_err("a host hard error cannot be converted to Missing");
-    assert_eq!(error.kind(), EvaluationPreactivationErrorKind::Store);
-    assert_eq!(error.store_kind(), Some(LocalStoreErrorKind::PathRejected));
 }
 
 #[test]

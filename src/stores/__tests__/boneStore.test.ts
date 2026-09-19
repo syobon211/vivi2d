@@ -80,75 +80,27 @@ describe("boneStore", () => {
   // addRootBone
   // ==============================================================
   describe("addRootBone", () => {
-    it("プロジェクトのルートレベルにボーンが追加される", () => {
+    it("root bone は固有 ID と指定位置・既定属性を持つ独立した二つのノードになる", () => {
       const actions = setup([]);
-
-      actions.addRootBone("ルートボーン", 0, 0);
-
-      const project = useEditorStore.getState().project!;
-      expect(project.layers).toHaveLength(1);
-      const bone = project.layers[0] as BoneNode;
-      expect(bone.kind).toBe("bone");
-      expect(bone.name).toBe("ルートボーン");
-      expect(bone.parentBoneId).toBeUndefined();
+      const first = actions.addRootBone("ボーン1", 123.5, 456.7);
+      const second = actions.addRootBone("ボーン2", -20, 15);
+      expect(first).not.toBe(second);
+      const layers = useEditorStore.getState().project!.layers;
+      expect(layers.map((node) => node.id)).toEqual([first, second]);
+      for (const [id, name, x, y] of [
+        [first, "ボーン1", 123.5, 456.7],
+        [second, "ボーン2", -20, 15],
+      ] as const) {
+        const bone = findLayerById(layers, id) as BoneNode;
+        expect(bone).toMatchObject({
+          id, name, x, y, kind: "bone", visible: true, opacity: 1, children: [],
+          bone: { angle: 0, length: 50, scaleX: 1, scaleY: 1 },
+        });
+        expect(bone.parentBoneId).toBeUndefined();
+      }
     });
   });
 
-  describe("addRootBone — 追加テスト", () => {
-    it("複数回呼ぶと異なるIDが返される", () => {
-      const actions = setup([]);
-
-      const id1 = actions.addRootBone("ボーン1", 0, 0);
-      const id2 = actions.addRootBone("ボーン2", 50, 50);
-      const id3 = actions.addRootBone("ボーン3", 100, 100);
-
-      expect(id1).not.toBe(id2);
-      expect(id2).not.toBe(id3);
-      expect(id1).not.toBe(id3);
-
-      const project = useEditorStore.getState().project!;
-      expect(project.layers).toHaveLength(3);
-    });
-
-    it("座標が正しく設定される", () => {
-      const actions = setup([]);
-
-      const id = actions.addRootBone("テスト", 123.5, 456.7);
-
-      const project = useEditorStore.getState().project!;
-      const bone = findLayerById(project.layers, id) as BoneNode;
-      expect(bone.x).toBe(123.5);
-      expect(bone.y).toBe(456.7);
-    });
-
-    it("名前が正しく設定される", () => {
-      const actions = setup([]);
-
-      const id = actions.addRootBone("日本語のボーン名", 0, 0);
-
-      const project = useEditorStore.getState().project!;
-      const bone = findLayerById(project.layers, id) as BoneNode;
-      expect(bone.name).toBe("日本語のボーン名");
-    });
-
-    it("デフォルトのボーンプロパティが正しい", () => {
-      const actions = setup([]);
-
-      const id = actions.addRootBone("テスト", 0, 0);
-
-      const project = useEditorStore.getState().project!;
-      const bone = findLayerById(project.layers, id) as BoneNode;
-      expect(bone.kind).toBe("bone");
-      expect(bone.visible).toBe(true);
-      expect(bone.opacity).toBe(1);
-      expect(bone.bone.angle).toBe(0);
-      expect(bone.bone.length).toBe(50);
-      expect(bone.bone.scaleX).toBe(1);
-      expect(bone.bone.scaleY).toBe(1);
-      expect(bone.children).toHaveLength(0);
-      expect(bone.parentBoneId).toBeUndefined();
-    });
-  });
 
   // ==============================================================
   // setBonePosition
@@ -243,19 +195,6 @@ describe("boneStore", () => {
   // reparentBone
   // ==============================================================
   describe("reparentBone", () => {
-    it("ボーンを別の親に移動する", () => {
-      const boneA = createBoneNode({ name: "A" });
-      const boneB = createBoneNode({ name: "B" });
-      const actions = setup([boneA, boneB]);
-
-      actions.reparentBone(boneB.id, boneA.id);
-
-      const project = useEditorStore.getState().project!;
-      expect(project.layers).toHaveLength(1);
-      const parentNode = findLayerById(project.layers, boneA.id)!;
-      expect(parentNode.children).toHaveLength(1);
-      expect(parentNode.children[0]!.id).toBe(boneB.id);
-    });
 
     it("null でルートレベルに移動する", () => {
       const parent = createBoneNode({ name: "親" });
@@ -289,13 +228,21 @@ describe("boneStore", () => {
     it("ボーンを削除し子ノードを親に昇格させる", () => {
       const child = createBoneNode({ name: "子" });
       const parent = createBoneNode({ name: "親", children: [child] });
+      child.parentBoneId = parent.id;
       const actions = setup([parent]);
+
+      expect(
+        (findLayerById(useEditorStore.getState().project!.layers, child.id) as BoneNode)
+          .parentBoneId,
+      ).toBe(parent.id);
 
       actions.removeBone(parent.id);
 
       const project = useEditorStore.getState().project!;
       expect(project.layers).toHaveLength(1);
       expect(project.layers[0]!.id).toBe(child.id);
+      expect(findLayerById(project.layers, parent.id)).toBeNull();
+      expect((project.layers[0] as BoneNode).parentBoneId).toBeUndefined();
     });
 
     it("選択中のボーンを削除すると選択がクリアされる", () => {
@@ -334,17 +281,6 @@ describe("boneStore", () => {
       expect(updatedGroup.children.some((l) => l.id === grandchild.id)).toBe(true);
     });
 
-    it("子付きルートボーンを削除すると子がルートに昇格する", () => {
-      const leaf = createBoneNode({ name: "リーフ" });
-      const root = createBoneNode({ name: "ルート", children: [leaf] });
-      const actions = setup([root]);
-
-      actions.removeBone(root.id);
-
-      const project = useEditorStore.getState().project!;
-      expect(project.layers).toHaveLength(1);
-      expect(project.layers[0]!.id).toBe(leaf.id);
-    });
 
     it("ルートレベルの子なしボーンを削除する", () => {
       const bone = createBoneNode({ name: "単独" });
@@ -375,10 +311,9 @@ describe("boneStore", () => {
     it("存在しない親IDへの移動は何もしない", () => {
       const bone = createBoneNode();
       const actions = setup([bone]);
-
+      const before = structuredClone(useEditorStore.getState().project!);
       actions.reparentBone(bone.id, "nonexistent");
-
-      const _project = useEditorStore.getState().project!;
+      expect(useEditorStore.getState().project).toEqual(before);
     });
 
     it("グループへのreparentではparentBoneIdがundefinedになる", () => {
@@ -408,18 +343,6 @@ describe("boneStore", () => {
       expect(updatedRoot.children.some((l) => l.id === leaf.id)).toBe(true);
     });
 
-    it("グループ > ボーン > ボーン構造での中間ボーン削除", () => {
-      const child = createBoneNode({ name: "子" });
-      const parent = createBoneNode({ name: "親", children: [child] });
-      const group = createGroup({ name: "グループ", children: [parent] });
-      const actions = setup([group]);
-
-      actions.removeBone(parent.id);
-
-      const project = useEditorStore.getState().project!;
-      const updatedGroup = findLayerById(project.layers, group.id)!;
-      expect(updatedGroup.children.some((l) => l.id === child.id)).toBe(true);
-    });
   });
 
   describe("setBoneAngle — エッジケース", () => {
@@ -473,14 +396,13 @@ describe("boneStore", () => {
 
   describe("reparentBone — 非ボーンノード", () => {
     it("グループノードをreparentしようとしても何もしない（bone以外はスキップ）", () => {
-      const group = createGroup({ name: "グループ" });
+      const nested = createBoneNode({ name: "保持する子" });
+      const group = createGroup({ name: "グループ", children: [nested] });
       const bone = createBoneNode({ name: "ボーン" });
       const actions = setup([group, bone]);
-
+      const before = structuredClone(useEditorStore.getState().project!);
       actions.reparentBone(group.id, bone.id);
-
-      const project = useEditorStore.getState().project!;
-      expect(project.layers.some((l) => l.id === bone.id)).toBe(true);
+      expect(useEditorStore.getState().project).toEqual(before);
     });
 
     it("存在しないノードIDをreparentしても何もしない", () => {
@@ -505,6 +427,9 @@ describe("boneStore", () => {
       actions.reparentBone(c.id, b.id);
 
       const project = useEditorStore.getState().project!;
+      expect((findLayerById(project.layers, a.id) as BoneNode).parentBoneId).toBeUndefined();
+      expect((findLayerById(project.layers, b.id) as BoneNode).parentBoneId).toBe(a.id);
+      expect((findLayerById(project.layers, c.id) as BoneNode).parentBoneId).toBe(b.id);
       expect(project.layers).toHaveLength(1);
       const rootA = findLayerById(project.layers, a.id)!;
       expect(rootA.children).toHaveLength(1);
@@ -513,23 +438,6 @@ describe("boneStore", () => {
       expect(rootA.children[0]!.children[0]!.id).toBe(c.id);
     });
 
-    it("4段階層（A→B→C→D）を構築できる", () => {
-      const a = createBoneNode({ name: "A" });
-      const b = createBoneNode({ name: "B" });
-      const c = createBoneNode({ name: "C" });
-      const d = createBoneNode({ name: "D" });
-      const actions = setup([a, b, c, d]);
-
-      actions.reparentBone(b.id, a.id);
-      actions.reparentBone(c.id, b.id);
-      actions.reparentBone(d.id, c.id);
-
-      const project = useEditorStore.getState().project!;
-      expect(project.layers).toHaveLength(1);
-      const nodeC = findLayerById(project.layers, c.id)!;
-      expect(nodeC.children).toHaveLength(1);
-      expect(nodeC.children[0]!.id).toBe(d.id);
-    });
 
     it("子持ちボーンを別の親に移動すると子も一緒に移動する", () => {
       const child = createBoneNode({ name: "子" });
@@ -586,29 +494,7 @@ describe("boneStore", () => {
       expect(otherNode.children[0]!.id).toBe(child2.id);
     });
 
-    it("reparent後にparentBoneIdが正しく設定される", () => {
-      const parent = createBoneNode({ name: "親" });
-      const child = createBoneNode({ name: "子" });
-      const actions = setup([parent, child]);
 
-      actions.reparentBone(child.id, parent.id);
-
-      const project = useEditorStore.getState().project!;
-      const movedChild = findLayerById(project.layers, child.id) as BoneNode;
-      expect(movedChild.parentBoneId).toBe(parent.id);
-    });
-
-    it("ルートに戻すとparentBoneIdがundefinedになる", () => {
-      const child = createBoneNode({ name: "子", parentBoneId: "some-parent" });
-      const parent = createBoneNode({ name: "親", children: [child] });
-      const actions = setup([parent]);
-
-      actions.reparentBone(child.id, null);
-
-      const project = useEditorStore.getState().project!;
-      const rootChild = findLayerById(project.layers, child.id) as BoneNode;
-      expect(rootChild.parentBoneId).toBeUndefined();
-    });
 
     it("兄弟ボーン間で移動できる（B→Cの子に）", () => {
       const b = createBoneNode({ name: "B" });

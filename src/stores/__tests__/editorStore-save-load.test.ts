@@ -11,11 +11,9 @@ import { mockCanvasContext, mockImageLoad } from "@/test/mocks";
 import {
   TEST_BAD_VIVI_PATH,
   TEST_EXISTING_TEST_VIVI_PATH,
-  TEST_GENERIC_TEST_VIVI_PATH,
   TEST_LOADED_VIVI_PATH,
   TEST_MODEL_VIVI_PATH,
   TEST_NEW_TEST_VIVI_PATH,
-  TEST_SAVED_VIVI_PATH,
 } from "@/test/path-fixtures";
 import { resetEditorStore, resetSelectionStore } from "@/test/store-reset";
 
@@ -100,19 +98,10 @@ describe("editorStore: saveProject / loadProject", () => {
       const callArgs = vi.mocked(window.electronAPI.saveFile).mock.calls[0]![0];
       expect(callArgs.defaultName).toBe(`${project.name}.vivi`);
       expect(JSON.parse(callArgs.data!).version).toBe(9);
+      expect(useEditorStore.getState().currentFilePath).toBe(TEST_MODEL_VIVI_PATH);
     });
 
-    it("保存後に currentFilePath が更新される", async () => {
-      const project = createProject({ layers: [] });
-      useEditorStore.setState({ project, projectVersion: 1 });
 
-      vi.mocked(window.electronAPI.saveFile).mockResolvedValue({
-        filePath: TEST_SAVED_VIVI_PATH,
-      });
-
-      await projectIO.saveProject();
-      expect(useEditorStore.getState().currentFilePath).toBe(TEST_SAVED_VIVI_PATH);
-    });
 
     it("キャンセル時は false を返し currentFilePath を変更しない", async () => {
       const project = createProject({ layers: [] });
@@ -175,6 +164,8 @@ describe("editorStore: saveProject / loadProject", () => {
     });
 
     it(".vivi ファイルを読み込んでプロジェクトを設定する", async () => {
+      useEditorStore.setState({ projectVersion: 5 });
+      useSelectionStore.setState({ selectedLayerId: "previous-layer", selectedLayerIds: ["previous-layer"] });
       const project = createProject({ name: "読み込みテスト", layers: [] });
       const fileData: ViviFileData = {
         version: 1,
@@ -194,25 +185,12 @@ describe("editorStore: saveProject / loadProject", () => {
       expect(state.project).not.toBeNull();
       expect(state.project!.name).toBe("読み込みテスト");
       expect(state.currentFilePath).toBe(TEST_LOADED_VIVI_PATH);
+      expect(state.projectVersion).toBe(6);
+      expect(useSelectionStore.getState().selectedLayerIds).toEqual([]);
       expect(useSelectionStore.getState().selectedLayerId).toBeNull();
     });
 
-    it("読み込み時に projectVersion がインクリメントされる", async () => {
-      useEditorStore.setState({ projectVersion: 5 });
-      const fileData: ViviFileData = {
-        version: 1,
-        project: createProject({ layers: [] }),
-        atlases: [],
-      };
 
-      vi.mocked(window.electronAPI.openViviFile).mockResolvedValue({
-        data: JSON.stringify(fileData),
-        filePath: TEST_GENERIC_TEST_VIVI_PATH,
-      });
-
-      await projectIO.loadProject();
-      expect(useEditorStore.getState().projectVersion).toBe(6);
-    });
 
     it("不正な JSON で false を返す", async () => {
       vi.mocked(window.electronAPI.openViviFile).mockResolvedValue({

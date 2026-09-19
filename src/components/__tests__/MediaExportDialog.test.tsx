@@ -9,7 +9,6 @@ import { createProject } from "@/test/fixtures";
 import { resetAllStores } from "@/test/store-reset";
 import { MediaExportDialog } from "../MediaExportDialog";
 
-
 vi.mock("@/hooks/usePixiApp", () => ({
   getPixiAppRefs: vi.fn().mockReturnValue(null),
 }));
@@ -43,26 +42,6 @@ describe("MediaExportDialog", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("タイトルを表示する", () => {
-    const clip = createClip({ name: "テストクリップ" });
-    const project = createProject({ scenes: [{ id: "s1", name: "S", clips: [clip] }] });
-    useEditorStore.setState({ project, projectVersion: 1 });
-
-    render(<MediaExportDialog onClose={onClose} />);
-
-    expect(screen.getByText(/メディア|Media/i)).toBeInTheDocument();
-  });
-
-  it("クリップが選択可能に表示される", () => {
-    const clip = createClip({ name: "Walk", duration: 60, fps: 30 });
-    const project = createProject({ scenes: [{ id: "s1", name: "S", clips: [clip] }] });
-    useEditorStore.setState({ project, projectVersion: 1 });
-
-    render(<MediaExportDialog onClose={onClose} />);
-
-    expect(screen.getByText(/Walk/)).toBeInTheDocument();
-  });
-
   it("クリップがない場合はエクスポートボタンが無効化される", () => {
     const project = createProject({ scenes: [{ id: "s1", name: "S", clips: [] }] });
     useEditorStore.setState({ project, projectVersion: 1 });
@@ -90,28 +69,6 @@ describe("MediaExportDialog", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("フォーマット選択が表示される", () => {
-    const clip = createClip();
-    const project = createProject({ scenes: [{ id: "s1", name: "S", clips: [clip] }] });
-    useEditorStore.setState({ project, projectVersion: 1 });
-
-    render(<MediaExportDialog onClose={onClose} />);
-
-    const selects = screen.getAllByRole("combobox");
-    expect(selects.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("クリップ情報を表示する", () => {
-    const clip = createClip({ name: "Run", duration: 90, fps: 30 });
-    const project = createProject({ scenes: [{ id: "s1", name: "S", clips: [clip] }] });
-    useEditorStore.setState({ project, projectVersion: 1 });
-
-    render(<MediaExportDialog onClose={onClose} />);
-
-    expect(screen.getByText(/3\.00秒/)).toBeInTheDocument();
-    expect(screen.getByText(/フレーム数.*90/)).toBeInTheDocument();
-  });
-
   it("オーバーレイクリックでonCloseが呼ばれる", () => {
     const clip = createClip();
     const project = createProject({ scenes: [{ id: "s1", name: "S", clips: [clip] }] });
@@ -124,7 +81,6 @@ describe("MediaExportDialog", () => {
 
     expect(onClose).toHaveBeenCalled();
   });
-
 
   it("PixiJS未初期化時はエラー通知される", async () => {
     vi.mocked(getPixiAppRefs).mockReturnValue(null);
@@ -181,19 +137,31 @@ describe("MediaExportDialog", () => {
 
     vi.mocked(mediaExporter.exportPngSequence).mockResolvedValue(30);
 
-    const clip = createClip();
+    const clip = createClip({ name: "Walk", duration: 90, fps: 30 });
     const project = createProject({ scenes: [{ id: "s1", name: "S", clips: [clip] }] });
     useEditorStore.setState({ project, projectVersion: 1 });
     const addNotification = vi.fn();
     useNotificationStore.setState({ addNotification } as any);
 
     render(<MediaExportDialog onClose={onClose} />);
+    expect(screen.getByText(/メディア|Media/i)).toBeInTheDocument();
+    expect(screen.getByText(/Walk/)).toBeInTheDocument();
+    expect(screen.getByText(/3\.00秒/)).toBeInTheDocument();
+    expect(screen.getByText(/フレーム数.*90/)).toBeInTheDocument();
+    expect(screen.getAllByRole("combobox").length).toBeGreaterThanOrEqual(1);
     const exportBtn = screen
       .getAllByRole("button")
       .find((b) => b.textContent?.match(/^エクスポート$|^Export$/i));
     fireEvent.click(exportBtn!);
 
     await waitFor(() => {
+      expect(mediaExporter.exportPngSequence).toHaveBeenCalledWith(
+        expect.objectContaining({ canvas: expect.any(HTMLCanvasElement) }),
+        project,
+        clip.id,
+        "/tmp/export",
+        expect.any(Function),
+      );
       expect(addNotification).toHaveBeenCalledWith(
         "info",
         expect.stringContaining("30枚"),
@@ -218,13 +186,20 @@ describe("MediaExportDialog", () => {
     const selects = screen.getAllByRole("combobox") as HTMLSelectElement[];
     fireEvent.change(selects[1]!, { target: { value: "mp4" } });
 
+    expect(screen.getByText(/WebM 動画ファイル/)).toBeInTheDocument();
     const exportBtn = screen
       .getAllByRole("button")
       .find((b) => b.textContent?.match(/^エクスポート$|^Export$/i));
     fireEvent.click(exportBtn!);
 
     await waitFor(() => {
-      expect(mediaExporter.exportMp4).toHaveBeenCalled();
+      expect(mediaExporter.exportMp4).toHaveBeenCalledWith(
+        expect.objectContaining({ canvas: expect.any(HTMLCanvasElement) }),
+        project,
+        clip.id,
+        "/tmp/export",
+        expect.any(Function),
+      );
     });
   });
 
@@ -258,17 +233,5 @@ describe("MediaExportDialog", () => {
         expect.stringContaining("書き込み失敗"),
       );
     });
-  });
-
-  it("MP4選択時は'WebM 動画ファイル' と表示", () => {
-    const clip = createClip();
-    const project = createProject({ scenes: [{ id: "s1", name: "S", clips: [clip] }] });
-    useEditorStore.setState({ project, projectVersion: 1 });
-
-    render(<MediaExportDialog onClose={onClose} />);
-    const selects = screen.getAllByRole("combobox") as HTMLSelectElement[];
-    fireEvent.change(selects[1]!, { target: { value: "mp4" } });
-
-    expect(screen.getByText(/WebM 動画ファイル/)).toBeInTheDocument();
   });
 });

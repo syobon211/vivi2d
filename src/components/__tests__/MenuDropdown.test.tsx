@@ -4,29 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { MenuDropdown, MenuDropdownItem } from "../MenuDropdown";
 
 describe("MenuDropdown", () => {
-  it("ラベルが表示される", () => {
-    render(
-      <MenuDropdown label="ファイル">
-        <div>内容</div>
-      </MenuDropdown>,
-    );
-    expect(screen.getByText("ファイル ▾")).toBeInTheDocument();
-  });
-
-  it("クリックでドロップダウンが開く", async () => {
-    const user = userEvent.setup();
-    render(
-      <MenuDropdown label="ファイル">
-        <div>メニュー内容</div>
-      </MenuDropdown>,
-    );
-
-    expect(screen.queryByText("メニュー内容")).not.toBeInTheDocument();
-
-    await user.click(screen.getByText("ファイル ▾"));
-    expect(screen.getByText("メニュー内容")).toBeInTheDocument();
-  });
-
   it("再クリックで閉じる", async () => {
     const user = userEvent.setup();
     render(
@@ -35,11 +12,18 @@ describe("MenuDropdown", () => {
       </MenuDropdown>,
     );
 
-    await user.click(screen.getByText("ファイル ▾"));
+    const trigger = screen.getByText("ファイル ▾");
+    expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("メニュー内容")).not.toBeInTheDocument();
+    await user.click(trigger);
+    expect(screen.getByRole("menu", { name: "ファイル" })).toBeInTheDocument();
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("メニュー内容")).toBeInTheDocument();
 
     await user.click(screen.getByText("ファイル ▾"));
     expect(screen.queryByText("メニュー内容")).not.toBeInTheDocument();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
   it("項目クリック後に閉じる", async () => {
@@ -85,55 +69,6 @@ describe("MenuDropdown", () => {
       </MenuDropdown>,
     );
     expect(container.querySelector(".menu-dropdown.custom-class")).toBeInTheDocument();
-  });
-
-  it("className が省略された場合でもエラーにならない", () => {
-    const { container } = render(
-      <MenuDropdown label="テスト">
-        <div>内容</div>
-      </MenuDropdown>,
-    );
-    expect(container.querySelector(".menu-dropdown")).toBeInTheDocument();
-  });
-
-
-  it("トリガーに aria-haspopup と aria-expanded が付く", async () => {
-    const user = userEvent.setup();
-    render(
-      <MenuDropdown label="ファイル">
-        <MenuDropdownItem onClick={() => {}}>保存</MenuDropdownItem>
-      </MenuDropdown>,
-    );
-    const trigger = screen.getByText("ファイル ▾");
-    expect(trigger).toHaveAttribute("aria-haspopup", "menu");
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-
-    await user.click(trigger);
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-  });
-
-  it("開いたパネルが role=menu と aria-label を持つ", async () => {
-    const user = userEvent.setup();
-    render(
-      <MenuDropdown label="ファイル">
-        <MenuDropdownItem onClick={() => {}}>保存</MenuDropdownItem>
-      </MenuDropdown>,
-    );
-    await user.click(screen.getByText("ファイル ▾"));
-    const menu = screen.getByRole("menu");
-    expect(menu).toHaveAttribute("aria-label", "ファイル");
-  });
-
-  it("開いた直後に最初の有効な項目にフォーカスが当たる", async () => {
-    const user = userEvent.setup();
-    render(
-      <MenuDropdown label="ファイル">
-        <MenuDropdownItem onClick={() => {}}>保存</MenuDropdownItem>
-        <MenuDropdownItem onClick={() => {}}>開く</MenuDropdownItem>
-      </MenuDropdown>,
-    );
-    await user.click(screen.getByText("ファイル ▾"));
-    expect(screen.getByText("保存")).toHaveFocus();
   });
 
   it("ArrowDown で次の項目にフォーカスが移る", async () => {
@@ -225,24 +160,15 @@ describe("MenuDropdown", () => {
 });
 
 describe("MenuDropdownItem", () => {
-  it("ボタンとして表示される", () => {
-    render(<MenuDropdownItem onClick={() => {}}>項目1</MenuDropdownItem>);
-    const btn = screen.getByText("項目1");
-    expect(btn.tagName).toBe("BUTTON");
-    expect(btn).toHaveClass("menu-dropdown-item");
-  });
-
-  it("role=menuitem を持つ", () => {
-    render(<MenuDropdownItem onClick={() => {}}>項目1</MenuDropdownItem>);
-    expect(screen.getByRole("menuitem", { name: "項目1" })).toBeInTheDocument();
-  });
-
   it("クリック時にonClickが呼ばれる", async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
     render(<MenuDropdownItem onClick={onClick}>項目1</MenuDropdownItem>);
 
-    await user.click(screen.getByText("項目1"));
+    const item = screen.getByRole("menuitem", { name: "項目1" });
+    expect(item.tagName).toBe("BUTTON");
+    expect(item).toHaveClass("menu-dropdown-item");
+    await user.click(item);
     expect(onClick).toHaveBeenCalledOnce();
   });
 
@@ -287,10 +213,5 @@ describe("MenuDropdownItem", () => {
       </MenuDropdownItem>,
     );
     expect(screen.getByText("項目")).toHaveAttribute("title", "ツールチップ");
-  });
-
-  it("title属性を省略できる", () => {
-    render(<MenuDropdownItem onClick={() => {}}>項目</MenuDropdownItem>);
-    expect(screen.getByText("項目")).not.toHaveAttribute("title");
   });
 });

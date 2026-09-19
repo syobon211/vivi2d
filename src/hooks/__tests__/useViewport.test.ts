@@ -65,49 +65,30 @@ describe("useViewport", () => {
   beforeEach(() => resetViewportStore());
 
   describe("中ボタンパン", () => {
-    it("中ボタン押下でパンを開始する", () => {
-      const containerRef = createContainerRef();
-      const { result } = renderHook(() => useViewport(containerRef));
-
-      const e = createPointerEvent({ button: 1, clientX: 100, clientY: 100 });
-      result.current.onPointerDown(e);
-
-      expect(e.preventDefault).toHaveBeenCalled();
-      expect((e.target as HTMLElement).setPointerCapture).toHaveBeenCalledWith(1);
-    });
-
-    it("中ボタンパン中の移動でパン値が更新される", () => {
-      const containerRef = createContainerRef();
-      const { result } = renderHook(() => useViewport(containerRef));
-
-      result.current.onPointerDown(
-        createPointerEvent({ button: 1, clientX: 100, clientY: 100 }),
-      );
+    it("中ボタンの連続 delta を累積し、pointerUp で capture とパンを終了する", () => {
+      const { result } = renderHook(() => useViewport(createContainerRef()));
+      const down = createPointerEvent({
+        button: 1, pointerId: 9, clientX: 100, clientY: 100,
+      });
+      result.current.onPointerDown(down);
+      expect(down.preventDefault).toHaveBeenCalledOnce();
+      expect((down.target as HTMLElement).setPointerCapture).toHaveBeenCalledExactlyOnceWith(9);
+      expect(result.current.isInteracting()).toBe(true);
 
       result.current.onPointerMove(createPointerEvent({ clientX: 130, clientY: 120 }));
+      expect(useViewportStore.getState()).toMatchObject({ panX: 30, panY: 20 });
+      result.current.onPointerMove(createPointerEvent({ clientX: 160, clientY: 150 }));
+      expect(useViewportStore.getState()).toMatchObject({ panX: 60, panY: 50 });
 
-      const state = useViewportStore.getState();
-      expect(state.panX).toBe(30);
-      expect(state.panY).toBe(20);
+      const up = createPointerEvent({ pointerId: 9, target: down.target });
+      result.current.onPointerUp(up);
+      expect((down.target as HTMLElement).releasePointerCapture).toHaveBeenCalledExactlyOnceWith(9);
+      expect(result.current.isInteracting()).toBe(false);
+      result.current.onPointerMove(createPointerEvent({ clientX: 300, clientY: 300 }));
+      expect(useViewportStore.getState()).toMatchObject({ panX: 60, panY: 50 });
     });
 
-    it("中ボタンリリースでパンを終了する", () => {
-      const containerRef = createContainerRef();
-      const { result } = renderHook(() => useViewport(containerRef));
 
-      result.current.onPointerDown(
-        createPointerEvent({ button: 1, clientX: 100, clientY: 100 }),
-      );
-      result.current.onPointerMove(createPointerEvent({ clientX: 130, clientY: 120 }));
-      const upEvent = createPointerEvent({ clientX: 130, clientY: 120 });
-      result.current.onPointerUp(upEvent);
-
-      result.current.onPointerMove(createPointerEvent({ clientX: 200, clientY: 200 }));
-
-      const state = useViewportStore.getState();
-      expect(state.panX).toBe(30);
-      expect(state.panY).toBe(20);
-    });
 
     it("どのツールでも中ボタンパンが動作する", () => {
       const containerRef = createContainerRef();
@@ -173,9 +154,9 @@ describe("useViewport", () => {
       const containerRef = createContainerRef();
       const { result } = renderHook(() => useViewport(containerRef));
 
-      result.current.onWheel(
-        createWheelEvent({ deltaY: -100, clientX: 400, clientY: 300 }),
-      );
+      const event = createWheelEvent({ deltaY: -100, clientX: 400, clientY: 300 });
+      result.current.onWheel(event);
+      expect(event.preventDefault).toHaveBeenCalledOnce();
 
       expect(useViewportStore.getState().zoom).toBeGreaterThan(1);
     });
@@ -191,15 +172,6 @@ describe("useViewport", () => {
       expect(useViewportStore.getState().zoom).toBeLessThan(1);
     });
 
-    it("ホイール時に preventDefault が呼ばれる", () => {
-      const containerRef = createContainerRef();
-      const { result } = renderHook(() => useViewport(containerRef));
-
-      const e = createWheelEvent({ deltaY: -100, clientX: 400, clientY: 300 });
-      result.current.onWheel(e);
-
-      expect(e.preventDefault).toHaveBeenCalled();
-    });
 
     it("containerRef.current が null の場合は何もしない", () => {
       const containerRef = {
@@ -217,39 +189,8 @@ describe("useViewport", () => {
     });
   });
 
-  describe("連続パン操作", () => {
-    it("複数回の移動でパン値が累積する", () => {
-      const containerRef = createContainerRef();
-      const { result } = renderHook(() => useViewport(containerRef));
-
-      result.current.onPointerDown(
-        createPointerEvent({ button: 1, clientX: 0, clientY: 0 }),
-      );
-      result.current.onPointerMove(createPointerEvent({ clientX: 10, clientY: 20 }));
-      result.current.onPointerMove(createPointerEvent({ clientX: 30, clientY: 50 }));
-
-      const state = useViewportStore.getState();
-      expect(state.panX).toBe(30);
-      expect(state.panY).toBe(50);
-    });
-  });
 
   describe("パン中にポインタアップでキャプチャ解放", () => {
-    it("releasePointerCapture が呼ばれる", () => {
-      const containerRef = createContainerRef();
-      const { result } = renderHook(() => useViewport(containerRef));
-
-      result.current.onPointerDown(
-        createPointerEvent({ button: 1, clientX: 0, clientY: 0 }),
-      );
-
-      const upEvent = createPointerEvent({ pointerId: 1 });
-      result.current.onPointerUp(upEvent);
-
-      expect((upEvent.target as HTMLElement).releasePointerCapture).toHaveBeenCalledWith(
-        1,
-      );
-    });
 
     it("パン中でない場合は releasePointerCapture が呼ばれない", () => {
       const containerRef = createContainerRef();

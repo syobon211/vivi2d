@@ -166,7 +166,7 @@ describe("comfyui-source-record", () => {
     );
   });
 
-  it("accepts an internal tracked-source record without release approval", () => {
+  it("accepts tracked source and transient metadata, then rejects a stale source hash", () => {
     const root = makeTempRoot();
     writeFile(
       root,
@@ -174,23 +174,27 @@ describe("comfyui-source-record", () => {
       "# placeholder\n",
     );
     writeTrackedSourceRecord(root);
-
     expect(
-      validateComfyUiTrackedSourceRecord(
-        root,
-        comfyUiTrackedSourceRecordReasons(root),
-      ),
+      validateComfyUiTrackedSourceRecord(root, comfyUiTrackedSourceRecordReasons(root)),
     ).toEqual([]);
-  });
-
-  it("rejects an internal tracked-source record with a stale source hash", () => {
-    const root = makeTempRoot();
     writeFile(
       root,
-      "integrations/comfyui/vivi2d_compat_plugin/__init__.py",
-      "# placeholder\n",
+      "integrations/comfyui/vivi2d_compat_plugin/__pycache__/module.pyc",
+      "cache",
     );
-    writeTrackedSourceRecord(root);
+    writeFile(
+      root,
+      "integrations/comfyui/vivi2d_compat_plugin/vivi2d_compat_plugin.egg-info/PKG-INFO",
+      "generated metadata",
+    );
+    writeFile(
+      root,
+      "integrations/comfyui/vivi2d_compat_plugin/build/lib/vivi2d_compat/__init__.py",
+      "generated build copy",
+    );
+    expect(
+      validateComfyUiTrackedSourceRecord(root, comfyUiTrackedSourceRecordReasons(root)),
+    ).toEqual([]);
     writeFile(
       root,
       "integrations/comfyui/vivi2d_compat_plugin/__init__.py",
@@ -224,39 +228,7 @@ describe("comfyui-source-record", () => {
     ).toContain("compatPlugin.sourceRevision must not be set");
   });
 
-  it("ignores transient Python build metadata when hashing tracked source", () => {
-    const root = makeTempRoot();
-    writeFile(
-      root,
-      "integrations/comfyui/vivi2d_compat_plugin/__init__.py",
-      "# placeholder\n",
-    );
-    writeTrackedSourceRecord(root);
-    writeFile(
-      root,
-      "integrations/comfyui/vivi2d_compat_plugin/__pycache__/module.pyc",
-      "cache",
-    );
-    writeFile(
-      root,
-      "integrations/comfyui/vivi2d_compat_plugin/vivi2d_compat_plugin.egg-info/PKG-INFO",
-      "generated metadata",
-    );
-    writeFile(
-      root,
-      "integrations/comfyui/vivi2d_compat_plugin/build/lib/vivi2d_compat/__init__.py",
-      "generated build copy",
-    );
-
-    expect(
-      validateComfyUiTrackedSourceRecord(
-        root,
-        comfyUiTrackedSourceRecordReasons(root),
-      ),
-    ).toEqual([]);
-  });
-
-  it("rejects symlink entries in tracked compat plugin source", () => {
+  it("rejects symlink entries in tracked compat plugin source", ({ skip }) => {
     const root = makeTempRoot();
     writeFile(
       root,
@@ -264,14 +236,14 @@ describe("comfyui-source-record", () => {
       "# placeholder\n",
     );
     writeFile(root, "outside.py", "# outside\n");
-    const linkPath = path.join(
-      root,
-      "integrations/comfyui/vivi2d_compat_plugin/link.py",
-    );
+    const linkPath = path.join(root, "integrations/comfyui/vivi2d_compat_plugin/link.py");
     try {
       fs.symlinkSync(path.join(root, "outside.py"), linkPath);
-    } catch {
-      return;
+    } catch (error) {
+      if (["EPERM", "EACCES", "ENOSYS", "ENOTSUP"].includes(error.code)) {
+        skip("Creating symlinks is unavailable in this environment.");
+      }
+      throw error;
     }
     writeTrackedSourceRecord(root);
 
@@ -283,29 +255,34 @@ describe("comfyui-source-record", () => {
     ).toContain("symlinks are not allowed");
   });
 
-  it("rejects non-regular entries in tracked compat plugin source", () => {
-    if (process.platform === "win32") return;
-    const root = makeTempRoot();
-    writeFile(
-      root,
-      "integrations/comfyui/vivi2d_compat_plugin/__init__.py",
-      "# placeholder\n",
-    );
-    const fifoPath = path.join(
-      root,
-      "integrations/comfyui/vivi2d_compat_plugin/source.fifo",
-    );
-    const mkfifo = spawnSync("mkfifo", [fifoPath], { encoding: "utf8" });
-    if (mkfifo.status !== 0) return;
-    writeTrackedSourceRecord(root);
-
-    expect(
-      validateComfyUiTrackedSourceRecord(
+  it.skipIf(process.platform === "win32")(
+    "rejects non-regular entries in tracked compat plugin source",
+    ({ skip }) => {
+      const root = makeTempRoot();
+      writeFile(
         root,
-        comfyUiTrackedSourceRecordReasons(root),
-      ).join("\n"),
-    ).toContain("non-regular source entry is not allowed");
-  });
+        "integrations/comfyui/vivi2d_compat_plugin/__init__.py",
+        "# placeholder\n",
+      );
+      const fifoPath = path.join(
+        root,
+        "integrations/comfyui/vivi2d_compat_plugin/source.fifo",
+      );
+      const mkfifo = spawnSync("mkfifo", [fifoPath], { encoding: "utf8" });
+      if (mkfifo.error?.code === "ENOENT")
+        skip("mkfifo is unavailable in this environment.");
+      expect(mkfifo.error).toBeUndefined();
+      expect(mkfifo.status).toBe(0);
+      writeTrackedSourceRecord(root);
+
+      expect(
+        validateComfyUiTrackedSourceRecord(
+          root,
+          comfyUiTrackedSourceRecordReasons(root),
+        ).join("\n"),
+      ).toContain("non-regular source entry is not allowed");
+    },
+  );
 
   it("does not make tracked source a published install-doc record by itself", () => {
     const root = makeTempRoot();

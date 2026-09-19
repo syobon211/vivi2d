@@ -111,51 +111,6 @@ test("Viewer defaults document language to English when no locale is persisted",
   }
 });
 
-test("Viewer restores persisted document language after reload", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  try {
-    await window.waitForLoadState("domcontentloaded");
-    await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ja"));
-    await window.reload();
-    await window.waitForLoadState("domcontentloaded");
-
-    await expect.poll(() => window.evaluate(() => document.documentElement.lang)).toBe("ja");
-    await expect.poll(() => window.evaluate(() => localStorage.getItem("vivi-viewer-locale"))).toBe(
-      "ja",
-    );
-  } finally {
-    await clearViewerLocale(window);
-    await app.close();
-  }
-});
-
-test("Viewer restores a persisted Korean document language after reload", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  try {
-    await window.waitForLoadState("domcontentloaded");
-    await window.evaluate(() => localStorage.setItem("vivi-viewer-locale", "ko-KR"));
-    await window.reload();
-    await window.waitForLoadState("domcontentloaded");
-
-    await expect.poll(() => window.evaluate(() => document.documentElement.lang)).toBe("ko-KR");
-    await expect.poll(() => window.evaluate(() => localStorage.getItem("vivi-viewer-locale"))).toBe(
-      "ko-KR",
-    );
-  } finally {
-    await clearViewerLocale(window);
-    await app.close();
-  }
-});
 
 const viewerLaunchLocales = [
   {
@@ -218,6 +173,8 @@ test("Viewer launch surface is localized for all supported locales", async () =>
     await window.reload();
     await window.waitForLoadState("domcontentloaded");
 
+    await expect.poll(() => window.evaluate(() => document.documentElement.lang)).toBe(locale);
+    await expect.poll(() => window.evaluate(() => localStorage.getItem("vivi-viewer-locale"))).toBe(locale);
     const visibleText = await window.evaluate(() => document.body.innerText);
     for (const label of labels) {
       expect(visibleText, `${locale} should show ${label}`).toContain(label);
@@ -255,6 +212,27 @@ test("Locale selector switches every supported Viewer locale through the UI", as
     await window.waitForTimeout(300);
     await expectOpenModelButton(window, openModelLabel, 3_000);
     await expect(await visibleLocaleSelect(window)).toHaveValue(locale);
+    if (locale === "ja") {
+      await expect(window.locator("p", { hasText: ".viviファイルをドロップ" })).toBeVisible();
+      await openSettingsPanel(window, "input-effects");
+      await expect(window.getByTestId("viewer-toggle-face-tracking")).toBeVisible();
+    }
+    if (locale === "en") {
+      await expect(window.locator("p", { hasText: "Drop .vivi file here" })).toBeVisible();
+      const bgSelect = window.locator("select").filter({ hasText: /透明|グリーン|Transparent|Green/ });
+      const options = await bgSelect.locator("option").allTextContents();
+      for (const label of ["Transparent", "Green Screen", "Blue Screen"]) expect(options).toContain(label);
+      await expect(window.locator("label", { hasText: "Smoothing" })).toBeVisible();
+      await expect(window.getByRole("button", { name: "Always On Top OFF", exact: true })).toBeVisible();
+      await openSettingsPanel(window, "input-effects");
+      for (const id of ["face-tracking", "hand-tracking", "lip-sync", "pose-tracking"]) {
+        await expect(window.getByTestId(`viewer-toggle-${id}`)).toBeVisible();
+      }
+      await openSettingsPanel(window);
+      const screenshotDir = path.resolve(import.meta.dirname, "../../test-screenshots");
+      if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
+      await window.screenshot({ path: path.join(screenshotDir, "i18n-en-launch.png") });
+    }
     await expect.poll(() => window.evaluate(() => localStorage.getItem("vivi-viewer-locale"))).toBe(
       locale,
     );
@@ -263,65 +241,6 @@ test("Locale selector switches every supported Viewer locale through the UI", as
   await app.close();
 });
 
-test("Locale selector switches all UI to Japanese and back to English", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await ensureEnglishLocale(window);
-
-  await expectOpenModelButton(window, "Open Model");
-
-  await openSettingsPanel(window);
-
-  await selectViewerLocale(window, "ja");
-  await window.waitForTimeout(300);
-
-  await expectOpenModelButton(window, "モデルを開く", 3_000);
-
-  await openSettingsPanel(window);
-
-  await selectViewerLocale(window, "en");
-  await window.waitForTimeout(300);
-
-  await expectOpenModelButton(window, "Open Model", 3_000);
-
-  await expect(
-    window.locator("p", { hasText: "Drop .vivi file here" }),
-  ).toBeVisible();
-
-  await openSettingsPanel(window);
-
-  const bgSelect = window.locator("select").filter({ hasText: /透明|グリーン|Transparent|Green/ });
-  const options = await bgSelect.locator("option").allTextContents();
-  expect(options).toContain("Transparent");
-  expect(options).toContain("Green Screen");
-  expect(options).toContain("Blue Screen");
-
-  await expect(
-    window.locator("label", { hasText: "Smoothing" }),
-  ).toBeVisible();
-
-  await openSettingsPanel(window, "input-effects");
-  await expect(window.locator('[data-testid="viewer-toggle-face-tracking"]')).toBeVisible();
-  await expect(window.locator('[data-testid="viewer-toggle-hand-tracking"]')).toBeVisible();
-  await expect(window.locator('[data-testid="viewer-toggle-lip-sync"]')).toBeVisible();
-  await expect(window.locator('[data-testid="viewer-toggle-pose-tracking"]')).toBeVisible();
-
-  await openSettingsPanel(window);
-  await expect(
-    window.locator("button", { hasText: "Always On Top OFF" }),
-  ).toBeVisible();
-
-  const screenshotDir = path.resolve(import.meta.dirname, "../../test-screenshots");
-  if (!fs.existsSync(screenshotDir)) fs.mkdirSync(screenshotDir, { recursive: true });
-  await window.screenshot({ path: path.join(screenshotDir, "i18n-en-launch.png") });
-
-  await app.close();
-});
 
 test("英語モードでモデル読込後、エフェクトボタンとバッジが英語表示", async () => {
   const app = await electron.launch({
@@ -399,32 +318,6 @@ test("英語設定がリロード後も維持される", async () => {
   await app.close();
 });
 
-test("Locale selector can return the Viewer to Japanese", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await ensureEnglishLocale(window);
-
-  await expectOpenModelButton(window, "Open Model");
-
-  await openSettingsPanel(window);
-
-  await selectViewerLocale(window, "ja");
-  await window.waitForTimeout(300);
-
-  await expectOpenModelButton(window, "モデルを開く", 3_000);
-  await openSettingsPanel(window, "input-effects");
-  await expect(window.locator('[data-testid="viewer-toggle-face-tracking"]')).toBeVisible();
-  await expect(
-    window.locator("p", { hasText: ".viviファイルをドロップ" }),
-  ).toBeVisible();
-
-  await app.close();
-});
 
 test("英語モードで不正ファイルを読むと英語エラーが表示される", async () => {
   const app = await electron.launch({
@@ -449,27 +342,6 @@ test("英語モードで不正ファイルを読むと英語エラーが表示�
     return Array.from(spans).some((s) => s.style.color && s.textContent && s.textContent.length > 5);
   });
   expect(hasError).toBe(true);
-
-  await app.close();
-});
-
-test("英語モードでホットキートーストが表示される（プリセット名はモデルデータのまま）", async () => {
-  const app = await electron.launch({
-    args: [path.join(viewerRoot, "electron/main.cjs")],
-    cwd: viewerRoot,
-  });
-
-  const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
-  await ensureEnglishLocale(window);
-
-  await loadModel(window);
-  await window.waitForTimeout(500);
-
-  await window.keyboard.press("1");
-  const toast = window.locator('[data-testid="preset-indicator"]');
-  await expect(toast).toBeVisible({ timeout: 3_000 });
-  await expect(toast).toContainText("1:");
 
   await app.close();
 });

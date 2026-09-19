@@ -2,7 +2,6 @@ import { LIPSYNC_DEFAULTS } from "@vivi2d/core/constants";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LipSyncAnalyser } from "../tracking/lipsync-analyser";
 
-
 let mockTimeDomainData: Float32Array;
 
 function createMockAnalyser() {
@@ -203,7 +202,6 @@ describe("LipSyncAnalyser", () => {
     analyser.destroy();
   });
 
-
   it("複数フレーム連続実行（10フレーム）で値が安定収束する", async () => {
     const analyser = new LipSyncAnalyser();
     await analyser.init();
@@ -224,23 +222,42 @@ describe("LipSyncAnalyser", () => {
     analyser.destroy();
   });
 
-  it("start()を2回連続で呼んだ場合、コールバックが2重にならない", async () => {
+  it("start() twice replaces the callback without adding a second RAF chain", async () => {
+    const pending = new Map<number, FrameRequestCallback>();
+    let nextId = 0;
+    vi.mocked(requestAnimationFrame).mockImplementation((callback) => {
+      pending.set(++nextId, callback);
+      return nextId;
+    });
+    vi.mocked(cancelAnimationFrame).mockImplementation((id) => {
+      pending.delete(id);
+    });
     const analyser = new LipSyncAnalyser();
     await analyser.init();
-
-    mockTimeDomainData.fill(0.2);
-    const volumes1: number[] = [];
-    const volumes2: number[] = [];
-
-    analyser.start((v) => volumes1.push(v));
-    analyser.start((v) => volumes2.push(v));
-
-    tickRaf();
-
-    const totalCallbacks = volumes1.length + volumes2.length;
-    expect(totalCallbacks).toBeLessThanOrEqual(4);
-
-    analyser.destroy();
+    const first = vi.fn();
+    const second = vi.fn();
+    try {
+      analyser.start(first);
+      expect(pending.size).toBe(1);
+      analyser.start(second);
+      expect(pending.size).toBe(1);
+      first.mockClear();
+      second.mockClear();
+      const [id, callback] = [...pending.entries()][0]!;
+      pending.delete(id);
+      callback(0);
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledTimes(1);
+      expect(pending.size).toBe(1);
+      analyser.stop();
+      expect(pending.size).toBe(0);
+      analyser.start(second);
+      expect(pending.size).toBe(1);
+      analyser.destroy();
+      expect(pending.size).toBe(0);
+    } finally {
+      analyser.destroy();
+    }
   });
 
   it("全サンプルが負値(-0.3)の場合でもRMS計算が正しい（二乗なので正）", async () => {
@@ -274,7 +291,6 @@ describe("LipSyncAnalyser", () => {
 
     analyser.destroy();
   });
-
 
   it("init()前にstart()を呼んでもクラッシュしない（analyser=null分岐）", () => {
     const analyser = new LipSyncAnalyser();
@@ -314,20 +330,24 @@ describe("LipSyncAnalyser", () => {
     analyser.destroy();
   });
 
-  it("閾値ちょうどの音量は0にカットされる（境界値テスト）", async () => {
+  it("Float32 samples below and above the threshold select the correct noise gate", async () => {
     const analyser = new LipSyncAnalyser();
     await analyser.init();
-
-    // rms = THRESHOLD / GAIN
-    const amplitude = LIPSYNC_DEFAULTS.THRESHOLD / LIPSYNC_DEFAULTS.GAIN;
-    mockTimeDomainData.fill(amplitude);
-
-    const volumes: number[] = [];
-    analyser.start((v) => volumes.push(v));
-
-    expect(volumes[0]).toBeGreaterThanOrEqual(0);
-    expect(volumes[0]).toBeLessThanOrEqual(1);
-
+    for (const factor of [0.999999, 1.000001]) {
+      const amplitude = Math.fround(
+        (LIPSYNC_DEFAULTS.THRESHOLD / LIPSYNC_DEFAULTS.GAIN) * factor,
+      );
+      const amplified = amplitude * LIPSYNC_DEFAULTS.GAIN;
+      if (factor < 1) expect(amplified).toBeLessThan(LIPSYNC_DEFAULTS.THRESHOLD);
+      else expect(amplified).toBeGreaterThan(LIPSYNC_DEFAULTS.THRESHOLD);
+      mockTimeDomainData.fill(amplitude);
+      const volumes: number[] = [];
+      analyser.start((value) => volumes.push(value));
+      expect(volumes).toHaveLength(1);
+      if (factor < 1) expect(volumes[0]).toBe(0);
+      else expect(volumes[0]).toBeGreaterThan(0);
+      analyser.stop();
+    }
     analyser.destroy();
   });
 });

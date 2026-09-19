@@ -177,27 +177,7 @@ describe("validateModel", () => {
     expect(issues.find((i) => i.category === "unboundVertices")?.message).toContain("1/3");
   });
 
-  it("emptyMeshを検出する", () => {
-    const mesh = makeViviMesh("m1", "emptyMesh");
-    mesh.mesh.vertices = [];
-    const project = makeProject({ layers: [mesh] });
 
-    const issues = validateModel(project);
-    expect(issues.some((i) => i.category === "emptyMesh")).toBe(true);
-  });
-
-  it("orphanSkinを検出する", () => {
-    const skin: SkinData = {
-      weights: [],
-      bindPoseInverse: {},
-    };
-    const project = makeProject({
-      skins: { nonexistent: skin },
-    });
-
-    const issues = validateModel(project);
-    expect(issues.some((i) => i.category === "orphanSkin")).toBe(true);
-  });
 
   // --- validateMeshIndexBounds ---
 

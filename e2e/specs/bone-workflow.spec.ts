@@ -27,11 +27,6 @@ test.beforeEach(async ({ loadTestPsd }) => {
   await loadTestPsd();
 });
 
-test("can add a bone from the context menu", async ({ window }) => {
-  await addBone(window, "Red Circle");
-  await expect(boneItems(window)).toHaveCount(1);
-});
-
 test("selecting a bone shows the bone property panel", async ({ window }) => {
   await addBone(window, "Red Circle");
   const boneItem = boneItems(window).first();
@@ -58,15 +53,6 @@ test("selecting a bone shows the bone property panel", async ({ window }) => {
     .toBe(true);
 });
 
-test("a ViviMesh can be skin-bound to all bones", async ({ window }) => {
-  await addBone(window, "Red Circle");
-
-  await selectLayer(window, "Red Circle");
-  await bindAllBones(window);
-
-  await expect(window.locator(".prop-bone-tag")).toBeVisible();
-});
-
 test("skin bindings can be removed", async ({ window }) => {
   await addBone(window, "Red Circle");
 
@@ -87,42 +73,14 @@ test("public profile keeps morph authoring hidden for the selected mesh", async 
     const legacyDeformationKey = ["blend", "Shapes"].join("");
     const legacyPanelName = ["Blend", "Shape", "Panel"].join("");
     return {
-      hasLegacyDeformationField: project
-        ? legacyDeformationKey in project
-        : false,
-      hasPrivatePanel: !!document.querySelector(
-        `[data-panel-name='${legacyPanelName}']`,
-      ),
+      hasLegacyDeformationField: project ? legacyDeformationKey in project : false,
+      hasPrivatePanel: !!document.querySelector(`[data-panel-name='${legacyPanelName}']`),
     };
   });
   expect(privateState).toEqual({
     hasLegacyDeformationField: false,
     hasPrivatePanel: false,
   });
-});
-
-test("a bone track can be added to the timeline", async ({ window }) => {
-  await addBone(window, "Red Circle");
-  await createSceneAndClip(window);
-  const clipId = await window.locator(".tl-clip-select").inputValue();
-
-  await window.evaluate((activeClipId) => {
-    const vivi = window.__vivi2d as any;
-    const project = vivi.useEditorStore.getState().project;
-    const bones: any[] = [];
-    const walk = (nodes: any[]) => {
-      for (const node of nodes) {
-        if (node.kind === "bone") bones.push(node);
-        if (node.children?.length) walk(node.children);
-      }
-    };
-    walk(project.layers);
-    if (!activeClipId) throw new Error("No active clip is selected");
-    if (!bones[0]?.id) throw new Error("No bone is available");
-    vivi.useClipStore.getState().addBoneTrack(activeClipId, bones[0].id, "angle");
-  }, clipId);
-
-  await expect(window.locator(".tl-track-label-bone")).toBeVisible();
 });
 
 test("public profile does not expose morph tracks in the timeline", async ({
@@ -147,6 +105,7 @@ test("bone, skin, and timeline workflow works end-to-end in the public profile",
 
   await selectLayer(window, "Red Circle");
   await bindAllBones(window);
+  await expect(window.locator(".prop-bone-tag")).toBeVisible();
 
   await createSceneAndClip(window);
   const clipId = await window.locator(".tl-clip-select").inputValue();
@@ -167,51 +126,8 @@ test("bone, skin, and timeline workflow works end-to-end in the public profile",
   }, clipId);
 
   await expect(window.locator(".tl-track-label-bone")).toHaveCount(1);
+  await expect(window.locator(".tl-track-label-bone")).toBeVisible();
   await expect(window.locator(".tl-track-label-bs")).toHaveCount(0);
-});
-
-test("adding a child bone sets parentBoneId", async ({ window }) => {
-  await addBone(window, "Red Circle");
-
-  const result = await window.evaluate(() => {
-    const vivi = window.__vivi2d as any;
-    const project = vivi.useEditorStore.getState().project;
-    const bones: any[] = [];
-    const walk = (nodes: any[]) => {
-      for (const node of nodes) {
-        if (node.kind === "bone")
-          bones.push({ id: node.id, parentBoneId: node.parentBoneId });
-        if (node.children?.length) walk(node.children);
-      }
-    };
-    walk(project.layers);
-    const parent = bones.find((bone) => !bone.parentBoneId);
-    if (!parent) return null;
-    vivi.useBoneStore.getState().addBone(parent.id, "Bone", 0, 0);
-    const nextBones: any[] = [];
-    walk(project.layers);
-    return nextBones;
-  });
-
-  const bones = await window.evaluate(() => {
-    const vivi = window.__vivi2d as any;
-    const project = vivi.useEditorStore.getState().project;
-    const bones: any[] = [];
-    const walk = (nodes: any[]) => {
-      for (const node of nodes) {
-        if (node.kind === "bone")
-          bones.push({ id: node.id, parentBoneId: node.parentBoneId });
-        if (node.children?.length) walk(node.children);
-      }
-    };
-    walk(project.layers);
-    return bones;
-  });
-
-  expect(result).not.toBeNull();
-  expect(bones.length).toBeGreaterThanOrEqual(2);
-  const childBone = bones.find((bone: any) => bone.parentBoneId);
-  expect(childBone).toBeTruthy();
 });
 
 test("three-level bone hierarchies can be created", async ({ window }) => {
@@ -254,74 +170,4 @@ test("three-level bone hierarchies can be created", async ({ window }) => {
   await expect(async () => {
     expect(await boneItems(window).count()).toBeGreaterThanOrEqual(3);
   }).toPass({ timeout: 5_000 });
-});
-
-test("removing a parent bone promotes children to root", async ({ window }) => {
-  await addBone(window, "Red Circle");
-
-  const parentId = await window.evaluate(() => {
-    const vivi = window.__vivi2d as any;
-    const project = vivi.useEditorStore.getState().project;
-    const bones: any[] = [];
-    const walk = (nodes: any[]) => {
-      for (const node of nodes) {
-        if (node.kind === "bone") bones.push(node);
-        if (node.children?.length) walk(node.children);
-      }
-    };
-    walk(project.layers);
-    return bones[0]?.id ?? null;
-  });
-  expect(parentId).toBeTruthy();
-
-  await addChildBoneFromStore(window, parentId!);
-
-  const before = await window.evaluate(() => {
-    const vivi = window.__vivi2d as any;
-    const project = vivi.useEditorStore.getState().project;
-    const bones: any[] = [];
-    const walk = (nodes: any[]) => {
-      for (const node of nodes) {
-        if (node.kind === "bone")
-          bones.push({ id: node.id, parentBoneId: node.parentBoneId });
-        if (node.children?.length) walk(node.children);
-      }
-    };
-    walk(project.layers);
-    return bones;
-  });
-  const child = before.find((bone: any) => bone.parentBoneId === parentId);
-  expect(child).toBeTruthy();
-
-  await window.evaluate((targetParentId) => {
-    const vivi = window.__vivi2d as any;
-    vivi.useBoneStore.getState().removeBone(targetParentId);
-  }, parentId);
-
-  await expect
-    .poll(
-      async () =>
-        window.evaluate(
-          ({ childId }) => {
-            const vivi = window.__vivi2d as any;
-            const project = vivi.useEditorStore.getState().project;
-            const bones: Array<{ id: string; parentBoneId?: string }> = [];
-            const walk = (nodes: any[]) => {
-              for (const node of nodes) {
-                if (node.kind === "bone") {
-                  bones.push({ id: node.id, parentBoneId: node.parentBoneId });
-                }
-                if (node.children?.length) walk(node.children);
-              }
-            };
-            walk(project.layers);
-            const promoted = bones.find((bone) => bone.id === childId);
-            if (!promoted) return "__missing__";
-            return promoted.parentBoneId ?? "__root__";
-          },
-          { childId: child.id },
-        ),
-      { timeout: 5_000 },
-    )
-    .not.toBe(parentId);
 });

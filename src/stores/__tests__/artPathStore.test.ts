@@ -33,23 +33,6 @@ describe("artPathStore", () => {
     expect(project.layers.find((l) => l.id === id)).toBeUndefined();
   });
 
-  it("制御点を追加できる", () => {
-    setup();
-    const id = useArtPathStore.getState().addArtPath("テスト", 0, 0);
-    useArtPathStore.getState().addControlPoint(id, {
-      x: 10,
-      y: 20,
-      handleInX: 0,
-      handleInY: 0,
-      handleOutX: 5,
-      handleOutY: 5,
-      width: 1,
-      opacity: 1,
-    });
-    const project = useEditorStore.getState().project!;
-    const node = project.layers.find((l) => l.id === id);
-    expect(node?.kind === "artPath" && node.controlPoints.length).toBe(1);
-  });
 
   it("制御点を削除できる", () => {
     setup();
@@ -139,76 +122,28 @@ describe("artPathStore", () => {
     const parentGroup = updated.layers.find((l) => l.id === group.id) as GroupNode;
     const nested = parentGroup.children.find((l) => l.id === "nested-ap") as ArtPathNode;
     expect(nested.controlPoints).toHaveLength(1);
-    expect(nested.controlPoints[0]!.x).toBe(50);
-  });
-
-  it("ネストされたArtPathのスタイルを変更できる", () => {
-    const apNode: ArtPathNode = {
-      id: "nested-ap-2",
-      name: "ネスト",
-      kind: "artPath",
-      visible: true,
-      opacity: 1,
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      blendMode: "normal",
-      expanded: false,
-      children: [],
-      controlPoints: [],
-      closed: false,
-      style: { color: 0x000000, baseWidth: 3, lineCap: "round", lineJoin: "round" },
-    };
-    const group = createGroup({ name: "グループ", children: [apNode] });
-    useEditorStore.setState({
-      project: { ...createEmptyProject(), layers: [group] },
-      projectVersion: 1,
+    expect(nested.controlPoints[0]).toEqual({
+      x: 50, y: 60, handleInX: 0, handleInY: 0, handleOutX: 5, handleOutY: 5,
+      width: 2, opacity: 0.8,
     });
+    const points = structuredClone(nested.controlPoints);
+    useArtPathStore.getState().setStyle(apNode.id, { baseWidth: 10 });
+    const styledGroup = useEditorStore.getState().project!.layers[0] as GroupNode;
+    const styled = styledGroup.children[0] as ArtPathNode;
+    expect(styled.style).toEqual({ ...apNode.style, baseWidth: 10 });
+    expect(styled.controlPoints).toEqual(points);
+    expect(styled.closed).toBe(false);
 
-    useArtPathStore.getState().setStyle("nested-ap-2", { baseWidth: 10 });
-
-    const updated = useEditorStore.getState().project!;
-    const parentGroup = updated.layers.find((l) => l.id === group.id) as GroupNode;
-    const nested = parentGroup.children.find(
-      (l) => l.id === "nested-ap-2",
-    ) as ArtPathNode;
-    expect(nested.style.baseWidth).toBe(10);
+    useArtPathStore.getState().setClosed(apNode.id, true);
+    const closedGroup = useEditorStore.getState().project!.layers[0] as GroupNode;
+    const closed = closedGroup.children[0] as ArtPathNode;
+    expect(closed.id).toBe(apNode.id);
+    expect(closed.closed).toBe(true);
+    expect(closed.controlPoints).toEqual(points);
+    expect(closed.style).toEqual(styled.style);
   });
 
-  it("ネストされたArtPathの閉じる設定を変更できる", () => {
-    const apNode: ArtPathNode = {
-      id: "nested-ap-3",
-      name: "ネスト",
-      kind: "artPath",
-      visible: true,
-      opacity: 1,
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      blendMode: "normal",
-      expanded: false,
-      children: [],
-      controlPoints: [],
-      closed: false,
-      style: { color: 0x000000, baseWidth: 3, lineCap: "round", lineJoin: "round" },
-    };
-    const group = createGroup({ name: "グループ", children: [apNode] });
-    useEditorStore.setState({
-      project: { ...createEmptyProject(), layers: [group] },
-      projectVersion: 1,
-    });
 
-    useArtPathStore.getState().setClosed("nested-ap-3", true);
-
-    const updated = useEditorStore.getState().project!;
-    const parentGroup = updated.layers.find((l) => l.id === group.id) as GroupNode;
-    const nested = parentGroup.children.find(
-      (l) => l.id === "nested-ap-3",
-    ) as ArtPathNode;
-    expect(nested.closed).toBe(true);
-  });
 
 
   it("指定インデックスに制御点を挿入できる", () => {
@@ -424,13 +359,4 @@ describe("artPathStore", () => {
   });
 
 
-  it("children のないレイヤーが含まれるツリーでもArtPathを検索できる", () => {
-    setup();
-    const id = useArtPathStore.getState().addArtPath("テスト", 0, 0);
-    useArtPathStore.getState().setStyle(id, { color: 0x00ff00 });
-
-    const project = useEditorStore.getState().project!;
-    const node = project.layers.find((l) => l.id === id) as ArtPathNode;
-    expect(node.style.color).toBe(0x00ff00);
-  });
 });

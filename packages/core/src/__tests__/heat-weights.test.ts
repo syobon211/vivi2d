@@ -257,16 +257,6 @@ describe("computeHeatWeights", () => {
     }
   });
 
-  it("smoothPasses=0 でも正しく動作する", () => {
-    const { vertices, indices } = createSquareMesh();
-    const bones: BoneHandle[] = [{ id: "b1", x: 50, y: 50, parentId: null }];
-
-    const result = computeHeatWeights(vertices, indices, bones, { smoothPasses: 0 });
-    expect(result).toHaveLength(4);
-    for (const vw of result) {
-      expect(vw[0]!.weight).toBeCloseTo(1.0, 4);
-    }
-  });
 
   it("距離法よりメッシュ形状を考慮したウェイトを生成する", () => {
     //

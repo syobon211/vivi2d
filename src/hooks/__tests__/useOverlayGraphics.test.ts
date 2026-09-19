@@ -39,15 +39,6 @@ describe("useOverlayGraphics", () => {
     expect(overlay.addChild).toHaveBeenCalledWith(result.current.current);
   });
 
-  it("applies the requested label to the created graphics", () => {
-    const overlay = createMockOverlay();
-    const pixiRefs = createPixiRefs(overlay);
-
-    const { result } = renderHook(() => useOverlayGraphics(pixiRefs, "my-label"));
-
-    expect(result.current.current).not.toBeNull();
-    expect(result.current.current?.label).toBe("my-label");
-  });
 
   it("destroys the graphics instance on unmount", () => {
     const overlay = createMockOverlay();
@@ -140,13 +131,4 @@ describe("useOverlayGraphics", () => {
     expect(result.current.current).toBeNull();
   });
 
-  it("returns a stable RefObject shape", () => {
-    const overlay = createMockOverlay();
-    const pixiRefs = createPixiRefs(overlay);
-
-    const { result } = renderHook(() => useOverlayGraphics(pixiRefs, "type-check"));
-
-    expect(result.current).toHaveProperty("current");
-    expect(result.current.current).not.toBeNull();
-  });
 });

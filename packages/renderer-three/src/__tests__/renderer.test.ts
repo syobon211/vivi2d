@@ -3,6 +3,7 @@ import {
   type ViviFileData,
   ViviRuntime,
 } from "@vivi2d/runtime";
+import { OrthographicCamera, WebGLRenderer } from "three";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readRuntimeConformanceFixture } from "../../../../tests/conformance/runtime-v1/runner";
 import { ViviThreeRenderer } from "../renderer";
@@ -10,7 +11,6 @@ import { ViviThreeRenderer } from "../renderer";
 type MutableRuntimeMeshSnapshot = {
   -readonly [Key in keyof RuntimeMeshSnapshot]: RuntimeMeshSnapshot[Key];
 };
-
 
 vi.mock("three", () => {
   function mockObject3D(): any {
@@ -132,7 +132,6 @@ vi.mock("three", () => {
   };
 });
 
-
 function createMockMeshState(
   overrides?: Partial<MutableRuntimeMeshSnapshot>,
 ): MutableRuntimeMeshSnapshot {
@@ -182,7 +181,6 @@ function createFixtureTextureMap(model: {
   );
 }
 
-
 describe("ViviThreeRenderer", () => {
   let canvas: HTMLCanvasElement;
 
@@ -194,12 +192,6 @@ describe("ViviThreeRenderer", () => {
 
   // --- create() ---
   describe("create()", () => {
-    it("レンダラーが作成される", () => {
-      const renderer = ViviThreeRenderer.create(canvas);
-      expect(renderer).toBeInstanceOf(ViviThreeRenderer);
-      renderer.destroy();
-    });
-
     it("transparentオプションが反映される", () => {
       const renderer = ViviThreeRenderer.create(canvas, { transparent: true });
       expect(renderer).toBeInstanceOf(ViviThreeRenderer);
@@ -366,22 +358,18 @@ describe("ViviThreeRenderer", () => {
     });
   });
 
-  // --- resize() ---
-  describe("resize()", () => {
-    it("WebGLRenderer.setSizeが呼ばれる", () => {
-      const renderer = ViviThreeRenderer.create(canvas);
-
-      renderer.resize(1920, 1080);
-
-      renderer.destroy();
-    });
-  });
-
   // --- screenToWorld() ---
   describe("screenToWorld()", () => {
     it("スクリーン座標がそのまま返される（OrthographicCamera Y-down）", () => {
       const renderer = ViviThreeRenderer.create(canvas);
 
+      renderer.resize(1920, 1080);
+      const webgl = vi.mocked(WebGLRenderer).mock.results.at(-1)!.value;
+      const camera = vi.mocked(OrthographicCamera).mock.results.at(-1)!.value;
+      expect(webgl.setSize).toHaveBeenLastCalledWith(1920, 1080);
+      expect(camera.right).toBe(1920);
+      expect(camera.bottom).toBe(1080);
+      expect(camera.updateProjectionMatrix).toHaveBeenCalled();
       const result = renderer.screenToWorld(100, 200);
 
       expect(result).toEqual({ x: 100, y: 200 });
@@ -423,26 +411,20 @@ describe("ViviThreeRenderer", () => {
         /\b(?:attribute|in)\s+vec2\s+uv\s*;/,
       );
       expect(material.uniforms.uOpacity.value).toBe(0.25);
-      expect(material.uniforms.uMultiplyColor.value).toMatchObject({ x: 0.4, y: 0.5, z: 0.6 });
+      expect(material.uniforms.uMultiplyColor.value).toMatchObject({
+        x: 0.4,
+        y: 0.5,
+        z: 0.6,
+      });
       state.opacity = 0.75;
       state.multiplyColor = [0.7, 0.8, 0.9, 1];
       renderer.sync();
       expect(material.uniforms.uOpacity.value).toBe(0.75);
-      expect(material.uniforms.uMultiplyColor.value.set).toHaveBeenCalledWith(0.7, 0.8, 0.9);
-      renderer.destroy();
-    });
-
-    it("screenColorありでShaderMaterialが使われる", () => {
-      const renderer = ViviThreeRenderer.create(canvas);
-      const state = createMockMeshState({
-        screenColor: [0.5, 0.3, 0.1, 1],
-      });
-      const model = createMockModel(new Map([["mesh-1", state]]));
-      const textures = new Map([["mesh-1", document.createElement("canvas")]]);
-
-      renderer.setModel(model, textures);
-      renderer.render();
-
+      expect(material.uniforms.uMultiplyColor.value.set).toHaveBeenCalledWith(
+        0.7,
+        0.8,
+        0.9,
+      );
       renderer.destroy();
     });
 
@@ -460,47 +442,47 @@ describe("ViviThreeRenderer", () => {
   });
 
   describe("screen material blend sync", () => {
-    it.each([false, true])(
-      "restores current base opacity in one sync after screen removal (initial screen=%s)",
-      async (initialScreen) => {
-        const { Mesh, MeshBasicMaterial, ShaderMaterial } = await import("three");
-        vi.mocked(Mesh).mockClear();
-        vi.mocked(MeshBasicMaterial).mockClear();
-        vi.mocked(ShaderMaterial).mockClear();
-        const renderer = ViviThreeRenderer.create(canvas);
-        const state = createMockMeshState({
-          opacity: 0.5,
-          screenColor: initialScreen ? [0.1, 0.2, 0.3, 1] : null,
-        });
-        try {
-          renderer.setModel(
-            createMockModel(new Map([["mesh-1", state]])),
-            new Map([["mesh-1", document.createElement("canvas")]]),
-          );
-          const mesh = vi.mocked(Mesh).mock.results[0]!.value;
-          const baseMaterial = vi.mocked(MeshBasicMaterial).mock.results[0]!.value;
-          if (!initialScreen) {
-            expect(mesh.material).toBe(baseMaterial);
-            state.screenColor = [0.1, 0.2, 0.3, 1];
-            renderer.sync();
-          }
-          const screenMaterial = vi.mocked(ShaderMaterial).mock.results[0]!.value;
-          expect(mesh.material).toBe(screenMaterial);
-          expect(screenMaterial.uniforms.uOpacity.value).toBe(0.5);
-
-          state.screenColor = null;
-          state.opacity = 0.3;
-          renderer.sync();
-
-          expect(baseMaterial.opacity).toBe(0.3);
+    it.each([
+      false,
+      true,
+    ])("restores current base opacity in one sync after screen removal (initial screen=%s)", async (initialScreen) => {
+      const { Mesh, MeshBasicMaterial, ShaderMaterial } = await import("three");
+      vi.mocked(Mesh).mockClear();
+      vi.mocked(MeshBasicMaterial).mockClear();
+      vi.mocked(ShaderMaterial).mockClear();
+      const renderer = ViviThreeRenderer.create(canvas);
+      const state = createMockMeshState({
+        opacity: 0.5,
+        screenColor: initialScreen ? [0.1, 0.2, 0.3, 1] : null,
+      });
+      try {
+        renderer.setModel(
+          createMockModel(new Map([["mesh-1", state]])),
+          new Map([["mesh-1", document.createElement("canvas")]]),
+        );
+        const mesh = vi.mocked(Mesh).mock.results[0]!.value;
+        const baseMaterial = vi.mocked(MeshBasicMaterial).mock.results[0]!.value;
+        if (!initialScreen) {
           expect(mesh.material).toBe(baseMaterial);
-          expect(mesh.material.opacity).toBe(0.3);
-          expect(screenMaterial.dispose).toHaveBeenCalledTimes(1);
-        } finally {
-          renderer.destroy();
+          state.screenColor = [0.1, 0.2, 0.3, 1];
+          renderer.sync();
         }
-      },
-    );
+        const screenMaterial = vi.mocked(ShaderMaterial).mock.results[0]!.value;
+        expect(mesh.material).toBe(screenMaterial);
+        expect(screenMaterial.uniforms.uOpacity.value).toBe(0.5);
+
+        state.screenColor = null;
+        state.opacity = 0.3;
+        renderer.sync();
+
+        expect(baseMaterial.opacity).toBe(0.3);
+        expect(mesh.material).toBe(baseMaterial);
+        expect(mesh.material.opacity).toBe(0.3);
+        expect(screenMaterial.dispose).toHaveBeenCalledTimes(1);
+      } finally {
+        renderer.destroy();
+      }
+    });
 
     it("applies custom blend factors to screen material during build", async () => {
       const { ShaderMaterial } = await import("three");

@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextPow2 } from "@/lib/export/texture-exporter";
 import { clearTextures, setTexture } from "@/lib/texture-store";
-import { createViviMesh, createEmptyProject } from "@/test/fixtures";
-
+import { createEmptyProject, createViviMesh } from "@/test/fixtures";
 
 const mockDrawImage = vi.fn();
 const mockGetContext = vi.fn().mockReturnValue({
@@ -85,22 +84,6 @@ describe("exportTextures", () => {
     expect(result).toEqual([]);
   });
 
-  it("テクスチャ有りのプロジェクトは texture_00.png を返す", async () => {
-    const mesh = createViviMesh({ name: "メッシュA" });
-    const project = createEmptyProject();
-    project.layers = [mesh];
-
-    const texCanvas = originalCreateElement("canvas");
-    texCanvas.width = 128;
-    texCanvas.height = 128;
-    setTexture(mesh.id, texCanvas);
-
-    const result = await exportTextures(project);
-    expect(result).toHaveLength(1);
-    expect(result[0]!.fileName).toBe("texture_00.png");
-    expect(result[0]!.blob).toBeInstanceOf(Blob);
-  });
-
   it("toBlob が null を返す場合はエラーになる", async () => {
     const mesh = createViviMesh({ name: "メッシュA" });
     const project = createEmptyProject();
@@ -125,19 +108,28 @@ describe("exportTextures", () => {
     const meshB = createViviMesh({ name: "メッシュB" });
     const project = createEmptyProject();
     project.layers = [meshA, meshB];
-
     const canvasA = originalCreateElement("canvas");
     canvasA.width = 64;
-    canvasA.height = 64;
+    canvasA.height = 32;
     setTexture(meshA.id, canvasA);
-
     const canvasB = originalCreateElement("canvas");
-    canvasB.width = 64;
-    canvasB.height = 64;
+    canvasB.width = 96;
+    canvasB.height = 48;
     setTexture(meshB.id, canvasB);
-
+    const png = new Blob(["atlas-png"], { type: "image/png" });
+    mockToBlob.mockImplementationOnce((callback: (blob: Blob | null) => void) => {
+      callback(png);
+    });
     const result = await exportTextures(project);
-    expect(result).toHaveLength(1);
-    expect(result[0]!.fileName).toBe("texture_00.png");
+    expect(result).toEqual([{ fileName: "texture_00.png", blob: png }]);
+    expect(result[0]!.blob).toBe(png);
+    expect(mockGetContext).toHaveBeenCalledExactlyOnceWith("2d");
+    const atlas = mockGetContext.mock.contexts[0] as HTMLCanvasElement;
+    expect([atlas.width, atlas.height]).toEqual([256, 64]);
+    expect(mockDrawImage.mock.calls).toEqual([
+      [canvasA, 0, 0],
+      [canvasB, 64, 0],
+    ]);
+    expect(mockToBlob).toHaveBeenCalledExactlyOnceWith(expect.any(Function), "image/png");
   });
 });

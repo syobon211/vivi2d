@@ -10,7 +10,6 @@ import {
 } from "@/lib/atlas-packer";
 import { mockCanvasContext } from "@/test/mocks";
 
-
 function makeCanvas(w: number, h: number): HTMLCanvasElement {
   const c = document.createElement("canvas");
   c.width = w;
@@ -183,11 +182,6 @@ describe("remapUvs", () => {
     expect(result[0]).toBeCloseTo(125 / 1024);
     expect(result[1]).toBeCloseTo(240 / 1024);
   });
-
-  it("複数のUV組を一括変換する", () => {
-    const result = remapUvs([0, 0, 1, 1], entry, atlasW, atlasH);
-    expect(result).toHaveLength(4);
-  });
 });
 
 describe("unremapUvs", () => {
@@ -213,18 +207,19 @@ describe("unremapUvs", () => {
     { width: 0, height: 2, expected: [0, 0, 0, 0, 0, 0.5, 0, 0.5] },
     { width: 2, height: 0, expected: [0, 0, 0.5, 0, 0, 0, 0.5, 0] },
     { width: 0, height: 0, expected: [0, 0, 0, 0, 0, 0, 0, 0] },
-  ])(
-    "canonicalizes zero axes for a $width x $height entry",
-    ({ width, height, expected }) => {
-      const zeroEntry = { layerId: "zero-entry", x: 2, y: 2, width, height };
-      const atlasUvs = [0.25, 0.25, 0.375, 0.25, 0.25, 0.375, 0.375, 0.375];
+  ])("canonicalizes zero axes for a $width x $height entry", ({
+    width,
+    height,
+    expected,
+  }) => {
+    const zeroEntry = { layerId: "zero-entry", x: 2, y: 2, width, height };
+    const atlasUvs = [0.25, 0.25, 0.375, 0.25, 0.25, 0.375, 0.375, 0.375];
 
-      const restored = unremapUvs(atlasUvs, zeroEntry, 8, 8);
+    const restored = unremapUvs(atlasUvs, zeroEntry, 8, 8);
 
-      expect(restored).toEqual(expected);
-      expect(restored.every(Number.isFinite)).toBe(true);
-    },
-  );
+    expect(restored).toEqual(expected);
+    expect(restored.every(Number.isFinite)).toBe(true);
+  });
 });
 
 // ============================================================
@@ -245,11 +240,11 @@ describe("renderAtlases", () => {
   });
 
   it("アトラスサイズが2の冪になる", () => {
-    const textures = makeTextures([["a", 100, 100]]);
-    const packed = [{ id: "a", x: 2, y: 2, width: 100, height: 100, atlasIndex: 0 }];
+    const textures = makeTextures([["a", 300, 130]]);
+    const packed = [{ id: "a", x: 2, y: 2, width: 300, height: 130, atlasIndex: 0 }];
     const canvases = renderAtlases(packed, textures, 1, 2, 4096, 256);
 
-    expect(canvases[0]!.width).toBe(256);
+    expect(canvases[0]!.width).toBe(512);
     expect(canvases[0]!.height).toBe(256);
   });
 
@@ -284,14 +279,13 @@ describe("renderAtlases", () => {
   });
 
   it("maxSize を超えないようにクランプされる", () => {
-    const textures = makeTextures([["big", 3000, 3000]]);
-    const packed = [{ id: "big", x: 2, y: 2, width: 3000, height: 3000, atlasIndex: 0 }];
-    const canvases = renderAtlases(packed, textures, 1, 2, 4096, 256);
-    expect(canvases[0]!.width).toBeLessThanOrEqual(4096);
-    expect(canvases[0]!.height).toBeLessThanOrEqual(4096);
+    const textures = makeTextures([["big", 2900, 300]]);
+    const packed = [{ id: "big", x: 2, y: 2, width: 2900, height: 300, atlasIndex: 0 }];
+    const canvases = renderAtlases(packed, textures, 1, 2, 3000, 256);
+    expect(canvases[0]!.width).toBe(3000);
+    expect(canvases[0]!.height).toBe(512);
   });
 });
-
 
 describe("buildAtlases", () => {
   beforeEach(() => mockCanvasContext());
@@ -339,7 +333,6 @@ describe("buildAtlases", () => {
     }
   });
 });
-
 
 describe("packRects — ブランチカバレッジ強化", () => {
   it("同じサイズの矩形が複数あっても正しくパッキングされる", () => {

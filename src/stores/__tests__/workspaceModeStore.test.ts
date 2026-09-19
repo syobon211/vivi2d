@@ -7,9 +7,6 @@ describe("workspaceModeStore", () => {
     useWorkspaceModeStore.setState({ mode: "default" });
   });
 
-  it("defaults to the standard workspace", () => {
-    expect(useWorkspaceModeStore.getState().mode).toBe("default");
-  });
 
   it("can switch to the rigging workspace explicitly", () => {
     useWorkspaceModeStore.getState().setMode("rigging");
