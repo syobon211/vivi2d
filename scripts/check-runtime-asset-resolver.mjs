@@ -133,7 +133,7 @@ const requiredRustTestNames = [
 const cAbiHeaderPins = [
   [
     "packages/runtime-c-abi/include/vivi_runtime.h",
-    "dac8dfe8169d73553623eee6eac87cf47d43ec79fe4f0ff9eb2237b25ec737ac",
+    "e443da00c440c166c729c58f275f63aedd506869f964f10870a9ce7fc8826a5a",
   ],
   [
     "packages/runtime-c-abi/include/vivi_png.h",
