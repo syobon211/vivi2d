@@ -417,6 +417,7 @@ dependencies = [
 name = "vivi-runtime-native-c-abi"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
  "vivi-png-ref",
  "vivi-runtime-native-core",
 ]
