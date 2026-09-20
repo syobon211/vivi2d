@@ -935,11 +935,14 @@ fn model_load_impl(
     data_len: u64,
     out_model: *mut *mut ViviModel,
 ) -> ViviStatus {
-    if runtime.is_null() || out_model.is_null() {
+    if out_model.is_null() {
         return status::INVALID_ARGUMENT;
     }
     unsafe {
         *out_model = ptr::null_mut();
+    }
+    if runtime.is_null() {
+        return status::INVALID_ARGUMENT;
     }
     if data.is_null() || data_len > isize::MAX as u64 {
         set_runtime_error(
@@ -3334,6 +3337,40 @@ mod tests {
         );
 
         vivi_model_destroy(model);
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[test]
+    fn model_load_clears_output_for_null_runtime() {
+        let payload = minimal_static_payload();
+        let (runtime, previous_model) = load_test_model(payload);
+        let mut output = previous_model;
+        assert_eq!(
+            vivi_model_load(
+                ptr::null_mut(),
+                payload.as_ptr(),
+                payload.len() as u64,
+                &mut output,
+            ),
+            status::INVALID_ARGUMENT
+        );
+        assert!(output.is_null());
+
+        let mut version = version_output();
+        assert_eq!(
+            vivi_model_get_spec_version(previous_model, &mut version),
+            status::OK
+        );
+        assert_eq!(
+            vivi_model_load(
+                ptr::null_mut(),
+                payload.as_ptr(),
+                payload.len() as u64,
+                ptr::null_mut(),
+            ),
+            status::INVALID_ARGUMENT
+        );
+        vivi_model_destroy(previous_model);
         vivi_runtime_destroy(runtime);
     }
 
