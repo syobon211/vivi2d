@@ -2738,6 +2738,106 @@ mod tests {
     }
 
     #[test]
+    fn c_abi_publishes_binding_skinned_vertices_after_update() {
+        let payload = canonical_fixture_payload(include_str!(
+            "../../../../../tests/conformance/runtime-v1/binding-skinning.fixture.json"
+        ));
+        let (runtime, model) = load_test_model(&payload);
+        assert_eq!(
+            vivi_model_set_input(model, c"vivi.bone.rotate".as_ptr(), 1.0),
+            status::OK
+        );
+        assert_eq!(vivi_model_update(model, 0.0), status::OK);
+
+        let mut count = 0_u64;
+        assert_eq!(vivi_model_mesh_count(model, &mut count), status::OK);
+        assert_eq!(count, 1);
+        let mut mesh = mesh_snapshot_output();
+        assert_eq!(vivi_model_mesh_snapshot(model, 0, &mut mesh), status::OK);
+        assert!(!mesh.id.is_null());
+        assert_eq!(unsafe { CStr::from_ptr(mesh.id) }, c"mesh-limb");
+        assert_eq!(mesh.vertex_float_count, 6);
+        assert!(!mesh.vertices.is_null());
+        let vertices = unsafe { slice::from_raw_parts(mesh.vertices, 6) };
+        for (actual, expected) in vertices.iter().zip([0.0, 1.0, 0.0, 2.0, -1.0, 1.0]) {
+            assert!((actual - expected).abs() <= 1e-4);
+        }
+
+        vivi_model_destroy(model);
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[test]
+    fn c_abi_publishes_draw_culling_and_hit_results() {
+        let payload = canonical_fixture_payload(include_str!(
+            "../../../../../tests/conformance/runtime-v1/draw-hit-culling.fixture.json"
+        ));
+        let (runtime, model) = load_test_model(&payload);
+        assert_eq!(vivi_model_update(model, 0.0), status::OK);
+        let mut count = 0_u64;
+        assert_eq!(vivi_model_mesh_count(model, &mut count), status::OK);
+        assert_eq!(count, 2);
+        for (index, (id, draw_order, blend_mode, visible, culled, x, y)) in [
+            (c"mesh-back", 5, 2, 1, 0, 3.0, 4.0),
+            (c"mesh-front", 20, 1, 0, 1, 0.0, 0.0),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let mut mesh = mesh_snapshot_output();
+            assert_eq!(
+                vivi_model_mesh_snapshot(model, index as u64, &mut mesh),
+                status::OK
+            );
+            assert!(!mesh.id.is_null());
+            assert_eq!(unsafe { CStr::from_ptr(mesh.id) }, id);
+            assert_eq!(
+                (
+                    mesh.draw_order,
+                    mesh.blend_mode,
+                    mesh.visible,
+                    mesh.culled,
+                    mesh.x,
+                    mesh.y
+                ),
+                (draw_order, blend_mode, visible, culled, x, y)
+            );
+        }
+
+        let mut hit = hit_result_output();
+        let mut has_hit = 255_u8;
+        assert_eq!(
+            vivi_model_hit_test(model, 11.0, 5.0, &mut hit, &mut has_hit),
+            status::OK
+        );
+        assert_eq!(has_hit, 1);
+        assert!(!hit.collider_id.is_null() && !hit.layer_id.is_null() && !hit.mesh_id.is_null());
+        assert_eq!(
+            unsafe { CStr::from_ptr(hit.collider_id) },
+            c"back-translated"
+        );
+        assert_eq!(unsafe { CStr::from_ptr(hit.layer_id) }, c"mesh-back");
+        assert_eq!(unsafe { CStr::from_ptr(hit.mesh_id) }, c"mesh-back");
+        assert_eq!(
+            vivi_model_hit_test(model, 22.0, 22.0, &mut hit, &mut has_hit),
+            status::OK
+        );
+        assert_eq!(has_hit, 1);
+        assert!(!hit.collider_id.is_null());
+        assert_eq!(unsafe { CStr::from_ptr(hit.collider_id) }, c"ui-rect");
+        assert!(hit.layer_id.is_null() && hit.mesh_id.is_null());
+
+        // This point is inside the culled front mesh, which must not produce a hit.
+        assert_eq!(
+            vivi_model_hit_test(model, 2.0, 2.0, &mut hit, &mut has_hit),
+            status::OK
+        );
+        assert_eq!(has_hit, 0);
+        vivi_model_destroy(model);
+        vivi_runtime_destroy(runtime);
+    }
+
+    #[test]
     fn c_abi_exposes_nonzero_mesh_translation() {
         let mut runtime: *mut ViviRuntime = ptr::null_mut();
         assert_eq!(
@@ -3815,6 +3915,13 @@ mod tests {
             hotkey: ptr::null(),
             parameter_value_count: 0,
         }
+    }
+
+    fn canonical_fixture_payload(source: &str) -> Vec<u8> {
+        let fixture: serde_json::Value = serde_json::from_str(source).unwrap();
+        let file_data = fixture.get("fileData").unwrap();
+        assert!(file_data.is_object());
+        serde_json::to_vec(file_data).unwrap()
     }
 
     fn load_test_model(payload: &[u8]) -> (*mut ViviRuntime, *mut ViviModel) {
