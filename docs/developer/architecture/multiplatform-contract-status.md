@@ -45,12 +45,12 @@ exchange.
 
 | Contract | Current status | Tracked foundation | Current product connection | Publication and exchange blockers |
 | --- | --- | --- | --- | --- |
-| Project | `internal foundation` | Project v1-v10 parser/types plus an internal Project Format v11 schema, codec, semantic validator, capability result, read-only host seam, and a tracked public review draft | Ordinary Windows save emits Project v9; the normal parser/runtime accepts through v10; v11 is an internal friend API | Complete the review bundle for the narrow authoring profile, machine overlay, inline PNG rules, limits, error precedence, migration, identity, and portable fixtures; then connect normal Windows load/save and prove independent round trips |
-| Asset | `internal foundation` | Asset Model v1 schema plus native resolver, principal-bound local store, and local host foundations | Native/local only; no public bridge, network transfer, Sync client, capability advertisement, or product activation path | Assign one normative `AssetRef` owner; fix Project-schema parity; publish bounds/errors/closure rules; add portable resolver and transfer conformance |
+| Project | `internal foundation` | v1-v10 parser/types; internal v11 schema/codec/graph rules; narrow embedded round-trip validator, explicit v9/v10 migration/fork and shared synthetic PNG/document evidence | Ordinary Windows save emits v9; normal parser/runtime accepts through v10; v11 candidate is internal and not connected to ordinary save | Review/promote the complete language-neutral profile and conformance bundle; supply real production PNG wiring; connect adopted Windows load/save and prove an independent consumer |
+| Asset | `internal foundation` | Asset Model v1 schema plus native resolver, principal-bound local store, local host foundations and Project structural drift gate | Native/local only; no public bridge, network transfer, Sync client, capability advertisement, or product activation path | Maintain Asset-owned structure and Project copy parity; publish remaining bounds/errors/closure rules; add portable resolver and transfer conformance |
 | Evaluation | `internal foundation` | Internal payload and texture-plan schemas/builder, native validation and preactivation, and lowering categories 1-9 | Read-only authoring projection only; no complete model-ready evaluator or product runtime connection | Complete categories 10-11, connect deterministic math, seal model-ready output, publish schemas/capabilities/errors/fixtures, and prove execution parity |
 | Runtime ABI | `internal foundation` | Tracked ABI 0.1 header and an opt-in native ABI 0.2 implementation slice | Internal packages only; ABI 0.2 public header and Evaluation load entry point are not tracked public surfaces | Publish one versioned header; complete Evaluation loading, ownership/lifetime/error/generation rules, exports, host tests, and supported-target execution evidence |
-| Sync | `proposed` | Project identity/capability and Asset content-addressing concepts are reusable inputs | No dedicated tracked Sync specification, schema, package, client, account policy, service, or deployment | Define revision/blob protocol, idempotency, authorization, optimistic concurrency, explicit conflicts, offline recovery, privacy lifecycle, and multi-client fixtures |
-| Job | `proposed` | Internal Provider SDK request/result/progress/cancellation and artifact-policy foundations | Provider-specific local adapters exist; no provider-neutral durable Job protocol, runner, cloud adapter, or worker lifecycle | Define durable identity/state, replay, retry/deduplication, lease/attempt/cancellation semantics, atomic result manifests, provenance, and explicit accept/reject behavior |
+| Sync | `internal foundation` | One internal model-local embedded-revision preparation and deterministic CAS/idempotency/conflict candidate with focused fixtures | No Sync client, durable outbox, account/authorization policy, service, transfer or deployment | Define/publish the full protocol; implement durable object/receipt retention, authenticated scope, transactional persistence, transfer/offline recovery/privacy lifecycle and multi-client evidence |
+| Job | `internal foundation` | Existing in-process Provider SDK plus the internal local six-state attempt/renewal/result/acceptance candidate and focused fixtures | No durable Job protocol, provider adapter for this candidate, runner, scheduler, service or remote worker | Complete durable identity/state/replay, authenticated routing, transactional storage, actual lease controller, verified provider integration and explicit Project/Sync acceptance across consumers |
 
 ## Contract Detail
 
@@ -75,12 +75,16 @@ contract.
 
 The
 [Project Format v11 public authoring profile](../api/spec/project-format-v11.draft.md)
-now records the proposed Project-owned boundary and its unresolved promotion
-gates. It deliberately does not relabel the row: the current machine schema is
-broader than the first portable profile, inline PNG validation and aggregate
-limits are incomplete, `documentId` lifecycle and deterministic error
-precedence are not frozen, `AssetRef` ownership is duplicated, and no portable
-fixture manifest or independent consumer exists.
+now records both the broader proposed boundary and the implemented narrow internal
+candidate. A fixed allowlist, collection/media ceilings, canonical base64,
+redacted error boundary, explicit identity migration/fork and byte-pinned shared
+PNG/document fixtures exist. Native full PNG fixture execution is distinct from
+the TypeScript wrapper's recorded-outcome port. The broad schema remains wider,
+the full public adoption corpus and language-neutral guarantees are not frozen,
+Asset Model owns the reusable structure and the Project copy is checked for
+structural drift, without a broader semantic-parity proof. No production bridge
+or independent consumer has completed the exchange gates. The Project row
+remains internal.
 
 Before publication, the Project owner must also resolve the current writer v9,
 reader ceiling v10, and authoring candidate v11 split. The normal Windows path
@@ -98,11 +102,15 @@ product integration, public support promise, transfer, Sync integration,
 language bridge, public C ABI, remote lifecycle, capability advertisement, or
 product activation.
 
-Project Format v11 currently carries an embedded copy of `AssetRef`-shaped
-schema rules while Asset Model v1 has its own schema. Publication must either
-make Asset Model the sole normative owner or add an explicit semantic-parity
-gate for every embedded copy. Two independently evolving definitions are not an
-acceptable public contract.
+Asset Model v1 owns the reusable `ViviAssetRef`, `EmbeddableBlobAssetRef`, and
+`PngAssetRef` structural definitions. Project retains self-contained copies for
+its compiled validator; the Project schema suite compares all three with the
+tracked Asset schema after local-reference expansion and annotation removal.
+Project's existing semantic validator additionally enforces its placement,
+media-type, digest, and closure rules. This is a structural drift gate, not
+general cross-language semantic equivalence or PNG resolution evidence: the
+native resolver has a narrower input ceiling and separate store/decode checks.
+Referenced transfer, independent consumers, and public promotion remain open.
 
 ### Evaluation
 
@@ -135,12 +143,23 @@ Compile evidence, runtime execution, and parity are separate claims.
 
 ### Sync
 
-There is no Sync implementation to promote. A future provider-neutral contract
-must use immutable Project documents and exact Asset closures, publish a
-revision only after its closure validates, bind idempotency to the authenticated
-client mutation, and use compare-and-swap rather than silent last-write-wins.
-Head disagreement must preserve both the local candidate and remote head as an
-explicit conflict. Offline retry must be durable and idempotent.
+The internal [local exchange candidate](../../../packages/model/src/internal/local-exchange-state.ts)
+now implements pure local revision preparation and one-document-cell CAS. It
+invokes the real embedded Project candidate and requires matching document
+identity and exact canonical bytes before minting a process-local revision
+handle. Scope/document/parent binding, retained mutation receipts, same-key
+mismatch, replay after head changes and explicit conflicts are checked. A new
+mutation at the 64-receipt ceiling fails rather than evicting idempotency history.
+A conflict preserves its original observed head and candidate identity; it does
+not perform a merge or silent last-write-wins.
+
+These are transient local rules, not a Sync client or durable offline protocol.
+Opaque `scopeId` is a trusted host label, not authentication. A future host must
+retain immutable bytes and receipts, route each cell through an atomic serialized
+transaction, authorize access, and implement transfer, crash recovery and privacy
+lifecycle. Metadata reload is shape-checked but does not recreate prepared
+handles: preparation from actual retained bytes must run again. IDs alone do
+not retain payloads. Durable offline retry remains an open requirement.
 
 Cloudflare remains an optional implementation candidate for a coordination
 plane. It is not part of the Sync wire contract, and the current tracked
@@ -154,7 +173,39 @@ artifact policy. It is not a durable provider-neutral Job protocol. Existing
 provider adapters are implementations below the future contract, not its wire
 authority.
 
-A future Job contract must define submission idempotency, durable status and
+The same internal candidate adds bounded submission/result preparation and
+explicit `queued`, `running`, `retryable`, `succeeded`, `failed`, `cancelled`
+states. Inputs/results are exact flat blob closures with mandatory size/digest
+checks, not a new AssetRef authority. Requests are bound to canonical parameters,
+capability, result policy and submission key; completion is bound to the active
+attempt/provider. Candidate ceilings are eight attempts, 128 artifacts, 50 MiB
+input, 200 MiB result, and 64 KiB / depth 8 / 1,024-node parameters. Lowered test
+limits cannot raise these ceilings.
+
+Attempt/renewal counters fence stale heartbeat/expiry; there is no clock, timer
+or actual lease service. Serialized command order decides completion/cancel and
+expiry races. Exact submission/completion/decision replay preserves current
+state, while opposite terminal decisions are rejected. Counters fail before
+safe-integer overflow. These pure transitions do not themselves make concurrent
+storage atomic or stop a physical worker when cancelled.
+
+Preparation snapshots bounded descriptors and bytes before awaiting trusted
+hash/PNG ports. Four process-local WeakMaps retain proof handles; copied JSON or
+Prepared-shaped state metadata cannot mint them. Fixed failures are SHAPE,
+LIMIT, BINDING, INTEGRITY, PROJECT, INTERNAL, IDEMPOTENCY_MISMATCH, STATE, STALE
+and TERMINAL, with no raw cause text. The module has no network, filesystem,
+account, storage, provider execution or public package export.
+
+Explicit acceptance selects one exact retained artifact from the winning
+prepared result and revalidates those bytes through Project. It does not accept
+arbitrary derived documents, execute conversion or edit the current Project.
+The accepted candidate revision and its process-local handle still require a
+separate Sync CAS call, which may conflict. TypeScript fixtures execute actual
+Project validation using the byte-bound recorded PNG port; separate Rust
+fixture execution does not create a production language bridge.
+
+The future durable Job contract still must define and prove submission
+idempotency, durable status and
 event replay, worker claims and attempts, terminal/cancellation races, mandatory
 artifact size and integrity metadata, provenance, and atomic result publication.
 A result must never mutate a Project directly. Explicit acceptance creates a

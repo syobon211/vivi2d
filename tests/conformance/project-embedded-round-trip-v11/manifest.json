@@ -1,0 +1,495 @@
+{
+  "schemaVersion": 1,
+  "profile": "vivi2d.projectFormat.v11.embeddedRoundTrip.draft1",
+  "evidence": "Synthetic public fixtures. Native outcomes and Project policy expectations are separate; neither proves a product TS-to-native bridge.",
+  "pngCases": [
+    {
+      "id": "frozen-palette",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAMAAADD/I+4AAAABlBMVEX/AAAA/wDSh+9xAAAAC0lEQVR4nGNgYAQAAAQAAr96P0oAAAAASUVORK5CYII=",
+      "sha256": "36bface51473c12ccf669e14991783a1f05a4d7b8a297b71bcf611c18b6b8a8c",
+      "width": 2,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "ff0000ff00ff00ff"
+      },
+      "project": {
+        "code": "ok"
+      }
+    },
+    {
+      "id": "frozen-palette-trns",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAMAAADD/I+4AAAABlBMVEX/AAAA/wDSh+9xAAAAAnRSTlP/AOW3MEoAAAALSURBVHicY2BgBAAABAACv3o/SgAAAABJRU5ErkJggg==",
+      "sha256": "34cda80661f719474d54c47efee945736708947a89e7fbe18765a1324923bb0e",
+      "width": 2,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "ff0000ff00ff0000"
+      },
+      "project": {
+        "code": "ok"
+      }
+    },
+    {
+      "id": "frozen-grayscale",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAAAAADRSSBWAAAAC0lEQVR4nGNg+A8AAQIBAEK+vGgAAAAASUVORK5CYII=",
+      "sha256": "ed74d943baff5e8863eafb334ac52a6efac2f3b2881a1ba85bac74f6918dc10a",
+      "width": 2,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "000000ffffffffff"
+      },
+      "project": {
+        "code": "ok"
+      }
+    },
+    {
+      "id": "frozen-grayscale-trns",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAAAAADRSSBWAAAAAnRSTlMAB+j3WJsAAAALSURBVHicY2DnBAAAGgARYM0kkgAAAABJRU5ErkJggg==",
+      "sha256": "ae809de39e45dfd89e1fc5a0a2c937bba37098bebf886ddfc2652b1fecfb684f",
+      "width": 2,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "07070700090909ff"
+      },
+      "project": {
+        "code": "ok"
+      }
+    },
+    {
+      "id": "frozen-truecolor-trns",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAIAAAB7QOjdAAAABnRSTlMAAQACAAPJS6v1AAAAD0lEQVR4nGNgZGJmYWUDAAA/ABYhutRUAAAAAElFTkSuQmCC",
+      "sha256": "033ff9ef27290e1203be2a946f87c0718afef116c9d19340b4e5b5b25c7df67b",
+      "width": 2,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "01020300040506ff"
+      },
+      "project": {
+        "code": "ok"
+      }
+    },
+    {
+      "id": "frozen-grayscale-alpha",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAIAAAABCAQAAABeK7cBAAAADUlEQVR4nGPgZDjRAAACOQFSct9UWgAAAABJRU5ErkJggg==",
+      "sha256": "47cb55d47c5137716b9d42d0640a5f70d22227b19df1043f73c118b590b68924",
+      "width": 2,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "09090900c8c8c880"
+      },
+      "project": {
+        "code": "ok"
+      }
+    },
+    {
+      "id": "frozen-rgba-alpha-zero-preserves-rgb",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMQMgljAAABlQCdTUEI3wAAAABJRU5ErkJggg==",
+      "sha256": "76f430c66cac7eb823fa3a8ca44209c9584693dfbcc15d9b1d5ea30daa4dd3d2",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "ok"
+      }
+    },
+    {
+      "id": "frozen-gamma-chunk-ignored",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAAA1JREFUeJxjaHBQ+A8ABAQB4PLrgPkAAAAASUVORK5CYII=",
+      "sha256": "606ac48cee349593b87be84b119988e507eb55a55b46451bfe57851b613caab0",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "804020ff"
+      },
+      "project": {
+        "code": "PROJECT_PNG_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "frozen-malformed-zlib",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAA0lEQVR4nP9T3l3RAAAAAElFTkSuQmCC",
+      "sha256": "173a3e03371794d2738b0503d4d1358a563f89a5a56283929dfd12117993ffd1",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "malformed"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "frozen-bad-crc",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMQMgljAAABlQCdTUEI3wAAAABJRU5ErkJggw==",
+      "sha256": "d5bad4b68155b3baa29452d9a30d88d82b2d4c7739855b8786a449265237b5e8",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "malformed"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "frozen-adam7-interlace",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAFoEvQfAAAADUlEQVR4nGNgZGL+DwABFAEG1rmmRQAAAABJRU5ErkJggg==",
+      "sha256": "d3609e0a7c9a837948a447f508ca3e64f9f50f4c0ee5add9c1715fd12878a421",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "unsupported"
+      },
+      "project": {
+        "code": "PROJECT_PNG_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "frozen-declared-dimension-mismatch",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMQMgljAAABlQCdTUEI3wAAAABJRU5ErkJggg==",
+      "sha256": "76f430c66cac7eb823fa3a8ca44209c9584693dfbcc15d9b1d5ea30daa4dd3d2",
+      "width": 2,
+      "height": 1,
+      "native": {
+        "status": "dimension"
+      },
+      "project": {
+        "code": "PROJECT_PNG_DIMENSION"
+      }
+    },
+    {
+      "id": "srgb-intent-zero",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=",
+      "sha256": "0dc262f77871df41d0513b016dc81d3b287aee077370a430c7b64b71f1f9b86e",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "ok"
+      }
+    },
+    {
+      "id": "srgb-intent-three-with-fallback",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAXNSR0IDN8dNUwAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=",
+      "sha256": "efc2a0748c6c7959e6dc0362849fb95dd3ccb95f48783c4efd839820f5dcd17f",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "ok"
+      }
+    },
+    {
+      "id": "srgb-intent-out-of-range",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IEqaPY8AAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=",
+      "sha256": "f3e46c7bc66ec588d7eb98aae893016f8d47594555f2340d89443e09d3da9c6d",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "srgb-bad-length",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAnNSR0IAAAt6e00AAAAQSURBVHgBAQUA+v8AEjRWAAGVAJ1gC8k/AAAAAElFTkSuQmCC",
+      "sha256": "135c1389f5091ce2533f9c005c6a3eac9d8da292bac3741c7f5b1fccd79da60a",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "srgb-duplicate",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAAFzUkdCAK7OHOkAAAAQSURBVHgBAQUA+v8AEjRWAAGVAJ1gC8k/AAAAAElFTkSuQmCC",
+      "sha256": "1c4131c2a54e487abfd6f289092019ab36ca76edbb09033538e907befdae4a30",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "srgb-after-idat",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAEElEQVR4AQEFAPr/ABI0VgABlQCdYAvJPwAAAAFzUkdCAK7OHOkAAAAASUVORK5CYII=",
+      "sha256": "241e13e671ef21f28458ed873e992c7706894754e3dc1974a1e137493b025318",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "srgb-after-plte",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAA1BMVEUBAgMNh2TVAAAAAXNSR0IArs4c6QAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=",
+      "sha256": "58fc4c040bf294a2c53132d1e2145ec5d3aa8dcc806dcd40e76c75888f3053cd",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "gamma-zero",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAAAAAIslYE0AAAAQSURBVHgBAQUA+v8AEjRWAAGVAJ1gC8k/AAAAAElFTkSuQmCC",
+      "sha256": "5f8bf481af112523658874a840e04704d2e5deb61c3898ef23dfd0d74612f4b2",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "gamma-bad-length",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAWdBTUEBKL8zWQAAAAFzUkdCAK7OHOkAAAAQSURBVHgBAQUA+v8AEjRWAAGVAJ1gC8k/AAAAAElFTkSuQmCC",
+      "sha256": "6f166be422a0ad9365bb4789bb236ca4727659ebc516a4a6f3bbc535c62a5732",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "gamma-nonmatching",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAARnQU1BAADDUACZtTQAAAAQSURBVHgBAQUA+v8AEjRWAAGVAJ1gC8k/AAAAAElFTkSuQmCC",
+      "sha256": "dbc8c28762cbfb4e981ffc0af083a5cca4998f0e2e421b9403500601a1070bcf",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "chrm-without-srgb",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAAQSURBVHgBAQUA+v8AEjRWAAGVAJ1gC8k/AAAAAElFTkSuQmCC",
+      "sha256": "a048501ddb2bf033a0423f4f002fc8cd6a18c318de8f536d7f906bebb23d9a30",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "chrm-nonmatching",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAACBjSFJNAAB6JwAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3D/vYgYAAAAEElEQVR4AQEFAPr/ABI0VgABlQCdYAvJPwAAAABJRU5ErkJggg==",
+      "sha256": "701f0128d09a784c7502e6b83eb317006331f2af688fb86c0ab39555d3a44136",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "chrm-bad-length",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAAFjSFJNARv4cVIAAAAQSURBVHgBAQUA+v8AEjRWAAGVAJ1gC8k/AAAAAElFTkSuQmCC",
+      "sha256": "b521a31453108255d422b931ee542de77209850a5dc497b5370b648479c1c2f7",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "unselected-text",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAGHRFWHRTeW50aGV0aWMAcHVibGljLWZpeHR1cmWRAQkQAAAAEElEQVR4AQEFAPr/ABI0VgABlQCdYAvJPwAAAABJRU5ErkJggg==",
+      "sha256": "861d8b1b166e9202ec779b34db68232e698c292120865752888a64b873b5c5e1",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "unselected-then-malformed",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAGHRFWHRTeW50aGV0aWMAcHVibGljLWZpeHR1cmWRAQkQAAAAAXNSR0IEqaPY8AAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=",
+      "sha256": "918245eb94f227ecad6e3eb4f97faf0207c3b18260de6f692ccdf37cf958c9cd",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "malformed-then-unselected",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IEqaPY8AAAABh0RVh0U3ludGhldGljAHB1YmxpYy1maXh0dXJlkQEJEAAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=",
+      "sha256": "34601925539b51d6ed38d690f8e7bdeef23d8006d654eca462eeb8ad4c3ceb85",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "12345600"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "native-malformed-before-policy",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAGHRFWHRTeW50aGV0aWMAcHVibGljLWZpeHR1cmWRAQkQAAAAA0lEQVQAAQIO3x7PAAAAAElFTkSuQmCC",
+      "sha256": "81dd97912c4bf6b21030a90d6662845519674c453827192d5fcb250f3441295e",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "malformed"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "filter-invalid",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAEElEQVR4AQEFAPr/BRI0VgABrgCitMSrPAAAAABJRU5ErkJggg==",
+      "sha256": "e1325859af50f4cf21c25fa710469525bbb03542fdbc692335ec2757f5a9fbd3",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "malformed"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    },
+    {
+      "id": "unknown-critical",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAEFCQ0TbFyClAAAAEElEQVR4AQEFAPr/ABI0VgABlQCdYAvJPwAAAABJRU5ErkJggg==",
+      "sha256": "066822d712e7edde23ccd278805484b62a94ec376b6d5a186593a42cd0492368",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "unsupported"
+      },
+      "project": {
+        "code": "PROJECT_PNG_UNSUPPORTED"
+      }
+    },
+    {
+      "id": "truecolor-plte-after-trns",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAABnRSTlMAAQACAAPJS6v1AAAAA1BMVEUBAgMNh2TVAAAAD0lEQVR4AQEEAPv/AAECAwAOAActojPsAAAAAElFTkSuQmCC",
+      "sha256": "313a280e3c64e0abd55c946e760be3ab00b884d3af02564fe7c06dcae1abd100",
+      "width": 1,
+      "height": 1,
+      "native": {
+        "status": "ok",
+        "rgbaHex": "01020300"
+      },
+      "project": {
+        "code": "PROJECT_PNG_MALFORMED"
+      }
+    }
+  ],
+  "documents": [
+    {
+      "id": "core-v11",
+      "operation": "validate",
+      "pngCaseIds": [
+        "srgb-intent-zero"
+      ],
+      "pngSha256s": [
+        "0dc262f77871df41d0513b016dc81d3b287aee077370a430c7b64b71f1f9b86e"
+      ],
+      "inputUtf8": "{\"version\":11,\"assetMode\":\"embedded\",\"documentId\":\"123e4567-e89b-42d3-a456-426614174000\",\"project\":{\"name\":\"Synthetic shared core\",\"width\":64,\"height\":64,\"layers\":[{\"id\":\"group-0\",\"name\":\"group-0\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[{\"id\":\"bone-0\",\"name\":\"bone-0\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[],\"kind\":\"bone\",\"bone\":{\"angle\":0,\"length\":1,\"scaleX\":1,\"scaleY\":1}},{\"id\":\"mesh-0\",\"name\":\"mesh-0\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[],\"kind\":\"viviMesh\",\"mesh\":{\"vertices\":[0,0,1,0,0,1],\"uvs\":[0,0,1,0,0,1],\"indices\":[0,1,2],\"divisionsX\":1,\"divisionsY\":1},\"culling\":false}],\"kind\":\"group\"}],\"parameters\":[{\"id\":\"Motion.x\",\"name\":\"Motion\",\"minValue\":0,\"maxValue\":1,\"defaultValue\":0}],\"clips\":[],\"scenes\":[],\"physicsGroups\":[],\"lipsyncConfig\":{\"enabled\":false,\"targetParameterId\":null,\"source\":\"microphone\",\"threshold\":0.02,\"smoothing\":0.7,\"gain\":2},\"skins\":{\"mesh-0\":{\"weights\":[[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}]],\"bindPoseInverse\":{\"bone-0\":[1,0,0,1,0,0]}}},\"parameterBindings\":[{\"id\":\"binding-0\",\"parameterId\":\"Motion.x\",\"target\":{\"type\":\"bone\",\"boneId\":\"bone-0\",\"property\":\"angle\"},\"bindingPoints\":[{\"paramValue\":0,\"targetValue\":0},{\"paramValue\":1,\"targetValue\":0.5}]}],\"ikControllers\":[{\"id\":\"ik-0\",\"name\":\"IK\",\"solverType\":\"ccd\",\"boneChain\":[{\"boneId\":\"bone-0\",\"minAngle\":-1,\"maxAngle\":1}],\"targetX\":1,\"targetY\":1,\"influence\":1,\"parameterMappings\":[]}],\"colliders\":[],\"stateMachines\":[]},\"atlases\":[{\"id\":\"atlas-0\",\"image\":\"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=\",\"width\":1,\"height\":1,\"entries\":[{\"layerId\":\"mesh-0\",\"x\":0,\"y\":0,\"width\":1,\"height\":1}]}]}",
+      "canonicalUtf8": "{\"assetMode\":\"embedded\",\"atlases\":[{\"entries\":[{\"height\":1,\"layerId\":\"mesh-0\",\"width\":1,\"x\":0,\"y\":0}],\"height\":1,\"id\":\"atlas-0\",\"image\":\"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=\",\"width\":1}],\"documentId\":\"123e4567-e89b-42d3-a456-426614174000\",\"project\":{\"clips\":[],\"colliders\":[],\"expressionPresets\":[],\"height\":64,\"ikControllers\":[{\"boneChain\":[{\"boneId\":\"bone-0\",\"maxAngle\":1,\"minAngle\":-1}],\"id\":\"ik-0\",\"influence\":1,\"name\":\"IK\",\"parameterMappings\":[],\"solverType\":\"ccd\",\"targetX\":1,\"targetY\":1}],\"layers\":[{\"blendMode\":\"normal\",\"children\":[{\"blendMode\":\"normal\",\"bone\":{\"angle\":0,\"length\":1,\"scaleX\":1,\"scaleY\":1},\"children\":[],\"expanded\":true,\"height\":1,\"id\":\"bone-0\",\"kind\":\"bone\",\"name\":\"bone-0\",\"opacity\":1,\"visible\":true,\"width\":1,\"x\":0,\"y\":0},{\"blendMode\":\"normal\",\"children\":[],\"culling\":false,\"expanded\":true,\"height\":1,\"id\":\"mesh-0\",\"kind\":\"viviMesh\",\"mesh\":{\"divisionsX\":1,\"divisionsY\":1,\"indices\":[0,1,2],\"uvs\":[0,0,1,0,0,1],\"vertices\":[0,0,1,0,0,1]},\"name\":\"mesh-0\",\"opacity\":1,\"visible\":true,\"width\":1,\"x\":0,\"y\":0}],\"expanded\":true,\"height\":1,\"id\":\"group-0\",\"kind\":\"group\",\"name\":\"group-0\",\"opacity\":1,\"visible\":true,\"width\":1,\"x\":0,\"y\":0}],\"lipsyncConfig\":{\"enabled\":false,\"gain\":2,\"smoothing\":0.7,\"source\":\"microphone\",\"targetParameterId\":null,\"threshold\":0.02},\"name\":\"Synthetic shared core\",\"offscreenTargets\":[],\"parameterBindings\":[{\"bindingPoints\":[{\"paramValue\":0,\"targetValue\":0},{\"paramValue\":1,\"targetValue\":0.5}],\"id\":\"binding-0\",\"parameterId\":\"Motion.x\",\"target\":{\"boneId\":\"bone-0\",\"property\":\"angle\",\"type\":\"bone\"}}],\"parameters\":[{\"defaultValue\":0,\"id\":\"Motion.x\",\"maxValue\":1,\"minValue\":0,\"name\":\"Motion\"}],\"physicsGroups\":[],\"sceneBlends\":[],\"scenes\":[],\"skins\":{\"mesh-0\":{\"bindPoseInverse\":{\"bone-0\":[1,0,0,1,0,0]},\"weights\":[[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}]]}},\"stateMachines\":[],\"width\":64},\"version\":11}",
+      "documentId": "123e4567-e89b-42d3-a456-426614174000",
+      "inputSha256": "40ae55eef10bdc31731454e7ef21044e946f33798b00995f522c4d30c95fc2d7",
+      "canonicalSha256": "025e0103b7de04b60eda2a26a28d77c11c174f2dbc42f0db75ae6efcd3391201"
+    },
+    {
+      "id": "core-v9-migration",
+      "operation": "migrate",
+      "pngCaseIds": [
+        "srgb-intent-zero"
+      ],
+      "pngSha256s": [
+        "0dc262f77871df41d0513b016dc81d3b287aee077370a430c7b64b71f1f9b86e"
+      ],
+      "inputUtf8": "{\"version\":9,\"project\":{\"name\":\"Synthetic shared core\",\"width\":64,\"height\":64,\"layers\":[{\"id\":\"group-0\",\"name\":\"group-0\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[{\"id\":\"bone-0\",\"name\":\"bone-0\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[],\"kind\":\"bone\",\"bone\":{\"angle\":0,\"length\":1,\"scaleX\":1,\"scaleY\":1}},{\"id\":\"mesh-0\",\"name\":\"mesh-0\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[],\"kind\":\"viviMesh\",\"mesh\":{\"vertices\":[0,0,1,0,0,1],\"uvs\":[0,0,1,0,0,1],\"indices\":[0,1,2],\"divisionsX\":1,\"divisionsY\":1},\"culling\":false}],\"kind\":\"group\"}],\"parameters\":[{\"id\":\"Motion.x\",\"name\":\"Motion\",\"minValue\":0,\"maxValue\":1,\"defaultValue\":0}],\"skins\":{\"mesh-0\":{\"weights\":[[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}]],\"bindPoseInverse\":{\"bone-0\":[1,0,0,1,0,0]}}},\"parameterBindings\":[{\"id\":\"binding-0\",\"parameterId\":\"Motion.x\",\"target\":{\"type\":\"bone\",\"boneId\":\"bone-0\",\"property\":\"angle\"},\"bindingPoints\":[{\"paramValue\":0,\"targetValue\":0},{\"paramValue\":1,\"targetValue\":0.5}]}],\"ikControllers\":[{\"id\":\"ik-0\",\"name\":\"IK\",\"solverType\":\"ccd\",\"boneChain\":[{\"boneId\":\"bone-0\",\"minAngle\":-1,\"maxAngle\":1}],\"targetX\":1,\"targetY\":1,\"influence\":1,\"parameterMappings\":[]}]},\"atlases\":[{\"image\":\"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=\",\"width\":1,\"height\":1,\"entries\":[{\"layerId\":\"mesh-0\",\"x\":0,\"y\":0,\"width\":1,\"height\":1}]}]}",
+      "canonicalUtf8": "{\"assetMode\":\"embedded\",\"atlases\":[{\"entries\":[{\"height\":1,\"layerId\":\"mesh-0\",\"width\":1,\"x\":0,\"y\":0}],\"height\":1,\"id\":\"atlas-0\",\"image\":\"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=\",\"width\":1}],\"documentId\":\"123e4567-e89b-42d3-a456-426614174000\",\"project\":{\"clips\":[],\"colliders\":[],\"expressionPresets\":[],\"height\":64,\"ikControllers\":[{\"boneChain\":[{\"boneId\":\"bone-0\",\"maxAngle\":1,\"minAngle\":-1}],\"id\":\"ik-0\",\"influence\":1,\"name\":\"IK\",\"parameterMappings\":[],\"solverType\":\"ccd\",\"targetX\":1,\"targetY\":1}],\"layers\":[{\"blendMode\":\"normal\",\"children\":[{\"blendMode\":\"normal\",\"bone\":{\"angle\":0,\"length\":1,\"scaleX\":1,\"scaleY\":1},\"children\":[],\"expanded\":true,\"height\":1,\"id\":\"bone-0\",\"kind\":\"bone\",\"name\":\"bone-0\",\"opacity\":1,\"visible\":true,\"width\":1,\"x\":0,\"y\":0},{\"blendMode\":\"normal\",\"children\":[],\"culling\":false,\"expanded\":true,\"height\":1,\"id\":\"mesh-0\",\"kind\":\"viviMesh\",\"mesh\":{\"divisionsX\":1,\"divisionsY\":1,\"indices\":[0,1,2],\"uvs\":[0,0,1,0,0,1],\"vertices\":[0,0,1,0,0,1]},\"name\":\"mesh-0\",\"opacity\":1,\"visible\":true,\"width\":1,\"x\":0,\"y\":0}],\"expanded\":true,\"height\":1,\"id\":\"group-0\",\"kind\":\"group\",\"name\":\"group-0\",\"opacity\":1,\"visible\":true,\"width\":1,\"x\":0,\"y\":0}],\"lipsyncConfig\":{\"enabled\":false,\"gain\":2,\"smoothing\":0.7,\"source\":\"microphone\",\"targetParameterId\":null,\"threshold\":0.02},\"name\":\"Synthetic shared core\",\"offscreenTargets\":[],\"parameterBindings\":[{\"bindingPoints\":[{\"paramValue\":0,\"targetValue\":0},{\"paramValue\":1,\"targetValue\":0.5}],\"id\":\"binding-0\",\"parameterId\":\"Motion.x\",\"target\":{\"boneId\":\"bone-0\",\"property\":\"angle\",\"type\":\"bone\"}}],\"parameters\":[{\"defaultValue\":0,\"id\":\"Motion.x\",\"maxValue\":1,\"minValue\":0,\"name\":\"Motion\"}],\"physicsGroups\":[],\"sceneBlends\":[],\"scenes\":[],\"skins\":{\"mesh-0\":{\"bindPoseInverse\":{\"bone-0\":[1,0,0,1,0,0]},\"weights\":[[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}]]}},\"stateMachines\":[],\"width\":64},\"version\":11}",
+      "documentId": "123e4567-e89b-42d3-a456-426614174000",
+      "inputSha256": "fefb3966ca4258c45a45df499c4d32f87fcbf850b1b467abafedc12344646d05",
+      "canonicalSha256": "025e0103b7de04b60eda2a26a28d77c11c174f2dbc42f0db75ae6efcd3391201"
+    },
+    {
+      "id": "core-v10-migration",
+      "operation": "migrate",
+      "pngCaseIds": [
+        "srgb-intent-zero"
+      ],
+      "pngSha256s": [
+        "0dc262f77871df41d0513b016dc81d3b287aee077370a430c7b64b71f1f9b86e"
+      ],
+      "inputUtf8": "{\"version\":10,\"project\":{\"name\":\"Synthetic shared core\",\"width\":64,\"height\":64,\"layers\":[{\"id\":\"group-0\",\"name\":\"group-0\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[{\"id\":\"bone-0\",\"name\":\"bone-0\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[],\"kind\":\"bone\",\"bone\":{\"angle\":0,\"length\":1,\"scaleX\":1,\"scaleY\":1}},{\"id\":\"mesh-0\",\"name\":\"mesh-0\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[],\"kind\":\"viviMesh\",\"mesh\":{\"vertices\":[0,0,1,0,0,1],\"uvs\":[0,0,1,0,0,1],\"indices\":[0,1,2],\"divisionsX\":1,\"divisionsY\":1},\"culling\":false}],\"kind\":\"group\"}],\"parameters\":[{\"id\":\"Motion.x\",\"name\":\"Motion\",\"minValue\":0,\"maxValue\":1,\"defaultValue\":0}],\"skins\":{\"mesh-0\":{\"weights\":[[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}]],\"bindPoseInverse\":{\"bone-0\":[1,0,0,1,0,0]}}},\"parameterBindings\":[{\"id\":\"binding-0\",\"parameterId\":\"Motion.x\",\"target\":{\"type\":\"bone\",\"boneId\":\"bone-0\",\"property\":\"angle\"},\"bindingPoints\":[{\"paramValue\":0,\"targetValue\":0},{\"paramValue\":1,\"targetValue\":0.5}]}],\"ikControllers\":[{\"id\":\"ik-0\",\"name\":\"IK\",\"solverType\":\"ccd\",\"boneChain\":[{\"boneId\":\"bone-0\",\"minAngle\":-1,\"maxAngle\":1}],\"targetX\":1,\"targetY\":1,\"influence\":1,\"parameterMappings\":[]}]},\"atlases\":[{\"image\":\"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=\",\"width\":1,\"height\":1,\"entries\":[{\"layerId\":\"mesh-0\",\"x\":0,\"y\":0,\"width\":1,\"height\":1}]}],\"profile\":\"publicProfileV1\"}",
+      "canonicalUtf8": "{\"assetMode\":\"embedded\",\"atlases\":[{\"entries\":[{\"height\":1,\"layerId\":\"mesh-0\",\"width\":1,\"x\":0,\"y\":0}],\"height\":1,\"id\":\"atlas-0\",\"image\":\"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAABBJREFUeAEBBQD6/wASNFYAAZUAnWALyT8AAAAASUVORK5CYII=\",\"width\":1}],\"documentId\":\"123e4567-e89b-42d3-a456-426614174000\",\"project\":{\"clips\":[],\"colliders\":[],\"expressionPresets\":[],\"height\":64,\"ikControllers\":[{\"boneChain\":[{\"boneId\":\"bone-0\",\"maxAngle\":1,\"minAngle\":-1}],\"id\":\"ik-0\",\"influence\":1,\"name\":\"IK\",\"parameterMappings\":[],\"solverType\":\"ccd\",\"targetX\":1,\"targetY\":1}],\"layers\":[{\"blendMode\":\"normal\",\"children\":[{\"blendMode\":\"normal\",\"bone\":{\"angle\":0,\"length\":1,\"scaleX\":1,\"scaleY\":1},\"children\":[],\"expanded\":true,\"height\":1,\"id\":\"bone-0\",\"kind\":\"bone\",\"name\":\"bone-0\",\"opacity\":1,\"visible\":true,\"width\":1,\"x\":0,\"y\":0},{\"blendMode\":\"normal\",\"children\":[],\"culling\":false,\"expanded\":true,\"height\":1,\"id\":\"mesh-0\",\"kind\":\"viviMesh\",\"mesh\":{\"divisionsX\":1,\"divisionsY\":1,\"indices\":[0,1,2],\"uvs\":[0,0,1,0,0,1],\"vertices\":[0,0,1,0,0,1]},\"name\":\"mesh-0\",\"opacity\":1,\"visible\":true,\"width\":1,\"x\":0,\"y\":0}],\"expanded\":true,\"height\":1,\"id\":\"group-0\",\"kind\":\"group\",\"name\":\"group-0\",\"opacity\":1,\"visible\":true,\"width\":1,\"x\":0,\"y\":0}],\"lipsyncConfig\":{\"enabled\":false,\"gain\":2,\"smoothing\":0.7,\"source\":\"microphone\",\"targetParameterId\":null,\"threshold\":0.02},\"name\":\"Synthetic shared core\",\"offscreenTargets\":[],\"parameterBindings\":[{\"bindingPoints\":[{\"paramValue\":0,\"targetValue\":0},{\"paramValue\":1,\"targetValue\":0.5}],\"id\":\"binding-0\",\"parameterId\":\"Motion.x\",\"target\":{\"boneId\":\"bone-0\",\"property\":\"angle\",\"type\":\"bone\"}}],\"parameters\":[{\"defaultValue\":0,\"id\":\"Motion.x\",\"maxValue\":1,\"minValue\":0,\"name\":\"Motion\"}],\"physicsGroups\":[],\"sceneBlends\":[],\"scenes\":[],\"skins\":{\"mesh-0\":{\"bindPoseInverse\":{\"bone-0\":[1,0,0,1,0,0]},\"weights\":[[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}],[{\"boneId\":\"bone-0\",\"weight\":1}]]}},\"stateMachines\":[],\"width\":64},\"version\":11}",
+      "documentId": "123e4567-e89b-42d3-a456-426614174000",
+      "inputSha256": "9661fc1303f0b190db507d5ed33d21946fc6547013de8f5b37784d432374a0ac",
+      "canonicalSha256": "025e0103b7de04b60eda2a26a28d77c11c174f2dbc42f0db75ae6efcd3391201"
+    }
+  ]
+}

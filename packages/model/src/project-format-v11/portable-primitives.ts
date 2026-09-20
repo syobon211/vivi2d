@@ -1,6 +1,3 @@
-const RAW_BASE64_PATTERN =
-  /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u;
-
 const UTF8_CHUNK_CODE_UNITS = 8_192;
 
 /** Encode with the replacement behavior required by the Encoding Standard. */
@@ -163,12 +160,17 @@ export function compareUtf8Bytes(left: string, right: string): number {
 
 /** Decode the unwrapped, canonical alphabet accepted by the Project v11 schema. */
 export function decodeRawBase64(value: string): Uint8Array {
-  if (!RAW_BASE64_PATTERN.test(value)) {
+  if (value.length % 4 !== 0) {
     throw new TypeError("Invalid raw base64");
   }
   if (value.length === 0) return new Uint8Array(0);
 
   const padding = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
+  // Preserve the schema's alphabet/padding accepted set without a repeated-group
+  // regex, which can exhaust the JS stack on an otherwise permitted large image.
+  for (let offset = 0; offset < value.length - padding; offset += 1) {
+    base64Value(value.charCodeAt(offset));
+  }
   const result = new Uint8Array((value.length / 4) * 3 - padding);
   let outputOffset = 0;
 

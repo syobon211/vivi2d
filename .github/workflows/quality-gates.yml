@@ -26,6 +26,7 @@ on:
       - "scripts/**"
       - "src/**"
       - "tests/conformance/runtime-v1/**"
+      - "tests/conformance/project-embedded-round-trip-v11/**"
       - "tsconfig.json"
       - "tsconfig.packages.json"
       - "vite.aliases.ts"

@@ -59,6 +59,7 @@ The implementation foundation and the ordinary application path are different:
 | Ordinary parser and runtime model | Accept Project versions 1 through 10. |
 | Project Format v11 | Available only through an internal model subpath and read-only authoring host seam. |
 | Ordinary v11 editing and save | Not connected. |
+| Embedded round-trip candidate | Internal validator, explicit v9/v10 migration and fork, consumed by synthetic model/conformance tests; not an ordinary application save path. |
 | Portable or independent consumer | No approved consumer has passed a public corpus. |
 
 The following tracked artifacts are review inputs, not public promises:
@@ -82,6 +83,15 @@ The following tracked artifacts are review inputs, not public promises:
   8,220 UTF-8 bytes, SHA-256
   `dc3203f3eef2dd6c6e42e60f8b719e88dcf893066d60cc3fb8ced23705a505ac`.
 
+- [`embedded-round-trip-profile.ts`](../../../../packages/model/src/project-format-v11/embedded-round-trip-profile.ts)
+  and [`legacy-to-embedded-round-trip.ts`](../../../../packages/model/src/project-format-v11/legacy-to-embedded-round-trip.ts)
+  implement the narrow internal candidate described below, through the existing
+  internal model friend only;
+- the shared [embedded round-trip manifest](../../../../tests/conformance/project-embedded-round-trip-v11/manifest.json)
+  binds 32 synthetic PNG cases and three document inputs/canonical outputs,
+  29,361 bytes, SHA-256
+  `d9803f48ac6911130d8baf36b605fc8ea9dee57bf8acbc01b4886c92788b79d4`.
+
 Source code and tests may demonstrate current behavior, but they do not replace
 an adopted language-neutral rule or a versioned portable conformance manifest.
 
@@ -97,9 +107,8 @@ The candidate base profile has all of these constraints:
 - root `assetMode`: exactly `embedded`;
 - root `documentId`: required and encoded as a lowercase canonical UUIDv4;
 - root `profile`: absent, because the current v11 schema forbids it;
-- root `requires`: absent in canonical producer output; a future consumer rule
-  may accept an empty array only as a noncanonical alias that canonicalizes to
-  absence;
+- root `requires`: absent, including rejection of an empty array; this first
+  candidate introduces no alias;
 - root `extensions` and `embeddedAssets`: absent;
 - referenced `AssetRef` values and chunk-manifest Assets: absent;
 - every atlas needed by the Project: present inline as PNG data with a stable,
@@ -114,11 +123,15 @@ transforms, visibility, and opacity; mesh topology, UVs, skin weights, and
 inline-atlas mapping; parameter definitions; public-safe bone and IK bindings;
 and the `normal`, `add`, `multiply`, and `screen` blend modes.
 
-The profile excludes animation and scenes, state machines, physics, colliders, offscreen
-targets, extended blend modes, inverted masks, provider metadata, referenced
-Assets, and extensions. The exact field set, defaults, bounds, and fixture
-manifest remain an adoption gate. This paragraph alone is not a machine-readable
-profile overlay.
+The candidate excludes nonempty animation, scenes, state machines, physics,
+colliders, offscreen targets and expression presets, along with art-path layers,
+extended blend modes, inverted masks, provider/provenance metadata, referenced
+Assets and extensions. Fields outside the closed allowlist are rejected even
+when their value is empty, false or null; they are not stripped during
+serialization. Allowed containers that are required to be empty remain permitted. A fixed
+closed field traversal in `checkCandidateProfile` supplies the machine-readable
+equivalent overlay without changing the broader pinned schema. The selected
+candidate rules below are implemented internal evidence, not public adoption.
 
 The machine-readable allowlist must also exclude local path, provenance, and
 provider-oriented fields that are present in the broader authoring model but are
@@ -145,9 +158,13 @@ candidate lifecycle is:
 5. A UUID is never a Sync revision ID, account ID, authorization principal,
    content digest, or proof of ownership.
 
-The current implementation validates and preserves an optional UUID but does not
-implement this assignment, migration, clone, collision, or product-save policy.
-Those behaviors require fixtures before adoption.
+The broader codec still permits an optional UUID. The narrow candidate requires
+a lowercase UUIDv4 and implements explicit caller-supplied migration and fork
+operations; it does not generate random IDs, maintain a collision registry or
+connect product save. Validation preserves the supplied document identity.
+Supported edits are complete documents revalidated by the same function; callers
+must preserve identity unless explicitly forking. Matching IDs do not prove
+equal contents, ancestry, authorization or ownership.
 
 ## Bounded JSON And Canonical Output
 
@@ -165,8 +182,8 @@ The current reference foundation supplies these candidate global ceilings:
 
 The adopted contract MUST also freeze Project collection, atlas count, decoded
 PNG bytes, pixel count, per-axis dimension, atlas-entry count, mesh count, and
-aggregate media ceilings. Those limits are not complete in the current Project
-schema and therefore remain open.
+aggregate media ceilings. The narrow candidate enforces the fixed overlay limits
+below; the complete cross-language adoption and boundary corpus remain open.
 
 The internal TS canonicalizer charges cumulative UTF-8 output bytes and lexical
 tokens before constructing escaped strings or joining complete child output.
@@ -201,11 +218,11 @@ validation against the parsed object's existing insertion order. That current
 split is not authority for deterministic within-stage error selection and must
 be resolved or covered by precedence fixtures before promotion.
 
-Base64 canonicality is also open. The current validator accepts some encodings
-with non-zero pad bits that decode to the same bytes. Adoption MUST either
-require canonical RFC 4648 spelling, including zero pad bits, or explicitly
-permit aliases and define their canonical output. The conformance corpus must
-cover the selected rule.
+The broader decoder preserves its existing base64 accepted set, including some
+nonzero-pad-bit aliases. The narrow candidate rejects noncanonical alphabet,
+padding and unused pad bits before its PNG port is called. It does not change
+ordinary legacy loading or rewrite the broader codec's accepted set. This
+implemented choice and its focused vectors do not alone promote P1-JSON.
 
 ## Validation Stages And Error Selection
 
@@ -233,6 +250,77 @@ stable.
 At minimum, the portable corpus must include simultaneous-fault vectors. A
 consumer must not rely on object iteration order, validator-library issue order,
 filesystem order, or decoder-specific wording to select the reported error.
+
+#### Implemented Internal Embedded Candidate
+
+The label `vivi2d.projectFormat.v11.embeddedRoundTrip.draft1` is result metadata,
+not an on-wire field or published compatibility identifier. The three internal
+operations are `validateEmbeddedRoundTripV11`,
+`migrateLegacyToEmbeddedRoundTripV11` and `forkEmbeddedRoundTripV11`. Success
+returns the document identity and owned canonical UTF-8 bytes, not a live codec
+object or a reusable validation token. The package root is unchanged.
+
+The exact closed field sets are in `checkCandidateProfile`, layered on the
+existing schema and semantic validator. Group, mesh and bone layers, parameters,
+skins, bone/IK bindings and the four base blend modes are retained. Unknown keys
+are rejected at their static parent; map keys never become diagnostic paths.
+Project v11 required fields remain required. Only the existing writer's absent
+optional arrays (`parameterBindings`, `sceneBlends`, `ikControllers`,
+`offscreenTargets`, `expressionPresets`) become empty arrays. An included
+lipsync configuration must be exactly the inert existing six-field object:
+`enabled:false`, `targetParameterId:null`, `source:"microphone"`,
+`threshold:0.02`, `smoothing:0.7`, `gain:2`. Nondefault excluded data is not erased.
+Noninverted `clipMasks` uses the existing canonical `clipMaskIds` representation;
+both spellings together or an inverted edge are rejected by the existing rules.
+
+Document IDs use canonical lowercase UUIDv4. Layer/bone/binding/controller IDs
+use `[A-Za-z0-9_-]{1,128}`, parameter IDs additionally allow `.`, and atlas IDs
+use `[A-Za-z0-9_-]{1,120}`. Names and parameter-group labels are limited to 1,024
+UTF-8 bytes. Existing nested IDs and numeric semantics are not renamed, clamped
+or quantized. Canvas and atlas dimensions are positive safe integers; atlas
+entry origins are nonnegative safe integers with positive extents; mesh
+subdivisions are nonnegative safe integers and draw order is signed 32-bit.
+
+| Candidate-owned limit | Ceiling |
+| --- | ---: |
+| Atlases | 32 |
+| PNG width / height | 8,192 each |
+| Pixels per PNG | 67,108,864 |
+| PNG compressed bytes / base64 characters | 16,777,216 / 22,369,624 |
+| Aggregate PNG compressed bytes | 67,108,864 |
+| Aggregate declared RGBA bytes | 268,435,456 |
+| Layers / meshes / bones / parameters / IK controllers | 4,096 / 1,024 / 1,024 / 2,048 / 256 |
+| Vertices / indices per mesh | 65,536 / 196,608 |
+| Bindings / aggregate binding points | 8,192 / 8,192 |
+| Aggregate atlas entries | 1,024 |
+| IK maximum iterations when present | 1,024 |
+
+Skin-map/inverse-map and per-weight-row counts and IK bone-chain lengths are
+also bounded by the 1,024-bone ceiling. Existing JSON limits remain unchanged.
+All-atlas dimension, encoded-size and aggregate preflight completes before any
+PNG callback; decoder success is still required. These bounds are not a total
+process-memory or recoverable-OOM guarantee.
+
+Candidate failure is exactly `{ok:false,code,path}`; it never includes raw input,
+unknown keys, IDs, decoder messages or exception causes. The internal error
+vocabulary is `PROJECT_CARRIER_INVALID`, `PROJECT_JSON_INVALID`,
+`PROJECT_SCHEMA_INVALID`, `PROJECT_PROFILE_UNSUPPORTED`,
+`PROJECT_LIMIT_EXCEEDED`, `PROJECT_SEMANTIC_INVALID`,
+`PROJECT_PNG_MALFORMED`, `PROJECT_PNG_UNSUPPORTED`, `PROJECT_PNG_DIMENSION` and
+`PROJECT_INTERNAL`. These are stable within this selected candidate, not a new
+published registry for the broad codec.
+
+Its order is bounded carrier/UTF-8, duplicate-aware JSON and canonical budget,
+broad machine schema, fixed profile traversal and all-atlas budgets, canonical
+semantic graph/full-compatibility validation, then each atlas's canonical base64,
+mandatory full PNG verification and additional Project policy. Arrays traverse
+in index order; map diagnostics stop at the static parent. Broad schema and
+semantic failures use root paths instead of exposing their library diagnostics.
+The writer reparses its output; the wrapper additionally compares canonical
+output with the validated source under only the declared optional-array and
+mask representation rules. It does not decode the same atlas twice for that
+one validation call. Unexpected serialization or trusted-port failures return
+`PROJECT_INTERNAL`.
 
 ## Capability And Preservation
 
@@ -314,24 +402,78 @@ profile covering all of these points:
   atlas count, and aggregate budgets; and
 - stable error code, path, precedence, and redaction for every failure class.
 
-The current Project schema types declared atlas dimensions as unbounded JSON
-`number` values. Stage-2 semantic validation additionally requires them to be
-finite and positive. The foundation also checks base64 shape, stable atlas IDs,
-entry bounds, and mesh coverage. It does not yet
-perform the complete PNG, IHDR, integer-dimension, decoded-budget, atlas-count,
-or aggregate-budget validation above. The public exchange gate therefore remains
-open.
+The broad schema still types declared atlas dimensions as JSON numbers and does
+not itself perform full PNG decoding. The embedded candidate now supplies the
+integer dimensions, count and aggregate limits above, and requires the trusted
+pure `verifyPng` port on the exact owned bytes and declared dimensions. Success
+must mean full bounded signature/chunk/CRC/order/zlib/filter decode and dimension
+verification; an inspect-only check or caller validity flag is insufficient.
+The model cannot establish that an arbitrary injected callback is honest.
 
-Referenced mode is a later extension. Before it is added, Asset Model must be
-the single normative owner of `AssetRef`, digest, size, blob/chunk-manifest,
-closure, and resolution semantics. The currently duplicated Project and Asset
-schema shapes require a normative schema import or a machine-enforced semantic
-parity gate. Independent copies may not evolve as separate public authorities.
+The selected native decoding profile is 8-bit PNG color types 0, 2, 3, 4 and 6,
+noninterlaced, with its existing strict structure and complete compressed-stream
+rules. After native success, Project accepts IHDR/PLTE/tRNS/IDAT/IEND plus at
+most one `sRGB` intent 0..3. Matching fallback `gAMA`/`cHRM` are allowed only with
+`sRGB`: gamma 45455 and chromaticities
+31270,32900,64000,33000,30000,60000,15000,6000. Color declarations precede any
+PLTE/IDAT. Untagged samples are assumed sRGB with straight alpha for this
+candidate; the decoder performs no gamma/ICC conversion. ICC, textual/EXIF,
+unknown and other unselected metadata is rejected, not stripped or re-encoded.
+This policy does not inspect images for sensitive text, imagery or hidden data.
+
+Base64 noncanonical spelling fails before native decode. Native failure wins
+over Project-only findings. After native success, malformed selected declarations
+(length/order/duplicates/intent/zero gamma), framing, or PLTE after tRNS win over
+unsupported metadata or fallback values, regardless of their relative order.
+PNG errors use `/atlases/<index>/image`. The byte-pinned truecolor PLTE-after-tRNS
+case intentionally records native success but Project `PROJECT_PNG_MALFORMED`;
+these two authorities are not conflated.
+
+The shared manifest has two consumers: TypeScript runs the real Project wrapper
+using exact-byte/digest/dimension-bound recorded native outcomes; the Rust
+`vivi-png-ref` test calls actual full `decode` for the same 32 PNG vectors and
+compares RGBA or the native error. Both pin the complete manifest identity above.
+These are distinct wrapper and native-decoder evidence, not an exercised
+TypeScript-to-native production bridge, independent consumer or P2/C1 result.
+The public exchange gate therefore remains open.
+
+Referenced mode remains a later extension. Asset Model owns `AssetRef`, digest,
+size, blob/chunk-manifest, closure, and resolution semantics. The existing
+Project schema retains its self-contained `ViviAssetRefV11`,
+`EmbeddableBlobAssetRefV11`, and `PngAssetRefV11` copies under an exact structural
+drift test against Asset Model v1. Local references are expanded and only schema
+`$comment` annotations are omitted; validation rules and array order stay exact.
+Project applies its additional placement and semantic checks. This does not
+establish general cross-language semantic parity, portable resolution or transfer,
+nor admit referenced Assets into the embedded round-trip candidate.
 
 ## Migration, Save, And Downgrade
 
-Adoption requires an explicit normal-path migration rather than treating the
-internal codec as a product connection:
+The implemented opt-in converter accepts only v9/v10 sources within the narrow
+candidate. It does not migrate every legacy document or replace ordinary v9
+save. It requires explicit source name, width and height, validates the original
+duplicate-aware raw tree and narrow allowlist before normalization, retains the
+existing raw public-profile guard when the original `publicProfileV1` marker is
+present, and reuses existing v11 graph/ordinary-serialization rules. No stripping
+Zod result becomes migration authority. The original ordinary parser and schema
+remain unchanged.
+
+Legacy atlas IDs are assigned once as `atlas-<source index>` by existing
+normalization; emitted v11 atlas IDs then persist. Only the obsolete version
+profile marker is removed, `documentId` is explicitly supplied, and the existing
+writer supplies absent allowed empty/inert containers. Present unsupported data
+is rejected. Complete v11/PNG validation follows conversion and returns new
+owned bytes without overwriting the source.
+
+Migration/fork first validates the supplied new UUID, before input parsing.
+Invalid new UUID returns `PROJECT_PROFILE_UNSUPPORTED` at root. With a valid
+argument, normal source validation runs; a fork then rejects equality with the
+validated original UUID, also at root. No random/time ID generation, global
+collision ownership, silent downgrade or default ordinary-save interception is
+implemented. A byte copy retains identity and is not a fork.
+
+Future ordinary-path adoption requires an explicit migration rather than
+treating the internal codec as a product connection:
 
 1. Validate the source under its original version and profile.
 2. Apply a reviewed v9/v10-to-v11 migration with stable layer, atlas, parameter,
@@ -339,8 +481,9 @@ internal codec as a product connection:
 3. Assign or preserve `documentId` according to this draft.
 4. Validate the candidate base profile, including inline media.
 5. Canonically serialize and independently reparse before publication.
-6. Preserve the v11 carrier on ordinary save. Do not minimize the adopted
-   profile back to v10 or silently emit the current v9 writer format.
+6. Preserve an already adopted v11 carrier on ordinary save. Do not minimize it
+   back to v10 or silently emit v9. This does not replace every ordinary Windows
+   project with the narrow candidate.
 
 Downgrade from this profile is not an ordinary save operation. A future explicit
 export to an older format must declare its loss model, reject unsupported data,
@@ -352,11 +495,13 @@ sets accidentally.
 
 ## Conformance Ownership
 
-The current golden JSON vectors and unit tests are valuable implementation
-evidence, but they are not yet a portable Project profile corpus. P1 requires a
-tracked versioned manifest that owns exact input bytes, expected canonical
-bytes, expected classification, stable error code and path, and applicable
-limit boundary for every case.
+The existing golden JSON vectors are supplemented by the byte-pinned shared
+manifest and focused profile/migration/error-order tests above. The manifest
+contains synthetic core-v11, legacy-v9 and legacy-v10 documents with exact input
+and canonical bytes/hashes, and separates native PNG outcomes from Project
+narrowing outcomes. This is bounded internal implementation evidence, not the
+complete public P1 conformance corpus; the full adoption requirements below
+remain the gate.
 
 The minimum corpus must cover:
 
@@ -383,6 +528,10 @@ portable execution, or product integration. These are separate claims.
 
 ## Promotion Gates
 
+Internal implementation and focused fixtures now exist for the selected profile,
+identity/migration, limits, coarse error mapping and PNG boundary; none of the
+following rows is closed merely by that candidate or its local review.
+
 | Gate | Required evidence | Current state |
 | --- | --- | --- |
 | P1-PROFILE | Narrow machine-readable v11 embedded profile and exact mandatory core | Open |
@@ -391,7 +540,7 @@ portable execution, or product integration. These are separate claims.
 | P1-LIMIT | Complete parse, collection, atlas, decoded-media, and serialization budgets | Open |
 | P1-ERROR | Stable stage and within-stage precedence, code, path, and multi-fault vectors | Open |
 | A1-PNG | Portable strict PNG subset, IHDR match, budgets, and hostile fixtures | Open |
-| P1-ASSET | Single `AssetRef` owner or machine-enforced parity for later referenced mode | Open; not needed for the base embedded claim |
+| P1-ASSET | Single `AssetRef` owner or machine-enforced parity for later referenced mode | Asset Model owns structure; Project copy drift is checked. Referenced-mode semantics and transfer remain separate gates. |
 | P1-FIXTURE | Versioned portable manifest and public conformance runner | Open |
 | P2-WINDOWS | Ordinary Windows import/export uses the adopted profile | Open |
 | C1-CONSUMER | Independent non-Windows implementation passes the public corpus | Open |
