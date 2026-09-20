@@ -100,11 +100,17 @@ try {
   );
   copyRuntimeArtifacts(v02Artifacts, tmpDir);
 
-  const { basicPayloadPath, maskedPayloadPath, emptyPayloadPath, errorPayloadPaths } =
-    writePayloads();
+  const {
+    basicPayloadPath,
+    maskedPayloadPath,
+    emptyPayloadPath,
+    errorPayloadPaths,
+    physicsProbe,
+  } = writePayloads();
   assertAbiV01ObservationParity(
     basicPayloadPath,
     errorPayloadPaths,
+    physicsProbe,
     defaultLibraryDir,
     tmpDir,
   );
@@ -190,12 +196,66 @@ function writePayloads() {
     writeFileSync(payloadPath, `${JSON.stringify(errorFixture.fileData)}\n`);
     return payloadPath;
   });
-  return { basicPayloadPath, maskedPayloadPath, emptyPayloadPath, errorPayloadPaths };
+  const physicsFile = "physics-pendulum.fixture.json";
+  const physicsEntries = manifest.fixtures.filter((entry) => entry?.file === physicsFile);
+  const physicsFixture = JSON.parse(
+    readFileSync(path.join(fixtureDir, physicsFile), "utf8"),
+  );
+  const hasExactKeys = (value, keys) =>
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value).sort().join("|") === [...keys].sort().join("|");
+  const setInput = physicsFixture.actions?.[0];
+  const update = physicsFixture.actions?.[1];
+  const parameters = physicsFixture.expect?.parameters;
+  if (
+    physicsEntries.length !== 1 ||
+    physicsEntries[0].category !== "physics" ||
+    physicsEntries[0].expected !== "success" ||
+    physicsFixture.name !== "physics-pendulum" ||
+    !physicsFixture.fileData ||
+    typeof physicsFixture.fileData !== "object" ||
+    Array.isArray(physicsFixture.fileData) ||
+    physicsFixture.expectError !== undefined ||
+    physicsFixture.runtimeOptions !== undefined ||
+    !Array.isArray(physicsFixture.actions) ||
+    physicsFixture.actions.length !== 2 ||
+    !hasExactKeys(setInput, ["type", "id", "value"]) ||
+    setInput.type !== "setInput" ||
+    setInput.id !== "vivi.motion.x" ||
+    !Number.isFinite(setInput.value) ||
+    !hasExactKeys(update, ["type", "deltaSeconds"]) ||
+    update.type !== "update" ||
+    !Number.isFinite(update.deltaSeconds) ||
+    !hasExactKeys(parameters, ["vivi.motion.x", "vivi.physics.angle"]) ||
+    !Number.isFinite(parameters["vivi.motion.x"]) ||
+    !Number.isFinite(parameters["vivi.physics.angle"])
+  ) {
+    throw new Error("Unsupported canonical physics scalar fixture");
+  }
+  const physicsPayloadPath = path.join(tmpDir, "physics-pendulum.runtime.json");
+  writeFileSync(physicsPayloadPath, `${JSON.stringify(physicsFixture.fileData)}\n`);
+  const physicsProbe = {
+    payloadPath: physicsPayloadPath,
+    input: setInput.value,
+    delta: update.deltaSeconds,
+    finalMotion: parameters["vivi.motion.x"],
+    finalPhysics: parameters["vivi.physics.angle"],
+  };
+  return {
+    basicPayloadPath,
+    maskedPayloadPath,
+    emptyPayloadPath,
+    errorPayloadPaths,
+    physicsProbe,
+  };
 }
 
 function assertAbiV01ObservationParity(
   basicPayloadPath,
   errorPayloadPaths,
+  physicsProbe,
   defaultLibraryDir,
   v02LibraryDir,
 ) {
@@ -236,7 +296,16 @@ function assertAbiV01ObservationParity(
       label,
       runHostCapture(
         exePath,
-        [basicPayloadPath, String(expectedAbi), ...errorPayloadPaths],
+        [
+          basicPayloadPath,
+          String(expectedAbi),
+          ...errorPayloadPaths,
+          physicsProbe.payloadPath,
+          String(physicsProbe.input),
+          String(physicsProbe.delta),
+          String(physicsProbe.finalMotion),
+          String(physicsProbe.finalPhysics),
+        ],
         libraryDir,
       ).trim(),
     ];
@@ -886,6 +955,8 @@ unsafe extern "C" {
         out_model: *mut *mut c_void,
     ) -> i32;
     fn vivi_model_destroy(model: *mut c_void);
+    fn vivi_model_set_input(model: *mut c_void, id: *const c_char, value: f64) -> i32;
+    fn vivi_model_get_input(model: *const c_void, id: *const c_char, out_value: *mut f64) -> i32;
     fn vivi_model_update(model: *mut c_void, delta_seconds: f64) -> i32;
     fn vivi_model_mesh_count(model: *const c_void, out_count: *mut u64) -> i32;
     fn vivi_model_mesh_snapshot(
@@ -900,7 +971,7 @@ fn main() {
     assert_eq!(size_of::<ViviRuntimeLimits>(), 88);
     assert_eq!(offset_of!(ViviRuntimeLimits, max_meshes), 32);
     let args: Vec<_> = std::env::args_os().skip(1).collect();
-    assert_eq!(args.len(), 6, "basic path, ABI and four error paths required");
+    assert_eq!(args.len(), 11, "basic path, ABI, four error paths, physics path and four scalars required");
     let expected_abi = args[1]
         .to_string_lossy()
         .parse::<u32>()
@@ -911,6 +982,12 @@ fn main() {
     let duplicate_atlas = fs::read(&args[3]).expect("read duplicate-atlas payload");
     let private_profile = fs::read(&args[4]).expect("read private-profile payload");
     let mesh_limit = fs::read(&args[5]).expect("read mesh-limit payload");
+    let physics_payload = fs::read(&args[6]).expect("read physics payload");
+    let physics_values: Vec<f64> = args[7..].iter().map(|value| {
+        let parsed = value.to_string_lossy().parse::<f64>().expect("numeric physics scalar");
+        assert!(parsed.is_finite(), "finite physics scalar");
+        parsed
+    }).collect();
     let mut runtime = ptr::null_mut();
     expect(
         unsafe { vivi_runtime_create(ptr::null(), ptr::null_mut(), &mut runtime) },
@@ -928,6 +1005,14 @@ fn main() {
     let after = observe(model);
     println!("before={before}\nupdate_status={update_status}\nafter={after}");
     unsafe { vivi_model_destroy(model) };
+    verify_physics_scalar(
+        runtime,
+        &physics_payload,
+        physics_values[0],
+        physics_values[1],
+        physics_values[2],
+        physics_values[3],
+    );
     expect_load_error(runtime, &missing_atlas, TEXTURE, "missing atlas entry");
     expect_load_error(runtime, &duplicate_atlas, TEXTURE, "duplicate atlas entry");
     expect_load_error(runtime, &private_profile, PRIVATE_PROFILE, "private profile key");
@@ -962,6 +1047,33 @@ fn main() {
     expect_load_error(limited_runtime, &mesh_limit, LIMIT_EXCEEDED, "canonical maxMeshes override");
     expect_load_error(limited_runtime, &payload, LIMIT_EXCEEDED, "valid basic with maxMeshes zero");
     unsafe { vivi_runtime_destroy(limited_runtime) };
+}
+
+fn expect_scalar(model: *const c_void, id: &CStr, expected: f64, label: &str) {
+    let mut actual = f64::NAN;
+    expect(unsafe { vivi_model_get_input(model, id.as_ptr(), &mut actual) }, label);
+    assert_eq!(actual, expected, "{label}");
+}
+
+fn verify_physics_scalar(
+    runtime: *mut c_void,
+    payload: &[u8],
+    input: f64,
+    delta: f64,
+    final_motion: f64,
+    final_physics: f64,
+) {
+    let mut model = ptr::null_mut();
+    expect(unsafe {
+        vivi_model_load(runtime, payload.as_ptr(), payload.len() as u64, &mut model)
+    }, "physics load");
+    assert!(!model.is_null(), "physics model");
+    expect(unsafe { vivi_model_set_input(model, c"vivi.motion.x".as_ptr(), input) },
+           "physics set input");
+    expect(unsafe { vivi_model_update(model, delta) }, "physics update");
+    expect_scalar(model, c"vivi.motion.x", final_motion, "physics final input");
+    expect_scalar(model, c"vivi.physics.angle", final_physics, "physics final output");
+    unsafe { vivi_model_destroy(model) };
 }
 
 fn expect_load_error(runtime: *mut c_void, payload: &[u8], expected: i32, label: &str) {
