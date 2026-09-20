@@ -246,15 +246,26 @@ src/ and electron/
   future category-10 evaluator work. The
   approved vector fixture and exact source/test identities are pinned. Native
   raw-bit tests and Rust 1.89 rustfmt/Clippy/rustdoc are gated on three OSes;
-  `wasm32-unknown-unknown` is compile/Clippy-only and is not raw-bit execution
-  evidence. The native allocator trap is a separate test-only crate with
+  the existing `wasm32-unknown-unknown` step remains compile/Clippy-only and is
+  not raw-bit execution evidence. The separate
+  `check:evaluation-math-wasm-execution` command reuses the checker for test-only
+  primitive execution of the unchanged 126-row corpus through the same Rust
+  kernel: 18 constant raw-bit round trips, 85 kernel, 12 comparison, and 11
+  utility rows. Constant round trips do not verify mathematical derivation.
+  Its cfg-test+WASM adapter and direct-rustc test harness are not Cargo targets
+  or dependencies and add no incoming Cargo edge or product API. This corpus
+  does not prove broad cross-target parity or hosted-green evidence from wiring.
+  The native allocator trap is a separate test-only crate with
   necessary `unsafe` system-allocator forwarding; `forbid(unsafe_code)` applies
   only to the production rlib source, not that harness or dependencies. The
+  separate WASM test harness has only an export-attribute unsafe allowance,
+  with no unsafe blocks. The
   oracle has no lowering, core, TypeScript, C ABI/editor,
   production-WASM, GPU, activation/publication, or capability connection.
   Category 9 reservation is now a separate lowering implementation candidate
   gated by its own review, with no oracle edge; category 10 remains disconnected
-  pending supported-target native plus test-only wasm execution, expanded
+  pending supported-target native plus test-only wasm evidence beyond this
+  primitive corpus, expanded
   transcendental cases, machine DAG/checkpoint bijection, complete compound
   traces, obligation bindings, and the remaining separate implementation
   reviews. Category 11 and

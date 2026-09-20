@@ -3,6 +3,8 @@ name: Runtime Native
 on:
   pull_request:
     paths:
+      - ".cargo/config"
+      - ".cargo/config.toml"
       - ".github/workflows/runtime-native.yml"
       - "docs/developer/api/spec/runtime-spec-v1.md"
       - "docs/developer/architecture/overview.md"
@@ -31,6 +33,9 @@ on:
       - "scripts/check-runtime-native-evaluation.mjs"
       - "scripts/check-runtime-native-evaluation-lowering.mjs"
       - "scripts/check-runtime-native-evaluation-math.mjs"
+      - "scripts/lib/evaluation-math-corpus.mjs"
+      - "scripts/lib/evaluation-math-corpus.node-test.mjs"
+      - "scripts/lib/evaluation-math-wasm-worker.mjs"
       - "scripts/check-runtime-native-preactivation.mjs"
       - "scripts/check-native-artifact-policy.mjs"
       - "scripts/check-runtime-native-wasm.mjs"
@@ -112,6 +117,8 @@ jobs:
         run: npm run check:evaluation-math:wasm32 --workspace @vivi2d/runtime-native
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/vivi-runtime-native-evaluation-math-wasm32
+      - name: Execute the deterministic math primitive corpus in test-only WASM
+        run: npm run check:evaluation-math-wasm-execution
       - run: npm run check:runtime-native
       - run: cargo test --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-core --no-default-features --features render-v02
       - run: cargo clippy --manifest-path packages/runtime-native/Cargo.toml -p vivi-runtime-native-core --no-default-features --features render-v02 --all-targets -- -D warnings
@@ -145,7 +152,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw "MSVC C ABI and PNG checks failed with exit code $LASTEXITCODE"
           }
-      - run: npx biome check scripts/check-runtime-asset-host-local.mjs scripts/check-runtime-asset-resolver.mjs scripts/check-runtime-asset-store-local.mjs scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs scripts/check-runtime-native-evaluation-lowering.mjs scripts/check-runtime-native-evaluation-math.mjs scripts/check-runtime-native-evaluation.mjs scripts/check-runtime-native-preactivation.mjs scripts/check-runtime-png.mjs
+      - run: npx biome check scripts/check-runtime-asset-host-local.mjs scripts/check-runtime-asset-resolver.mjs scripts/check-runtime-asset-store-local.mjs scripts/check-runtime-c-abi-v02-host-smoke.mjs scripts/check-runtime-c-abi.mjs scripts/check-runtime-native-evaluation-lowering.mjs scripts/check-runtime-native-evaluation-math.mjs scripts/check-runtime-native-evaluation.mjs scripts/check-runtime-native-preactivation.mjs scripts/check-runtime-png.mjs scripts/lib/evaluation-math-corpus.mjs scripts/lib/evaluation-math-corpus.node-test.mjs scripts/lib/evaluation-math-wasm-worker.mjs
       - name: Verify ABI 0.1/0.2 exports and host-observation parity subset
         if: runner.os != 'Windows'
         run: npm run check:runtime-c-abi-v02-host-smoke

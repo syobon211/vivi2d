@@ -1,8 +1,20 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
+import { Worker } from "node:worker_threads";
 
 const root = process.cwd();
 const nativeManifestPath = "packages/runtime-native/Cargo.toml";
@@ -15,6 +27,32 @@ const protectedBodyPaths = new Set([
   "src/lib/see-through-auto-setup.ts",
   "src/stores/projectIO/__tests__/seeThroughNativeImport.test.ts",
 ]);
+const executionMode = process.argv.length === 3 && process.argv[2] === "--execute-wasm";
+const wasmTarget = "wasm32-unknown-unknown";
+const executionCommand = "check:evaluation-math-wasm-execution";
+const childTimeoutMs = 60_000;
+const cargoBuildTimeoutMs = 300_000;
+const childMaxBuffer = 32 * 1024 * 1024;
+let executionContext;
+let executionPassed = false;
+// These files are implementation-review inputs, not numerical expected values.
+const executionJsPins = [
+  [
+    "scripts/lib/evaluation-math-corpus.mjs",
+    4705,
+    "25bcf4fc576d168da431845313e923899b13e64fefb0b7b222b0f4f21b29fc5f",
+  ],
+  [
+    "scripts/lib/evaluation-math-corpus.node-test.mjs",
+    5869,
+    "4feab9881961558aea2bdf448d3398888a79b947f09a5eb0d6f15ec746c55e0d",
+  ],
+  [
+    "scripts/lib/evaluation-math-wasm-worker.mjs",
+    2093,
+    "f61230ee3d3dd40e5682ba12ef3209da5955f1c6d3b093d81d017391d9ac0fc4",
+  ],
+];
 
 const approvedArtifacts = [
   {
@@ -249,7 +287,9 @@ const expectedOracleFiles = [
   "src/lib.rs",
   "src/tests.rs",
   "src/transcendental.rs",
+  "src/wasm_test_adapter.rs",
   "tests/no_allocation.rs",
+  "tests/support/wasm_execution.rs",
   "tests/wasm_compile.rs",
 ].sort();
 
@@ -267,8 +307,8 @@ const pinnedOracleFiles = [
   ],
   [
     "src/lib.rs",
-    3_127,
-    "960ae032d5981e13f1bc43acec34e5a23f7f5f4b7e5f0b10f6d9b4cae0941f5c",
+    3380,
+    "570f58b800097d634e56efe42da3104b3431efae8ad523b1559f2db72c141e38",
   ],
   [
     "src/tests.rs",
@@ -289,6 +329,16 @@ const pinnedOracleFiles = [
     "tests/wasm_compile.rs",
     3_076,
     "d95da086ca4069a635a0d5a0865f3af6587f6c19bc2d0982f4b7ae95f582d401",
+  ],
+  [
+    "src/wasm_test_adapter.rs",
+    1700,
+    "d194fcd7df0e7956f691ad6ff20555f3c80d706b29c4e86df2051e76b434e9ee",
+  ],
+  [
+    "tests/support/wasm_execution.rs",
+    414,
+    "a4cd9074e95eb3304ffbcc3aecaefc8817f27f53d40e56db8797781b02af58ed",
   ],
 ];
 
@@ -378,6 +428,13 @@ const expectedUnitTests = [
 ].sort();
 
 try {
+  if (process.argv.length !== 2 && !executionMode) {
+    throw new Error("expected no arguments or exactly --execute-wasm");
+  }
+  if (executionMode) {
+    executionContext = createExecutionContext();
+    initializeExecutionTools();
+  }
   assertSourceInventory();
   const vectors = assertApprovedReviewUnit();
   const metadata = readCargoMetadata();
@@ -389,14 +446,41 @@ try {
   assertTestEvidence();
   assertConsumerIsolation(metadata);
   assertGateAndDocumentationWiring();
-  runRustdocGate();
-  console.log(
-    "[runtime-native-evaluation-math] passed (consumer-zero raw-D64 oracle candidate against the adopted contract, native allocator trap, wasm32 compile-only isolation)",
-  );
+  if (executionMode) {
+    await executeWasmCorpus(metadata, vectors);
+    executionPassed = true;
+  } else {
+    runRustdocGate();
+    console.log(
+      "[runtime-native-evaluation-math] passed (consumer-zero raw-D64 oracle candidate against the adopted contract, native allocator trap, wasm32 compile-only isolation)",
+    );
+  }
 } catch (error) {
-  console.error("[runtime-native-evaluation-math] failed:");
-  console.error(`- ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
+  if (executionMode) {
+    recordExecutionError(error);
+    console.error(
+      `[evaluation-math-wasm-execution] failed (phase=${executionContext?.phase ?? "initialization"})`,
+    );
+  } else {
+    console.error("[runtime-native-evaluation-math] failed:");
+    console.error(`- ${error instanceof Error ? error.message : String(error)}`);
+  }
+  process.exitCode = 1;
+} finally {
+  if (executionMode) {
+    try {
+      assertFinalExecutionInputs();
+      if (executionPassed && !process.exitCode) {
+        console.log(
+          "[evaluation-math-wasm-execution] passed (126 primitive rows: constants=18 kernel=85 comparison=12 utility=11; negative-link=E0432; unsupported-op traps=2; test-only, no C10/C11 closure)",
+        );
+      }
+    } catch (error) {
+      recordExecutionError(error);
+      console.error("[evaluation-math-wasm-execution] failed (phase=final-input-check)");
+      process.exitCode = 1;
+    }
+  }
 }
 
 function assertSourceInventory() {
@@ -416,6 +500,12 @@ function assertSourceInventory() {
     const contents = readBuffer(`${oracleRoot}/${relativePath}`);
     if (contents.byteLength !== expectedBytes || sha256(contents) !== expectedHash) {
       throw new Error(`${relativePath} drifted from ${expectedBytes}/${expectedHash}`);
+    }
+  }
+  for (const [relativePath, expectedBytes, expectedHash] of executionJsPins) {
+    const contents = readBuffer(relativePath);
+    if (contents.length !== expectedBytes || sha256(contents) !== expectedHash) {
+      throw new Error("test-only execution helper source drifted");
     }
   }
 }
@@ -459,10 +549,7 @@ function assertApprovedReviewUnit() {
     ) {
       throw new Error(`${artifact.path} must remain BOM-free LF UTF-8 with final LF`);
     }
-    const ignored = spawnSync("git", ["check-ignore", "-q", "--", artifact.path], {
-      cwd: root,
-      windowsHide: true,
-    });
+    const ignored = runChild("git", ["check-ignore", "-q", "--", artifact.path]);
     if (ignored.status !== 0) {
       throw new Error(`${artifact.path} must remain locally excluded`);
     }
@@ -781,7 +868,7 @@ function assertDependencyClosure(metadata, vectors) {
     target.kind.includes("custom-build"),
   );
   if (!buildTarget) throw new Error("rustc_apfloat build script disappeared");
-  const buildScript = readFileSync(buildTarget.src_path);
+  const buildScript = readSelectedInput(buildTarget.src_path);
   if (
     buildScript.byteLength !== 2_058 ||
     sha256(buildScript) !==
@@ -813,7 +900,7 @@ function assertPinnedArchives() {
       throw new Error(`Cargo cache is missing pinned archive ${pin.archive}`);
     }
     for (const archivePath of candidates) {
-      const contents = readFileSync(archivePath);
+      const contents = readSelectedInput(archivePath);
       if (contents.byteLength !== pin.bytes || sha256(contents) !== pin.sha256) {
         throw new Error(`${archivePath} does not match the pinned archive identity`);
       }
@@ -839,7 +926,7 @@ function assertDependencySourceProjection(metadata) {
     expectedBytes,
     expectedHash,
   ] of dependencySourceProjection) {
-    const contents = readFileSync(
+    const contents = readSelectedInput(
       path.join(packageRoots.get(packageName), ...relativePath.split("/")),
     );
     if (contents.byteLength !== expectedBytes || sha256(contents) !== expectedHash) {
@@ -854,7 +941,7 @@ function assertDependencySourceProjection(metadata) {
     expectedBytes,
     expectedHash,
   ] of excludedDependencySourceBoundary) {
-    const contents = readFileSync(
+    const contents = readSelectedInput(
       path.join(packageRoots.get(packageName), ...relativePath.split("/")),
     );
     if (contents.byteLength !== expectedBytes || sha256(contents) !== expectedHash) {
@@ -1123,10 +1210,17 @@ function assertPrivateKernelSource(vectors) {
       throw new Error(`oracle root omits ${evidence}`);
     }
   }
-  const libCode = stripRustNonCode(lib).replace(
-    /#\[cfg\(test\)\]\s*extern\s+crate\s+std\s*;/g,
-    "",
-  );
+  const testAdapterDeclaration =
+    '#[cfg(all(test, target_family = "wasm"))]\npub mod wasm_test_adapter;';
+  if (
+    countMatches(normalizeNewlines(lib), /pub mod wasm_test_adapter;/g) !== 1 ||
+    !normalizeNewlines(lib).includes(testAdapterDeclaration)
+  ) {
+    throw new Error("test-only adapter declaration drifted");
+  }
+  const libCode = stripRustNonCode(
+    normalizeNewlines(lib).replace(testAdapterDeclaration, ""),
+  ).replace(/#\[cfg\(test\)\]\s*extern\s+crate\s+std\s*;/g, "");
   if (/\bpub\s+(?!\(crate\))/.test(libCode) || /\bpub\s+use\b/.test(libCode)) {
     throw new Error("oracle root gained a product-public Rust item");
   }
@@ -1410,9 +1504,7 @@ function assertGateAndDocumentationWiring() {
       throw new Error(`runtime-native workflow omits ${evidence}`);
     }
   }
-  if (/run:.*(?:wasmtime|wasmer|node).*evaluation-math.*wasm/i.test(workflow)) {
-    throw new Error("workflow must not claim or perform wasm oracle execution");
-  }
+  assertExecutionWiring(rootPackage, manifest, workflow);
   if (
     !readText(".github/ISSUE_TEMPLATE/gate_failure.yml").includes(
       "- check:runtime-native-evaluation-math",
@@ -1454,6 +1546,9 @@ function assertGateAndDocumentationWiring() {
       "category 10",
       "category 11",
       "EDH-01",
+      executionCommand,
+      "test-only primitive execution",
+      "126-row corpus",
     ]) {
       if (!contents.toLowerCase().includes(evidence.toLowerCase())) {
         throw new Error(`${documentationPath} omits oracle scope: ${evidence}`);
@@ -1609,6 +1704,7 @@ function assertReferenceAllowlist() {
     "scripts/check-runtime-native-preactivation.mjs",
     "scripts/quality-gate-manifest.json",
     "scripts/run-quality-gates.mjs",
+    ...executionJsPins.map(([filename]) => filename),
   ]);
   const pattern =
     /vivi[-_]runtime[-_]native[-_]evaluation[-_]math|\bDetF64(?:Class)?\b|selected_raw_bit_wrapper_closure_allocates_nothing/;
@@ -1636,12 +1732,16 @@ function assertReferenceAllowlist() {
 }
 
 function findCargoArchiveCandidates(filename) {
-  const cargoHomes = new Set([
-    process.env.CARGO_HOME
-      ? path.resolve(process.env.CARGO_HOME)
-      : path.join(homedir(), ".cargo"),
-    path.join(homedir(), ".cargo"),
-  ]);
+  const cargoHomes = new Set(
+    executionMode
+      ? [requireExecutionContext().cargoHome]
+      : [
+          process.env.CARGO_HOME
+            ? path.resolve(process.env.CARGO_HOME)
+            : path.join(homedir(), ".cargo"),
+          path.join(homedir(), ".cargo"),
+        ],
+  );
   const results = [];
   for (const cargoHome of cargoHomes) {
     const cacheRoot = path.join(cargoHome, "registry", "cache");
@@ -1791,11 +1891,11 @@ function readJson(relativePath) {
 }
 
 function readText(relativePath) {
-  return readFileSync(resolve(relativePath), "utf8");
+  return readBuffer(relativePath).toString("utf8");
 }
 
 function readBuffer(relativePath) {
-  return readFileSync(resolve(relativePath));
+  return readSelectedInput(resolve(relativePath));
 }
 
 function resolve(relativePath) {
@@ -1819,13 +1919,8 @@ function assertExactJson(actual, expected, label) {
 }
 
 function runCapture(command, args, extraEnv = {}) {
-  const result = spawnSync(command, args, {
-    cwd: root,
-    encoding: "utf8",
-    windowsHide: true,
-    env: { ...process.env, ...extraEnv },
-  });
-  if (result.status !== 0) {
+  const result = runChild(command, args, extraEnv);
+  if (result.status !== 0 || result.error || result.signal) {
     throw new Error(
       [`${command} ${args.join(" ")} failed`, result.stdout, result.stderr]
         .filter(Boolean)
@@ -1834,4 +1929,563 @@ function runCapture(command, args, extraEnv = {}) {
     );
   }
   return result.stdout ?? "";
+}
+
+function runChild(command, args, extraEnv = {}, timeout = childTimeoutMs) {
+  const context = executionMode ? requireExecutionContext() : null;
+  let childCommand = command;
+  let childArgs = args;
+  if (context && command === "cargo") {
+    if (!context.cargo || !context.rustc || context.env.RUSTC !== context.rustc) {
+      throw new Error("Cargo compiler must be pinned before its first invocation");
+    }
+    childCommand = context.cargo;
+    childArgs = args.filter((arg) => arg !== "+1.89.0");
+    if (!childArgs.includes("--offline")) childArgs.push("--offline");
+    if (childArgs[0] === "tree") childArgs.push("--target", wasmTarget);
+    if (childArgs[0] === "metadata") childArgs.push("--filter-platform", wasmTarget);
+  }
+  const started = Date.now();
+  const result = spawnSync(childCommand, childArgs, {
+    cwd: root,
+    encoding: "utf8",
+    windowsHide: true,
+    shell: false,
+    ...(context ? { timeout, maxBuffer: childMaxBuffer } : {}),
+    env: {
+      ...(context ? context.env : process.env),
+      ...extraEnv,
+      ...(context?.rustc ? { RUSTC: context.rustc } : {}),
+    },
+  });
+  if (context?.ignored) {
+    const prefix = `${String(++context.sequence).padStart(2, "0")}-${context.phase}`;
+    writeFileSync(path.join(context.run, `${prefix}.stdout.log`), result.stdout ?? "");
+    writeFileSync(path.join(context.run, `${prefix}.stderr.log`), result.stderr ?? "");
+    writeFileSync(
+      path.join(context.run, `${prefix}.json`),
+      JSON.stringify({
+        status: result.status,
+        signal: result.signal,
+        durationMs: Date.now() - started,
+        timedOut: result.error?.code === "ETIMEDOUT",
+      }),
+    );
+  }
+  return result;
+}
+
+function requireExecutionContext() {
+  if (!executionContext) throw new Error("execution context is not initialized");
+  return executionContext;
+}
+
+function assertFinalExecutionInputs() {
+  const context = requireExecutionContext();
+  for (const [filename, digest] of context.inputs) {
+    if (filename.startsWith(root + path.sep)) assertRegularOwned(filename, root);
+    if (sha256(readFileSync(filename)) !== digest) throw new Error("input drift");
+  }
+  assertExecutionConfiguration(context.cargoHome);
+}
+
+function readSelectedInput(filename) {
+  const contents = readFileSync(filename);
+  if (executionContext) {
+    const digest = sha256(contents);
+    const previous = executionContext.inputs.get(filename);
+    if (previous && previous !== digest) throw new Error("selected input changed");
+    executionContext.inputs.set(filename, digest);
+  }
+  return contents;
+}
+
+function assertRegularOwned(filename, owner, directory = false) {
+  const absolute = path.resolve(filename);
+  const boundary = path.resolve(owner);
+  const relative = path.relative(boundary, absolute);
+  if (
+    relative.startsWith(`..${path.sep}`) ||
+    relative === ".." ||
+    path.isAbsolute(relative)
+  ) {
+    throw new Error("output escaped its owned directory");
+  }
+  let cursor = absolute;
+  while (true) {
+    const entry = lstatSync(cursor);
+    if (entry.isSymbolicLink() || (cursor !== absolute && !entry.isDirectory())) {
+      throw new Error("redirected execution path");
+    }
+    if (cursor === absolute && !(directory ? entry.isDirectory() : entry.isFile())) {
+      throw new Error("nonregular execution path");
+    }
+    if (path.relative(boundary, cursor) === "") break;
+    const parent = path.dirname(cursor);
+    if (parent === cursor) throw new Error("owned path boundary was not reached");
+    cursor = parent;
+  }
+  const same =
+    process.platform === "win32"
+      ? realpathSync(absolute).toLowerCase() === absolute.toLowerCase()
+      : realpathSync(absolute) === absolute;
+  if (!same) throw new Error("redirected execution path");
+  return absolute;
+}
+
+function assertExecutionConfiguration(cargoHome) {
+  const filename = assertRegularOwned(resolve(".cargo/config.toml"), root);
+  const config = readFileSync(filename);
+  if (
+    config.length !== 85 ||
+    sha256(config) !==
+      "079f8a8032322e1fe2b7d2102bf5db329a0026c37d6e1866fdc776b9b058608b" ||
+    existsSync(resolve(".cargo/config"))
+  ) {
+    throw new Error("repository Cargo configuration drifted");
+  }
+  const outside = new Set([cargoHome]);
+  let ancestor = path.dirname(root);
+  while (true) {
+    outside.add(path.join(ancestor, ".cargo"));
+    const parent = path.dirname(ancestor);
+    if (parent === ancestor) break;
+    ancestor = parent;
+  }
+  for (const directory of outside) {
+    for (const name of ["config", "config.toml"]) {
+      if (existsSync(path.join(directory, name))) {
+        throw new Error("ambient Cargo configuration is unsupported");
+      }
+    }
+  }
+}
+
+function createExecutionContext() {
+  const environmentValue = (name) => {
+    const matches = Object.keys(process.env).filter((key) => key.toUpperCase() === name);
+    if (matches.length > 1) throw new Error("ambiguous environment key");
+    return matches.length ? process.env[matches[0]] : undefined;
+  };
+  if (environmentValue("NODE_OPTIONS") || environmentValue("NODE_PATH")) {
+    throw new Error("Node preload/path environment is unsupported");
+  }
+  const cargoHome = path.resolve(
+    environmentValue("CARGO_HOME") || path.join(homedir(), ".cargo"),
+  );
+  const rustupHome = environmentValue("RUSTUP_HOME");
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([key]) =>
+        !/^(?:CARGO_|RUST|NODE_OPTIONS$|NODE_PATH$|CC(?:_|$)|CXX(?:_|$)|AR(?:_|$)|CFLAGS$|CXXFLAGS$|CPPFLAGS$|LDFLAGS$|LD_PRELOAD$|DYLD_)/i.test(
+          key,
+        ),
+    ),
+  );
+  env.CARGO_HOME = cargoHome;
+  if (rustupHome) env.RUSTUP_HOME = rustupHome;
+  env.RUSTUP_AUTO_INSTALL = "0";
+  env.CARGO_NET_OFFLINE = "true";
+  assertExecutionConfiguration(cargoHome);
+  assertRegularOwned(root, path.parse(root).root, true);
+  const tmp = resolve("tmp");
+  if (!existsSync(tmp)) mkdirSync(tmp);
+  assertRegularOwned(tmp, root, true);
+  const run = mkdtempSync(path.join(tmp, "evaluation-math-wasm-"));
+  assertRegularOwned(run, root, true);
+  env.CARGO_TARGET_DIR = path.join(run, "wasm-default");
+  const inputs = new Map();
+  const selected = new Set([
+    ...pinnedOracleFiles.map(([file]) => `${oracleRoot}/${file}`),
+    ...executionJsPins.map(([file]) => file),
+    nativeManifestPath,
+    nativeLockPath,
+    ".cargo/config.toml",
+    ".gitignore",
+    "scripts/check-runtime-native-evaluation-math.mjs",
+    "package.json",
+    "packages/runtime-native/package.json",
+    "scripts/quality-gate-manifest.json",
+    "scripts/run-quality-gates.mjs",
+    ".github/ISSUE_TEMPLATE/gate_failure.yml",
+    ".github/workflows/runtime-native.yml",
+    ".github/workflows/quality-gates.yml",
+    "docs/developer/architecture/overview.md",
+    "docs/developer/architecture/package-graph.md",
+    "docs/developer/contributing/package-boundaries.md",
+    "docs/developer/quality/public-api-status.md",
+  ]);
+  for (const relative of selected) {
+    const filename = assertRegularOwned(resolve(relative), root);
+    inputs.set(filename, sha256(readFileSync(filename)));
+  }
+  return {
+    env,
+    cargoHome,
+    run,
+    inputs,
+    ignored: false,
+    phase: "initialization",
+    sequence: 0,
+  };
+}
+
+function initializeExecutionTools() {
+  const context = requireExecutionContext();
+  // This must be the first child. Never write a diagnostic before ignore is proved.
+  const ignored = runChild("git", [
+    "check-ignore",
+    "-q",
+    "--",
+    path.relative(root, context.run),
+  ]);
+  if (ignored.status !== 0 || ignored.error || ignored.signal) {
+    throw new Error("owned execution directory is not ignored");
+  }
+  context.ignored = true;
+  context.phase = "tools";
+  context.rustc = runCapture("rustup", [
+    "which",
+    "--toolchain",
+    "1.89.0",
+    "rustc",
+  ]).trim();
+  context.cargo = runCapture("rustup", [
+    "which",
+    "--toolchain",
+    "1.89.0",
+    "cargo",
+  ]).trim();
+  for (const tool of [context.rustc, context.cargo]) {
+    if (
+      !path.isAbsolute(tool) ||
+      !lstatSync(tool).isFile() ||
+      lstatSync(tool).isSymbolicLink()
+    ) {
+      throw new Error("installed tool path is not an absolute regular executable");
+    }
+  }
+  const compiler = runCapture(context.rustc, ["-Vv"]);
+  if (
+    !/^release: 1\.89\.0\r?$/m.test(compiler) ||
+    !/^host: [a-z0-9_-]+\r?$/m.test(compiler)
+  ) {
+    throw new Error("actual installed compiler identity mismatch");
+  }
+  const cargoVersion = runCapture(context.cargo, ["--version"]);
+  if (!/^cargo 1\.89\.0 /.test(cargoVersion))
+    throw new Error("actual Cargo identity mismatch");
+  // R1: before metadata/tree, not merely before build. Preserve in every child.
+  context.env.RUSTC = context.rustc;
+  context.phase = "preflight";
+}
+
+function recordExecutionError(error) {
+  if (!executionContext?.ignored) return;
+  try {
+    assertRegularOwned(executionContext.run, root, true);
+    writeFileSync(
+      path.join(executionContext.run, "failure.log"),
+      String(error?.stack ?? error),
+    );
+  } catch {
+    // Never replace the fixed public failure with a raw finalizer exception.
+  }
+}
+
+function assertExecutionWiring(rootPackage, manifest, workflow) {
+  if (
+    rootPackage.scripts?.[executionCommand] !==
+    "node scripts/check-runtime-native-evaluation-math.mjs --execute-wasm"
+  ) {
+    throw new Error("test-only WASM execution command drifted");
+  }
+  const gates = manifest.gates.filter((gate) => gate.npmScript === executionCommand);
+  if (
+    gates.length !== 1 ||
+    gates[0].command !== `npm run ${executionCommand}` ||
+    JSON.stringify(gates[0].requiredWorkflows) !==
+      JSON.stringify([".github/workflows/runtime-native.yml"]) ||
+    gates[0].intentionallySplit !== true ||
+    gates[0].escalatable !== true
+  ) {
+    throw new Error("test-only WASM gate registration drifted");
+  }
+  for (const file of [
+    "scripts/run-quality-gates.mjs",
+    ".github/ISSUE_TEMPLATE/gate_failure.yml",
+  ]) {
+    if (countMatches(readText(file), new RegExp(executionCommand, "g")) !== 1) {
+      throw new Error("test-only WASM gate must be registered exactly once");
+    }
+  }
+  if (
+    countMatches(workflow, new RegExp(`run: npm run ${executionCommand}`, "g")) !== 1 ||
+    workflow.indexOf(`run: npm run ${executionCommand}`) <
+      workflow.indexOf("run: npm run check:evaluation-math:wasm32")
+  ) {
+    throw new Error("test-only WASM execution must follow compile/Clippy");
+  }
+  for (const [file] of executionJsPins) {
+    if (countMatches(workflow, new RegExp(file.replaceAll(".", "\\."), "g")) !== 2) {
+      throw new Error("WASM helper missing Native watch/lint wiring");
+    }
+  }
+  for (const file of [".cargo/config", ".cargo/config.toml"]) {
+    for (const yaml of [workflow, readText(".github/workflows/quality-gates.yml")]) {
+      if (countMatches(yaml, new RegExp(`"${file.replaceAll(".", "\\.")}"`, "g")) !== 1) {
+        throw new Error("Cargo config must trigger Native and required Quality");
+      }
+    }
+  }
+}
+
+async function executeWasmCorpus(metadata, vectors) {
+  const context = requireExecutionContext();
+  context.phase = "helper";
+  const tap = runCapture(process.execPath, [
+    "--test",
+    "--test-reporter=tap",
+    executionJsPins[1][0],
+  ]);
+  if (
+    !/^# tests [1-9]\d*\r?$/m.test(tap) ||
+    !/^# fail 0\r?$/m.test(tap) ||
+    !/^# skipped 0\r?$/m.test(tap) ||
+    !/^# cancelled 0\r?$/m.test(tap)
+  ) {
+    throw new Error("helper tests must execute without failures or skips");
+  }
+  context.phase = "ordinary-build";
+  const build = runChild(
+    "cargo",
+    [
+      "build",
+      "--manifest-path",
+      resolve(nativeManifestPath),
+      "--locked",
+      "--offline",
+      "-p",
+      "vivi-runtime-native-evaluation-math",
+      "--lib",
+      "--target",
+      wasmTarget,
+      "--target-dir",
+      context.env.CARGO_TARGET_DIR,
+      "--message-format=json",
+    ],
+    {
+      CARGO_ENCODED_RUSTFLAGS:
+        "-C\x1fpanic=abort\x1f-C\x1flink-arg=--max-memory=67108864",
+    },
+    cargoBuildTimeoutMs,
+  );
+  if (build.status !== 0 || build.error || build.signal)
+    throw new Error("ordinary WASM build failed");
+  const rows = build.stdout
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+  const artifacts = new Map();
+  const artifactEvidence = [];
+  for (const name of [
+    "vivi-runtime-native-evaluation-math",
+    ...sourcePins.map((pin) => pin.package),
+  ]) {
+    const pkg = requirePackage(metadata, name);
+    const targets = pkg.targets.filter((target) =>
+      target.kind.some((kind) => kind === "lib" || kind === "rlib"),
+    );
+    if (targets.length !== 1) throw new Error("ambiguous library target");
+    const target = targets[0];
+    const matches = rows.filter(
+      (row) =>
+        row.reason === "compiler-artifact" &&
+        row.package_id === pkg.id &&
+        row.target?.name === target.name &&
+        JSON.stringify(row.target.kind) === JSON.stringify(target.kind) &&
+        JSON.stringify(row.target.crate_types) === JSON.stringify(target.crate_types) &&
+        path.resolve(row.target.src_path) === path.resolve(target.src_path),
+    );
+    if (matches.length !== 1) throw new Error("ambiguous compiled library identity");
+    const filenames = matches[0].filenames.filter((filename) =>
+      filename.endsWith(".rlib"),
+    );
+    if (filenames.length !== 1) throw new Error("ambiguous rlib output");
+    const filename = assertRegularOwned(filenames[0], context.run);
+    const targetRelative = path.relative(
+      path.join(context.env.CARGO_TARGET_DIR, wasmTarget),
+      filename,
+    );
+    if (
+      targetRelative === "" ||
+      targetRelative === ".." ||
+      targetRelative.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(targetRelative)
+    ) {
+      throw new Error("compiled output is not a WASM target artifact");
+    }
+    artifacts.set(name, filename);
+    artifactEvidence.push({
+      name,
+      packageId: pkg.id,
+      target: target.name,
+      filename,
+      sha256: sha256(readFileSync(filename)),
+    });
+  }
+  const dependencyDirs = new Set(
+    sourcePins.map((pin) => path.dirname(artifacts.get(pin.package))),
+  );
+  if (dependencyDirs.size !== 1)
+    throw new Error("dependencies do not share one reported directory");
+  const dependencyDir = [...dependencyDirs][0];
+  const edition = requirePackage(metadata, "vivi-runtime-native-evaluation-math").edition;
+  const common = [
+    `--edition=${edition}`,
+    "--target",
+    wasmTarget,
+    "-C",
+    "panic=abort",
+    "-C",
+    "link-arg=--max-memory=67108864",
+    "-L",
+    `dependency=${dependencyDir}`,
+    "--cfg",
+    "test",
+  ];
+  context.phase = "test-library";
+  const testLibrary = path.join(context.run, "libevaluation_math_test.rlib");
+  runCapture(context.rustc, [
+    resolve(`${oracleRoot}/src/lib.rs`),
+    ...common,
+    "--crate-name",
+    "vivi_runtime_native_evaluation_math",
+    "--crate-type",
+    "rlib",
+    "--extern",
+    `fpmath=${artifacts.get("fpmath")}`,
+    "--extern",
+    `rustc_apfloat=${artifacts.get("rustc_apfloat")}`,
+    "-o",
+    testLibrary,
+  ]);
+  assertRegularOwned(testLibrary, context.run);
+  const harness = resolve(`${oracleRoot}/tests/support/wasm_execution.rs`);
+  context.phase = "negative-link";
+  const negativeOutput = path.join(context.run, "ordinary-must-not-link.wasm");
+  const negative = runChild(context.rustc, [
+    harness,
+    ...common,
+    "--crate-type",
+    "cdylib",
+    "--error-format=json",
+    "--extern",
+    `vivi_runtime_native_evaluation_math=${artifacts.get("vivi-runtime-native-evaluation-math")}`,
+    "-o",
+    negativeOutput,
+  ]);
+  const diagnostics = (negative.stderr ?? "")
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+  const errors = diagnostics.filter((diagnostic) => diagnostic.level === "error");
+  const substantive = errors.filter((diagnostic) => diagnostic.code !== null);
+  const terminal = errors.filter((diagnostic) => diagnostic.code === null);
+  if (
+    negative.status !== 1 ||
+    negative.error ||
+    negative.signal ||
+    existsSync(negativeOutput) ||
+    substantive.length !== 1 ||
+    substantive[0].code?.code !== "E0432" ||
+    !substantive[0].message.includes("wasm_test_adapter") ||
+    terminal.length !== 1 ||
+    terminal[0].message !== "aborting due to 1 previous error"
+  ) {
+    throw new Error(
+      "ordinary-library negative control did not produce the required E0432",
+    );
+  }
+  context.phase = "test-link";
+  const modulePath = path.join(context.run, "oracle-test.wasm");
+  runCapture(context.rustc, [
+    harness,
+    ...common,
+    "--crate-type",
+    "cdylib",
+    "--extern",
+    `vivi_runtime_native_evaluation_math=${testLibrary}`,
+    "-o",
+    modulePath,
+  ]);
+  assertRegularOwned(modulePath, context.run);
+  const moduleBytes = readFileSync(modulePath);
+  context.phase = "worker";
+  const result = await runWasmWorker(moduleBytes, vectors);
+  writeFileSync(
+    path.join(context.run, "execution-evidence.json"),
+    JSON.stringify(
+      {
+        artifacts: artifactEvidence,
+        testLibrarySha256: sha256(readFileSync(testLibrary)),
+        wasmSha256: sha256(moduleBytes),
+        negativeControl: "E0432",
+        result,
+      },
+      null,
+      2,
+    ),
+  );
+}
+
+async function runWasmWorker(moduleBytes, fixture) {
+  const context = requireExecutionContext();
+  const worker = new Worker(resolve(executionJsPins[2][0]), {
+    workerData: { moduleBytes, fixture },
+    env: context.env,
+    execArgv: [],
+    stdout: true,
+    stderr: true,
+  });
+  let timer;
+  try {
+    return await new Promise((accept, reject) => {
+      let settled = false;
+      const finish = (error, result) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        if (error) reject(new Error("WASM worker failed"));
+        else accept(result);
+      };
+      timer = setTimeout(() => finish(true), 30_000);
+      worker.once("error", () => finish(true));
+      worker.once("exit", () => finish(true));
+      worker.stdout.on("data", () => finish(true));
+      worker.stderr.on("data", () => finish(true));
+      worker.once("message", (message) => {
+        const expected = {
+          ok: true,
+          counts: { constants: 18, kernel: 85, comparison: 12, utility: 11, total: 126 },
+          exports: [
+            { name: "__data_end", kind: "global" },
+            { name: "__heap_base", kind: "global" },
+            { name: "memory", kind: "memory" },
+            { name: "vivi_math_test_invoke", kind: "function" },
+          ],
+          imports: 0,
+          traps: [20, 0xffffffff],
+        };
+        try {
+          finish(!isDeepStrictEqual(message, expected), message);
+        } catch {
+          finish(true);
+        }
+      });
+    });
+  } finally {
+    clearTimeout(timer);
+    await worker.terminate();
+  }
 }

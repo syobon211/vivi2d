@@ -90,6 +90,7 @@ body:
         - check:runtime-native-preactivation
         - check:runtime-native-evaluation-lowering
         - check:runtime-native-evaluation-math
+        - check:evaluation-math-wasm-execution
         - check:runtime-native
         - check:native-artifact-policy
         - test:runtime-wasm:browser

@@ -3,6 +3,8 @@ name: Quality Gates
 on:
   pull_request:
     paths:
+      - ".cargo/config"
+      - ".cargo/config.toml"
       - "apps/**"
       - ".github/**"
       - ".gitleaks.toml"
