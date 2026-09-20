@@ -13,6 +13,10 @@
 mod binary64;
 mod transcendental;
 
+/// Test-only WASM raw-bit dispatch; no module exists in a production build.
+#[cfg(all(test, target_family = "wasm"))]
+pub mod wasm_test_adapter;
+
 // A consumer-zero crate has no caller by construction. Keep every approved
 // crate-private callable live for linting and source review without exporting
 // it or executing any math during initialization.
@@ -41,6 +45,9 @@ const _: () = {
     let _: fn(DetF64, DetF64) -> bool = DetF64::gt;
     let _: fn(DetF64, DetF64) -> bool = DetF64::ge;
 };
+
+#[cfg(all(test, target_family = "wasm"))]
+const _: fn(u32, u64, u64) -> u64 = wasm_test_adapter::invoke;
 
 /// Exact UTF-8 byte length of the adopted deterministic-math contract draft.
 const APPROVED_CONTRACT_DRAFT_BYTES: usize = 38_965;

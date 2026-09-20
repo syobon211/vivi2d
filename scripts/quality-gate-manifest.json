@@ -780,6 +780,16 @@
       "escalatable": true
     },
     {
+      "npmScript": "check:evaluation-math-wasm-execution",
+      "command": "npm run check:evaluation-math-wasm-execution",
+      "requiredWorkflows": [
+        ".github/workflows/runtime-native.yml"
+      ],
+      "notes": "Reuses the deterministic-math checker with --execute-wasm for bounded test-only primitive execution, separate from the existing native and wasm32-unknown-unknown compile/Clippy gates. It runs the unchanged 126-row corpus through a test-configured build of the same Rust kernel: 18 constant raw-bit round trips, 85 kernel, 12 comparison, and 11 utility rows. The constants do not independently verify their mathematical derivation. A direct-rustc test harness and cfg-test+WASM adapter add no Cargo consumer edge, production export, stable API, or lowerer/core/TypeScript/C ABI/editor/runtime-WASM connection. The production rlib remains consumer-zero, unpublished, no_std, and forbid(unsafe_code); the separate export-attribute-only harness allowance does not extend that claim to the harness or dependencies. The checker verifies pinned inputs and reported compiler outputs, ordinary-rlib adapter rejection, zero WASM imports, exact exports, helper failure controls, raw-bit results, and unsupported-op traps. It uses installed Rust 1.89, locked/offline Cargo, bounded commands and worker execution, and ignored checkout-local evidence retained without upload or automatic cleanup. Selected protected bodies remain excluded. A successful invocation covers only this primitive corpus; it does not prove broad cross-target parity, hosted CI success from wiring, expanded transcendental coverage, machine DAG/checkpoint bijection, compound traces, obligation bindings, category 10 connection, category 11 sealing, or EDH-01. Those remaining gates and separate implementation reviews stay open.",
+      "intentionallySplit": true,
+      "escalatable": true
+    },
+    {
       "npmScript": "check:runtime-native",
       "command": "npm run check:runtime-native",
       "requiredWorkflows": [

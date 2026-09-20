@@ -227,16 +227,28 @@ locale, media, frontmatter, and future website route contract is tracked in
   Evaluation Deterministic Math Contract v1 vectors. The gate executes the raw
   kernel/comparison/utility corpus natively and compiles the identical rlib and
   tests for `wasm32-unknown-unknown`; that wasm step is compile-only, not
-  cross-target raw-bit execution. The native allocator trap is a separate
+  cross-target raw-bit execution. The separate
+  `check:evaluation-math-wasm-execution` command reuses the checker for test-only
+  primitive execution of the unchanged 126-row corpus through the same Rust
+  kernel: 18 constant raw-bit round trips, 85 kernel, 12 comparison, and 11
+  utility rows. Constant round trips do not verify mathematical derivation.
+  A cfg-test+WASM adapter and direct-rustc test harness add no Cargo consumer
+  edge or product API. The existing compile-only step is not raw-bit execution;
+  successful execution of this corpus does not prove broad cross-target parity
+  or turn workflow wiring into hosted-green evidence.
+  The native allocator trap is a separate
   test-only crate whose system-allocator forwarding necessarily uses `unsafe`;
   `forbid(unsafe_code)` applies to the production rlib source, not that harness
-  or the dependency closure. No crate consumes the oracle, and it has no
+  or the dependency closure. The separate WASM test harness has an
+  export-attribute-only unsafe allowance, not an unsafe-block allowance.
+  No production crate consumes the oracle, and it has no
   lowering, runtime-native core, TypeScript, C ABI/editor, production-WASM,
   GPU, activation, publication, or capability edge. Category 9 reservation is
   now a separate lowering implementation candidate gated by its own review;
   the oracle remains consumer-zero and disconnected from it. Category 10
   remains disconnected pending all
-  supported-target native and test-only wasm execution, expanded transcendental
+  supported-target native and test-only wasm evidence beyond this primitive
+  corpus, expanded transcendental
   coverage, machine DAG/checkpoint bijection, compound traces, obligation
   bindings, and the remaining separate implementation reviews. Category
   11 topology/sealing/model-ready output and EDH-01 also remain open.

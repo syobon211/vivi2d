@@ -398,18 +398,28 @@ requests.
   implement checkpoints, graph scheduling, or status mapping; those obligations
   remain future category-10 evaluator work. The focused gate runs Rust 1.89
   rustfmt, native corpus tests, Clippy, rustdoc with warnings denied, and wires
-  three-OS CI. It only compiles
-  and Clippies the test target for `wasm32-unknown-unknown`; that is not wasm
-  raw-bit execution, cross-target parity, or hosted-green evidence. Its native
+  three-OS CI. Its existing compile-only step compiles
+  and Clippies the test target for `wasm32-unknown-unknown`; that is not raw-bit
+  execution, cross-target parity, or hosted-green evidence. The separate
+  `check:evaluation-math-wasm-execution` command reuses the checker for test-only
+  primitive execution of the unchanged 126-row corpus through the same Rust
+  kernel: 18 constant raw-bit round trips, 85 kernel, 12 comparison, and 11
+  utility rows. Constant round trips do not verify mathematical derivation.
+  Its cfg-test+WASM adapter and direct-rustc test harness add no production
+  export, Cargo consumer edge, or product-public API. A successful invocation
+  covers only these primitive rows, not broad cross-target parity; workflow
+  wiring still does not establish hosted-green evidence. Its native
   allocator trap is a separate test-only crate with necessary `unsafe`
   system-allocator forwarding; `forbid(unsafe_code)` applies only to production
-  rlib source, not the harness or dependencies. No lowerer,
+  rlib source, not the harness or dependencies. The separate WASM test harness
+  has only an export-attribute unsafe allowance, with no unsafe blocks. No lowerer,
   runtime-native core, TypeScript, C ABI/editor, runtime-WASM, GPU,
   activation/publication, or capability consumer is connected. Category 9
   reservation is now a separate lowering implementation candidate gated by its
   own review; the oracle remains consumer-zero and disconnected from it.
   Category 10 remains disconnected pending
-  supported-target native plus test-only wasm execution, expanded transcendental
+  supported-target native plus test-only wasm evidence beyond this primitive
+  corpus, expanded transcendental
   coverage, machine DAG/checkpoint bijection, complete compound traces,
   obligation bindings, and the remaining separate implementation reviews. Category 11
   topology/sealing/model-ready output and
