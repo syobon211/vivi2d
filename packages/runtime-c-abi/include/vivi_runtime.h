@@ -426,8 +426,10 @@ VIVI_EXPORT ViviStatus VIVI_CALL vivi_model_set_input(
 VIVI_EXPORT ViviStatus VIVI_CALL vivi_model_get_input(
   const ViviModel* model,
   const char* id,
-  /* Returns the current clamped scalar input value, including any prior
-     set_input or expression-preset change, not derived binding/physics state. */
+  /* Returns the current clamped scalar parameter value, including set_input,
+     expression-preset changes, and committed physics parameter outputs.
+     It does not return derived bone/IK/mesh transforms or internal
+     pendulum state. */
   double* out_value
 );
 VIVI_EXPORT ViviStatus VIVI_CALL vivi_model_update(
