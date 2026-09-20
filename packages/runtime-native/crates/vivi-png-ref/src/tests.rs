@@ -435,3 +435,80 @@ fn append_chunk(png: &mut Vec<u8>, chunk_type: &[u8; 4], data: &[u8]) {
     png.extend(data);
     png.extend(crc32(&png[crc_start..]).to_be_bytes());
 }
+
+// Actual decoder evidence is separate from the TS wrapper's Project policy.
+mod project_shared_corpus {
+    use super::*;
+
+    const MANIFEST: &[u8] = include_bytes!(
+        "../../../../../tests/conformance/project-embedded-round-trip-v11/manifest.json"
+    );
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Manifest {
+        schema_version: u32,
+        png_cases: Vec<PngCase>,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct PngCase {
+        id: String,
+        base64: String,
+        sha256: String,
+        width: u32,
+        height: u32,
+        native: NativeOutcome,
+    }
+
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct NativeOutcome {
+        status: String,
+        rgba_hex: Option<String>,
+    }
+
+    #[test]
+    fn project_shared_png_bytes_use_real_full_decode() {
+        assert_eq!(MANIFEST.len(), 29_361);
+        assert_eq!(
+            format!("{:x}", Sha256::digest(MANIFEST)),
+            "d9803f48ac6911130d8baf36b605fc8ea9dee57bf8acbc01b4886c92788b79d4"
+        );
+        let manifest: Manifest = serde_json::from_slice(MANIFEST).unwrap();
+        assert_eq!(manifest.schema_version, 1);
+        assert!(!manifest.png_cases.is_empty());
+        let mut ids = std::collections::BTreeSet::new();
+        for vector in manifest.png_cases {
+            assert!(ids.insert(vector.id.clone()), "duplicate fixture ID");
+            let bytes = decode_base64(&vector.base64);
+            let digest: [u8; 32] = Sha256::digest(&bytes).into();
+            assert_eq!(
+                digest,
+                decode_hex::<32>(&vector.sha256),
+                "{} content",
+                vector.id
+            );
+            let actual = decode(&bytes, &digest, vector.width, vector.height);
+            if vector.native.status == "ok" {
+                let image = actual.unwrap_or_else(|error| panic!("{}: {error:?}", vector.id));
+                assert_eq!(image.info.width, vector.width, "{} width", vector.id);
+                assert_eq!(image.info.height, vector.height, "{} height", vector.id);
+                assert_eq!(
+                    image.rgba,
+                    decode_hex_vec(&vector.native.rgba_hex.expect("explicit golden RGBA")),
+                    "{} full decoded pixels",
+                    vector.id
+                );
+            } else {
+                assert!(vector.native.rgba_hex.is_none());
+                let expected = error_named(&vector.native.status);
+                match actual {
+                    Err(error) => assert_eq!(error, expected, "{} classification", vector.id),
+                    Ok(_) => panic!("{} unexpectedly accepted", vector.id),
+                }
+            }
+        }
+    }
+}

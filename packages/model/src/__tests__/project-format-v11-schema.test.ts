@@ -415,6 +415,76 @@ function createDefinitionValidator(definitionName: string): ValidateFunction<unk
 }
 
 describe("Project Format v11 production Stage 1 schema", () => {
+  it("keeps the embedded AssetRef structures equal to the Asset Model authority", () => {
+    const assetSchema = JSON.parse(
+      readFileSync(
+        path.join(
+          process.cwd(),
+          "packages/runtime-native/crates/vivi-asset-resolver/schema/asset-model-v1.schema.json",
+        ),
+        "utf8",
+      ),
+    ) as JsonSchema;
+
+    // Only the applicators used by these three definitions are expanded. Other
+    // values stay exact, including const/enum data and property names $comment.
+    function expand(node: JsonSchema, owner: JsonSchema, ancestors: string[]): unknown {
+      expect(node !== null && typeof node === "object" && !Array.isArray(node)).toBe(
+        true,
+      );
+      if (Object.hasOwn(node, "$ref")) {
+        expect(Object.keys(node)).toEqual(["$ref"]);
+        expect(node.$ref).toMatch(/^#\/\$defs\/[A-Za-z0-9]+$/u);
+        const name = (node.$ref as string).slice("#/$defs/".length);
+        expect(ancestors).not.toContain(name);
+        expect(Object.hasOwn(owner.$defs, name)).toBe(true);
+        return expand(owner.$defs[name], owner, [...ancestors, name]);
+      }
+      return Object.fromEntries(
+        Object.entries(node)
+          .filter(([key]) => key !== "$comment")
+          .map(([key, value]) => {
+            if (key === "properties") {
+              return [
+                key,
+                Object.fromEntries(
+                  Object.entries(value as JsonSchema).map(([name, child]) => [
+                    name,
+                    expand(child, owner, ancestors),
+                  ]),
+                ),
+              ];
+            }
+            if (key === "allOf") {
+              return [
+                key,
+                (value as JsonSchema[]).map((child) => expand(child, owner, ancestors)),
+              ];
+            }
+            if (key === "if" || key === "then" || key === "else") {
+              return [key, expand(value as JsonSchema, owner, ancestors)];
+            }
+            // A new schema applicator requires a deliberate gate update, not
+            // silent traversal of arbitrary data or ignored external refs.
+            if (!["const", "enum", "required", "type"].includes(key)) {
+              expect(value === null || typeof value !== "object").toBe(true);
+            }
+            return [key, value];
+          }),
+      );
+    }
+
+    for (const [asset, project] of [
+      ["ViviAssetRefV1", "ViviAssetRefV11"],
+      ["EmbeddableBlobAssetRefV1", "EmbeddableBlobAssetRefV11"],
+      ["PngAssetRefV1", "PngAssetRefV11"],
+    ]) {
+      expect(expand(schema.$defs[project!], schema, [project!])).toEqual(
+        expand(assetSchema.$defs[asset!], assetSchema, [asset!]),
+      );
+    }
+  });
+
   it("pins the approved schema bytes, identity, and status", () => {
     expect(schemaBytes).toHaveLength(56_486);
     expect(schemaBytes.at(-1)).toBe(0x0a);

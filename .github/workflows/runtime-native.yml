@@ -44,6 +44,7 @@ on:
       - "scripts/quality-gate-manifest.json"
       - "scripts/run-quality-gates.mjs"
       - "tests/conformance/runtime-v1/**"
+      - "tests/conformance/project-embedded-round-trip-v11/**"
   workflow_dispatch:
 
 permissions:

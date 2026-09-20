@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseProjectFormatV11Json } from "../project-format-v11/codec";
 import { ProjectFormatV11SemanticError } from "../project-format-v11/errors";
 import { canonicalizeJsonV11 } from "../project-format-v11/json-contract";
 import { validateProjectFormatV11Schema } from "../project-format-v11/schema";
@@ -764,6 +765,55 @@ describe("Project Format v11 requirements and extension classification", () => {
 });
 
 describe("Project Format v11 asset invariants", () => {
+  it("accepts a 255 UTF-8 byte mediaType but rejects ASCII controls through the codec", async () => {
+    const wire = referencedV11();
+    const mediaType = `${"😀".repeat(63)}aaa`;
+    const ref = assetRef({ mediaType });
+    const options = attachKnownAssetExtension(wire, [ref]);
+    const accepted = await parseProjectFormatV11Json(JSON.stringify(wire), options);
+    expect(accepted.normalized.extensions?.asset?.blobRefs?.[0]?.mediaType).toBe(
+      mediaType,
+    );
+
+    // The PNG-only atlas test cannot distinguish a control check from the
+    // image/png const check. Exercise the generic extension reference here.
+    for (const control of ["\u0000", "\u007f"]) {
+      ref.mediaType = `application/x-test${control}`;
+      await expect(
+        parseProjectFormatV11Json(JSON.stringify(wire), options),
+      ).rejects.toMatchObject({
+        stage: "semantic",
+        code: "VIVI_FMT_ASSET_REF_INVALID",
+        path: "/extensions/asset/blobRefs/0/mediaType",
+      });
+    }
+  });
+
+  it("validates referenced size boundaries without allocating their declared content", async () => {
+    const wire = referencedV11();
+    const ref = assetRef();
+    const options = attachKnownAssetExtension(wire, [ref]);
+    for (const [storageKind, sizeBytes] of [
+      ["blob", 16 * 1024 * 1024],
+      ["chunk_manifest", 16 * 1024 * 1024 + 1],
+      ["chunk_manifest", 64 * 1024 * 1024 * 1024],
+    ] as const) {
+      Object.assign(ref, { storageKind, sizeBytes });
+      const accepted = await parseProjectFormatV11Json(JSON.stringify(wire), options);
+      expect(accepted.normalized.extensions?.asset?.blobRefs?.[0]).toMatchObject({
+        storageKind,
+        sizeBytes,
+      });
+    }
+    ref.sizeBytes += 1;
+    await expect(
+      parseProjectFormatV11Json(JSON.stringify(wire), options),
+    ).rejects.toMatchObject({
+      stage: "schema",
+      code: "VIVI_FMT_ASSET_REF_INVALID",
+    });
+  });
+
   it("accepts case-insensitive blob addresses and an exact embedded closure", async () => {
     const wire = embeddedV11();
     const options = attachKnownAssetExtension(wire, [assetRef()]);

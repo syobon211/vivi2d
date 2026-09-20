@@ -1438,11 +1438,22 @@ describe("viewer-api-server.cjs", () => {
     );
   });
 
-  it("throttles minInterval event subscriptions", async () => {
+  it("throttles minInterval event subscriptions", async ({ onTestFinished }) => {
     const server = createViewerApiServer({
       port: 0,
       logger: { warn: vi.fn() },
       allowSessionGrants: true,
+    });
+    let client: typeof WebSocket | undefined;
+    let messageListener: ((raw: Buffer) => void) | undefined;
+    onTestFinished(async () => {
+      try {
+        if (client && messageListener) client.off("message", messageListener);
+        client?.terminate();
+        for (const peer of server.wsServer?.clients ?? []) peer.terminate();
+      } finally {
+        await server.stop();
+      }
     });
     await server.start({ port: 0 });
     const { ws, tokenMessage } = await approveTestGrant(server, [
@@ -1450,6 +1461,7 @@ describe("viewer-api-server.cjs", () => {
       "read:signals",
       "read:actions",
     ]);
+    client = ws;
     const authToken = (tokenMessage.data as Record<string, string>).token;
     ws.send(JSON.stringify(envelope("viewer.auth.authenticate", { token: authToken })));
     await waitForMessage(ws);
@@ -1469,26 +1481,51 @@ describe("viewer-api-server.cjs", () => {
     await waitForMessage(ws);
 
     const signalMessages: Record<string, unknown>[] = [];
-    ws.on("message", (raw: Buffer) => {
-      const message = JSON.parse(raw.toString("utf8")) as Record<string, unknown>;
-      if (message.type === "viewer.signals.changed") signalMessages.push(message);
+    const markerId = "min-interval-receive-barrier";
+    const markerReceived = new Promise<void>((resolve, reject) => {
+      messageListener = (raw: Buffer) => {
+        try {
+          const message = JSON.parse(raw.toString("utf8")) as Record<string, unknown>;
+          if (message.type === "viewer.signals.changed") signalMessages.push(message);
+          if (
+            message.type === "viewer.action.completed" &&
+            (message.data as Record<string, unknown> | undefined)?.actionId === markerId
+          ) {
+            resolve();
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+      ws.on("message", messageListener);
     });
     const now = Date.now();
-    server.publishEvent({
-      name: "viewer.signals.changed",
-      timestamp: now,
-      data: { signalIds: ["vivi.signal.headYaw"] },
-    });
-    server.publishEvent({
-      name: "viewer.signals.changed",
-      timestamp: now + 10,
-      data: { signalIds: ["vivi.signal.headYaw"] },
-    });
-    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(
+      server.publishEvent({
+        name: "viewer.signals.changed",
+        timestamp: now,
+        data: { signalIds: ["vivi.signal.headYaw"] },
+      }),
+    ).toBe(1);
+    expect(
+      server.publishEvent({
+        name: "viewer.signals.changed",
+        timestamp: now + 10,
+        data: { signalIds: ["vivi.signal.headYaw"] },
+      }),
+    ).toBe(0);
+    expect(
+      server.publishEvent({
+        name: "viewer.action.completed",
+        data: { actionId: markerId },
+      }),
+    ).toBe(1);
+    // The later normal-queue marker arrives after every accepted signal in this batch.
+    await markerReceived;
     expect(signalMessages).toHaveLength(1);
-
-    ws.close();
-    await server.stop();
+    expect(signalMessages[0].type).toBe("viewer.signals.changed");
+    expect(signalMessages[0].timestamp).toBe(now);
+    expect(signalMessages[0].data).toEqual({ signalIds: ["vivi.signal.headYaw"] });
   });
 
   it("requires the external pairing code without exposing it in renderer status", async () => {

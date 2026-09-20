@@ -164,8 +164,19 @@ describe("Project Format v11 strict raw base64", () => {
     "Zm8_",
     "=m8=",
     "Zg==AAAA",
+    "AAAA====",
+    "AAAA/w=A",
+    "AAAA_w==",
   ])("rejects non-raw or malformed input %j", (source) => {
     expect(() => decodeRawBase64(source)).toThrow("Invalid raw base64");
+  });
+
+  it("decodes the embedded candidate's 16 MiB ceiling without regex stack growth", () => {
+    const source = `${"A".repeat(22_369_620)}/w==`;
+    const decoded = decodeRawBase64(source);
+    expect(decoded.byteLength).toBe(16_777_216);
+    expect(decoded[0]).toBe(0);
+    expect(decoded[decoded.length - 1]).toBe(255);
   });
 });
 
