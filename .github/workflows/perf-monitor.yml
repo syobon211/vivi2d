@@ -40,9 +40,6 @@ jobs:
         run: npm run build:e2e
       - name: Check release surface before perf tests
         run: npm run check:release-surface
-      - name: One-run PR140 renderer diagnosis
-        if: github.event.pull_request.number == 140
-        run: xvfb-run --auto-servernum -- node scripts/diagnose-pr140-renderer.mjs
       - name: Run perf project
         id: perf
         continue-on-error: true

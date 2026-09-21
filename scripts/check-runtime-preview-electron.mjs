@@ -503,12 +503,16 @@ require(path.join(config.appRoot, "electron/main.cjs"));
   assert.equal(productionPage.url(), editorUrl);
   await productionPage.route(/^https?:\/\//, (route) => route.abort());
   await productionPage.evaluate(() => {
-    localStorage.setItem("vivi2d-theme", "light");
+    localStorage.setItem(
+      "vivi2d-theme",
+      JSON.stringify({ state: { theme: "light" }, version: 1 }),
+    );
     localStorage.setItem("vivi2d-locale", "en");
     localStorage.setItem("vivi2d-workspace-mode", "default");
   });
   await productionPage.reload();
   await productionPage.locator(".menu-bar").waitFor({ state: "visible" });
+  await expect(productionPage.locator("html")).toHaveAttribute("data-theme", "light");
   assert.equal(productionPage.url(), editorUrl);
   const exchange = async (command) => {
     const response = await productionPage.evaluate(
@@ -611,12 +615,16 @@ require(path.join(config.appRoot, "electron/main.cjs"));
     .locator("..");
   await previewPanel.locator(":scope > summary").click();
   const actualCanvas = previewPanel.locator("canvas");
+  // Proof-owned matte fixes the backdrop, not WebGL pixels. This is not a
+  // visual test of the product modal gradient or an all-pixel alpha proof.
+  await actualCanvas.evaluate((canvas) => {
+    canvas.style.backgroundColor = "rgb(0, 255, 0)";
+  });
   const blank = await canvasPixels(actualCanvas);
-  const background = blank.pixels[0].rgba;
-  assert(
-    blank.pixels.every(
-      (point) => JSON.stringify(point.rgba) === JSON.stringify(background),
-    ),
+  const background = [0, 255, 0, 255];
+  assert.deepEqual(
+    blank.pixels.map((point) => point.rgba),
+    [background, background, background, background, background],
   );
   stage = "production-main-new-receiver-missing";
   await selectFile("open", info.files.manifest);

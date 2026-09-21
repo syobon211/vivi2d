@@ -43,6 +43,15 @@ These JSON files are descriptive snapshots. The actual pass/fail thresholds live
 
 ## CI Monitoring
 
+The historical timeline `firstPaintMs` measured a workspace-visibility assertion
+after injection and count verification, not timeline rendering or paint. That
+metric and its 80ms assertion are retired: this spec now measures only the same
+synchronous 1,000-keyframe state injection (soft 10ms, hard below 40ms), retains
+the count and untimed workspace-visibility checks, and explicitly leaves actual
+timeline paint unmeasured. Historical JSON and failures are preserved, not
+rewritten as passes or used to claim rendering improvement. The legacy paint
+budget keys remain unchanged but are no longer enforced by this spec.
+
 Performance checks now have a dedicated GitHub Actions workflow:
 
 - `.github/workflows/perf-monitor.yml`

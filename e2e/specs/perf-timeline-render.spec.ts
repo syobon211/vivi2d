@@ -3,7 +3,6 @@ import path from "node:path";
 import { expect, test } from "../fixtures";
 import { writePerfBaseline } from "../helpers/perf-baseline";
 
-
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const BUDGETS = JSON.parse(
   readFileSync(path.resolve(ROOT, "e2e/perf-budgets.json"), "utf8"),
@@ -14,8 +13,8 @@ const BASELINE_PATH = path.resolve(
 );
 const KEYFRAMES: number = BUDGETS.timelineRender.keyframeCount;
 
-test.describe("タイムライン描画時間 (P7-P5)", () => {
-  test(`${KEYFRAMES} キーフレームを注入して state 反映 / 初期表示時間を記録する`, async ({
+test.describe("タイムライン用データの同期state注入 (P7-P5)", () => {
+  test(`${KEYFRAMES} キーフレームの同期注入時間とstate反映を確認する`, async ({
     window,
     loadTestPsd,
   }) => {
@@ -87,9 +86,7 @@ test.describe("タイムライン描画時間 (P7-P5)", () => {
     });
     expect(storedCount).toBe(KEYFRAMES);
 
-    const firstPaintStart = performance.now();
     await expect(window.locator(".workspace")).toBeVisible({ timeout: 10_000 });
-    const firstPaintMs = performance.now() - firstPaintStart;
 
     const summary = {
       recordedAt: new Date().toISOString(),
@@ -98,26 +95,19 @@ test.describe("タイムライン描画時間 (P7-P5)", () => {
       node: process.version,
       keyframeCount: KEYFRAMES,
       injectionMs: Number(injectionMs.toFixed(2)),
-      firstPaintMs: Number(firstPaintMs.toFixed(2)),
+      note: "Synchronous editor-store injection only; timeline rendering/paint is not measured.",
     };
     writePerfBaseline(BASELINE_PATH, summary);
 
     const softInj: number = BUDGETS.timelineRender.budget_soft.injectionMs;
     const hardInj: number = BUDGETS.timelineRender.budget_hard.injectionMs;
-    const softPaint: number = BUDGETS.timelineRender.budget_soft.firstPaintMs;
-    const hardPaint: number = BUDGETS.timelineRender.budget_hard.firstPaintMs;
     console.log(
-      `[perf-timeline-render] inject=${summary.injectionMs}ms (soft=${softInj}) ` +
-        `firstPaint=${summary.firstPaintMs}ms (soft=${softPaint})`,
+      `[perf-timeline-render] synchronous inject=${summary.injectionMs}ms (soft=${softInj}); timeline paint not measured`,
     );
 
     expect(
       injectionMs,
       `1000 keyframe 注入 ${injectionMs.toFixed(0)}ms > hard budget ${hardInj}ms`,
     ).toBeLessThan(hardInj);
-    expect(
-      firstPaintMs,
-      `timeline first-paint ${firstPaintMs.toFixed(0)}ms > hard budget ${hardPaint}ms`,
-    ).toBeLessThan(hardPaint);
   });
 });

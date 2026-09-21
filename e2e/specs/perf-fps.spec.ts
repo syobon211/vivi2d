@@ -1,16 +1,37 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import type { Page } from "playwright";
 import { expect, test } from "../fixtures";
 import { writePerfBaseline } from "../helpers/perf-baseline";
-
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const BUDGETS = JSON.parse(
   readFileSync(path.resolve(ROOT, "e2e/perf-budgets.json"), "utf8"),
 );
-const BASELINE_PATH = path.resolve(ROOT, "docs/developer/quality/baselines/perf-fps-2026-04-30.json");
+const BASELINE_PATH = path.resolve(
+  ROOT,
+  "docs/developer/quality/baselines/perf-fps-2026-04-30.json",
+);
 const SAMPLES = 3;
 const SAMPLING_MS: number = BUDGETS.fps.samplingMs;
+
+async function expectLiveEditorWebGL(window: Page): Promise<void> {
+  const state = await window.evaluate(() => {
+    // Pixi appends this canvas only after initialization. Inspect that context,
+    // not WebGL availability on a new canvas; pixel suites prove image content.
+    const canvases = document.querySelectorAll<HTMLCanvasElement>(
+      ".canvas-container canvas",
+    );
+    const canvas = canvases.length === 1 ? canvases[0] : undefined;
+    const context = canvas?.getContext("webgl2") ?? canvas?.getContext("webgl");
+    return {
+      count: canvases.length,
+      webgl: Boolean(context),
+      contextLost: context?.isContextLost() ?? true,
+    };
+  });
+  expect(state).toEqual({ count: 1, webgl: true, contextLost: false });
+}
 
 function median(nums: number[]): number {
   if (nums.length === 0) return 0;
@@ -32,6 +53,8 @@ test.describe("FPS 計測 (P7-P3)", () => {
 
     await window.waitForTimeout(500);
 
+    await expectLiveEditorWebGL(window);
+
     const fpsSamples: number[] = [];
     for (let i = 0; i < SAMPLES; i++) {
       const fps = await window.evaluate(async (durationMs) => {
@@ -52,6 +75,8 @@ test.describe("FPS 計測 (P7-P3)", () => {
       }, SAMPLING_MS);
       fpsSamples.push(Number(fps.toFixed(2)));
     }
+
+    await expectLiveEditorWebGL(window);
 
     const medianFps = Number(median(fpsSamples).toFixed(2));
     const minFps = Number(Math.min(...fpsSamples).toFixed(2));
