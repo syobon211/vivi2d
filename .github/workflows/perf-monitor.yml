@@ -40,6 +40,9 @@ jobs:
         run: npm run build:e2e
       - name: Check release surface before perf tests
         run: npm run check:release-surface
+      - name: Collect bounded PR140 CPU-only diagnostic
+        if: github.event.pull_request.number == 140
+        run: xvfb-run --auto-servernum -- node scripts/diagnose-pr140-cpu.mjs
       - name: Run perf project
         id: perf
         continue-on-error: true
