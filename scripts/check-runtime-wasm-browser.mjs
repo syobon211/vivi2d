@@ -5,6 +5,7 @@ import { createServer } from "vite";
 const root = process.cwd();
 const checkPagePath = "/__runtime-wasm-browser-check.html";
 const requestedBrowsers = parseBrowserArg(process.argv);
+const headed = process.argv.includes("--headed");
 const pngMode = process.argv.includes("--png-v1");
 const evaluationMode = process.argv.includes("--evaluation-v1");
 const browserTypes = {
@@ -151,7 +152,7 @@ const server = await createServer({
       };
     } catch (error) {
       window.__runtimeWasmBrowserError =
-        error instanceof Error ? error.stack || error.message : String(error);
+        error instanceof Error ? error.message + "\\n" + (error.stack || "") : String(error);
     } finally {
       window.dispatchEvent(new Event("runtime-wasm-browser-check:done"));
     }
@@ -187,8 +188,9 @@ try {
       throw new Error(`Unsupported browser: ${browserName}`);
     }
 
-    const browser = await browserType.launch(
-      evaluationMode && browserName === "chromium"
+    const browser = await browserType.launch({
+      headless: !headed,
+      ...(evaluationMode && browserName === "chromium"
         ? {
             args: [
               "--enable-webgl",
@@ -196,8 +198,8 @@ try {
               "--enable-unsafe-swiftshader",
             ],
           }
-        : {},
-    );
+        : {}),
+    });
     try {
       const page = await browser.newPage();
       await page.goto(new URL("__runtime-wasm-browser-check.html", baseUrl).href);

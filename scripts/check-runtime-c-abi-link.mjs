@@ -1,12 +1,5 @@
 import { spawnSync } from "node:child_process";
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   msvcCompileAndLinkArgs,
@@ -197,33 +190,31 @@ function findVcvars64() {
   if (process.platform !== "win32") return null;
   const programFilesX86 = process.env["ProgramFiles(x86)"];
   if (!programFilesX86) return null;
-  const visualStudioRoot = path.join(programFilesX86, "Microsoft Visual Studio");
-  if (!existsSync(visualStudioRoot)) return null;
-  for (const year of safeReaddir(visualStudioRoot)) {
-    const yearPath = path.join(visualStudioRoot, year.name);
-    if (!year.isDirectory()) continue;
-    for (const edition of safeReaddir(yearPath)) {
-      if (!edition.isDirectory()) continue;
-      const candidate = path.join(
-        yearPath,
-        edition.name,
-        "VC",
-        "Auxiliary",
-        "Build",
-        "vcvars64.bat",
-      );
-      if (existsSync(candidate)) return candidate;
-    }
-  }
-  return null;
-}
-
-function safeReaddir(directory) {
-  try {
-    return readdirSync(directory, { withFileTypes: true });
-  } catch {
-    return [];
-  }
+  const vswhere = path.join(
+    programFilesX86,
+    "Microsoft Visual Studio",
+    "Installer",
+    "vswhere.exe",
+  );
+  if (!existsSync(vswhere)) return null;
+  const result = spawnSync(
+    vswhere,
+    [
+      "-latest",
+      "-products",
+      "*",
+      "-requires",
+      "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+      "-property",
+      "installationPath",
+    ],
+    { encoding: "utf8", windowsHide: true, timeout: 10000 },
+  );
+  if (result.status !== 0 || result.error || result.signal) return null;
+  const installation = result.stdout.trim();
+  if (!path.isAbsolute(installation) || /[\r\n"&|<>%!]/.test(installation)) return null;
+  const candidate = path.join(installation, "VC", "Auxiliary", "Build", "vcvars64.bat");
+  return existsSync(candidate) ? candidate : null;
 }
 
 function commandExists(command) {

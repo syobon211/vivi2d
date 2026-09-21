@@ -453,9 +453,10 @@ export async function runEvaluationWasmCorpus(exports, wasmBytes, root, label) {
     }
     a.finish();
   }
-  // Only the built module runs the heavyweight boundary once; embedded bytes
-  // were compared byte-for-byte before this invocation by the owning checker.
-  if (label.startsWith("built ")) await maximumBoundary(wasmBytes);
+  // Each artifact must independently satisfy the boundaries: noncanonical
+  // builders do not claim byte identity with the retained Windows artifact.
+  await maximumBoundary(wasmBytes);
+  console.log(`[runtime-native-wasm] ${label}: maximum Evaluation boundaries passed`);
   void root;
 }
 

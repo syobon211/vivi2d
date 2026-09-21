@@ -502,7 +502,12 @@ export async function launchApp(): Promise<{
   window: Page;
 }> {
   const app = await electron.launch({
-    args: [path.join(ROOT, "electron/main.cjs")],
+    args: [
+      ...(process.platform === "linux"
+        ? ["--enable-webgl", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"]
+        : []),
+      path.join(ROOT, "electron/main.cjs"),
+    ],
     env: {
       ...process.env,
       NODE_ENV: "test",

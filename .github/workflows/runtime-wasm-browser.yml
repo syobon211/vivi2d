@@ -59,7 +59,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npm run test:runtime-wasm:browser
+      - run: xvfb-run --auto-servernum -- npm run test:runtime-wasm:browser -- --headed
       - name: Verify real Editor v11 WebGL mask pixels
         run: node scripts/check-editor-v11-masks-browser.mjs
       - run: npx biome check scripts/check-runtime-wasm-browser.mjs scripts/check-editor-v11-masks-browser.mjs packages/runtime-wasm/src/internal/evaluation-runtime-v1.ts packages/renderer-pixi/src/evaluation-model.ts

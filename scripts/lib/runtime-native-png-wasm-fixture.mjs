@@ -15,7 +15,17 @@ export async function createMaxPngWasmFixture() {
   const rgbaHash = createHash("sha256");
   const deflater = createDeflate({ level: 9 });
   const chunks = [];
-  deflater.on("data", (chunk) => chunks.push(chunk));
+  const maxBytes = 67_108_864;
+  let total = 0;
+  let exceeded = false;
+  deflater.on("data", (chunk) => {
+    total += chunk.length;
+    if (total > maxBytes) {
+      exceeded = true;
+      return;
+    }
+    chunks.push(chunk);
+  });
   const completed = once(deflater, "end");
   for (let y = 0; y < height; y++) {
     rgbaHash.update(row.subarray(1));
@@ -23,6 +33,7 @@ export async function createMaxPngWasmFixture() {
   }
   deflater.end();
   await completed;
+  if (exceeded) throw new Error("Compressed PNG fixture exceeds bound");
   const compressed = Buffer.concat(chunks);
   const bytes = Buffer.alloc(67_108_864);
   Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(bytes);

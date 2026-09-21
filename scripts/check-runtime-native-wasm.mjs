@@ -49,6 +49,10 @@ const expectedAbiVersion = 1;
 const expectedMaxMemoryPages = evaluationMode ? 12288 : pngMode ? 6144 : 1024;
 const enforceGeneratedBytesFreshness =
   process.env.VIVI2D_ENFORCE_NATIVE_WASM_FRESHNESS === "1";
+// Rust embeds host-specific source-path representations. The retained profiles
+// have a canonical Windows x64 builder; other hosts prove finite conformance,
+// not cross-host byte reproducibility. Force-exact remains available everywhere.
+const canonicalProfileBuilder = process.platform === "win32" && process.arch === "x64";
 const deterministicRustflags = [
   "-C",
   `link-arg=--max-memory=${expectedMaxMemoryPages * 65536}`,
@@ -119,7 +123,7 @@ run(
   },
 );
 
-if (profileMode || enforceGeneratedBytesFreshness) {
+if ((profileMode && canonicalProfileBuilder) || enforceGeneratedBytesFreshness) {
   run("node", [
     "scripts/generate-runtime-native-wasm-module.mjs",
     "--check",
@@ -127,22 +131,29 @@ if (profileMode || enforceGeneratedBytesFreshness) {
   ]);
 } else {
   console.log(
-    "[runtime-native-wasm] skipped byte-for-byte freshness; set VIVI2D_ENFORCE_NATIVE_WASM_FRESHNESS=1 for a local regeneration check",
+    profileMode
+      ? "[runtime-native-wasm] noncanonical host: built and embedded functional/ABI/boundary conformance only; mandatory byte freshness runs on win32/x64. VIVI2D_ENFORCE_NATIVE_WASM_FRESHNESS=1 forces exact checking here."
+      : "[runtime-native-wasm] skipped byte-for-byte freshness; set VIVI2D_ENFORCE_NATIVE_WASM_FRESHNESS=1 for a local regeneration check",
   );
 }
 
 if (pngMode) assertPngTargetDependencies();
 if (evaluationMode) assertEvaluationTargetDependencies(root);
 const builtArtifactBytes = readFileSync(wasmPath);
-const builtInstance = await validateNativeWasmArtifact(
-  builtArtifactBytes,
-  `built native WASM artifact (${path.relative(root, wasmPath)})`,
-);
-await validateNativeWasmArtifact(
-  readEmbeddedNativeWasmBytes(),
-  `embedded native WASM bytes (${path.relative(root, generatedBytesPath)})`,
-);
-if (pngMode) await runPngMaximumSequence(builtInstance.exports, builtArtifactBytes);
+for (const [bytes, label] of [
+  [builtArtifactBytes, `built native WASM artifact (${path.relative(root, wasmPath)})`],
+  [
+    readEmbeddedNativeWasmBytes(),
+    `embedded native WASM bytes (${path.relative(root, generatedBytesPath)})`,
+  ],
+]) {
+  const instance = await validateNativeWasmArtifact(bytes, label);
+  // Include heavy boundaries on BOTH artifacts, without assuming byte identity.
+  if (pngMode) {
+    await runPngMaximumSequence(instance.exports, bytes);
+    console.log(`[runtime-native-wasm] ${label}: maximum PNG boundaries passed`);
+  }
+}
 if (evaluationMode)
   assert.equal(
     sha256(readFileSync(pngBytesPath)),

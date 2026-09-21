@@ -327,8 +327,8 @@ const pinnedOracleFiles = [
   ],
   [
     "tests/no_allocation.rs",
-    5041,
-    "0d121ed3aaf7c36a1b619d9aee961f5f5f0c93ad0de562766ace344fe9e19b47",
+    7466,
+    "91e8887774637fddf914683041e87846e0e056ce6cf7975a5577d934d369d3fa",
   ],
   [
     "tests/support/wasm_execution.rs",
@@ -1348,7 +1348,10 @@ function assertTestEvidence() {
 
   assertExactJson(
     [...allocator.matchAll(/#\[test\]\s*fn\s+([A-Za-z0-9_]+)/g)].map((match) => match[1]),
-    ["selected_raw_bit_wrapper_closure_allocates_nothing"],
+    [
+      "selected_raw_bit_wrapper_closure_allocates_nothing",
+      "observation_counts_actual_allocations_only_on_the_subject_thread",
+    ],
     "native allocator-trap test inventory",
   );
   for (const evidence of [
@@ -1356,10 +1359,13 @@ function assertTestEvidence() {
     '#[path = "../src/binary64.rs"]',
     '#[path = "../src/transcendental.rs"]',
     "#[global_allocator]",
-    "AtomicBool",
-    "AtomicUsize",
+    "thread_local!",
+    "const { Cell::new(false) }",
+    "const { Cell::new(0) }",
     "ObservationWindow::begin()",
-    "ALLOCATIONS.load(Ordering::SeqCst), 0",
+    "ALLOCATIONS.with(Cell::get), 0",
+    "assert_eq!(foreign_count, 0)",
+    "assert_eq!(subject_count, 3)",
     "0x43e0_0000_0000_0000",
   ]) {
     if (!allocator.includes(evidence)) {

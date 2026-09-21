@@ -122,10 +122,11 @@ async function pinnedDownload(spec, cache) {
   });
   if (!response.ok || !response.body) throw Error("Pinned download unavailable");
   const chunks = [];
-  let length = 0;
+  const maxBytes = spec[1];
+  let total = 0;
   for await (const chunk of response.body) {
-    length += chunk.length;
-    if (length > spec[1]) throw Error("Pinned download exceeds bound");
+    total += chunk.length;
+    if (total > maxBytes) throw Error("Pinned download exceeds bound");
     chunks.push(chunk);
   }
   const bytes = Buffer.concat(chunks);
@@ -402,6 +403,20 @@ export async function buildLocalAssetAddon() {
   ];
   const noticePins = noticeSources.map((file) => identity(path.join(root, file)));
   const lockPin = identity(path.join(root, "packages/runtime-native/Cargo.lock"));
+  // Offline notice metadata also resolves workspace packages outside the linked graph.
+  command(
+    "cargo",
+    [
+      "+1.94.1",
+      "fetch",
+      "--locked",
+      "--manifest-path",
+      "packages/runtime-native/Cargo.toml",
+      "--target",
+      "x86_64-pc-windows-msvc",
+    ],
+    env,
+  );
   const cargoArgs = [
     "+1.94.1",
     "rustc",
