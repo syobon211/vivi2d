@@ -93,6 +93,7 @@ function builtEditorPins() {
   return paths.sort().map(pin);
 }
 const editorBuildPinsBefore = builtEditorPins();
+fs.mkdirSync(path.join(root, "tmp"), { recursive: true });
 const directory = fs.mkdtempSync(path.join(root, "tmp/runtime-preview-electron-"));
 const evidence = [],
   errors = [];

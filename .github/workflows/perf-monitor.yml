@@ -40,6 +40,9 @@ jobs:
         run: npm run build:e2e
       - name: Check release surface before perf tests
         run: npm run check:release-surface
+      - name: One-run PR140 renderer diagnosis
+        if: github.event.pull_request.number == 140
+        run: xvfb-run --auto-servernum -- node scripts/diagnose-pr140-renderer.mjs
       - name: Run perf project
         id: perf
         continue-on-error: true
@@ -54,8 +57,10 @@ jobs:
           if [ "${{ steps.perf.outcome }}" = "failure" ]; then
             echo "- Result: report only (soft/hard regression observed)" >> "$GITHUB_STEP_SUMMARY"
             echo "- Action: reproduce locally and review the result before deciding whether to refresh baselines or tighten budgets." >> "$GITHUB_STEP_SUMMARY"
-          else
+          elif [ "${{ steps.perf.outcome }}" = "success" ]; then
             echo "- Result: perf project passed in report-only mode." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Result: perf project did not complete; no passing result is available." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   perf-enforced:

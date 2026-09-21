@@ -25,18 +25,19 @@ async function readBoxes(
 ): Promise<
   Array<NonNullable<Awaited<ReturnType<import("playwright").Locator["boundingBox"]>>>>
 > {
-  const count = await locators.count();
-  const boxes: Array<
-    NonNullable<Awaited<ReturnType<import("playwright").Locator["boundingBox"]>>>
-  > = [];
-  for (let index = 0; index < count; index += 1) {
-    const box = await locators.nth(index).boundingBox();
-    if (!box) {
-      throw new Error(`Bounding box unavailable for notification index ${index}`);
-    }
-    boxes.push(box);
-  }
-  return boxes;
+  return locators.evaluateAll((notifications) =>
+    notifications.map((notification, index) => {
+      const rect = notification.getBoundingClientRect();
+      if (
+        getComputedStyle(notification).visibility !== "visible" ||
+        rect.width <= 0 ||
+        rect.height <= 0
+      ) {
+        throw new Error(`Notification is not visible at index ${index}`);
+      }
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+    }),
+  );
 }
 
 async function waitForNotificationSettle(window: import("playwright").Page) {
@@ -105,10 +106,15 @@ test("multiple toasts stack without overlapping and remain inside the viewport",
 
   const boxes = await readBoxes(notifications);
   expect(boxes).toHaveLength(3);
+  const viewport = window.viewportSize();
+  if (!viewport) throw new Error("Viewport size unavailable");
   const baselineX = boxes[0]!.x;
   for (let index = 0; index < boxes.length; index += 1) {
-    const locator = notifications.nth(index);
-    await expectElementWithinViewport(window, locator);
+    const box = boxes[index]!;
+    expect(box.x).toBeGreaterThanOrEqual(-2);
+    expect(box.y).toBeGreaterThanOrEqual(-2);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 2);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 2);
     if (Math.abs(boxes[index]!.x - baselineX) > 2) {
       throw new Error("Expected stacked notifications to align on the same right column");
     }
