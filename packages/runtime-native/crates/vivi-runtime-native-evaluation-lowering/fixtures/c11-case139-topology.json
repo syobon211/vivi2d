@@ -1,0 +1,173 @@
+{
+  "sourcePins": [
+    {
+      "name": "native-c10-physics-latefault-input-1.json",
+      "bytes": 38244,
+      "sha256": "6e8bcaadc61dae4b5721d199dd40330b7a618d2e696eabd5649fe1cb396b3771"
+    },
+    {
+      "name": "native-c10-physics-latefault-expectations-3.json",
+      "bytes": 224037,
+      "sha256": "fff9407640e4f345e4a1b7c793cf74729ea5a285fb62f48188f0a2d2e5b97d77"
+    }
+  ],
+  "inputPointer": "/scenarios/0/variants/0",
+  "expectedPointer": "/cases/0",
+  "caseIndex": 139,
+  "payloadUtf8": "{\"schema\":\"vivi2d.evaluationPayload.v1\",\"canvas\":{\"width\":32,\"height\":64},\"layers\":[{\"id\":\"mesh\",\"name\":\"mesh\",\"kind\":\"viviMesh\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[],\"mesh\":{\"vertices\":[0,0,1,0,0,1],\"uvs\":[0,0,1,0,0,1],\"indices\":[0,1,2],\"divisionsX\":1,\"divisionsY\":1}},{\"id\":\"A\",\"name\":\"A\",\"kind\":\"bone\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[],\"bone\":{\"angle\":0,\"length\":1,\"scaleX\":1,\"scaleY\":1}},{\"id\":\"B\",\"name\":\"B\",\"kind\":\"bone\",\"visible\":true,\"opacity\":1,\"x\":0,\"y\":0,\"width\":1,\"height\":1,\"blendMode\":\"normal\",\"expanded\":true,\"children\":[],\"bone\":{\"angle\":0,\"length\":1,\"scaleX\":1,\"scaleY\":1}}],\"parameters\":[{\"id\":\"p\",\"name\":\"p\",\"minValue\":0,\"maxValue\":1,\"defaultValue\":0},{\"id\":\"q\",\"name\":\"q\",\"minValue\":0,\"maxValue\":1,\"defaultValue\":0}],\"parameterBindings\":[{\"id\":\"late-scale-y\",\"parameterId\":\"q\",\"target\":{\"type\":\"bone\",\"boneId\":\"B\",\"property\":\"scaleY\"},\"bindingPoints\":[{\"paramValue\":0,\"targetValue\":1},{\"paramValue\":1,\"targetValue\":1.7976931348623157e+308}]}],\"skins\":{\"mesh\":{\"weights\":[[{\"boneId\":\"A\",\"weight\":1}],[{\"boneId\":\"A\",\"weight\":1}],[{\"boneId\":\"B\",\"weight\":1}]],\"bindPoseInverse\":{\"A\":[1,0,0,1,0,0],\"B\":[1,0,0,1,0,0]}}},\"ikControllers\":[],\"physicsGroups\":[{\"id\":\"disabled\",\"name\":\"disabled\",\"enabled\":false,\"pendulums\":[],\"inputs\":[],\"outputs\":[],\"gravityDirection\":0,\"gravityStrength\":0,\"wind\":0},{\"id\":\"live\",\"name\":\"live\",\"enabled\":true,\"pendulums\":[{\"length\":2,\"mass\":3,\"damping\":0.25}],\"inputs\":[{\"parameterId\":\"p\",\"weight\":0.5,\"type\":\"x\"}],\"outputs\":[{\"boneId\":\"A\",\"pendulumIndex\":0,\"weight\":0.5,\"type\":\"boneAngle\"}],\"gravityDirection\":45,\"gravityStrength\":2,\"wind\":0.25}],\"colliders\":[],\"expressionPresets\":[],\"clips\":[],\"stateMachines\":[],\"atlases\":[{\"id\":\"atlas\",\"width\":1,\"height\":1,\"entries\":[{\"layerId\":\"mesh\",\"x\":0,\"y\":0,\"width\":1,\"height\":1}]}]}",
+  "payloadSha256": "63b2d30fe05768c3d3d447048baf886caba6ec4b6165f89f677cf80c24fc8744",
+  "steps": [
+    {
+      "actionIndex": 0,
+      "operation": "construct-initial",
+      "status": 0,
+      "dynamicGenerationU64": "0",
+      "topologyGenerationU64": "1",
+      "callerCurrentD64Bits": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "parameterPreviousD64Bits": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "vertexD32Bits": [
+        "00000000",
+        "00000000",
+        "3f800000",
+        "00000000",
+        "00000000",
+        "3f800000"
+      ],
+      "primitiveRowCount": 114
+    },
+    {
+      "actionIndex": 1,
+      "operation": "set_input",
+      "parameterId": "p",
+      "valueD64Bits": "3ff0000000000000",
+      "status": 0,
+      "dynamicGenerationU64": "0",
+      "topologyGenerationU64": "1",
+      "callerCurrentD64Bits": [
+        "3ff0000000000000",
+        "0000000000000000"
+      ],
+      "parameterPreviousD64Bits": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "vertexD32Bits": [
+        "00000000",
+        "00000000",
+        "3f800000",
+        "00000000",
+        "00000000",
+        "3f800000"
+      ],
+      "primitiveRowCount": 0
+    },
+    {
+      "actionIndex": 2,
+      "operation": "set_input",
+      "parameterId": "q",
+      "valueD64Bits": "3ff0000000000000",
+      "status": 0,
+      "dynamicGenerationU64": "0",
+      "topologyGenerationU64": "1",
+      "callerCurrentD64Bits": [
+        "3ff0000000000000",
+        "3ff0000000000000"
+      ],
+      "parameterPreviousD64Bits": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "vertexD32Bits": [
+        "00000000",
+        "00000000",
+        "3f800000",
+        "00000000",
+        "00000000",
+        "3f800000"
+      ],
+      "primitiveRowCount": 0
+    },
+    {
+      "actionIndex": 3,
+      "operation": "update",
+      "deltaD64Bits": "3f81111111111112",
+      "status": 9,
+      "dynamicGenerationU64": "0",
+      "topologyGenerationU64": "1",
+      "callerCurrentD64Bits": [
+        "3ff0000000000000",
+        "3ff0000000000000"
+      ],
+      "parameterPreviousD64Bits": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "vertexD32Bits": [
+        "00000000",
+        "00000000",
+        "3f800000",
+        "00000000",
+        "00000000",
+        "3f800000"
+      ],
+      "primitiveRowCount": 143
+    },
+    {
+      "actionIndex": 4,
+      "operation": "set_input",
+      "parameterId": "q",
+      "valueD64Bits": "0000000000000000",
+      "status": 0,
+      "dynamicGenerationU64": "0",
+      "topologyGenerationU64": "1",
+      "callerCurrentD64Bits": [
+        "3ff0000000000000",
+        "0000000000000000"
+      ],
+      "parameterPreviousD64Bits": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "vertexD32Bits": [
+        "00000000",
+        "00000000",
+        "3f800000",
+        "00000000",
+        "00000000",
+        "3f800000"
+      ],
+      "primitiveRowCount": 0
+    },
+    {
+      "actionIndex": 5,
+      "operation": "update",
+      "deltaD64Bits": "3f81111111111112",
+      "status": 0,
+      "dynamicGenerationU64": "1",
+      "topologyGenerationU64": "1",
+      "callerCurrentD64Bits": [
+        "3ff0000000000000",
+        "0000000000000000"
+      ],
+      "parameterPreviousD64Bits": [
+        "3ff0000000000000",
+        "0000000000000000"
+      ],
+      "vertexD32Bits": [
+        "00000000",
+        "00000000",
+        "3f800000",
+        "371d97dd",
+        "00000000",
+        "3f800000"
+      ],
+      "primitiveRowCount": 143
+    }
+  ]
+}

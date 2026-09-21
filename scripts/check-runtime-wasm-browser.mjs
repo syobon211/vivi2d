@@ -5,6 +5,8 @@ import { createServer } from "vite";
 const root = process.cwd();
 const checkPagePath = "/__runtime-wasm-browser-check.html";
 const requestedBrowsers = parseBrowserArg(process.argv);
+const pngMode = process.argv.includes("--png-v1");
+const evaluationMode = process.argv.includes("--evaluation-v1");
 const browserTypes = {
   chromium,
   firefox,
@@ -28,6 +30,58 @@ const server = await createServer({
     VIVI_RUNTIME_ABI_VERSION,
     createViviWasmRuntime,
   } from "@vivi2d/runtime-wasm";
+
+  const hex = (bytes) => Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+  const fromHex = (value) => Uint8Array.from(value.match(/../g), (part) => Number.parseInt(part, 16));
+  const fromBase64 = (value) => Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
+  const sha256 = async (bytes) => hex(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)));
+
+  async function checkNativePng() {
+    const { createNativePngDecoder } = await import("@vivi2d/runtime-wasm/internal/png-rgba8-v1");
+    const { validateProjectV11WithNativePng } = await import("/src/lib/project-v11-native-png.ts");
+    const response = await fetch("/tests/conformance/project-embedded-round-trip-v11/manifest.json");
+    if (!response.ok) throw new Error("PNG conformance fixture unavailable");
+    const manifest = await response.json();
+    const initialized = await createNativePngDecoder();
+    if (!initialized.ok) throw new Error("Real PNG WASM unavailable");
+    let retained;
+    let retainedHex;
+    try {
+      for (const fixture of manifest.pngCases) {
+        const result = initialized.decoder.decode({
+          bytes: fromBase64(fixture.base64), expectedSha256: fromHex(fixture.sha256),
+          width: fixture.width, height: fixture.height,
+        });
+        if (fixture.native.status === "ok") {
+          if (!result.ok || result.profile !== "vivi2d.png.rgba8.v1" ||
+              result.width !== fixture.width || result.height !== fixture.height ||
+              result.rowStride !== fixture.width * 4 || hex(result.rgba) !== fixture.native.rgbaHex) {
+            throw new Error("Real PNG pixels/profile mismatch: " + fixture.id);
+          }
+          retained = result.rgba;
+          retainedHex = fixture.native.rgbaHex;
+        } else {
+          const status = { unsupported: 2, malformed: 3, limit: 4, dimension: 5 }[fixture.native.status];
+          if (result.ok || result.kind !== "png" || result.status !== status) {
+            throw new Error("Real PNG rejection mismatch: " + fixture.id);
+          }
+        }
+      }
+    } finally {
+      initialized.decoder.dispose();
+    }
+    if (!retained || hex(retained) !== retainedHex) throw new Error("PNG ownership after dispose failed");
+    const document = manifest.documents.find((fixture) => fixture.operation === "validate");
+    if (!document) throw new Error("Project conformance fixture missing");
+    const project = await validateProjectV11WithNativePng(new TextEncoder().encode(document.inputUtf8), sha256);
+    if (!project.ok || project.documentId !== document.documentId ||
+        new TextDecoder().decode(project.canonicalUtf8) !== document.canonicalUtf8 ||
+        project.images.length !== document.pngSha256s.length ||
+        project.images.some((image, index) => image.sha256 !== document.pngSha256s[index])) {
+      throw new Error("Real native Project PNG integration failed");
+    }
+    return { nativePngCases: manifest.pngCases.length, nativeProjectDocuments: 1 };
+  }
 
   async function runRuntimeWasmBrowserCheck() {
     try {
@@ -83,10 +137,17 @@ const server = await createServer({
         );
       }
 
+      const png = ${pngMode} ? await checkNativePng() : {};
+      const evaluation = ${evaluationMode}
+        ? await (await import("/packages/renderer-pixi/src/__tests__/fixtures/evaluation-runtime-pixels.ts")).runEvaluationRuntimePixels()
+        : {};
+
       window.__runtimeWasmBrowserResult = {
         backend,
         meshCount: renderList.length,
         vertexFloatCount: mesh.vertices.length,
+        ...png,
+        ...evaluation,
       };
     } catch (error) {
       window.__runtimeWasmBrowserError =
@@ -126,7 +187,17 @@ try {
       throw new Error(`Unsupported browser: ${browserName}`);
     }
 
-    const browser = await browserType.launch();
+    const browser = await browserType.launch(
+      evaluationMode && browserName === "chromium"
+        ? {
+            args: [
+              "--enable-webgl",
+              "--use-angle=swiftshader",
+              "--enable-unsafe-swiftshader",
+            ],
+          }
+        : {},
+    );
     try {
       const page = await browser.newPage();
       await page.goto(new URL("__runtime-wasm-browser-check.html", baseUrl).href);
@@ -146,14 +217,38 @@ try {
       console.log(
         `[runtime-wasm-browser] ${browserName} passed: ` +
           `${result.backend.evaluator}, ${result.meshCount} mesh, ` +
-          `${result.vertexFloatCount} vertex floats`,
+          `${result.vertexFloatCount} vertex floats` +
+          (pngMode
+            ? `; ${result.nativePngCases} real PNG cases, ${result.nativeProjectDocuments} native Project document`
+            : ""),
       );
+      if (evaluationMode) {
+        console.log(
+          `[runtime-wasm-browser] ${browserName} evaluation-v1: ${JSON.stringify({
+            realWebGL: result.realWebGL,
+            nestedInvertPixels: result.nestedInvertPixels,
+            sameSealRetry: result.sameSealRetry,
+            sessionDisposed: result.sessionDisposed,
+            initialDynamic: result.initialDynamic,
+            explicitUpdate: result.explicitUpdate,
+            publicationEvents: result.publicationEvents,
+            lastPrepareFailurePreservedIncumbent:
+              result.lastPrepareFailurePreservedIncumbent,
+            enteredRenderAbortStopped: result.enteredRenderAbortStopped,
+            actualApplicationRecovery: result.actualApplicationRecovery,
+          })}`,
+        );
+      }
     } finally {
+      console.log(`[runtime-wasm-browser] closing ${browserName}`);
       await browser.close();
+      console.log(`[runtime-wasm-browser] closed ${browserName}`);
     }
   }
 } finally {
+  console.log("[runtime-wasm-browser] closing Vite");
   await server.close();
+  console.log("[runtime-wasm-browser] closed Vite");
 }
 
 function parseBrowserArg(argv) {

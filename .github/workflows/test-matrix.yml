@@ -222,6 +222,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check:e2e-project-coverage
+      - name: Typecheck Electron E2E sources
+        run: npx tsc --noEmit -p e2e/tsconfig.json
       - run: npx playwright install --with-deps chromium
       - name: Build for E2E
         run: npm run build:e2e

@@ -20,48 +20,77 @@ const approvedTexturePlanSchemaSha256 =
 const expectedHostFiles = [
   "Cargo.toml",
   hostTexturePlanSchemaRelativePath,
+  "src/activation.rs",
+  "src/byte_input.rs",
+  "src/byte_input/tests.rs",
   "src/error.rs",
   "src/host.rs",
   "src/lib.rs",
   "src/model.rs",
   "src/tests.rs",
+  "src/tests/transfer.rs",
 ].sort();
 
+// Phase C2 moves shared preflight into a pure byte-input graph. Default native
+// store behavior, schema and error vocabulary remain unchanged; no API promotion.
 const pinnedHostFiles = [
-  ["Cargo.toml", 543, "3e84ee055ebd261e58e3cc973805d566a13c3b76d6014956836cbee7e6143b4b"],
+  ["Cargo.toml", 643, "9b4b4587d6b2feee1abfe294be53e35b93262f0ee842192f8c56718f824e46ea"],
   [
-    hostTexturePlanSchemaRelativePath,
-    approvedTexturePlanSchemaBytes,
-    approvedTexturePlanSchemaSha256,
+    "schema/evaluation-texture-plan-v1.schema.json",
+    4155,
+    "90e36afd066cc6f58eb134796779013caf13e9de184b1031b7d834b89fadf055",
+  ],
+  [
+    "src/activation.rs",
+    7223,
+    "960e84aef918b839a691baf13a599cb4c4cccef012ed3f8e156f00dc19f5f212",
+  ],
+  [
+    "src/byte_input.rs",
+    5043,
+    "ec0136ad20f0980861fa10996c068e84f1a330790ddcc9ba84c5cbdcab789522",
+  ],
+  [
+    "src/byte_input/tests.rs",
+    5161,
+    "8cb0395f3c1aef2f0fb833bce882d4266fd5f6bd37c3e51f61276c24f979b2bd",
   ],
   [
     "src/error.rs",
-    3_130,
-    "6190f1903a8b61131022279711b739b2dd68904945f672387f1c83ccf83c24b3",
+    6395,
+    "b5e052a5e4c1f24993b16802b446f23eec1fb2eeed74125e728a1b5e3d145445",
   ],
   [
     "src/host.rs",
-    22_651,
-    "ef259d5900310f4129944a604647a44b6f9f3e801c0b68e942fc1d9e89b73d7a",
+    30724,
+    "68bd9c3378c3a87d6cc875cd82214c7ac91187c08dd1b46a5484cbc02674a292",
   ],
   [
     "src/lib.rs",
-    1_365,
-    "b3ac5d3b8ca9ef899a408b660c2fb309de874413016b78baff1b7706e0266525",
+    1769,
+    "d15cd57f909478f6567de23e0f1e9ef5e261be34aaa0940801c01307aadfa8b9",
   ],
   [
     "src/model.rs",
-    7_148,
-    "8bfaa759cd6f794697f4f66264c5f5bf13ebf1297c5c9894cd6d5d13006750a3",
+    9351,
+    "a775ec4be15a2cc0d10bc5a9e3827bba4ce8862a790e6e41ad3045cd8c44dd97",
   ],
   [
     "src/tests.rs",
-    48_957,
-    "e5bed670afd729df9f6398b758220d2a88a50561b22167da226bb935c4827f0e",
+    48972,
+    "48ef27a052f33757b2e419bb03a5ed80af0e2008b2b08993c2ce79d1fa951f55",
+  ],
+  [
+    "src/tests/transfer.rs",
+    27517,
+    "604c23d71398bf92c22ec716280eb032a1a8dd0985fbfbfee2bde922f30734cd",
   ],
 ];
 
 const requiredTestNames = [
+  "pure_bytes_really_decode_and_missing_has_no_partial_ready",
+  "exact_input_set_and_later_resolver_error_do_not_mask_each_other",
+  "typed_batch_caps_precede_resolution_and_owned_snapshot_respects_read_limit",
   "activation_exact_contract_seams_are_accepted_and_id_overflow_is_pre_io",
   "activation_later_hard_error_wins_over_earlier_missing",
   "activation_missing_ids_are_deterministic_and_drop_partial_ready_values",
@@ -82,16 +111,38 @@ const requiredTestNames = [
   "request_generation_safe_integer_boundaries_are_preserved_without_reads",
   "store_failures_remain_redacted_and_never_fabricate_asset_codes",
   "write_failures_are_redacted_ordered_and_descriptor_last",
+  "blob_interruption_and_ambiguous_descriptor_commit_reopen_and_replay",
+  "blob_transfer_owns_source_bytes_and_resolves_in_two_reopened_principal_stores",
+  "cancellation_after_actual_source_resolution_discards_the_owned_export",
+  "cancelled_transfer_performs_no_source_reads_or_destination_puts_and_late_cancel_completes",
+  "export_bounds_corrupt_bytes_and_dto_debug_are_fail_closed_and_redacted",
+  "export_keeps_resolver_missing_descriptor_and_store_error_precedence",
+  "manifest_interruption_never_partial_ready_and_exact_replay_preserves_existing_bytes",
+  "manifest_postvalidation_cancellation_has_zero_puts_and_late_cancellation_completes",
+  "repeated_manifest_transfer_preserves_received_raw_bytes_and_unique_physical_objects",
+  "transfer_substitutions_are_rejected_before_any_destination_put",
+  "recorder_caps_unique_objects_before_copy_and_deduplicates",
+  "recorder_caps_retained_bytes_with_checked_arithmetic",
 ];
 
 const expectedPublicItemsByFile = {
-  "src/error.rs": ["LocalAssetHostError", "LocalAssetHostErrorKind"],
+  "src/activation.rs": [],
+  "src/byte_input.rs": ["EvaluationPhysicalObjectV1"],
+  "src/error.rs": [
+    "LocalAssetHostError",
+    "LocalAssetHostErrorKind",
+    "PngTransferError",
+    "PngTransferErrorKind",
+  ],
   "src/host.rs": ["LocalAssetHost"],
   "src/lib.rs": [],
   "src/model.rs": [
     "EvaluationTextureBindingV1",
     "EvaluationTexturePlanV1",
     "MissingActivationTexturesV1",
+    "ExportPngClosureV1",
+    "PngClosureExportV1",
+    "PngClosureObjectV1",
     "PrepareActivationTextureSetV1",
     "PreparedActivationTextureSetV1",
     "PreparedActivationTextureV1",
@@ -104,16 +155,35 @@ const expectedPublicItemsByFile = {
 };
 
 const expectedPublicFunctionsByFile = {
-  "src/error.rs": ["asset_code", "kind", "store_kind"],
+  "src/activation.rs": [],
+  "src/byte_input.rs": ["prepare_activation_texture_set_from_bytes"],
+  "src/error.rs": [
+    "asset_code",
+    "asset_code",
+    "kind",
+    "kind",
+    "store_kind",
+    "store_kind",
+    "host_error",
+    "outcome_may_have_committed",
+  ],
   "src/host.rs": [
     "ingest_referenced_png_manifest_closure",
     "materialize_embedded_png",
     "open",
     "prepare_activation_texture_set",
     "resolve_referenced_png",
+    "export_png_closure",
+    "import_png_closure",
   ],
   "src/lib.rs": [],
   "src/model.rs": [
+    "address",
+    "bytes",
+    "height",
+    "objects",
+    "reference",
+    "width",
     "id",
     "into_parts",
     "into_parts",
@@ -146,11 +216,18 @@ const expectedRootReexports = [
   "Digest",
   "EvaluationTextureBindingV1",
   "EvaluationTexturePlanV1",
+  "EvaluationPhysicalObjectV1",
+  "prepare_activation_texture_set_from_bytes",
   "LocalAssetHost",
   "LocalAssetHostError",
   "LocalAssetHostErrorKind",
   "LocalStoreErrorKind",
   "MissingActivationTexturesV1",
+  "ExportPngClosureV1",
+  "PngClosureExportV1",
+  "PngClosureObjectV1",
+  "PngTransferError",
+  "PngTransferErrorKind",
   "PrepareActivationTextureSetV1",
   "PreparedActivationTextureSetV1",
   "PreparedActivationTextureV1",
@@ -172,10 +249,11 @@ try {
   assertDependencyPins(metadata);
   assertHostContract();
   assertManifestIngestionContract();
+  assertPngTransferContract();
   assertNativeOnlyIsolation(metadata);
   assertToolchainGateAndDocs();
   console.log(
-    "[runtime-asset-host-local] passed (exact manifest ingestion, bounded orchestration, native isolation)",
+    "[runtime-asset-host-local] passed (exact manifest ingestion, bounded PNG transfer, native isolation)",
   );
 } catch (error) {
   console.error("[runtime-asset-host-local] failed:");
@@ -213,7 +291,14 @@ function assertSourceInventory() {
     }
   }
 
-  const tests = readText(`${hostRoot}/src/tests.rs`);
+  const tests = [
+    "src/tests.rs",
+    "src/tests/transfer.rs",
+    "src/host.rs",
+    "src/byte_input/tests.rs",
+  ]
+    .map((relativePath) => readText(`${hostRoot}/${relativePath}`))
+    .join("\n");
   const actualTestNames = [...tests.matchAll(/#\[test\]\s*fn\s+([A-Za-z0-9_]+)\s*\(/g)]
     .map((match) => match[1])
     .sort();
@@ -398,7 +483,11 @@ function assertCargoBoundary() {
     hostPackage.rust_version !== "1.89" ||
     hostPackage.license !== "Apache-2.0" ||
     JSON.stringify(hostPackage.publish) !== "[]" ||
-    JSON.stringify(hostPackage.features) !== "{}" ||
+    JSON.stringify(hostPackage.features) !==
+      JSON.stringify({
+        default: ["local-store"],
+        "local-store": ["dep:vivi-asset-store-local"],
+      }) ||
     path.resolve(hostPackage.manifest_path) !== resolve(hostManifestPath)
   ) {
     throw new Error(
@@ -423,7 +512,10 @@ function assertCargoBoundary() {
     directDependency("sha2", "^0.10", "dev", false, []),
     directDependency("tempfile", "^3", "dev", true, []),
     directDependency("vivi-asset-resolver", "*", "normal", false, [], "path"),
-    directDependency("vivi-asset-store-local", "*", "normal", false, [], "path"),
+    {
+      ...directDependency("vivi-asset-store-local", "*", "normal", false, [], "path"),
+      optional: true,
+    },
   ];
   const actualDirect = hostPackage.dependencies
     .map((dependency) => ({
@@ -486,8 +578,8 @@ function assertCargoBoundary() {
   }
 
   const hostNode = metadata.resolve.nodes.find((node) => node.id === hostPackage.id);
-  if (!hostNode || JSON.stringify(hostNode.features) !== "[]") {
-    throw new Error("local Asset host resolved feature surface must remain empty");
+  if (!hostNode || JSON.stringify(hostNode.features) !== '["local-store"]') {
+    throw new Error("workspace host must resolve only the explicit native store feature");
   }
   return metadata;
 }
@@ -522,7 +614,14 @@ function assertHostContract() {
     throw new Error("local Asset host must not add build.rs or native export types");
   }
 
-  const productionSource = ["src/error.rs", "src/host.rs", "src/lib.rs", "src/model.rs"]
+  const productionSource = [
+    "src/activation.rs",
+    "src/byte_input.rs",
+    "src/error.rs",
+    "src/host.rs",
+    "src/lib.rs",
+    "src/model.rs",
+  ]
     .map((relativePath) => readText(`${hostRoot}/${relativePath}`))
     .join("\n");
   for (const evidence of [
@@ -778,6 +877,116 @@ function assertManifestIngestionContract() {
   }
 }
 
+function assertPngTransferContract() {
+  const host = readText(`${hostRoot}/src/host.rs`);
+  const model = readText(`${hostRoot}/src/model.rs`);
+  const error = readText(`${hostRoot}/src/error.rs`);
+  const section = (start, end) => {
+    const first = host.indexOf(start);
+    const last = host.indexOf(end, first + start.length);
+    if (first < 0 || last < 0) throw new Error(`PNG transfer section missing: ${start}`);
+    return host.slice(first, last);
+  };
+  const exportSource = section(
+    "pub(crate) fn export_png_closure_from_store",
+    "pub(crate) fn import_png_closure_into_store",
+  );
+  if (/validate_asset_shape\s*\(/.test(exportSource)) {
+    throw new Error(
+      "PNG export must not preflight host shape/media before resolver Missing/descriptor ordering",
+    );
+  }
+  for (const evidence of [
+    "resolve_png_with_store(",
+    "ensure_not_cancelled(cancellation)?;",
+    "RecordingReadError::Store",
+    "RecordingReadError::ResourceLimit",
+    "LocalAssetHostError::resource_limit_exceeded()",
+    "drop(ready);",
+    "recording.captured.into_inner().objects",
+  ]) {
+    if (!exportSource.includes(evidence)) throw new Error(`PNG export lost ${evidence}`);
+  }
+  for (const evidence of [
+    "const MAX_CAPTURED_PNG_CLOSURE_BYTES: u64 = 68_157_440;",
+    "captured.objects.len() >= MAX_REFERENCED_PNG_CLOSURE_OBJECTS",
+    "captured.total_bytes.checked_add(length)",
+    "MAX_CAPTURED_PNG_CLOSURE_BYTES",
+    ".try_reserve_exact(snapshot.bytes.len())",
+    "RecordingReadError::ResourceLimit",
+  ]) {
+    if (!host.replace(/\s+/g, "").includes(evidence.replace(/\s+/g, ""))) {
+      throw new Error(`PNG recording bound/allocation evidence drifted: ${evidence}`);
+    }
+  }
+  const importSource = section(
+    "pub(crate) fn import_png_closure_into_store",
+    "pub(crate) fn publish_transfer_blob",
+  );
+  const blobOrder = [
+    "prepare_embedded_png(",
+    "prepared.reference() != reference",
+    "publish_transfer_blob(",
+  ].map((item) => importSource.indexOf(item));
+  if (
+    blobOrder.some((n) => n < 0) ||
+    blobOrder.some((n, i) => i > 0 && n <= blobOrder[i - 1])
+  ) {
+    throw new Error(
+      "PNG Blob transfer must fully prepare and compare the entire reference before publication",
+    );
+  }
+  const publication = section(
+    "pub(crate) fn publish_transfer_blob",
+    "pub(crate) trait ReferencedPngManifestWriteStore",
+  );
+  if (
+    (publication.match(/ensure_not_cancelled\(cancellation\)/g) ?? []).length !== 1 ||
+    publication.indexOf("ensure_not_cancelled(cancellation)") >
+      publication.indexOf("materialize_prepared_png(") ||
+    !publication.includes(".publication_failure()")
+  )
+    throw new Error(
+      "PNG Blob transfer cancellation/publication ambiguity boundary drifted",
+    );
+  const manifest = section(
+    "pub(crate) fn ingest_manifest_with_cancellation",
+    "fn validate_referenced_png_manifest_closure",
+  );
+  const checkpoint = manifest.indexOf("ensure_not_cancelled(cancellation)?;");
+  if (
+    checkpoint <= manifest.indexOf("let attestation =") ||
+    checkpoint >= manifest.indexOf(".put_verified_chunk_if_absent")
+  ) {
+    throw new Error(
+      "PNG manifest cancellation must occur after validation/planning but before the first write",
+    );
+  }
+  assertExactEnumVariants(error, "PngTransferErrorKind", [
+    "CancelledBeforePublication",
+    "Host",
+  ]);
+  assertExactEnumVariants(model, "ExportPngClosureV1", ["Ready", "Missing"]);
+  for (const name of ["PngClosureObjectV1", "PngClosureExportV1"]) {
+    if (
+      !model.includes(`impl fmt::Debug for ${name}`) ||
+      new RegExp(`#\\[derive\\([^\\]]*Debug[^\\]]*\\)\\]\\s*pub struct ${name}`).test(
+        model,
+      )
+    ) {
+      throw new Error(`${name} must retain redacted count/length-only Debug`);
+    }
+  }
+  if (
+    !error.includes("outcome_may_have_committed") ||
+    !error.includes("Host(error.kind())")
+  ) {
+    throw new Error(
+      "PNG transfer must preserve host causes and expose outcome ambiguity separately",
+    );
+  }
+}
+
 function assertNativeOnlyIsolation(metadata) {
   const resolverConsumers = consumersOf(metadata, "vivi-asset-resolver");
   if (
@@ -797,18 +1006,16 @@ function assertNativeOnlyIsolation(metadata) {
   const hostConsumers = consumersOf(metadata, "vivi-asset-host-local");
   if (
     JSON.stringify(hostConsumers) !==
-    JSON.stringify(["vivi-runtime-native-preactivation"])
+    JSON.stringify(["vivi-runtime-native-c-abi", "vivi-runtime-native-preactivation"])
   ) {
     throw new Error(
       `local Asset host production consumer isolation drifted: ${hostConsumers.join(", ")}`,
     );
   }
 
-  for (const packageName of [
-    "vivi-runtime-native-c-abi",
-    "vivi-runtime-native-core",
-    "vivi-runtime-native-wasm",
-  ]) {
+  assertOptionalNativeBridge(metadata);
+  assertPureByteBoundary();
+  for (const packageName of ["vivi-runtime-native-core", "vivi-runtime-native-wasm"]) {
     const pkg = requirePackage(metadata, packageName);
     if (
       pkg.dependencies.some((dependency) =>
@@ -824,6 +1031,12 @@ function assertNativeOnlyIsolation(metadata) {
   for (const boundaryRoot of ["packages/editor-host", "electron", "src"]) {
     for (const filePath of walkFiles(resolve(boundaryRoot))) {
       if (!/\.(?:[cm]?[jt]sx?|json)$/i.test(filePath)) continue;
+      // This exact generated SBOM is dependency attribution data, not source wiring.
+      if (
+        toRelative(filePath) ===
+        "electron/generated/native-local-asset/win32-x64/native-local-asset.cdx.json"
+      )
+        continue;
       if (/vivi[-_]asset[-_]host[-_]local/i.test(readFileSync(filePath, "utf8"))) {
         throw new Error(
           `${toRelative(filePath)} wires the local Asset host before its bridge slice`,
@@ -839,8 +1052,14 @@ function assertNativeOnlyIsolation(metadata) {
     "packages/runtime-native/crates/vivi-runtime-native-wasm",
   ]) {
     if (
-      walkFiles(resolve(isolatedRoot)).some((filePath) =>
-        /vivi[-_]asset[-_]host[-_]local/i.test(readFileSync(filePath, "utf8")),
+      walkFiles(resolve(isolatedRoot)).some(
+        (filePath) =>
+          ![
+            "packages/runtime-native/crates/vivi-runtime-native-c-abi/Cargo.toml",
+            "packages/runtime-native/crates/vivi-runtime-native-c-abi/src/local_asset.rs",
+            "packages/runtime-native/crates/vivi-runtime-native-c-abi/src/local_asset/preview.rs",
+          ].includes(toRelative(filePath)) &&
+          /vivi[-_]asset[-_]host[-_]local/i.test(readFileSync(filePath, "utf8")),
       )
     ) {
       throw new Error(`${isolatedRoot} source must remain disconnected from the host`);
@@ -856,6 +1075,116 @@ function assertNativeOnlyIsolation(metadata) {
       throw new Error(
         `${foundationRoot} source must not depend back on its host adapter`,
       );
+    }
+  }
+}
+
+function assertPureByteBoundary() {
+  // Workspace metadata unifies dev/native features. Inspect the actual production
+  // target separately so a declared optional edge cannot hide a SQLite dependency.
+  const tree = runCapture("cargo", [
+    "+1.89.0",
+    "tree",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    resolve(nativeManifestPath),
+    "-p",
+    "vivi-runtime-native-wasm",
+    "--no-default-features",
+    "--features",
+    "evaluation-v1",
+    "--target",
+    "wasm32-unknown-unknown",
+    "--edges",
+    "normal,build",
+    "--prefix",
+    "none",
+  ]);
+  for (const required of [
+    "vivi-asset-host-local",
+    "vivi-asset-resolver",
+    "vivi-png-ref",
+  ]) {
+    if (!new RegExp(`^${required} v`, "m").test(tree)) {
+      throw new Error(`Evaluation WASM pure byte graph omits ${required}`);
+    }
+  }
+  if (/^(?:vivi-asset-store-local|rusqlite|libsqlite3-sys) v/m.test(tree)) {
+    throw new Error("Evaluation WASM normal/build graph reaches native store/SQLite");
+  }
+  for (const file of ["src/activation.rs", "src/byte_input.rs"]) {
+    const source = readText(`${hostRoot}/${file}`);
+    if (
+      /vivi_asset_store_local|\bstd::(?:fs|net|process)\b|\bLocalImmutableAssetStore\b/.test(
+        source,
+      )
+    ) {
+      throw new Error(`${file} must remain byte-only without native I/O`);
+    }
+  }
+  const source = readText(`${hostRoot}/src/lib.rs`);
+  for (const declaration of [
+    "mod host;",
+    "pub use host::LocalAssetHost;",
+    "pub use vivi_asset_store_local::LocalStoreErrorKind;",
+  ]) {
+    if (!source.includes(`#[cfg(feature = "local-store")]\n${declaration}`)) {
+      throw new Error("Native host/store surface escaped its explicit feature");
+    }
+  }
+}
+
+function assertOptionalNativeBridge(metadata) {
+  const abi = requirePackage(metadata, "vivi-runtime-native-c-abi");
+  const edges = abi.dependencies.filter(
+    (entry) => entry.name === "vivi-asset-host-local",
+  );
+  const edge = edges[0];
+  if (
+    edges.length !== 1 ||
+    !edge.optional ||
+    edge.kind !== null ||
+    edge.source !== null ||
+    edge.req !== "*" ||
+    edge.target !== null ||
+    edge.uses_default_features ||
+    JSON.stringify(edge.features) !== "[]" ||
+    path.resolve(edge.path) !== resolve(hostRoot) ||
+    JSON.stringify(abi.features.default) !== "[]" ||
+    JSON.stringify(abi.features["local-asset-host-v1"]) !==
+      JSON.stringify(["dep:vivi-asset-host-local", "vivi-asset-host-local/local-store"])
+  )
+    throw new Error("C ABI host dependency must remain the exact opt-in native edge");
+
+  const source = readText(
+    "packages/runtime-native/crates/vivi-runtime-native-c-abi/src/lib.rs",
+  );
+  if (!source.includes('#[cfg(feature = "local-asset-host-v1")]\nmod local_asset;'))
+    throw new Error("Local Asset implementation must remain feature-gated");
+  const nodes = new Map(metadata.resolve.nodes.map((node) => [node.id, node]));
+  // Inspect resolved normal/build edges, not workspace/dev feature membership.
+  // An optional declaration is not proof that a default artifact excludes SQLite.
+  for (const name of [
+    "vivi-runtime-native-c-abi",
+    "vivi-runtime-native-core",
+    "vivi-runtime-native-wasm",
+  ]) {
+    const closure = new Set();
+    visitDependency(
+      requirePackage(metadata, name).id,
+      nodes,
+      closure,
+      new Set([null, "build"]),
+    );
+    for (const forbidden of [
+      "vivi-asset-host-local",
+      "vivi-asset-store-local",
+      "rusqlite",
+      "libsqlite3-sys",
+    ]) {
+      if (closure.has(requirePackage(metadata, forbidden).id))
+        throw new Error(`${name} default artifact reaches local host/store/SQLite`);
     }
   }
 }

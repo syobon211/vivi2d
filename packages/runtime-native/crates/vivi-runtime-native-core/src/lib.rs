@@ -8,6 +8,8 @@
 
 /// Error types and canonical status mapping.
 pub mod errors;
+#[cfg(feature = "evaluation-v1")]
+mod evaluation;
 /// Parser and evaluator resource limits.
 pub mod limits;
 /// Runtime Spec v1 model evaluator.
@@ -23,6 +25,15 @@ pub mod render;
 pub mod static_model;
 
 pub use errors::RuntimeError;
+#[cfg(feature = "evaluation-v1")]
+pub use evaluation::preparation::{
+    EvaluationPreparationError, prepare_evaluation_bytes_v1, retry_evaluation_bytes_v1,
+};
+#[cfg(feature = "evaluation-v1")]
+pub use evaluation::{
+    ActiveEvaluationV1, EvaluationActivationV1, EvaluationGenerationsV1, EvaluationOwnerError,
+    EvaluationRuntimeV1,
+};
 pub use limits::RuntimeLimits;
 pub use model::{HitResult, RuntimeModel};
 pub use parameters::{ParameterInfo, ParameterState};
@@ -35,6 +46,13 @@ pub use render::{
     MAX_MASK_DEPTH, RENDER_FEATURE_DRAW_COMMANDS,
 };
 pub use static_model::{BlendMode, MeshSnapshot, StaticModel, TextureSnapshot};
+#[cfg(feature = "evaluation-v1")]
+pub use vivi_runtime_native_evaluation_lowering::{
+    AssetRef, Digest, EvaluationPhysicalObjectV1, EvaluationTextureBindingV1,
+    EvaluationTexturePlanV1, MissingLoweredEvaluationV1, PrepareLoweredEvaluationV1,
+    PreparedActivationTextureSetV1, PreparedLoweredEvaluationV1, SealedEvaluationCandidateV1,
+    StorageKind,
+};
 
 /// Runtime ABI major version for the pre-release native C ABI candidate.
 pub const ABI_VERSION_MAJOR: u16 = 0;

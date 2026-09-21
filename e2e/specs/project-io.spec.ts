@@ -20,6 +20,18 @@ import {
   writeBase64Png,
 } from "../helpers/png-fixtures";
 
+type ProjectIoLayer = {
+  id: string;
+  kind?: string;
+  children?: ProjectIoLayer[];
+};
+type ProjectIoEditorStore = {
+  getState: () => {
+    project: { layers: ProjectIoLayer[] } | null;
+    setLayerSemanticRole: (id: string, role: "hair" | "body") => void;
+  };
+};
+
 let tmpDir: string;
 let pngAPath: string;
 let pngBPath: string;
@@ -302,7 +314,10 @@ test("manually split PNG projects can open Auto Setup", async ({ app, window }) 
   });
 
   const meshLayerCount = await window.evaluate(() => {
-    const project = window.__vivi2d?.useEditorStore.getState().project;
+    const runtime = globalThis.window.__vivi2d as
+      | { useEditorStore: ProjectIoEditorStore }
+      | undefined;
+    const project = runtime?.useEditorStore.getState().project;
     if (!project) return 0;
     const walk = (layers: Array<{ kind?: string; children?: unknown[] }>): number =>
       layers.reduce((count, layer) => {
@@ -316,7 +331,10 @@ test("manually split PNG projects can open Auto Setup", async ({ app, window }) 
   });
   expect(meshLayerCount).toBeGreaterThanOrEqual(2);
   const meshLayerIds = await window.evaluate(() => {
-    const project = window.__vivi2d?.useEditorStore.getState().project;
+    const runtime = globalThis.window.__vivi2d as
+      | { useEditorStore: ProjectIoEditorStore }
+      | undefined;
+    const project = runtime?.useEditorStore.getState().project;
     if (!project) return [];
     const meshes: Array<{
       id?: string;
@@ -344,13 +362,21 @@ test("manually split PNG projects can open Auto Setup", async ({ app, window }) 
       }
     };
     walk(project.layers);
-    return meshes.map((mesh) => mesh.id).filter(Boolean).slice(0, 2);
+    return meshes
+      .map((mesh) => mesh.id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0)
+      .slice(0, 2);
   });
   await window.evaluate((ids) => {
-    const editor = window.__vivi2d?.useEditorStore.getState();
-    if (!editor || ids.length < 2) return;
-    editor.setLayerSemanticRole(ids[0], "hair");
-    editor.setLayerSemanticRole(ids[1], "body");
+    const runtime = globalThis.window.__vivi2d as
+      | { useEditorStore: ProjectIoEditorStore }
+      | undefined;
+    const editor = runtime?.useEditorStore.getState();
+    const first = ids[0];
+    const second = ids[1];
+    if (!editor || first === undefined || second === undefined) return;
+    editor.setLayerSemanticRole(first, "hair");
+    editor.setLayerSemanticRole(second, "body");
   }, meshLayerIds);
 
   await window.locator(".menu-dropdown-trigger").first().click();
@@ -766,7 +792,8 @@ test("manual PNG reimport notifications follow the active locale", async ({
   await clickFileMenuItem(window, "Reimport Image Layer");
   await expect(
     window.locator(".notification-message", {
-      hasText: "\u518d\u8aad\u307f\u8fbc\u307f\u3057\u307e\u3057\u305f: localized-reimport.",
+      hasText:
+        "\u518d\u8aad\u307f\u8fbc\u307f\u3057\u307e\u3057\u305f: localized-reimport.",
     }),
   ).toBeVisible({ timeout: 10_000 });
 });

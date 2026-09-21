@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use vivi_asset_resolver::{
     AssetError, AssetErrorCode, AssetReadStore, AssetRef, Descriptor, Digest, EmbeddedBlobStore,
@@ -9,24 +11,19 @@ use vivi_asset_resolver::{
 };
 use vivi_asset_store_local::{LocalImmutableAssetStore, LocalStoreError, LocalStoreErrorKind};
 
-use crate::error::LocalAssetHostError;
+use crate::activation::validate_asset_shape;
+use crate::error::{LocalAssetHostError, PngTransferError};
 use crate::model::{
-    EVALUATION_TEXTURE_PLAN_SCHEMA_V1, EvaluationTexturePlanV1, MissingActivationTexturesV1,
-    PNG_MEDIA_TYPE, PNG_PROFILE_V1, PrepareActivationTextureSetV1, PreparedActivationTextureSetV1,
-    PreparedActivationTextureV1, ReferencedAtlasResolutionV1, ReferencedPngManifestClosureV1,
-    SRGB_COLOR_SPACE, STRAIGHT_ALPHA_MODE, VerifiedAtlasAssetV1, VerifiedPngV1,
+    EvaluationTexturePlanV1, ExportPngClosureV1, PNG_PROFILE_V1, PngClosureExportV1,
+    PngClosureObjectV1, PrepareActivationTextureSetV1, ReferencedAtlasResolutionV1,
+    ReferencedPngClosureObjectV1, ReferencedPngManifestClosureV1, VerifiedAtlasAssetV1,
+    VerifiedPngV1,
 };
 
-const MAX_TEXTURES: usize = 32;
-const MAX_TEXTURE_AXIS: u32 = 8_192;
-const MAX_TEXTURE_PIXELS: u64 = 67_108_864;
-const MAX_TOTAL_TEXTURE_PIXELS: u64 = 67_108_864;
-const MAX_TEXTURE_RGBA_BYTES: u64 = 268_435_456;
-const MAX_TOTAL_TEXTURE_RGBA_BYTES: u64 = 268_435_456;
-const MAX_PNG_INPUT_BYTES: u64 = 67_108_864;
-const MAX_BLOB_BYTES: u64 = 16_777_216;
-const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 const MAX_REFERENCED_PNG_CLOSURE_OBJECTS: usize = 9;
+// This bounds only retained transfer copies: PNG input plus one raw manifest.
+// Resolver/store owners still enforce their own per-read/decode limits.
+const MAX_CAPTURED_PNG_CLOSURE_BYTES: u64 = 68_157_440;
 
 /// Principal-bound facade over one private immutable SQLite Asset store.
 /// Neither its principal nor its path is observable through this API.
@@ -36,6 +33,50 @@ pub struct LocalAssetHost {
 }
 
 impl LocalAssetHost {
+    /// Exports one exact owned physical PNG closure through the existing
+    /// resolver's validation/read ordering. No host reference preflight runs
+    /// before it; Missing and descriptor failures retain resolver precedence.
+    pub fn export_png_closure(
+        &self,
+        reference: &AssetRef,
+        declared_width: u32,
+        declared_height: u32,
+        cancellation: &AtomicBool,
+    ) -> Result<ExportPngClosureV1, PngTransferError> {
+        export_png_closure_from_store(
+            &self.store,
+            &self.principal,
+            reference,
+            declared_width,
+            declared_height,
+            cancellation,
+            &|e: LocalStoreError| Some(e.kind()),
+        )
+    }
+
+    /// Revalidates untrusted transfer bytes before descriptor-last publication.
+    /// Cancellation is checked before work and once after all validation. Once
+    /// writing starts, completion or an outcome-ambiguous Store error wins.
+    pub fn import_png_closure(
+        &mut self,
+        reference: &AssetRef,
+        closure: &PngClosureExportV1,
+        declared_width: u32,
+        declared_height: u32,
+        cancellation: &AtomicBool,
+    ) -> Result<VerifiedAtlasAssetV1, PngTransferError> {
+        import_png_closure_into_store(
+            &mut self.store,
+            &self.principal,
+            reference,
+            closure,
+            declared_width,
+            declared_height,
+            cancellation,
+            &|e: LocalStoreError| Some(e.kind()),
+        )
+    }
+
     /// Opens or creates one store and permanently binds this host instance to
     /// the supplied opaque principal.
     pub fn open(
@@ -122,6 +163,253 @@ impl LocalAssetHost {
             &classify,
         )
     }
+}
+
+fn ensure_not_cancelled(cancellation: &AtomicBool) -> Result<(), PngTransferError> {
+    if cancellation.load(Ordering::Acquire) {
+        Err(PngTransferError::cancelled_before_publication())
+    } else {
+        Ok(())
+    }
+}
+
+#[derive(Default)]
+struct CapturedPngObjects {
+    objects: Vec<PngClosureObjectV1>,
+    total_bytes: u64,
+}
+
+enum RecordingReadError<E> {
+    Store(E),
+    ResourceLimit,
+}
+
+struct RecordingReadStore<'a, S> {
+    store: &'a S,
+    captured: RefCell<CapturedPngObjects>,
+}
+
+impl<S: AssetReadStore> RecordingReadStore<'_, S> {
+    fn record(&self, snapshot: &ObjectSnapshot) -> Result<(), RecordingReadError<S::Error>> {
+        let mut captured = self.captured.borrow_mut();
+        if captured
+            .objects
+            .iter()
+            .any(|o| o.address == snapshot.address)
+        {
+            return Ok(());
+        }
+        if captured.objects.len() >= MAX_REFERENCED_PNG_CLOSURE_OBJECTS {
+            return Err(RecordingReadError::ResourceLimit);
+        }
+        let length =
+            u64::try_from(snapshot.bytes.len()).map_err(|_| RecordingReadError::ResourceLimit)?;
+        let total = captured
+            .total_bytes
+            .checked_add(length)
+            .filter(|n| *n <= MAX_CAPTURED_PNG_CLOSURE_BYTES)
+            .ok_or(RecordingReadError::ResourceLimit)?;
+        let mut bytes = Vec::new();
+        bytes
+            .try_reserve_exact(snapshot.bytes.len())
+            .map_err(|_| RecordingReadError::ResourceLimit)?;
+        bytes.extend_from_slice(&snapshot.bytes);
+        captured
+            .objects
+            .try_reserve_exact(1)
+            .map_err(|_| RecordingReadError::ResourceLimit)?;
+        captured.objects.push(PngClosureObjectV1 {
+            address: snapshot.address,
+            bytes,
+        });
+        captured.total_bytes = total;
+        Ok(())
+    }
+}
+
+impl<S: AssetReadStore> AssetReadStore for RecordingReadStore<'_, S> {
+    type Error = RecordingReadError<S::Error>;
+
+    fn descriptor(
+        &self,
+        principal: &PrincipalId,
+        expected: &AssetRef,
+    ) -> Result<Option<Descriptor>, Self::Error> {
+        self.store
+            .descriptor(principal, expected)
+            .map_err(RecordingReadError::Store)
+    }
+
+    fn object(
+        &self,
+        principal: &PrincipalId,
+        address: Digest,
+        max_bytes: u64,
+    ) -> Result<ObjectRead, Self::Error> {
+        let result = self
+            .store
+            .object(principal, address, max_bytes)
+            .map_err(RecordingReadError::Store)?;
+        if let ObjectRead::Snapshot(snapshot) = &result {
+            // Leave invalid/transient snapshots to the resolver's existing
+            // classification; a recorder must not turn them into success.
+            if snapshot.state == ObjectState::Active && (snapshot.bytes.len() as u64) <= max_bytes {
+                self.record(snapshot)?;
+            }
+        }
+        Ok(result)
+    }
+}
+
+pub(crate) fn export_png_closure_from_store<S, F>(
+    store: &S,
+    principal: &PrincipalId,
+    reference: &AssetRef,
+    declared_width: u32,
+    declared_height: u32,
+    cancellation: &AtomicBool,
+    classify_store_error: &F,
+) -> Result<ExportPngClosureV1, PngTransferError>
+where
+    S: AssetReadStore,
+    F: Fn(S::Error) -> Option<LocalStoreErrorKind>,
+{
+    ensure_not_cancelled(cancellation)?;
+    let recording = RecordingReadStore {
+        store,
+        captured: RefCell::new(CapturedPngObjects::default()),
+    };
+    // Deliberately no validate_asset_shape: resolver top/descriptor/media
+    // ordering is authoritative for export, including Missing precedence.
+    let resolved = resolve_png_with_store(
+        &recording,
+        principal,
+        reference,
+        declared_width,
+        declared_height,
+    )
+    .map_err(|error| match error {
+        OperationError::Asset(error) => LocalAssetHostError::from_asset(error),
+        OperationError::StoreUnavailable(RecordingReadError::Store(error)) => {
+            LocalAssetHostError::from_store_kind(classify_store_error(error))
+        }
+        OperationError::StoreUnavailable(RecordingReadError::ResourceLimit) => {
+            LocalAssetHostError::resource_limit_exceeded()
+        }
+    })?;
+    ensure_not_cancelled(cancellation)?;
+    let ResolvePng::Ready(ready) = resolved else {
+        return Ok(ExportPngClosureV1::Missing);
+    };
+    let reference = ready.reference().clone();
+    let info = ready.decoded().info;
+    drop(ready);
+    Ok(ExportPngClosureV1::Ready(PngClosureExportV1 {
+        reference,
+        width: info.width,
+        height: info.height,
+        objects: recording.captured.into_inner().objects,
+    }))
+}
+
+// Retain the existing store/principal/reference/dimensions/classifier seam;
+// the transfer adds only its owned closure and one cancellation checkpoint.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn import_png_closure_into_store<S, F>(
+    store: &mut S,
+    principal: &PrincipalId,
+    reference: &AssetRef,
+    closure: &PngClosureExportV1,
+    declared_width: u32,
+    declared_height: u32,
+    cancellation: &AtomicBool,
+    classify_store_error: &F,
+) -> Result<VerifiedAtlasAssetV1, PngTransferError>
+where
+    S: EmbeddedBlobStore + ReferencedPngManifestWriteStore<Error = <S as EmbeddedBlobStore>::Error>,
+    F: Fn(<S as EmbeddedBlobStore>::Error) -> Option<LocalStoreErrorKind>,
+{
+    ensure_not_cancelled(cancellation)?;
+    validate_asset_shape(reference)?;
+    if closure.reference != *reference {
+        return Err(asset_ingestion_error(AssetErrorCode::DescriptorMismatch).into());
+    }
+    if (closure.width, closure.height) != (declared_width, declared_height) {
+        return Err(asset_ingestion_error(AssetErrorCode::DimensionMismatch).into());
+    }
+    match reference.storage_kind {
+        StorageKind::Blob => {
+            if closure.objects.len() != 1 || closure.objects[0].address != reference.object_address
+            {
+                return Err(asset_ingestion_error(AssetErrorCode::RefSetMismatch).into());
+            }
+            let prepared =
+                prepare_embedded_png(&closure.objects[0].bytes, declared_width, declared_height)
+                    .map_err(LocalAssetHostError::from_asset)?;
+            // Compare the entire independently generated reference BEFORE any put.
+            if prepared.reference() != reference {
+                return Err(asset_ingestion_error(AssetErrorCode::HashMismatch).into());
+            }
+            publish_transfer_blob(
+                store,
+                principal,
+                &prepared,
+                cancellation,
+                classify_store_error,
+            )
+        }
+        StorageKind::ChunkManifest => {
+            if closure.objects.len() > MAX_REFERENCED_PNG_CLOSURE_OBJECTS {
+                return Err(asset_ingestion_error(AssetErrorCode::RefSetMismatch).into());
+            }
+            let mut wire = Vec::new();
+            wire.try_reserve_exact(closure.objects.len())
+                .map_err(|_| LocalAssetHostError::resource_limit_exceeded())?;
+            for object in &closure.objects {
+                wire.push(object.address.to_lower_hex());
+            }
+            let mut objects = Vec::new();
+            objects
+                .try_reserve_exact(closure.objects.len())
+                .map_err(|_| LocalAssetHostError::resource_limit_exceeded())?;
+            for (address, object) in wire.iter().zip(&closure.objects) {
+                objects.push(ReferencedPngClosureObjectV1::new(address, &object.bytes));
+            }
+            ingest_manifest_with_cancellation(
+                store,
+                principal,
+                reference,
+                &ReferencedPngManifestClosureV1::new(objects),
+                declared_width,
+                declared_height,
+                Some(cancellation),
+                classify_store_error,
+            )
+            .map_err(PngTransferError::publication_failure)
+        }
+    }
+}
+
+pub(crate) fn publish_transfer_blob<S, F>(
+    store: &mut S,
+    principal: &PrincipalId,
+    prepared: &vivi_asset_resolver::PreparedEmbeddedPng,
+    cancellation: &AtomicBool,
+    classify_store_error: &F,
+) -> Result<VerifiedAtlasAssetV1, PngTransferError>
+where
+    S: EmbeddedBlobStore,
+    F: Fn(S::Error) -> Option<LocalStoreErrorKind>,
+{
+    let info = prepared.decoded().info;
+    ensure_not_cancelled(cancellation)?;
+    // No cancellation callback between these immutable writes. A Store error
+    // can follow the descriptor commit and is conservatively ambiguous.
+    let reference = materialize_prepared_png(store, principal, prepared).map_err(|error| {
+        PngTransferError::from(map_publication_error(error, classify_store_error))
+            .publication_failure()
+    })?;
+    Ok(verified_attestation(reference, info.width, info.height))
 }
 
 pub(crate) trait ReferencedPngManifestWriteStore {
@@ -257,6 +545,39 @@ where
     S: ReferencedPngManifestWriteStore,
     F: Fn(S::Error) -> Option<LocalStoreErrorKind>,
 {
+    ingest_manifest_with_cancellation(
+        store,
+        principal,
+        reference,
+        closure,
+        declared_width,
+        declared_height,
+        None,
+        classify_store_error,
+    )
+    .map_err(|error| {
+        error
+            .host_error()
+            .expect("non-cancellable ingestion has a host cause")
+    })
+}
+
+// The existing ingestion seam plus an optional final cancellation checkpoint.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn ingest_manifest_with_cancellation<S, F>(
+    store: &mut S,
+    principal: &PrincipalId,
+    reference: &AssetRef,
+    closure: &ReferencedPngManifestClosureV1<'_>,
+    declared_width: u32,
+    declared_height: u32,
+    cancellation: Option<&AtomicBool>,
+    classify_store_error: &F,
+) -> Result<VerifiedAtlasAssetV1, PngTransferError>
+where
+    S: ReferencedPngManifestWriteStore,
+    F: Fn(S::Error) -> Option<LocalStoreErrorKind>,
+{
     let validated = validate_referenced_png_manifest_closure(
         principal,
         reference,
@@ -291,6 +612,9 @@ where
 
     // Every fallible caller/Asset check is complete before the first durable
     // write. From this point onward, failures belong only to publication.
+    if let Some(cancellation) = cancellation {
+        ensure_not_cancelled(cancellation)?;
+    }
     for (address, bytes) in publication_chunks {
         store
             .put_verified_chunk_if_absent(principal, address, bytes)
@@ -432,54 +756,13 @@ where
     S: AssetReadStore,
     F: Fn(S::Error) -> Option<LocalStoreErrorKind>,
 {
-    let totals = preflight_plan(request_generation, plan)?;
-
-    let mut ready = Vec::new();
-    ready
-        .try_reserve_exact(plan.textures.len())
-        .map_err(|_| LocalAssetHostError::resource_limit_exceeded())?;
-    let mut missing_ids = Vec::new();
-    missing_ids
-        .try_reserve_exact(plan.textures.len())
-        .map_err(|_| LocalAssetHostError::resource_limit_exceeded())?;
-
-    for binding in &plan.textures {
-        match resolve_png_with_store(
-            store,
-            principal,
-            &binding.asset,
-            binding.width,
-            binding.height,
-        )
-        .map_err(|error| map_operation_error(error, classify_store_error))?
-        {
-            ResolvePng::Ready(ready_png) => ready.push(PreparedActivationTextureV1 {
-                id: binding.id.clone(),
-                ready: ready_png,
-            }),
-            ResolvePng::Missing => missing_ids.push(binding.id.clone()),
-        }
-    }
-
-    if missing_ids.is_empty() {
-        Ok(PrepareActivationTextureSetV1::Ready(
-            PreparedActivationTextureSetV1 {
-                request_generation,
-                textures: ready,
-                total_pixels: totals.pixels,
-                total_rgba_bytes: totals.rgba_bytes,
-            },
-        ))
-    } else {
-        // `ready` is dropped here: a Missing state can never carry a partial
-        // activation set.
-        Ok(PrepareActivationTextureSetV1::Missing(
-            MissingActivationTexturesV1 {
-                request_generation,
-                texture_ids: missing_ids,
-            },
-        ))
-    }
+    crate::activation::prepare_activation_texture_set_from_store(
+        store,
+        principal,
+        request_generation,
+        plan,
+        &|error| LocalAssetHostError::from_store_kind(classify_store_error(error)),
+    )
 }
 
 fn map_local_operation_error(error: OperationError<LocalStoreError>) -> LocalAssetHostError {
@@ -521,126 +804,77 @@ where
     }
 }
 
-#[derive(Clone, Copy)]
-struct PlanTotals {
-    pixels: u64,
-    rgba_bytes: u64,
-}
-
-fn preflight_plan(
-    request_generation: u64,
-    plan: &EvaluationTexturePlanV1,
-) -> Result<PlanTotals, LocalAssetHostError> {
-    if request_generation > MAX_SAFE_INTEGER {
-        return Err(LocalAssetHostError::resource_limit_exceeded());
-    }
-    if plan.schema != EVALUATION_TEXTURE_PLAN_SCHEMA_V1 {
-        return Err(LocalAssetHostError::invalid_texture_plan());
-    }
-    if plan.textures.len() > MAX_TEXTURES {
-        return Err(LocalAssetHostError::resource_limit_exceeded());
-    }
-
-    let mut previous_id: Option<&[u8]> = None;
-    let mut total_pixels = 0_u64;
-    let mut total_rgba_bytes = 0_u64;
-    for binding in &plan.textures {
-        if !valid_texture_id(&binding.id)
-            || previous_id.is_some_and(|previous| previous >= binding.id.as_bytes())
-            || binding.media_type != PNG_MEDIA_TYPE
-            || binding.color_space != SRGB_COLOR_SPACE
-            || binding.alpha_mode != STRAIGHT_ALPHA_MODE
-        {
-            return Err(LocalAssetHostError::invalid_texture_plan());
-        }
-        previous_id = Some(binding.id.as_bytes());
-
-        if binding.width == 0 || binding.height == 0 {
-            return Err(LocalAssetHostError::invalid_texture_plan());
-        }
-        if binding.width > MAX_TEXTURE_AXIS || binding.height > MAX_TEXTURE_AXIS {
-            return Err(LocalAssetHostError::resource_limit_exceeded());
-        }
-
-        let pixels = u64::from(binding.width)
-            .checked_mul(u64::from(binding.height))
-            .ok_or_else(LocalAssetHostError::resource_limit_exceeded)?;
-        if pixels > MAX_TEXTURE_PIXELS {
-            return Err(LocalAssetHostError::resource_limit_exceeded());
-        }
-        let rgba_bytes = pixels
-            .checked_mul(4)
-            .ok_or_else(LocalAssetHostError::resource_limit_exceeded)?;
-        if rgba_bytes > MAX_TEXTURE_RGBA_BYTES {
-            return Err(LocalAssetHostError::resource_limit_exceeded());
-        }
-
-        validate_asset_shape(&binding.asset)?;
-
-        total_pixels = total_pixels
-            .checked_add(pixels)
-            .ok_or_else(LocalAssetHostError::resource_limit_exceeded)?;
-        total_rgba_bytes = total_rgba_bytes
-            .checked_add(rgba_bytes)
-            .ok_or_else(LocalAssetHostError::resource_limit_exceeded)?;
-        if total_pixels > MAX_TOTAL_TEXTURE_PIXELS
-            || total_rgba_bytes > MAX_TOTAL_TEXTURE_RGBA_BYTES
-        {
-            return Err(LocalAssetHostError::resource_limit_exceeded());
-        }
-    }
-
-    Ok(PlanTotals {
-        pixels: total_pixels,
-        rgba_bytes: total_rgba_bytes,
-    })
-}
-
-fn valid_texture_id(id: &str) -> bool {
-    let Some(suffix) = id.as_bytes().strip_prefix(b"atlas:") else {
-        return false;
-    };
-    (1..=120).contains(&suffix.len())
-        && suffix
-            .iter()
-            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-'))
-}
-
-fn validate_asset_shape(reference: &AssetRef) -> Result<(), LocalAssetHostError> {
-    match reference.storage_kind {
-        StorageKind::Blob => {
-            if reference.size_bytes > MAX_BLOB_BYTES {
-                return Err(asset_preflight_error(AssetErrorCode::LimitExceeded));
-            }
-            if reference.object_address != reference.content_sha256 {
-                return Err(asset_preflight_error(AssetErrorCode::HashMismatch));
-            }
-        }
-        StorageKind::ChunkManifest => {
-            if reference.size_bytes <= MAX_BLOB_BYTES {
-                return Err(asset_preflight_error(AssetErrorCode::LimitExceeded));
-            }
-        }
-    }
-    if reference.size_bytes > MAX_PNG_INPUT_BYTES {
-        return Err(asset_preflight_error(AssetErrorCode::LimitExceeded));
-    }
-    if reference.media_type != PNG_MEDIA_TYPE {
-        return Err(asset_preflight_error(AssetErrorCode::MediaTypeMismatch));
-    }
-    Ok(())
-}
-
-fn asset_preflight_error(code: AssetErrorCode) -> LocalAssetHostError {
-    LocalAssetHostError::from_asset(AssetError::new(
-        code,
-        "evaluation texture AssetRef preflight failed",
-    ))
-}
-
 fn asset_ingestion_error(code: AssetErrorCode) -> LocalAssetHostError {
     LocalAssetHostError::from_asset(AssetError::new(
         code,
         "referenced PNG manifest closure ingestion failed",
     ))
+}
+
+#[cfg(test)]
+mod recording_tests {
+    use super::*;
+
+    struct NoReads;
+    impl AssetReadStore for NoReads {
+        type Error = ();
+        fn descriptor(&self, _: &PrincipalId, _: &AssetRef) -> Result<Option<Descriptor>, ()> {
+            panic!("recording-bound unit test does not assert resolver readiness")
+        }
+        fn object(&self, _: &PrincipalId, _: Digest, _: u64) -> Result<ObjectRead, ()> {
+            panic!("recording-bound unit test does not assert resolver readiness")
+        }
+    }
+    fn snapshot(byte: u8) -> ObjectSnapshot {
+        ObjectSnapshot {
+            address: Digest::from_bytes([byte; Digest::LENGTH]),
+            storage_generation: 0,
+            state: ObjectState::Active,
+            bytes: vec![byte],
+        }
+    }
+
+    #[test]
+    fn recorder_caps_unique_objects_before_copy_and_deduplicates() {
+        let recording = RecordingReadStore {
+            store: &NoReads,
+            captured: RefCell::new(CapturedPngObjects::default()),
+        };
+        for byte in 0..9 {
+            assert!(recording.record(&snapshot(byte)).is_ok());
+        }
+        assert!(recording.record(&snapshot(0)).is_ok());
+        assert_eq!(recording.captured.borrow().objects.len(), 9);
+        assert!(matches!(
+            recording.record(&snapshot(9)),
+            Err(RecordingReadError::ResourceLimit)
+        ));
+        assert_eq!(recording.captured.borrow().objects.len(), 9);
+    }
+
+    #[test]
+    fn recorder_caps_retained_bytes_with_checked_arithmetic() {
+        let recording = RecordingReadStore {
+            store: &NoReads,
+            captured: RefCell::new(CapturedPngObjects {
+                objects: Vec::new(),
+                total_bytes: MAX_CAPTURED_PNG_CLOSURE_BYTES - 1,
+            }),
+        };
+        assert!(recording.record(&snapshot(0)).is_ok());
+        assert_eq!(
+            recording.captured.borrow().total_bytes,
+            MAX_CAPTURED_PNG_CLOSURE_BYTES
+        );
+        assert!(matches!(
+            recording.record(&snapshot(1)),
+            Err(RecordingReadError::ResourceLimit)
+        ));
+        recording.captured.borrow_mut().total_bytes = u64::MAX;
+        assert!(matches!(
+            recording.record(&snapshot(1)),
+            Err(RecordingReadError::ResourceLimit)
+        ));
+        assert_eq!(recording.captured.borrow().objects.len(), 1);
+    }
 }

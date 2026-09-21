@@ -1,5 +1,6 @@
 import { GEOMETRY, type MeshDensityPreset } from "@vivi2d/core/constants";
 import type { LayerNode } from "@vivi2d/core/types";
+import type { SoftRegionPresetId } from "@vivi2d/editor-core/soft-region-helper";
 import { useState } from "react";
 import { useDefaultFormLock } from "@/hooks/useDefaultFormLock";
 import { type I18nKey, useT } from "@/lib/i18n";
@@ -8,9 +9,9 @@ import {
   REFERENCE_OVERLAY_COMPARE_PRESETS,
   type ReferenceOverlayBoundsMode,
 } from "@/lib/reference-overlay-utils";
-import type { SoftRegionPresetId } from "@vivi2d/editor-core/soft-region-helper";
 import { useEditorStore } from "@/stores/editorStore";
 import { useMeshEditStore } from "@/stores/meshEditStore";
+import { setV11AtlasEntry, setV11RawUv } from "@/stores/projectIO/v11Images";
 import {
   type PuppetWarpFalloffCurve,
   type PuppetWarpPin,
@@ -69,9 +70,7 @@ function useReferenceOverlayText() {
     summaryArea: t("prop.referenceOverlay.summaryArea"),
     summaryOffset: t("prop.referenceOverlay.summaryOffset"),
     summarySize: t("prop.referenceOverlay.summarySize"),
-    disabledImportedPresetReason: t(
-      "prop.referenceOverlay.disabledImportedPresetReason",
-    ),
+    disabledImportedPresetReason: t("prop.referenceOverlay.disabledImportedPresetReason"),
     modes: {
       source: t("prop.referenceOverlay.mode.source"),
       currentBounds: t("prop.referenceOverlay.mode.currentBounds"),
@@ -95,6 +94,8 @@ function useReferenceOverlayText() {
 export function MeshProperties({ layer }: { layer: LayerNode }) {
   const t = useT();
   const project = useEditorStore((state) => state.project);
+  const v11 = useEditorStore((state) => state.projectV11);
+  const structureVersion = useEditorStore((state) => state.projectStructureVersion);
   const setMeshDivisions = useEditorStore((state) => state.setMeshDivisions);
   const setAutoMesh = useEditorStore((state) => state.setAutoMesh);
   const setMeshData = useEditorStore((state) => state.setMeshData);
@@ -190,6 +191,13 @@ export function MeshProperties({ layer }: { layer: LayerNode }) {
     <div className="properties-section">
       <div className="prop-section-title">{t("meshProps.title")}</div>
       <PropGroup label={t("meshProps.vertices")}>{vertexCount}</PropGroup>
+      {v11 && (
+        <V11AtlasControls
+          key={`${layer.id}:${structureVersion}:${selectedVertices.length === 1 ? selectedVertices[0] : "none"}`}
+          layer={layer}
+          selectedVertices={selectedVertices}
+        />
+      )}
 
       {selectedVertices.length > 0 && (
         <PropGroup label={t("meshProps.selectedVertices")}>
@@ -288,9 +296,7 @@ export function MeshProperties({ layer }: { layer: LayerNode }) {
         </>
       )}
 
-      <div className="prop-section-title mesh-ops-title">
-        {t("meshProps.puppetWarp")}
-      </div>
+      <div className="prop-section-title mesh-ops-title">{t("meshProps.puppetWarp")}</div>
       <PropGroup label={t("meshProps.softRegion")}>
         <div className="prop-row">
           <select
@@ -815,10 +821,116 @@ export function MeshProperties({ layer }: { layer: LayerNode }) {
           {t("meshProps.mirrorY")}
         </button>
       </div>
-      <div className="mesh-ops-hint">
-        {t("meshProps.vertexModeHint")}
-      </div>
+      <div className="mesh-ops-hint">{t("meshProps.vertexModeHint")}</div>
       <div className="mesh-ops-hint">{t("meshProps.puppetModeHint")}</div>
     </div>
+  );
+}
+
+function V11AtlasControls({
+  layer,
+  selectedVertices,
+}: {
+  layer: LayerNode;
+  selectedVertices: number[];
+}) {
+  const t = useT();
+  const session = useEditorStore((state) => state.projectV11);
+  const mapping = session?.revision.entry(layer.id);
+  const [atlasId, setAtlasId] = useState(mapping?.atlas.id ?? "");
+  const [bounds, setBounds] = useState({
+    x: String(mapping?.entry.x ?? 0),
+    y: String(mapping?.entry.y ?? 0),
+    width: String(mapping?.entry.width ?? 1),
+    height: String(mapping?.entry.height ?? 1),
+  });
+  const vertex = selectedVertices.length === 1 ? selectedVertices[0] : undefined;
+  const [uv, setUv] = useState({
+    u: String(
+      layer.kind === "viviMesh" && vertex !== undefined ? layer.mesh.uvs[vertex * 2] : 0,
+    ),
+    v: String(
+      layer.kind === "viviMesh" && vertex !== undefined
+        ? layer.mesh.uvs[vertex * 2 + 1]
+        : 0,
+    ),
+  });
+  const [failed, setFailed] = useState(false);
+  if (!session || !mapping) return null;
+  const apply = (action: () => void) => {
+    try {
+      action();
+      setFailed(false);
+    } catch {
+      setFailed(true);
+    }
+  };
+  return (
+    <>
+      <PropGroup label={t("v11.atlas")}>
+        <select
+          aria-label={t("v11.atlas")}
+          value={atlasId}
+          onChange={(event) => setAtlasId(event.target.value)}
+        >
+          {session.revision.atlases.map((atlas) => (
+            <option key={atlas.id} value={atlas.id}>
+              {atlas.id}
+            </option>
+          ))}
+        </select>
+      </PropGroup>
+      <PropGroup label={t("v11.entry")}>
+        {(["x", "y", "width", "height"] as const).map((key) => (
+          <input
+            key={key}
+            aria-label={`v11 ${key}`}
+            type="number"
+            step="1"
+            value={bounds[key]}
+            onChange={(event) => setBounds({ ...bounds, [key]: event.target.value })}
+          />
+        ))}
+        <button
+          type="button"
+          onClick={() =>
+            apply(() =>
+              setV11AtlasEntry(layer.id, atlasId, {
+                x: Number(bounds.x),
+                y: Number(bounds.y),
+                width: Number(bounds.width),
+                height: Number(bounds.height),
+              }),
+            )
+          }
+        >
+          {t("v11.applyEntry")}
+        </button>
+      </PropGroup>
+      {vertex !== undefined && (
+        <PropGroup label={t("v11.rawUv")}>
+          {(["u", "v"] as const).map((key) => (
+            <input
+              key={key}
+              aria-label={`v11 ${key}`}
+              type="number"
+              step="any"
+              value={uv[key]}
+              onChange={(event) => setUv({ ...uv, [key]: event.target.value })}
+            />
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              apply(() => setV11RawUv(layer.id, vertex, Number(uv.u), Number(uv.v)))
+            }
+          >
+            {t("v11.applyUv")}
+          </button>
+        </PropGroup>
+      )}
+      <p>{t("v11.sharedPixels")}</p>
+      {failed && <p role="alert">{t("v11.editFailed")}</p>}
+    </>
   );
 }

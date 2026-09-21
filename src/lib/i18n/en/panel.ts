@@ -2,6 +2,15 @@
 // State Machine / Lip Sync / Scene Blend / IK / Offscreen /
 // VMC / Template / Expression Preset / Node Kind / Art Path)
 export const panel = {
+  "v11.legacyUnavailable":
+    "This legacy/provenance operation is unavailable in the v11 profile. Close this project before importing another legacy project.",
+  "v11.atlas": "v11 atlas mapping",
+  "v11.entry": "Entry x / y / width / height",
+  "v11.applyEntry": "Apply entry (keep atlas-space UVs)",
+  "v11.rawUv": "Selected vertex raw UV",
+  "v11.applyUv": "Apply UV",
+  "v11.editFailed": "This change cannot be applied to the supported v11 profile.",
+  "v11.sharedPixels": "Deleting an entry does not scrub pixels from a shared image.",
   "prop.title": "Properties",
   "prop.layersSelected": "layer(s) selected",
   "prop.batchAutoMesh": "Batch Auto Mesh",
@@ -72,8 +81,7 @@ export const panel = {
     'Mesh "{name}" has {count}/{total} unbound vertices.',
   "prop.rigHealth.message.validation.emptyMeshNoVertices":
     'Mesh "{name}" has no vertices.',
-  "prop.rigHealth.message.validation.emptyMeshNoIndices":
-    'Mesh "{name}" has no indices.',
+  "prop.rigHealth.message.validation.emptyMeshNoIndices": 'Mesh "{name}" has no indices.',
   "prop.rigHealth.message.validation.meshIndexBounds":
     'Mesh "{name}" has out-of-range index {index}.',
   "prop.rigHealth.message.validation.orphanSkin":
@@ -82,23 +90,19 @@ export const panel = {
     "Secondary physics setup needs review.",
   "prop.rigHealth.message.workflow.needsMeshRefinement":
     "Imported meshes need refinement.",
-  "prop.rigHealth.message.workflow.needsEyeClipping":
-    "Eye clipping setup needs review.",
+  "prop.rigHealth.message.workflow.needsEyeClipping": "Eye clipping setup needs review.",
   "prop.rigHealth.message.workflow.needsEyeRig": "Eye rig setup needs review.",
   "prop.rigHealth.message.workflow.needsMouthRig": "Mouth rig setup needs review.",
   "prop.rigHealth.message.workflow.needsParameterBindingReview":
     "Parameter bindings need review.",
   "prop.rigHealth.message.workflow.needsStateMachineReview":
     "State machines need review.",
-  "prop.rigHealth.message.workflow.needsSceneBlendReview":
-    "Scene blends need review.",
+  "prop.rigHealth.message.workflow.needsSceneBlendReview": "Scene blends need review.",
   "prop.rigHealth.message.workflow.needsAnimationTrackReview":
     "Animation clips contain stale track references.",
-  "prop.rigHealth.message.seeThrough.missingHeadOrFace":
-    "Face/head layers are missing.",
+  "prop.rigHealth.message.seeThrough.missingHeadOrFace": "Face/head layers are missing.",
   "prop.rigHealth.message.seeThrough.missingEyeLeft": "A left eye layer is missing.",
-  "prop.rigHealth.message.seeThrough.missingEyeRight":
-    "A right eye layer is missing.",
+  "prop.rigHealth.message.seeThrough.missingEyeRight": "A right eye layer is missing.",
   "prop.rigHealth.message.seeThrough.missingMouth": "Mouth layers are missing.",
   "prop.rigHealth.message.seeThrough.missingBody": "Body layers are missing.",
   "prop.rigHealth.message.seeThrough.duplicateCriticalRole":
@@ -111,8 +115,7 @@ export const panel = {
     "The role conflicts with the imported left/right hint.",
   "prop.rigHealth.message.seeThrough.frontBackUnknown":
     "The imported front/back hint is unknown.",
-  "prop.rigHealth.message.seeThrough.invalidBBox":
-    "The imported bounds are invalid.",
+  "prop.rigHealth.message.seeThrough.invalidBBox": "The imported bounds are invalid.",
   "prop.rigHealth.message.seeThrough.invalidDepthStats":
     "The imported depth stats are invalid.",
   "multiView.viewAria": "View {id}",
@@ -164,8 +167,7 @@ export const panel = {
   "prop.referenceOverlay.highlightDifferencesAria":
     "Highlight reference overlay differences",
   "prop.referenceOverlay.pinCompareSummaryLabel": "Pin compare summary",
-  "prop.referenceOverlay.pinCompareSummaryAria":
-    "Pin reference overlay compare summary",
+  "prop.referenceOverlay.pinCompareSummaryAria": "Pin reference overlay compare summary",
   "prop.referenceOverlay.statePinned": "Pinned",
   "prop.referenceOverlay.stateUnpinned": "Unpinned",
   "prop.referenceOverlay.requiresMetadata":

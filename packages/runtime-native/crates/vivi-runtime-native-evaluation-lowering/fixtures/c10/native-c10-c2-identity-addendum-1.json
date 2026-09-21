@@ -1,0 +1,131 @@
+{
+  "kind": "vivi2d-c10-c2-identity-addendum-v1",
+  "status": "AUTHOR_C2_IMPLEMENTATION_REVIEW_PENDING",
+  "historicalPhaseB": {
+    "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-phase-b-identity-addendum-1.json",
+    "bytes": 3201,
+    "sha256": "514df71a6afb0e9e2b629961077b332750e35b5c95280b5227540821511a6c53"
+  },
+  "historicalPostseal": {
+    "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-postseal-identity-addendum-1.json",
+    "bytes": 3125,
+    "sha256": "3546eb1b46ed7ce8d30a24f040a981e1833be7ff0d4ddc6526d5b1a377c7eb70"
+  },
+  "sourceUpdates": [
+    {
+      "historical": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lib.rs",
+        "bytes": 5505,
+        "sha256": "7d85b1fb9943a0566c12060d0a76decc84d1b19d49f73d177d25f317a6219659"
+      },
+      "current": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lib.rs",
+        "bytes": 5848,
+        "sha256": "da1b8554b26d8df5fd6176c5857002ec9138f58b05967f7d7e90e2aa4bbe681b"
+      }
+    },
+    {
+      "historical": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-core/Cargo.toml",
+        "bytes": 682,
+        "sha256": "717b69c0966182b11e402becc6a7df782b53efaabb0dbcc5c589576eead1f89d"
+      },
+      "current": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-core/Cargo.toml",
+        "bytes": 862,
+        "sha256": "918078400ff84dd897fb56b573d9cada8e69b16c4284fccb5d8e724a3bd7c79e"
+      }
+    },
+    {
+      "historical": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-core/src/lib.rs",
+        "bytes": 6323,
+        "sha256": "a2e88cd19c61fbc7b49a029a6651088bdd3448864e512b4764b3ca495a31e8d5"
+      },
+      "current": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-core/src/lib.rs",
+        "bytes": 6845,
+        "sha256": "0dd2ba7c6a4c7ba838b0faec50b1103988e9da464b201a6b00590cf6bcade59d"
+      }
+    },
+    {
+      "historical": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation.rs",
+        "bytes": 7757,
+        "sha256": "f03de9dfd3417ce53a497c27e6159c0b97ca89d81ec3454a22d75451b808e596"
+      },
+      "current": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation.rs",
+        "bytes": 7785,
+        "sha256": "92e27837b90d6f203efb5f9726b57cc2fdbb7c18c2285a8e95e2bdd951a36a0a"
+      }
+    },
+    {
+      "historical": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation/tests.rs",
+        "bytes": 10704,
+        "sha256": "e08da13e5e47455612dc5e100f45ec7df7d05542510a9b973a6934568feb361d"
+      },
+      "current": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation/tests.rs",
+        "bytes": 10726,
+        "sha256": "d85cee3154254ba40078e4d21bfacbb421ea1d4dfe55a32f5e998ba6b378767f"
+      }
+    },
+    {
+      "historical": {
+        "path": "packages/editor-host/src/read-only-authoring-host.ts",
+        "bytes": 44086,
+        "sha256": "1efd73b39bbe000155b163bdcc215e4ed9964b095434df7c9db5d87e11871a49"
+      },
+      "current": {
+        "path": "packages/editor-host/src/read-only-authoring-host.ts",
+        "bytes": 44086,
+        "sha256": "1efd73b39bbe000155b163bdcc215e4ed9964b095434df7c9db5d87e11871a49"
+      }
+    },
+    {
+      "historical": {
+        "path": "packages/editor-host/src/request-generation.ts",
+        "bytes": 575,
+        "sha256": "6069d77b61ede1b6242706105528e564e55c5d31b95ec3501299a2c8c6f0fc44"
+      },
+      "current": {
+        "path": "packages/editor-host/src/request-generation.ts",
+        "bytes": 575,
+        "sha256": "6069d77b61ede1b6242706105528e564e55c5d31b95ec3501299a2c8c6f0fc44"
+      }
+    },
+    {
+      "historical": {
+        "path": "packages/editor-host/src/__tests__/read-only-authoring-host.test.ts",
+        "bytes": 45649,
+        "sha256": "818faf366839f7468eb19612f30666127dd73b788cc6be5083d24911cf449838"
+      },
+      "current": {
+        "path": "packages/editor-host/src/__tests__/read-only-authoring-host.test.ts",
+        "bytes": 45649,
+        "sha256": "818faf366839f7468eb19612f30666127dd73b788cc6be5083d24911cf449838"
+      }
+    },
+    {
+      "historical": {
+        "path": "packages/runtime-native/package.json",
+        "bytes": 3669,
+        "sha256": "111c98460ce6b08df3ad5d12711e8171b0f606e1925dee6ea46086266bbebbc0"
+      },
+      "current": {
+        "path": "packages/runtime-native/package.json",
+        "bytes": 4612,
+        "sha256": "60eafcd8f92251c5c3304068b253d727df3e5a97d25dacc45ac5a17594e749dc"
+      }
+    }
+  ],
+  "claims": {
+    "allC10MappedNumericalSourcesUnchanged": true,
+    "allC11TopologyAndSealingBodiesUnchanged": true,
+    "originalAuthorityBytesPreserved": true,
+    "historicalApprovalTransfersToChangedCode": false
+  },
+  "scope": "C2 adds exact internal pure feature forwarding, byte-backed real PNG preparation and thin typed transport consumers. These current identities do not amend or replace prior arithmetic expectations or transfer historical approval. Actual current full C10 and C2 implementation review are separately required."
+}

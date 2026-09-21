@@ -12,6 +12,11 @@ name = "vivi_runtime_native_wasm"
 crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
+[features]
+png-v1 = ["dep:vivi-png-ref"]
+evaluation-v1 = ["vivi-runtime-native-core/evaluation-v1"]
+
 [dependencies]
 serde_json = "1.0"
+vivi-png-ref = { path = "../vivi-png-ref", optional = true }
 vivi-runtime-native-core = { path = "../vivi-runtime-native-core" }

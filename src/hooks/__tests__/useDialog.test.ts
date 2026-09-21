@@ -2,7 +2,6 @@ import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDialog } from "@/hooks/useDialog";
 
-
 function flushMicrotasks(): Promise<void> {
   return new Promise<void>((resolve) => queueMicrotask(() => resolve()));
 }
@@ -70,6 +69,45 @@ describe("useDialog", () => {
     renderHook(() => useDialog({ dialogRef: { current: dialog }, onClose: vi.fn() }));
     await flushMicrotasks();
     expect(document.activeElement?.id).toBe("a");
+  });
+
+  it("closed nested details keep focus on visible summaries and footer controls", async () => {
+    dialog.innerHTML = `
+      <details id="exchange">
+        <summary id="exchange-summary">Local exchange</summary>
+        <button id="refresh">Refresh</button>
+        <details><summary id="copy-summary">Copy</summary>
+          <button id="copy">Copy assets</button>
+        </details>
+      </details>
+      <button id="close">Close</button>`;
+    renderHook(() => useDialog({ dialogRef: { current: dialog }, onClose: vi.fn() }));
+    await flushMicrotasks();
+    expect(document.activeElement?.id).toBe("exchange-summary");
+
+    const wrap = (shiftKey: boolean) => {
+      const event = new KeyboardEvent("keydown", {
+        key: "Tab",
+        shiftKey,
+        bubbles: true,
+        cancelable: true,
+      });
+      document.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+    };
+    wrap(true);
+    expect(document.activeElement?.id).toBe("close");
+    wrap(false);
+    expect(document.activeElement?.id).toBe("exchange-summary");
+
+    dialog.querySelector<HTMLButtonElement>("#close")!.disabled = true;
+    wrap(true);
+    expect(document.activeElement?.id).toBe("exchange-summary");
+    dialog.querySelector<HTMLDetailsElement>("#exchange")!.open = true;
+    wrap(true);
+    expect(document.activeElement?.id).toBe("copy-summary");
+    // Synthetic keydown only proves the hook's explicit boundary wrapping.
+    // Normal Tab traversal remains covered by the actual Electron keyboard tests.
   });
 
   it("アンマウント時に previouslyFocused に戻る", async () => {

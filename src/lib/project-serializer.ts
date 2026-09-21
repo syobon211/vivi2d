@@ -1,5 +1,6 @@
 import { flattenLayers } from "@vivi2d/core/layer-utils";
 import {
+  ensureProjectDefaults,
   migrateV1toV2,
   migrateV2toV3,
   migrateV3toV4,
@@ -73,6 +74,16 @@ export function parseViviFile(json: string): ViviFileData {
 }
 
 export async function deserializeProject(fileData: ViviFileData): Promise<ProjectData> {
+  const prepared = await prepareDeserializedProject(fileData);
+  clearTextures();
+  for (const [layerId, canvas] of prepared.textures) setTexture(layerId, canvas);
+  return prepared.project;
+}
+
+/** Preparation-only route for atomic adoption across an active v11 session. */
+export async function prepareDeserializedProject(
+  fileData: ViviFileData,
+): Promise<{ project: ProjectData; textures: ReadonlyMap<string, HTMLCanvasElement> }> {
   const { project, atlases } = fileData;
   assertAtlasImageAllocationWithinLimits(atlases);
   // Keep the active project's textures intact until every atlas is decoded and
@@ -115,17 +126,13 @@ export async function deserializeProject(fileData: ViviFileData): Promise<Projec
     }
   }
 
-  const migratedV2 = migrateV1toV2(project);
-  Object.assign(project, migratedV2);
-
-  const migratedV3 = migrateV2toV3(project);
-  Object.assign(project, migratedV3);
-
-  const migratedV4 = migrateV3toV4(project);
-  Object.assign(project, migratedV4);
-
-  const migratedV5 = migrateV4toV5(project);
-  Object.assign(project, migratedV5);
+  // Use the validated input version for each historical step. Newer empty
+  // collections are authored state, not evidence of an old-format document.
+  if (fileData.version < 2) Object.assign(project, migrateV1toV2(project));
+  if (fileData.version < 3) Object.assign(project, migrateV2toV3(project));
+  if (fileData.version < 4) Object.assign(project, migrateV3toV4(project));
+  if (fileData.version < 5) Object.assign(project, migrateV4toV5(project));
+  Object.assign(project, ensureProjectDefaults(project));
 
   const allNodes = flattenLayers(project.layers);
   for (const node of allNodes) {
@@ -140,9 +147,7 @@ export async function deserializeProject(fileData: ViviFileData): Promise<Projec
     );
   }
 
-  clearTextures();
-  for (const [layerId, canvas] of nextTextures) setTexture(layerId, canvas);
-  return project;
+  return { project, textures: nextTextures };
 }
 
 function loadImageAsCanvas(

@@ -17,12 +17,13 @@ import { useHistoryStore } from "@/stores/historyStore";
 import { useMultiViewStore } from "@/stores/multiViewStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useProjectDialogsStore } from "@/stores/projectDialogsStore";
+import { closeProject, loadProject, loadPsd, saveProject } from "@/stores/projectIO";
+import { removeUnusedV11Images } from "@/stores/projectIO/v11Images";
 import {
-  closeProject,
-  loadProject,
-  loadPsd,
-  saveProject,
-} from "@/stores/projectIO";
+  duplicateOriginalProjectV11,
+  forkProjectV11,
+  saveProjectV11Copy,
+} from "@/stores/projectIO/viviFile";
 import { useQuickActionRegistryStore } from "@/stores/quickActionRegistryStore";
 import { useQuickActionsStore } from "@/stores/quickActionsStore";
 import {
@@ -55,17 +56,14 @@ import { useMenuQuickActionsRegistration } from "./menu/useMenuQuickActionsRegis
 export function MenuBar() {
   const t = useT();
   const project = useEditorStore((s) => s.project);
+  const v11 = useEditorStore((s) => !!s.projectV11);
   const projectVersion = useEditorStore((s) => s.projectVersion);
-  const projectStructureVersion = useEditorStore(
-    (s) => s.projectStructureVersion,
-  );
+  const projectStructureVersion = useEditorStore((s) => s.projectStructureVersion);
   const currentFilePath = useEditorStore((s) => s.currentFilePath);
   const projectSourceKind = useEditorStore((s) => s.projectSourceKind);
   const resetView = useViewportStore((s) => s.resetView);
   const defaultFormLocked = useViewportStore((s) => s.defaultFormLocked);
-  const toggleDefaultFormLock = useViewportStore(
-    (s) => s.toggleDefaultFormLock,
-  );
+  const toggleDefaultFormLock = useViewportStore((s) => s.toggleDefaultFormLock);
   const onionSkinEnabled = useViewportStore((s) => s.onionSkin.enabled);
   const toggleOnionSkin = useViewportStore((s) => s.toggleOnionSkin);
   const referenceOverlay = useViewportStore((s) => s.referenceOverlay);
@@ -75,21 +73,13 @@ export function MenuBar() {
   const workspaceMode = useWorkspaceModeStore((s) => s.mode);
   const setWorkspaceMode = useWorkspaceModeStore((s) => s.setMode);
   const openQuickActions = useQuickActionsStore((s) => s.openPalette);
-  const registerQuickAction = useQuickActionRegistryStore(
-    (s) => s.registerAction,
-  );
-  const unregisterQuickAction = useQuickActionRegistryStore(
-    (s) => s.unregisterAction,
-  );
-  const requestAutoSetupCommand = useAutoSetupCommandStore(
-    (s) => s.requestCommand,
-  );
+  const registerQuickAction = useQuickActionRegistryStore((s) => s.registerAction);
+  const unregisterQuickAction = useQuickActionRegistryStore((s) => s.unregisterAction);
+  const requestAutoSetupCommand = useAutoSetupCommandStore((s) => s.requestCommand);
   const clearAutoSetupCommandIfProjectChanged = useAutoSetupCommandStore(
     (s) => s.clearCommandIfProjectChanged,
   );
-  const autoSetupCommandInFlight = useAutoSetupCommandStore(
-    (s) => s.commandInFlight,
-  );
+  const autoSetupCommandInFlight = useAutoSetupCommandStore((s) => s.commandInFlight);
   const multiViewEnabled = useMultiViewStore((s) => s.enabled);
   const enableMultiView = useMultiViewStore((s) => s.enableMultiView);
   const disableMultiView = useMultiViewStore((s) => s.disableMultiView);
@@ -111,19 +101,12 @@ export function MenuBar() {
   const autoSetupProjectKey = useMemo(
     () =>
       project
-        ? buildAutoSetupDraftProjectKey(
-            project,
-            currentFilePath,
-            projectVersion,
-          )
+        ? buildAutoSetupDraftProjectKey(project, currentFilePath, projectVersion)
         : null,
     [currentFilePath, project, projectVersion],
   );
   const requiresProjectReason = t("quickActions.requiresProject");
-  const qa = useCallback(
-    (key: string) => t(`quickActions.${key}` as I18nKey),
-    [t],
-  );
+  const qa = useCallback((key: string) => t(`quickActions.${key}` as I18nKey), [t]);
   const autoSetupBlockReasonKey = getAutoSetupProjectBlockReasonKey(
     project,
     projectSourceKind,
@@ -131,13 +114,8 @@ export function MenuBar() {
   const autoSetupDisabledReason = autoSetupBlockReasonKey
     ? t(autoSetupBlockReasonKey)
     : null;
-  const showAutoSetup = isAutoSetupDiscoverableProject(
-    project,
-    projectSourceKind,
-  );
-  const referenceOverlaySelectionReason = qa(
-    "reason.referenceOverlaySelection",
-  );
+  const showAutoSetup = isAutoSetupDiscoverableProject(project, projectSourceKind);
+  const referenceOverlaySelectionReason = qa("reason.referenceOverlaySelection");
   const referenceOverlayImportedBoundsReason = qa(
     "reason.referenceOverlayImportedBounds",
   );
@@ -231,10 +209,7 @@ export function MenuBar() {
   );
 
   useEffect(() => {
-    clearAutoSetupCommandIfProjectChanged(
-      autoSetupProjectKey,
-      projectStructureVersion,
-    );
+    clearAutoSetupCommandIfProjectChanged(autoSetupProjectKey, projectStructureVersion);
   }, [
     autoSetupProjectKey,
     clearAutoSetupCommandIfProjectChanged,
@@ -308,10 +283,7 @@ export function MenuBar() {
     } catch {
       useNotificationStore
         .getState()
-        .addNotification(
-          "error",
-          tGlobal("menu.glbExportFailed"),
-        );
+        .addNotification("error", tGlobal("menu.glbExportFailed"));
     }
   }, []);
 
@@ -322,6 +294,25 @@ export function MenuBar() {
 
         {/* ===== File ===== */}
         <FileMenuSection
+          v11={v11}
+          onV11Copy={() => {
+            void saveProjectV11Copy();
+          }}
+          onV11Fork={() => {
+            void forkProjectV11();
+          }}
+          onV11Original={() => {
+            void duplicateOriginalProjectV11();
+          }}
+          onV11Unused={() => {
+            try {
+              removeUnusedV11Images();
+            } catch {
+              useNotificationStore
+                .getState()
+                .addNotification("error", t("v11.editFailed"));
+            }
+          }}
           projectLoaded={!!project}
           showAutoSetup={showAutoSetup}
           autoSetupDisabledReason={autoSetupDisabledReason}
@@ -374,9 +365,7 @@ export function MenuBar() {
           onToggleDefaultFormLock={toggleDefaultFormLock}
           onToggleOnionSkin={toggleOnionSkin}
           onToggleMultiView={() =>
-            multiViewEnabled
-              ? disableMultiView()
-              : enableMultiView("horizontal")
+            multiViewEnabled ? disableMultiView() : enableMultiView("horizontal")
           }
           onResetView={resetView}
           onSetWorkspaceMode={setWorkspaceMode}

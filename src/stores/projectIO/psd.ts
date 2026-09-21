@@ -6,6 +6,7 @@ import { parsePsd } from "@/lib/psd-loader";
 import { parsePsdAsync } from "@/lib/workers/psd-parse-client";
 import { useNotificationStore } from "../notificationStore";
 import { applyLoadedProject } from "./reset";
+import { rejectV11LegacyAction } from "../v11LegacyGuard";
 import { applySeeThroughImportContext } from "./seeThroughImport";
 
 let activePsdLoadController: AbortController | null = null;
@@ -61,6 +62,7 @@ function applyImportOptions(project: ProjectData, options?: LoadPsdOptions): Pro
 }
 
 export async function loadPsd(): Promise<boolean> {
+  if (rejectV11LegacyAction()) return false;
   const controller = beginPsdLoad();
   try {
     const result = await window.electronAPI.openPsdFile();
@@ -86,6 +88,7 @@ export async function loadPsd(): Promise<boolean> {
       cancelCanvasOpenProbes();
       return false;
     }
+    if (rejectV11LegacyAction()) return false;
     parsed.commitTextures();
     applyLoadedProject(parsed.project, null, "psd");
     return true;
@@ -103,6 +106,7 @@ export function loadPsdFromBuffer(
   fileName: string,
   options?: LoadPsdOptions,
 ): boolean {
+  if (rejectV11LegacyAction()) return false;
   startCanvasOpenProbes();
   let project: ProjectData;
   try {
@@ -129,6 +133,7 @@ export async function loadPsdFromBufferAsync(
   fileName: string,
   options?: LoadPsdOptions,
 ): Promise<boolean> {
+  if (rejectV11LegacyAction()) return false;
   const controller = beginPsdLoad();
   startCanvasOpenProbes();
   let parsed: Awaited<ReturnType<typeof parsePsdAsync>>;
@@ -149,6 +154,7 @@ export async function loadPsdFromBufferAsync(
     cancelCanvasOpenProbes();
     return false;
   }
+  if (rejectV11LegacyAction()) return false;
   parsed.commitTextures();
   const project = applyImportOptions(parsed.project, options);
   applyLoadedProject(

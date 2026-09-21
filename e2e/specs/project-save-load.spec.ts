@@ -1,8 +1,12 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import projectV11Manifest from "../../tests/conformance/project-embedded-round-trip-v11/manifest.json" with {
+  type: "json",
+};
 import { expect, test } from "../fixtures";
-import { mockOpenVivi, mockSaveDialog } from "../helpers/dialog-mock";
+import { waitForAppReady } from "../helpers/app";
+import { mockOpenPng, mockOpenVivi, mockSaveDialog } from "../helpers/dialog-mock";
 import {
   addBone,
   addParameter,
@@ -12,7 +16,6 @@ import {
   createSceneAndClip,
   selectLayer,
 } from "../helpers/operations";
-
 
 let tmpDir: string;
 
@@ -24,7 +27,6 @@ test.beforeEach(async ({ window }) => {
 test.afterEach(async () => {
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
-
 
 async function saveAndVerify(
   app: import("playwright").ElectronApplication,
@@ -56,7 +58,6 @@ async function openAndVerify(
     timeout: 10_000,
   });
 }
-
 
 test("PSDインポート -> .vivi保存 -> 読み込みで状態が復元される", async ({
   app,
@@ -359,4 +360,574 @@ test("大きなプロジェクト(多レイヤー)でも保存/読み込みが�
   await expect(
     window.locator(".parameter-name", { hasText: "パラメータ5" }),
   ).toBeVisible();
+});
+
+function v11Fixture() {
+  const wire = JSON.parse(projectV11Manifest.documents[0]!.inputUtf8);
+  const png = projectV11Manifest.pngCases.find((entry) => entry.id === "frozen-palette")!;
+  wire.project.name = "Atlas round trip";
+  const mesh = wire.project.layers[0].children[1];
+  mesh.name = "Atlas mesh";
+  const neighbour = structuredClone(mesh);
+  neighbour.id = "neighbour";
+  neighbour.name = "Atlas neighbour";
+  neighbour.mesh.uvs[0] = -0.25;
+  wire.project.layers[0].children.push(neighbour);
+  wire.atlases[0].image = png.base64;
+  wire.atlases[0].width = png.width;
+  wire.atlases[0].height = png.height;
+  wire.atlases[0].entries.push({
+    ...wire.atlases[0].entries[0],
+    layerId: neighbour.id,
+    x: 1,
+  });
+  const transparent = projectV11Manifest.pngCases.find(
+    (entry) => entry.id === "frozen-rgba-alpha-zero-preserves-rgb",
+  )!;
+  // Real Canvas readback may erase RGB under alpha zero; source PNG still owns it.
+  wire.atlases.push({
+    id: "retained-empty",
+    image: transparent.base64,
+    width: transparent.width,
+    height: transparent.height,
+    entries: [],
+  });
+  return wire;
+}
+
+function boundMaskFixture() {
+  const wire = JSON.parse(projectV11Manifest.documents[0]!.inputUtf8);
+  const png = projectV11Manifest.pngCases.find((entry) => entry.id === "frozen-palette")!;
+  wire.project.name = "Bound mask display";
+  wire.project.width = wire.project.height = 64;
+  wire.project.parameters[0].name = "Bound mask";
+  wire.project.parameters[0].defaultValue = 0;
+  const group = wire.project.layers[0];
+  const bone = group.children[0],
+    target = group.children[1];
+  bone.name = "Bound bone";
+  bone.x = bone.y = 0;
+  Object.assign(bone.bone, { angle: 0, length: 2, scaleX: 1, scaleY: 1 });
+  target.name = "Bound target";
+  target.x = target.y = 0;
+  target.mesh.vertices = [0, 0, 64, 0, 0, 64, 64, 64];
+  target.mesh.uvs = [0.25, 0.5, 0.25, 0.5, 0.25, 0.5, 0.25, 0.5];
+  target.mesh.indices = [0, 1, 2, 1, 3, 2];
+  const mask = structuredClone(target);
+  mask.id = "mask";
+  mask.name = "Hidden bound mask";
+  mask.visible = false;
+  mask.x = 4;
+  mask.mesh.vertices = [0, 0, 16, 0, 0, 64, 16, 64];
+  target.clipMaskIds = [mask.id];
+  group.children.push(mask);
+  wire.project.skins = {
+    mask: {
+      weights: Array.from({ length: 4 }, () => [{ boneId: bone.id, weight: 1 }]),
+      bindPoseInverse: { [bone.id]: [1, 0, 0, 1, 0, 0] },
+    },
+  };
+  wire.project.parameterBindings = [
+    {
+      id: "bound-x",
+      parameterId: "Motion.x",
+      target: { type: "bone", boneId: bone.id, property: "x" },
+      bindingPoints: [
+        { paramValue: 0, targetValue: 0 },
+        { paramValue: 1, targetValue: 24 },
+      ],
+    },
+  ];
+  Object.assign(wire.atlases[0], {
+    image: png.base64,
+    width: png.width,
+    height: png.height,
+  });
+  wire.atlases[0].entries = [target, mask].map((layer) => ({
+    ...wire.atlases[0].entries[0],
+    layerId: layer.id,
+  }));
+  return wire;
+}
+
+test("v11 actual bound mask pixels follow live values and binding Undo without authoring the pose", async ({
+  app,
+  window,
+}) => {
+  // Reuse the existing E2E readback opt-in; no new production render API.
+  await window.evaluate(() => localStorage.setItem("vivi2d-e2e-canvas-readback", "1"));
+  await window.reload();
+  await waitForAppReady(window);
+  const wire = boundMaskFixture(),
+    source = path.join(tmpDir, "bound.vivi"),
+    saved = path.join(tmpDir, "bound-saved.vivi");
+  fs.writeFileSync(source, JSON.stringify(wire));
+  await mockOpenVivi(app, source);
+  await clickFileMenuItem(window, "開く");
+  await expect(window.locator(".project-name")).toHaveText("Bound mask display");
+  await window.evaluate(() => {
+    const api = window.__vivi2d as any;
+    api.useViewportStore.getState().setZoom(1);
+    api.useViewportStore.getState().setPan(0, 0);
+  });
+  const sample = () =>
+    window.evaluate(async () => {
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      const sourceCanvas = document.querySelector(
+        ".canvas-container canvas",
+      ) as HTMLCanvasElement;
+      const image = new Image();
+      image.src = sourceCanvas.toDataURL("image/png");
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = sourceCanvas.width;
+      canvas.height = sourceCanvas.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(image, 0, 0);
+      const scale = sourceCanvas.width / sourceCanvas.clientWidth;
+      return [8, 32].map((x) =>
+        Array.from(
+          ctx.getImageData(Math.floor(x * scale), Math.floor(20 * scale), 1, 1).data,
+        ).slice(0, 3),
+      );
+    });
+  const expectPixels = async (expected: number[][]) => {
+    await expect(async () => {
+      const observed = await sample();
+      for (let point = 0; point < expected.length; point++)
+        for (let channel = 0; channel < 3; channel++)
+          expect(
+            Math.abs(observed[point]![channel]! - expected[point]![channel]!),
+          ).toBeLessThanOrEqual(3);
+    }).toPass();
+  };
+  const snapshot = () =>
+    window.evaluate(() => {
+      const api = window.__vivi2d as any,
+        state = api.useEditorStore.getState();
+      return {
+        project: JSON.stringify(state.project),
+        history: api.useHistoryStore.getState().undoStack.length,
+      };
+    });
+  const before = await snapshot();
+  await expectPixels([
+    [255, 0, 0],
+    [255, 255, 255],
+  ]);
+  const slider = window
+    .locator(".parameter-item")
+    .filter({ hasText: "Bound mask" })
+    .locator('input[type="range"]');
+  await slider.fill("1");
+  await expectPixels([
+    [255, 255, 255],
+    [255, 0, 0],
+  ]);
+  expect(await snapshot()).toEqual(before);
+  await selectLayer(window, "Bound bone");
+  const item = window.locator(".binding-item").filter({ hasText: "Bound mask" });
+  await item.locator(".binding-toggle").click();
+  await item
+    .locator(".binding-point-row")
+    .filter({ hasText: "P: 1.00" })
+    .getByRole("button")
+    .click();
+  await expectPixels([
+    [255, 0, 0],
+    [255, 255, 255],
+  ]);
+  await window.keyboard.press("Control+z");
+  await expectPixels([
+    [255, 255, 255],
+    [255, 0, 0],
+  ]);
+  await mockSaveDialog(app, saved);
+  await clickFileMenuItem(window, "別名で保存");
+  await expect.poll(() => fs.existsSync(saved)).toBe(true);
+  const output = JSON.parse(fs.readFileSync(saved, "utf8"));
+  expect(output.project.layers[0].children[0]).toEqual(
+    wire.project.layers[0].children[0],
+  );
+  expect(output.project.parameterBindings).toEqual(wire.project.parameterBindings);
+  expect(output.atlases).toEqual(wire.atlases);
+});
+
+test("v11 ordinary open / entry edit / save / Undo retains full atlas authority", async ({
+  app,
+  window,
+}) => {
+  // CDP Runtime.evaluate defaults to bypassing CSP for eval. Explicitly disable
+  // that debugger privilege so this measures the production document policy.
+  const cdp = await window.context().newCDPSession(window);
+  const evalResult = await cdp.send("Runtime.evaluate", {
+    expression: `(() => { try { Function("return 1")(); return "unexpectedly-allowed"; } catch (error) { return error instanceof EvalError ? "blocked" : "other-failure"; } })()`,
+    allowUnsafeEvalBlockedByCSP: false,
+    returnByValue: true,
+  });
+  await cdp.detach();
+  expect(evalResult.result.value).toBe("blocked");
+  const source = v11Fixture(),
+    sourcePath = path.join(tmpDir, "original-v11.vivi"),
+    savedPath = path.join(tmpDir, "edited-v11.vivi");
+  const original = JSON.stringify(source);
+  fs.writeFileSync(sourcePath, original);
+  await mockOpenVivi(app, sourcePath);
+  await clickFileMenuItem(window, "開く");
+  await expect(window.locator(".project-name")).toHaveText("Atlas round trip");
+  await selectLayer(window, "Atlas mesh");
+  await window.getByRole("spinbutton", { name: "v11 x", exact: true }).fill("1");
+  await window
+    .getByRole("button", { name: "エントリを適用（atlas空間UVを保持）", exact: true })
+    .click();
+  await mockSaveDialog(app, savedPath);
+  await clickFileMenuItem(window, "別名で保存");
+  await expect.poll(() => fs.existsSync(savedPath)).toBe(true);
+  const saved = JSON.parse(fs.readFileSync(savedPath, "utf8"));
+  expect(saved.version).toBe(11);
+  expect(saved.documentId).toBe(source.documentId);
+  expect(
+    saved.atlases.map((atlas: { id: string; image: string }) => [atlas.id, atlas.image]),
+  ).toEqual(
+    source.atlases.map((atlas: { id: string; image: string }) => [atlas.id, atlas.image]),
+  );
+  expect(saved.atlases[0].entries[0].x).toBe(1);
+  expect(saved.project.layers[0].children[2].mesh.uvs[0]).toBe(-0.25);
+  expect(fs.readFileSync(sourcePath, "utf8")).toBe(original);
+  await window.keyboard.press("Control+z");
+  await expect(
+    window.getByRole("spinbutton", { name: "v11 x", exact: true }),
+  ).toHaveValue("0");
+  await clickFileMenuItem(window, "保存");
+  await expect
+    .poll(() => JSON.parse(fs.readFileSync(savedPath, "utf8")).atlases[0].entries[0].x)
+    .toBe(0);
+  await closeAndVerify(window);
+  await mockOpenVivi(app, savedPath);
+  await clickFileMenuItem(window, "開く");
+  await expect(window.locator(".project-name")).toHaveText("Atlas round trip");
+  await selectLayer(window, "Atlas mesh");
+  await expect(
+    window.getByRole("spinbutton", { name: "v11 x", exact: true }),
+  ).toHaveValue("0");
+});
+
+test("v11 chosen replacement detaches only its shared entry and Undo restores it", async ({
+  app,
+  window,
+}) => {
+  const source = v11Fixture(),
+    sourcePath = path.join(tmpDir, "shared-v11.vivi"),
+    savedPath = path.join(tmpDir, "detached-v11.vivi");
+  const replacement = projectV11Manifest.pngCases.find(
+    (entry) => entry.id === "frozen-palette-trns",
+  )!;
+  const pngPath = path.join(tmpDir, "replacement.png");
+  fs.writeFileSync(sourcePath, JSON.stringify(source));
+  fs.writeFileSync(pngPath, Buffer.from(replacement.base64, "base64"));
+  await mockOpenVivi(app, sourcePath);
+  await clickFileMenuItem(window, "開く");
+  await expect(window.locator(".project-name")).toHaveText("Atlas round trip");
+  await selectLayer(window, "Atlas neighbour");
+  await mockOpenPng(app, pngPath);
+  await clickFileMenuItem(window, "差替えPNGを選択（共有atlasから分離）");
+  await expect
+    .poll(() =>
+      window.evaluate(
+        () =>
+          (window.__vivi2d as any).useEditorStore.getState().projectV11?.revision.atlases
+            .length,
+      ),
+    )
+    .toBe(3);
+  await mockSaveDialog(app, savedPath);
+  await clickFileMenuItem(window, "別名で保存");
+  await expect.poll(() => fs.existsSync(savedPath)).toBe(true);
+  const saved = JSON.parse(fs.readFileSync(savedPath, "utf8"));
+  expect(saved.atlases[0].image).toBe(source.atlases[0].image);
+  expect(saved.atlases[0].entries).toEqual([source.atlases[0].entries[0]]);
+  expect(saved.atlases[2].image).toBe(replacement.base64);
+  expect(saved.atlases[2].id).not.toBe(source.atlases[0].id);
+  expect(saved.project.layers[0].children[2].mesh.uvs[0]).toBe(-1.5);
+  await window.keyboard.press("Control+z");
+  await expect
+    .poll(() =>
+      window.evaluate(
+        () =>
+          (window.__vivi2d as any).useEditorStore.getState().projectV11?.revision.atlases
+            .length,
+      ),
+    )
+    .toBe(2);
+  await clickFileMenuItem(window, "保存");
+  await expect
+    .poll(() => JSON.parse(fs.readFileSync(savedPath, "utf8")).atlases.length)
+    .toBe(2);
+  expect(JSON.parse(fs.readFileSync(savedPath, "utf8")).atlases).toEqual(source.atlases);
+});
+
+test("v11 real-file malformed UTF-8 never replaces the incumbent document", async ({
+  app,
+  window,
+}) => {
+  const source = v11Fixture(),
+    goodPath = path.join(tmpDir, "valid-utf8.vivi"),
+    badPath = path.join(tmpDir, "invalid-utf8.vivi");
+  const sourceBytes = Buffer.from(JSON.stringify(source));
+  fs.writeFileSync(goodPath, sourceBytes);
+  const offset = sourceBytes.indexOf("Atlas round trip");
+  expect(offset).toBeGreaterThan(0);
+  sourceBytes[offset] = 0xff;
+  fs.writeFileSync(badPath, sourceBytes);
+  await mockOpenVivi(app, goodPath);
+  await clickFileMenuItem(window, "開く");
+  await expect(window.locator(".project-name")).toHaveText("Atlas round trip");
+  const before = await window.evaluate(() => {
+    const state = (window.__vivi2d as any).useEditorStore.getState();
+    return {
+      project: JSON.stringify(state.project),
+      version: state.projectVersion,
+      path: state.currentFilePath,
+    };
+  });
+  await mockOpenVivi(app, badPath);
+  await clickFileMenuItem(window, "開く");
+  await expect(
+    window.getByRole("alert").filter({ hasText: "プロジェクトの読み込みに失敗しました" }),
+  ).toBeVisible();
+  expect(
+    await window.evaluate(() => {
+      const state = (window.__vivi2d as any).useEditorStore.getState();
+      return {
+        project: JSON.stringify(state.project),
+        version: state.projectVersion,
+        path: state.currentFilePath,
+      };
+    }),
+  ).toEqual(before);
+});
+
+test("v11 explicit legacy copy and fork preserve source identity and reject original/current aliases", async ({
+  app,
+  window,
+}) => {
+  // Unchanged shared corpus: the ordinary loader must fill omitted runtime
+  // defaults without inventing a Scene 1 for a declared v9 document.
+  const legacy = projectV11Manifest.documents.find(
+    (entry) => entry.id === "core-v9-migration",
+  )!.inputUtf8;
+  const originalPath = path.join(tmpDir, "legacy.vivi"),
+    copyPath = path.join(tmpDir, "copy.vivi"),
+    saveAsPath = path.join(tmpDir, "save-as.vivi"),
+    forkPath = path.join(tmpDir, "fork.vivi");
+  fs.writeFileSync(originalPath, legacy);
+  await mockOpenVivi(app, originalPath);
+  await clickFileMenuItem(window, "開く");
+  await expect(window.locator(".project-name")).toHaveText("Synthetic shared core");
+  expect(
+    await window.evaluate(() => {
+      const state = (window.__vivi2d as any).useEditorStore.getState();
+      return {
+        hasSourceKind: Object.hasOwn(state.project, "sourceKind"),
+        uiSourceKind: state.projectSourceKind,
+      };
+    }),
+  ).toEqual({ hasSourceKind: false, uiSourceKind: "vivi" });
+  await mockSaveDialog(app, copyPath);
+  await clickFileMenuItem(window, "v11コピーを保存（対応プロファイル）");
+  await expect.poll(() => fs.existsSync(copyPath)).toBe(true);
+  const copied = fs.readFileSync(copyPath, "utf8"),
+    documentId = JSON.parse(copied).documentId;
+  expect(JSON.parse(copied).version).toBe(11);
+  expect(documentId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(fs.readFileSync(originalPath, "utf8")).toBe(legacy);
+  await mockSaveDialog(app, saveAsPath);
+  await clickFileMenuItem(window, "別名で保存");
+  await expect.poll(() => fs.existsSync(saveAsPath)).toBe(true);
+  const saved = fs.readFileSync(saveAsPath, "utf8");
+  for (const target of [copyPath, saveAsPath]) {
+    await mockSaveDialog(app, target);
+    await clickFileMenuItem(window, "開いた時点のv11原本を複製");
+    await expect(
+      window
+        .getByRole("alert")
+        .filter({ hasText: "プロジェクトの保存に失敗しました" })
+        .last(),
+    ).toBeVisible();
+    expect(fs.readFileSync(copyPath, "utf8")).toBe(copied);
+    expect(fs.readFileSync(saveAsPath, "utf8")).toBe(saved);
+  }
+  await mockSaveDialog(app, forkPath);
+  await clickFileMenuItem(window, "v11を分岐して保存（新しい文書ID）");
+  await expect.poll(() => fs.existsSync(forkPath)).toBe(true);
+  const forked = JSON.parse(fs.readFileSync(forkPath, "utf8"));
+  expect(forked.documentId).not.toBe(documentId);
+  expect(forked.atlases).toEqual(JSON.parse(copied).atlases);
+  expect(fs.readFileSync(originalPath, "utf8")).toBe(legacy);
+});
+
+test("v11 real device resource rejection occurs before Project and history publication", async ({
+  app,
+  window,
+}) => {
+  const source = v11Fixture(),
+    good = path.join(tmpDir, "good.vivi"),
+    oversized = path.join(tmpDir, "oversized-mask.vivi"),
+    saved = path.join(tmpDir, "incumbent.vivi");
+  fs.writeFileSync(good, JSON.stringify(source));
+  await mockOpenVivi(app, good);
+  await clickFileMenuItem(window, "開く");
+  await expect(window.locator(".project-name")).toHaveText("Atlas round trip");
+  await selectLayer(window, "Atlas mesh");
+  await window.getByRole("spinbutton", { name: "v11 x", exact: true }).fill("1");
+  await window
+    .getByRole("button", { name: "エントリを適用（atlas空間UVを保持）", exact: true })
+    .click();
+  const before = await window.evaluate(() => {
+    const state = (window.__vivi2d as any).useEditorStore.getState();
+    return {
+      project: JSON.stringify(state.project),
+      version: state.projectVersion,
+      structure: state.projectStructureVersion,
+      path: state.currentFilePath,
+    };
+  });
+  const rejected = structuredClone(source);
+  rejected.project.name = "Must not publish";
+  rejected.project.layers[0].children[1].clipMaskIds = ["neighbour"];
+  rejected.project.layers[0].children[2].mesh.vertices =
+    rejected.project.layers[0].children[2].mesh.vertices.map(
+      (value: number) => value * 1_000_000,
+    );
+  fs.writeFileSync(oversized, JSON.stringify(rejected));
+  await mockOpenVivi(app, oversized);
+  await clickFileMenuItem(window, "開く");
+  await expect(
+    window.getByRole("alert").filter({ hasText: "プロジェクトの読み込みに失敗しました" }),
+  ).toBeVisible();
+  expect(
+    await window.evaluate(() => {
+      const state = (window.__vivi2d as any).useEditorStore.getState();
+      return {
+        project: JSON.stringify(state.project),
+        version: state.projectVersion,
+        structure: state.projectStructureVersion,
+        path: state.currentFilePath,
+      };
+    }),
+  ).toEqual(before);
+  // The authored geometry now fits. Only the captured default binding exceeds
+  // the actual device cap, so accepting this would miss pre-publication projection.
+  const cap = await window.evaluate(() => {
+    const canvas = document.querySelector(
+      ".canvas-container canvas",
+    ) as HTMLCanvasElement;
+    const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+    if (!gl) throw Error("Actual WebGL device required");
+    return gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
+  });
+  const defaultBound = boundMaskFixture();
+  defaultBound.project.name = "Bound candidate must not publish";
+  defaultBound.project.parameters[0].defaultValue = 1;
+  defaultBound.project.parameterBindings[0].target.property = "scaleX";
+  defaultBound.project.parameterBindings[0].bindingPoints = [
+    { paramValue: 0, targetValue: 1 },
+    { paramValue: 1, targetValue: cap },
+  ];
+  const defaultBoundPath = path.join(tmpDir, "default-bound-limit.vivi");
+  fs.writeFileSync(defaultBoundPath, JSON.stringify(defaultBound));
+  const failures = window
+    .getByRole("alert")
+    .filter({ hasText: "プロジェクトの読み込みに失敗しました" });
+  const failureCount = await failures.count();
+  await mockOpenVivi(app, defaultBoundPath);
+  await clickFileMenuItem(window, "開く");
+  await expect(failures).toHaveCount(failureCount + 1);
+  expect(
+    await window.evaluate(() => {
+      const state = (window.__vivi2d as any).useEditorStore.getState();
+      return {
+        project: JSON.stringify(state.project),
+        version: state.projectVersion,
+        structure: state.projectStructureVersion,
+        path: state.currentFilePath,
+      };
+    }),
+  ).toEqual(before);
+  await window.keyboard.press("Control+z");
+  await expect(
+    window.getByRole("spinbutton", { name: "v11 x", exact: true }),
+  ).toHaveValue("0");
+  await mockSaveDialog(app, saved);
+  await clickFileMenuItem(window, "別名で保存");
+  await expect.poll(() => fs.existsSync(saved)).toBe(true);
+  expect(JSON.parse(fs.readFileSync(saved, "utf8")).atlases).toEqual(source.atlases);
+});
+
+test("v11 copy never strips authored legacy fields and malformed config cannot replace the incumbent", async ({
+  app,
+  window,
+}) => {
+  const source = JSON.parse(
+    projectV11Manifest.documents.find((entry) => entry.id === "core-v9-migration")!
+      .inputUtf8,
+  );
+  const inert = JSON.parse(projectV11Manifest.documents[0]!.inputUtf8).project
+    .lipsyncConfig;
+  const readState = () =>
+    window.evaluate(() => {
+      const api = window.__vivi2d as any,
+        state = api.useEditorStore.getState();
+      return {
+        project: JSON.stringify(state.project),
+        path: state.currentFilePath,
+        version: state.projectVersion,
+        undo: api.useHistoryStore.getState().undoStack.length,
+      };
+    });
+  for (const [index, fields] of [
+    { sourceKind: "vivi" },
+    {
+      scenes: [{ id: "authored-scene", name: "Keep scene", clips: [] }],
+      lipsyncConfig: { ...inert, gain: 3 },
+    },
+  ].entries()) {
+    const authored = structuredClone(source);
+    Object.assign(authored.project, fields);
+    const sourcePath = path.join(tmpDir, `authored-${index}.vivi`),
+      rejectedCopy = path.join(tmpDir, `must-not-strip-${index}.vivi`);
+    fs.writeFileSync(sourcePath, JSON.stringify(authored));
+    await mockOpenVivi(app, sourcePath);
+    await clickFileMenuItem(window, "開く");
+    await expect.poll(async () => (await readState()).path).toBe(sourcePath);
+    const before = await readState();
+    expect(JSON.parse(before.project)).toMatchObject(fields);
+    const failures = window
+      .getByRole("alert")
+      .filter({ hasText: "プロジェクトの保存に失敗しました" });
+    const count = await failures.count();
+    await mockSaveDialog(app, rejectedCopy);
+    await clickFileMenuItem(window, "v11コピーを保存（対応プロファイル）");
+    await expect(failures).toHaveCount(count + 1);
+    expect(fs.existsSync(rejectedCopy)).toBe(false);
+    expect(await readState()).toEqual(before);
+    expect(JSON.parse(fs.readFileSync(sourcePath, "utf8"))).toEqual(authored);
+  }
+  const before = await readState();
+  for (const [index, config] of [null, { ...inert, enabled: "true" }].entries()) {
+    const invalid = structuredClone(source);
+    invalid.project.lipsyncConfig = config;
+    const rejectedPath = path.join(tmpDir, `malformed-lip-${index}.vivi`);
+    fs.writeFileSync(rejectedPath, JSON.stringify(invalid));
+    const failures = window
+      .getByRole("alert")
+      .filter({ hasText: "プロジェクトの読み込みに失敗しました" });
+    const count = await failures.count();
+    await mockOpenVivi(app, rejectedPath);
+    await clickFileMenuItem(window, "開く");
+    await expect(failures).toHaveCount(count + 1);
+    expect(await readState()).toEqual(before);
+  }
 });

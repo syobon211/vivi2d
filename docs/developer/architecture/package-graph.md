@@ -1,5 +1,34 @@
 # Package Graph
 
+Current Phase B adds exactly the optional production edge
+`runtime-native-core --evaluation-v1--> evaluation-lowering`. Core defaults
+remain empty; default C ABI and runtime-WASM do not reach this edge. Core's
+preactivation and tempfile edges are dev-only. This supersedes the historical
+lowerer consumer-zero/absent-owner statements below, not the protected/private
+or publication boundaries. There is no lowerer-to-core cycle or new core host
+operation. EDH metadata has no runtime dependency.
+
+C2's implementation candidate explicitly forwards `evaluation-v1` from C ABI
+and runtime-WASM to core. Lowering/preactivation now separate their default native
+host entry (`native-host`) from pure preparation; the Asset host's default
+`local-store` feature owns SQLite. The Evaluation-WASM production graph disables
+those defaults and retains only the existing resolver/strict PNG implementation,
+not store/SQLite or a C ABI Cargo edge. Native E explicitly retains `local-store`.
+Core's lowerer/preactivation dev features permit native fixture setup and are not
+evidence about the production WASM graph. The fixed, nonexporting C ABI transport
+source is included by the WASM adapter and independently pinned; Cargo metadata
+alone does not describe that source dependency. No new crate or dependency
+version is introduced. Application capability and implementation approval remain
+separate from the tested opt-in graph.
+
+The [current C10/C11 integration boundary](evaluation-c10-integration.md) supersedes
+disconnected-C10, consumer-zero-math and absent-C11 wording in the historical
+foundation audit paragraphs below. C11 adds internal sealing and borrowed views
+without a new dependency edge. Separate post-seal preparation reuses the existing
+lowering -> preactivation -> host edges: it borrows the sealed plan, then moves
+Ready/Missing with the same owner. There is no direct lowerer-to-host edge or
+evaluation replay. Active ownership/application integration remain separate.
+
 This document summarizes the intended dependency direction between Vivi2D
 workspaces. The enforceable contributor rules live in
 [`docs/developer/contributing/package-boundaries.md`](../contributing/package-boundaries.md).

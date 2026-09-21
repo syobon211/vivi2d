@@ -88,7 +88,7 @@ function preparePromotionCanvas(entry: TexturePromotionEntry): HTMLCanvasElement
   return entry.canvas;
 }
 
-export function hashTextureBytes(bytes: Uint8ClampedArray): string {
+export function hashTextureBytes(bytes: Uint8ClampedArray | Uint8Array): string {
   return `sha256:${sha256Hex(bytes)}`;
 }
 
@@ -214,6 +214,32 @@ function assertExpectedTextureHashes(
 export interface PreparedTextureHistoryEffects {
   commit: () => void;
   rollback: () => void;
+}
+
+/** A symmetric map replacement for an already prepared v11 alias revision.
+ * It owns no canvas and never destroys a shared surface. Commit must not yield.
+ */
+export function prepareTextureAliases(next: ReadonlyMap<string, HTMLCanvasElement>): PreparedTextureHistoryEffects {
+  const before = new Map(textures);
+  const after = new Map(next);
+  const revision = textureStoreRevision;
+  let started = false;
+  return {
+    commit() {
+      if (textureStoreRevision !== revision) throw new Error("PROJECT_TEXTURE_CONFLICT");
+      started = true;
+      textures.clear();
+      for (const [id, canvas] of after) textures.set(id, canvas);
+      textureStoreRevision = revision + 1;
+    },
+    rollback() {
+      if (!started) return;
+      textures.clear();
+      for (const [id, canvas] of before) textures.set(id, canvas);
+      textureStoreRevision = revision;
+      started = false;
+    },
+  };
 }
 
 /** Prepare and validate the entire batch; the caller must commit without yielding. */

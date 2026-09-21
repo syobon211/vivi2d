@@ -1,13 +1,26 @@
 interface ElectronAPI {
+  localAssetCopy: (
+    args: import("./local-asset-copy").LocalAssetCopyCommand,
+  ) => Promise<import("./local-asset-copy").LocalAssetCopyResponse>;
+  localExchange: (
+    args: Record<string, unknown>,
+  ) => Promise<{ ok: true; value: unknown } | { ok: false; code: string }>;
+  onLocalExchangeAbort: (
+    callback: (message: { cellId: string; attempt: number }) => void,
+  ) => () => void;
   openPsdFile: () => Promise<{ buffer: ArrayBuffer; fileName: string } | null>;
   saveFile: (args: {
     data?: string;
     binary?: ArrayBuffer;
     defaultName: string;
     filePath?: string;
+    format?: "project-v11-json";
+    preserveSourcePaths?: string[];
   }) => Promise<{ filePath: string } | null>;
   openViviFile: () => Promise<
-    { data: string; filePath: string } | { binary: ArrayBuffer; filePath: string } | null
+    | { data: string; filePath: string; utf8Bytes?: ArrayBuffer }
+    | { binary: ArrayBuffer; filePath: string }
+    | null
   >;
 
   saveVividFile: (args: {

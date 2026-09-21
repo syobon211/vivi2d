@@ -22,3 +22,70 @@ regexes = [
   '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{9}_[A-Za-z0-9]{4}_[A-Za-z0-9]{14}",\n  "[A-Za-z0-9+/]{100}"$''',
   '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{16}",\n  "[A-Za-z0-9+/]{100}"$''',
 ]
+
+[[rules.allowlists]]
+description = "Reviewed Evaluation generated 100-character chunk boundaries only; unreviewed regenerated shapes remain findings."
+condition = "AND"
+regexTarget = "match"
+paths = ['''^packages/runtime-wasm/src/native-evaluation-wasm-bytes\.ts$''']
+regexes = [
+  '''^[A-Za-z0-9+/]{20}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{25}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{27}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{28}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{30}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{31}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{53}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{54}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{56}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{57}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{60}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{61}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{62}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{64}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{65}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{68}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{69}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{72}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{73}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{9}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{0}",\n  "[A-Za-z0-9+/]{100}"$''',
+]
+
+[[rules.allowlists]]
+description = "Reviewed PNG generated 100-character chunk boundaries only; unreviewed regenerated shapes remain findings."
+condition = "AND"
+regexTarget = "match"
+paths = ['''^packages/runtime-wasm/src/native-png-wasm-bytes\.ts$''']
+regexes = [
+  '''^[A-Za-z0-9+/]{12}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{19}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{20}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{27}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{32}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{53}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{56}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{57}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{60}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{61}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{62}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{64}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{65}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{68}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{69}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{72}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{73}",\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{9}_[A-Za-z0-9]{4}_[A-Za-z0-9]{1}",\n  "[A-Za-z0-9+/]{100}"$''',
+]
+
+[[rules]]
+id = "square-access-token"
+
+[[rules.allowlists]]
+description = "One exact reviewed PNG compiler-output detector match; not a token-format exception."
+condition = "AND"
+regexTarget = "match"
+paths = ['''^packages/runtime-wasm/src/native-png-wasm-bytes\.ts$''']
+regexes = [
+  '''^\x45AAAAAAgIQuQQAAAADQEmNBAAAAAITXl0EAAAAAZc3NQQAAACBfoAJCAAAA"$''',
+]

@@ -35,22 +35,31 @@ describe("usePixiApp", () => {
     expect(Application).toHaveBeenCalledTimes(1);
     const app = vi.mocked(Application).mock.results[0]!.value;
     expect(app.init).toHaveBeenCalledTimes(1);
-    expect(app.init).toHaveBeenCalledWith(expect.objectContaining({
-      resizeTo: el,
-      antialias: true,
-      autoDensity: true,
-    }));
+    expect(app.init).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resizeTo: el,
+        antialias: true,
+        autoDensity: true,
+      }),
+    );
     expect(MockResizeObserver).toHaveBeenCalledTimes(1);
     expect(mockResizeObserverInstance.observe).toHaveBeenCalledExactlyOnceWith(el);
 
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     expect(Container).toHaveBeenCalledTimes(2);
     expect(Graphics).toHaveBeenCalledTimes(1);
     const world = vi.mocked(Container).mock.results[0]!.value;
     const overlay = vi.mocked(Container).mock.results[1]!.value;
     const background = vi.mocked(Graphics).mock.results[0]!.value;
-    expect(result.current.current).toEqual({ app, world, background, overlay });
+    expect(result.current.current).toEqual(
+      expect.objectContaining({ app, world, background, overlay }),
+    );
+    expect(app.start).not.toHaveBeenCalled();
+    result.current.current.markDisplayReady?.();
+    expect(app.start).toHaveBeenCalledTimes(1);
     expect(getPixiAppRefs()).toBe(result.current.current);
     expect(el.appendChild).toHaveBeenCalledExactlyOnceWith(app.canvas);
     expect(world.label).toBe("world");
@@ -67,21 +76,13 @@ describe("usePixiApp", () => {
     expect(mockResizeObserverInstance.disconnect).toHaveBeenCalledTimes(1);
     expect(app.destroy).toHaveBeenCalledExactlyOnceWith(true);
     expect(result.current.current).toEqual({
-      app: null, world: null, background: null, overlay: null,
+      app: null,
+      world: null,
+      background: null,
+      overlay: null,
     });
     expect(getPixiAppRefs()).toBeNull();
   });
-
-
-
-
-
-
-
-
-
-
-
 
   it("containerRef.current が null の場合は初期化しない", () => {
     const containerRef = { current: null } as React.RefObject<HTMLDivElement | null>;
@@ -92,8 +93,39 @@ describe("usePixiApp", () => {
     expect(result.current.current.app).toBeNull();
   });
 
-
-
+  it("stops draws after an entered render fails and rebuilds via the existing lifecycle before resuming", async () => {
+    const containerRef = { current: createContainerEl() };
+    const { result } = renderHook(() => usePixiApp(containerRef));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const original = result.current.current;
+    const originalApp = original.app!;
+    const dispose = vi.fn();
+    original.disposeScene = dispose;
+    original.markDisplayReady!();
+    vi.mocked(originalApp.renderer.render).mockImplementation(() => {
+      throw new Error("synthetic GPU failure");
+    });
+    await act(async () => {
+      expect(() => original.renderSafely!({ container: originalApp.stage })).toThrow(
+        "V11_MASK_RENDERER_UNAVAILABLE",
+      );
+      expect(original.displayUnavailable).toBe(true);
+      expect(() => original.renderSafely!({ container: originalApp.stage })).toThrow(
+        "V11_MASK_RENDERER_UNAVAILABLE",
+      );
+      expect(originalApp.renderer.render).toHaveBeenCalledTimes(1);
+      await Promise.resolve();
+    });
+    expect(dispose).toHaveBeenCalledTimes(1);
+    expect(originalApp.destroy).toHaveBeenCalledTimes(1);
+    const recovered = result.current.current;
+    expect(recovered.app).not.toBe(originalApp);
+    expect(recovered.app!.start).not.toHaveBeenCalled();
+    recovered.markDisplayReady!();
+    expect(recovered.app!.start).toHaveBeenCalledTimes(1);
+  });
 
   it("テーマ変更時に背景色が更新される", async () => {
     const el = createContainerEl();
@@ -131,28 +163,25 @@ describe("usePixiApp", () => {
     }).not.toThrow();
   });
 
-
-
   it("init 完了前にアンマウントすると disposed=true で destroy される", async () => {
-      const el = createContainerEl();
-      const containerRef = { current: el } as React.RefObject<HTMLDivElement | null>;
+    const el = createContainerEl();
+    const containerRef = { current: el } as React.RefObject<HTMLDivElement | null>;
 
-      const { result, unmount } = renderHook(() => usePixiApp(containerRef));
+    const { result, unmount } = renderHook(() => usePixiApp(containerRef));
 
-      unmount();
+    unmount();
 
-      const appInstance = (Application as unknown as ReturnType<typeof vi.fn>).mock
-        .results[0]!.value;
+    const appInstance = (Application as unknown as ReturnType<typeof vi.fn>).mock
+      .results[0]!.value;
 
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      expect(appInstance.destroy).toHaveBeenCalledWith(true);
-      expect(mockResizeObserverInstance.disconnect).toHaveBeenCalledOnce();
-      expect(el.appendChild).not.toHaveBeenCalled();
-      expect(result.current.current.app).toBeNull();
-      expect(getPixiAppRefs()).toBeNull();
+    await act(async () => {
+      await Promise.resolve();
     });
 
+    expect(appInstance.destroy).toHaveBeenCalledWith(true);
+    expect(mockResizeObserverInstance.disconnect).toHaveBeenCalledOnce();
+    expect(el.appendChild).not.toHaveBeenCalled();
+    expect(result.current.current.app).toBeNull();
+    expect(getPixiAppRefs()).toBeNull();
+  });
 });

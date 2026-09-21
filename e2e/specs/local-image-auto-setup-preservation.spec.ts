@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import type { Page } from "playwright";
 import { expect, test } from "../fixtures";
 import { waitForCanvasOpenReady } from "../helpers/app";
 import { mockOpenPng } from "../helpers/dialog-mock";
@@ -34,10 +35,7 @@ async function openLocalImage(
 test.describe("local image Auto Setup availability", () => {
   test.skip(!LOCAL_IMAGE_PATH, "Set VIVI2D_LOCAL_IMAGE_PATH to verify a local PNG.");
 
-  test("disables Auto Setup for a single manual PNG project", async ({
-    app,
-    window,
-  }) => {
+  test("disables Auto Setup for a single manual PNG project", async ({ app, window }) => {
     const imagePath = LOCAL_IMAGE_PATH!;
     expect(existsSync(imagePath)).toBe(true);
 

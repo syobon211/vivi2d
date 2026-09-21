@@ -297,38 +297,28 @@ const pinnedOracleFiles = [
   ["Cargo.toml", 522, "53ee392000cd8d815ea56f39454d7900dbe348066d250a5ee35d465ebe5e1707"],
   [
     "fixtures/evaluation-deterministic-math-v1-vectors.json",
-    79_921,
+    79921,
     "0a467b96d93ea0b7b8d12f8b8229d050b50945c40fff29c8ace0469b76cdec00",
   ],
   [
     "src/binary64.rs",
-    5_368,
-    "63abecda2a7a29efa2b3ddd3c6b325360de9c1a93195911c194301c124ca5739",
+    5972,
+    "1a28922c8f2ff01c9943b70c8eb82f2ef4a5036ccc5ef8e0f72571cc02499552",
   ],
   [
     "src/lib.rs",
-    3380,
-    "570f58b800097d634e56efe42da3104b3431efae8ad523b1559f2db72c141e38",
+    3457,
+    "df71cf7067fa730138aca80beda45dc22e33f5e52287afb5efeec3c7bb14f19e",
   ],
   [
     "src/tests.rs",
-    17_256,
-    "40cdc388d494759a0998aa704000dccbc6b6f614285d8aa447f5bd61e2823e14",
+    18659,
+    "0cd9ccfdd30df997f024c246617f3bd842d7f2cfdd402882b39eb19ac6f8b311",
   ],
   [
     "src/transcendental.rs",
-    1_329,
-    "1e637341e566b516dec855572ca3585bf4afc0b9ac58ec1384aa4cf615d2d52d",
-  ],
-  [
-    "tests/no_allocation.rs",
-    5_041,
-    "0d121ed3aaf7c36a1b619d9aee961f5f5f0c93ad0de562766ace344fe9e19b47",
-  ],
-  [
-    "tests/wasm_compile.rs",
-    3_076,
-    "d95da086ca4069a635a0d5a0865f3af6587f6c19bc2d0982f4b7ae95f582d401",
+    1294,
+    "adbf514a87c2afc80f28ff6cad110e955b8d71346840809c56ed47b177fba39b",
   ],
   [
     "src/wasm_test_adapter.rs",
@@ -336,9 +326,19 @@ const pinnedOracleFiles = [
     "d194fcd7df0e7956f691ad6ff20555f3c80d706b29c4e86df2051e76b434e9ee",
   ],
   [
+    "tests/no_allocation.rs",
+    5041,
+    "0d121ed3aaf7c36a1b619d9aee961f5f5f0c93ad0de562766ace344fe9e19b47",
+  ],
+  [
     "tests/support/wasm_execution.rs",
     414,
     "a4cd9074e95eb3304ffbcc3aecaefc8817f27f53d40e56db8797781b02af58ed",
+  ],
+  [
+    "tests/wasm_compile.rs",
+    3076,
+    "d95da086ca4069a635a0d5a0865f3af6587f6c19bc2d0982f4b7ae95f582d401",
   ],
 ];
 
@@ -423,7 +423,7 @@ const expectedUnitTests = [
   "all_twelve_comparison_vectors_are_exact",
   "approved_fixture_is_exact_utf8_without_bom",
   "every_nan_boundary_is_positive_canonical_quiet_nan",
-  "manifest_and_production_sources_keep_the_consumer_zero_boundary",
+  "manifest_and_production_sources_keep_the_internal_raw_boundary",
   "signed_zero_and_subnormal_semantics_are_preserved",
 ].sort();
 
@@ -452,7 +452,7 @@ try {
   } else {
     runRustdocGate();
     console.log(
-      "[runtime-native-evaluation-math] passed (consumer-zero raw-D64 oracle candidate against the adopted contract, native allocator trap, wasm32 compile-only isolation)",
+      "[runtime-native-evaluation-math] passed (exact internal raw-D64 surface, sole lowering consumer, native allocator trap, separate WASM evidence)",
     );
   }
 } catch (error) {
@@ -1218,30 +1218,34 @@ function assertPrivateKernelSource(vectors) {
   ) {
     throw new Error("test-only adapter declaration drifted");
   }
-  const libCode = stripRustNonCode(
+  let libCode = stripRustNonCode(
     normalizeNewlines(lib).replace(testAdapterDeclaration, ""),
   ).replace(/#\[cfg\(test\)\]\s*extern\s+crate\s+std\s*;/g, "");
+  const rawSurface =
+    /pub\s+mod\s+raw\s*\{\s*pub\s+use\s+crate::binary64::\{\s*DetF64\s+as\s+D64,\s*DetF64Class\s+as\s+Class\s*\};\s*\}/;
+  if (!rawSurface.test(libCode))
+    throw new Error("exact internal raw-D64 surface missing");
+  libCode = libCode.replace(rawSurface, "");
   if (/\bpub\s+(?!\(crate\))/.test(libCode) || /\bpub\s+use\b/.test(libCode)) {
     throw new Error("oracle root gained a product-public Rust item");
   }
   const wrapperCallables = [binary64, transcendental]
-    .flatMap((source) => [
-      ...source.matchAll(/pub\(crate\)\s+(?:const\s+)?fn\s+([A-Za-z0-9_]+)/g),
-    ])
+    .flatMap((source) => [...source.matchAll(/pub\s+(?:const\s+)?fn\s+([A-Za-z0-9_]+)/g)])
     .map((match) => match[1])
     .sort();
   assertExactJson(
     wrapperCallables,
     expectedWrapperCallables,
-    "crate-private raw-D64 wrapper surface",
+    "exact internal raw-D64 wrapper surface",
   );
   const publicTypes = [binary64]
-    .flatMap((source) => [
-      ...source.matchAll(/pub\(crate\)\s+(?:struct|enum)\s+([A-Za-z0-9_]+)/g),
-    ])
+    .flatMap((source) => [...source.matchAll(/pub\s+(?:struct|enum)\s+([A-Za-z0-9_]+)/g)])
     .map((match) => match[1])
     .sort();
-  assertExactJson(publicTypes, ["DetF64", "DetF64Class"], "crate-private type surface");
+  assertExactJson(publicTypes, ["DetF64", "DetF64Class"], "opaque internal type surface");
+  if (!/pub\s+struct\s+DetF64\(u64\);/.test(binary64)) {
+    throw new Error("raw-D64 storage must remain opaque");
+  }
 
   for (const operation of ["add_r", "sub_r", "mul_r", "div_r"]) {
     if (
@@ -1402,13 +1406,12 @@ function assertTestEvidence() {
 function assertConsumerIsolation(metadata) {
   assertExactJson(
     consumersOf(metadata, "vivi-runtime-native-evaluation-math"),
-    [],
+    ["vivi-runtime-native-evaluation-lowering"],
     "oracle production consumer graph",
   );
   for (const packageName of [
     "vivi-runtime-native-evaluation",
     "vivi-runtime-native-preactivation",
-    "vivi-runtime-native-evaluation-lowering",
     "vivi-runtime-native-core",
     "vivi-runtime-native-c-abi",
     "vivi-runtime-native-wasm",
@@ -1689,6 +1692,35 @@ function assertReferenceAllowlist() {
     "protected body skip set",
   );
   const allowed = new Set([
+    "docs/developer/architecture/evaluation-c10-integration.md",
+    "scripts/lib/runtime-native-evaluation-wasm.mjs",
+    "scripts/lib/evaluation-lowering-c10-corpus.mjs",
+    "scripts/lib/evaluation-lowering-c10-corpus.node-test.mjs",
+    "scripts/lib/evaluation-lowering-c10-execution.mjs",
+    "scripts/lib/evaluation-lowering-c10-wasm-worker.mjs",
+    ...[
+      "Cargo.toml",
+      "src/derived.rs",
+      "src/derived_candidate.rs",
+      "src/physics.rs",
+      "src/tests.rs",
+      "tests/c10/support/compare.rs",
+      "tests/c10/support/native.rs.in",
+      "tests/c10/support/wasm.rs.in",
+      "fixtures/c10/native-c10-review-data-bundle-3.json",
+      "fixtures/c10/native-c10-review-input-bundle-1.json",
+      "fixtures/c10/native-c10-freeze-assertion-binding-2.json",
+      "fixtures/c10/raw-transcendental-edge-matrix-1-inputs.json",
+      "fixtures/c10/raw-transcendental-edge-matrix-1-expectations.json",
+      "fixtures/c10/native-c10-callable-allocation-closure-4.json",
+      "fixtures/c10/native-c10-callable-allocation-closure-4.md",
+      "fixtures/c10/native-c10-source-callsite-map-2.json",
+      "fixtures/c10/native-c10-source-bindings-4.json",
+      "fixtures/c10/native-c10-machine-dag-physics-slots-1.json",
+    ].map(
+      (file) =>
+        `packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/${file}`,
+    ),
     ".github/ISSUE_TEMPLATE/gate_failure.yml",
     ".github/workflows/runtime-native.yml",
     "docs/developer/architecture/overview.md",

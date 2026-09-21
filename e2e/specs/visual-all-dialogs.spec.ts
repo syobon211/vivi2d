@@ -264,12 +264,18 @@ test.describe("all dialog focused screenshots", () => {
   test("SDK export dialog", async ({ app, window }) => {
     await importPsd(app, window, TEST_PSD);
     await clickFileMenuItem(window, "SDK Export");
+    await expect(
+      window.getByRole("dialog", { name: "外部 JSON エクスポート", exact: true }),
+    ).toBeVisible();
     await openDialogScreenshot(window, "dialog-sdk-export-ja.png");
   });
 
   test("media export dialog", async ({ app, window }) => {
     await importPsd(app, window, TEST_PSD);
     await clickFileMenuItem(window, "Media Output");
+    await expect(
+      window.getByRole("dialog", { name: "メディア書き出し", exact: true }),
+    ).toBeVisible();
     await openDialogScreenshot(window, "dialog-media-export-ja.png");
   });
 

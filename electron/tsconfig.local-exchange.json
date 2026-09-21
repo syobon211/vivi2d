@@ -1,0 +1,5 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": { "types": ["node"] },
+  "include": ["local-exchange-host.ts", "local-exchange-provider.ts", "local-asset-copy.ts", "__tests__/local-exchange-*.test.ts", "__tests__/local-asset-copy*.test.ts"]
+}

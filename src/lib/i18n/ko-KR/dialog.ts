@@ -2,6 +2,67 @@ import { dialog as enDialog } from "../en/dialog";
 
 export const dialog = {
   ...enDialog,
+  "runtimePreview.title": "Runtime 미리 보기",
+  "runtimePreview.scope":
+    "이 복제본에 해당하는 .vivi 스냅샷을 선택하여 표시합니다. 프로젝트를 편집, 저장 또는 게시하지 않습니다.",
+  "runtimePreview.open": "프로젝트 미리 보기",
+  "runtimePreview.reload": "다시 불러오기",
+  "runtimePreview.close": "미리 보기 닫기",
+  "runtimePreview.loading": "미리 보기 준비 중…",
+  "runtimePreview.ready": "미리 보기 준비 완료",
+  "runtimePreview.warning":
+    "미리 보기 상태는 적용되었지만 표시 또는 정리가 완료되지 않았습니다. 다시 불러오세요.",
+  "runtimePreview.missing": "필요한 에셋이 없습니다. 현재 화면은 유지됩니다.",
+  "runtimePreview.failed": "미리 보기에 실패했습니다. 다시 불러와 재시도하세요.",
+  "runtimePreview.parameter": "매개변수",
+  "runtimePreview.preset": "표정 프리셋",
+  "runtimePreview.generation": "Runtime 세대",
+  "localExchange.title": "영구 로컬 Job 및 데이터 교환",
+  "localAssetCopy.title": "참조형 프로젝트를 로컬로 복사",
+  "localAssetCopy.scope":
+    "승인된 정규화 프로젝트와 PNG 에셋을 로컬 복제본 사이에 복사합니다. 편집기에서 열거나 내용을 변경하거나 Sync 리비전을 게시하지 않습니다.",
+  "localAssetCopy.source": "원본 복제본",
+  "localAssetCopy.receiver": "대상 복제본",
+  "localAssetCopy.prepare": "프로젝트 선택",
+  "localAssetCopy.commit": "에셋 복사 및 다른 이름으로 저장",
+  "localAssetCopy.cancel": "남은 작업 취소",
+  "localAssetCopy.consent":
+    "현재 선택한 프로젝트와 에셋을 대상 로컬 복제본에 복사할까요? 다음 단계에서 저장 위치를 선택합니다. 이후 실패하거나 취소해도 이미 복사된 불변 에셋은 남습니다.",
+  "localAssetCopy.unavailable": "현재 실행 구성에서는 복사할 수 없습니다.",
+  "localAssetCopy.failed":
+    "복사 결과를 확인할 수 없습니다. 재시도하기 전에 선택한 출력 위치를 확인하세요. 복사된 불변 에셋은 남을 수 있습니다.",
+  "localAssetCopy.ambiguous":
+    "작업이 완료되었을 수 있지만 결과를 확인할 수 없습니다. 선택한 출력 위치를 확인한 후 같은 프로젝트를 다시 선택하여 명시적으로 재시도하세요.",
+  "localAssetCopy.committed": "정규화 복사본이 저장된 문서:",
+  "localExchange.scope":
+    "내부 로컬 모드입니다. 요청과 결과는 이 컴퓨터에 저장되며 재시작 후 자동 실행되지 않습니다.",
+  "localExchange.refresh": "새로 고침",
+  "localExchange.createWorkspace": "로컬 작업 영역 만들기",
+  "localExchange.workspace": "작업 영역",
+  "localExchange.replica": "대응 복제본 만들기",
+  "localExchange.publish": "현재 완전한 v11 게시",
+  "localExchange.target": "대상 복제본",
+  "localExchange.queue": "대상 현재 헤드 기준으로 v11 예약",
+  "localExchange.deliver": "전달 / 동일 요청 재전송",
+  "localExchange.queuePrompt": "프롬프트 Job 예약",
+  "localExchange.queueImage": "이미지 선택 후 Job 예약",
+  "localExchange.job": "Job",
+  "localExchange.retry": "명시적으로 재시도",
+  "localExchange.start": "시작",
+  "localExchange.cancel": "취소",
+  "localExchange.selection": "정확한 결과 아티팩트 선택",
+  "localExchange.consent":
+    "보관된 후보로 현재 편집 내용을 바꾸시겠습니까? 저장하지 않은 변경 내용이 대체됩니다.",
+  "localExchange.approve": "일반 가져오기 승인",
+  "localExchange.reject": "제안 거부",
+  "localExchange.psd": "별도 PSD 변환 예약 (서버 의존)",
+  "localExchange.openCandidate": "보관된 승인 후보 열기",
+  "localExchange.legacy":
+    "일반 Provider 가져오기는 지원되는 데이터를 유지합니다. v11 Sync 리비전이나 직접 Project 아티팩트 승인 증명은 아닙니다.",
+  "localExchange.failed":
+    "작업이 실패했거나 상태가 변경되었습니다. 새로 고친 후 다시 명시적으로 작업하세요.",
+  "localExchange.unavailable": "로컬 데이터 교환을 사용할 수 없습니다.",
+  "localExchange.integrity": "무결성 검사에 실패한 저장 셀은 사용할 수 없습니다.",
   "media.title": "미디어 내보내기",
   "media.pngSequence": "PNG 시퀀스",
   "media.video": "비디오 (WebM/MP4)",
@@ -104,7 +165,8 @@ export const dialog = {
   "autoSetup.cleanupComparisonTitle": "클린업 효과 비교",
   "autoSetup.motionHandleEditor": "모션 핸들 편집기",
   "autoSetup.motionStressAction.duplicateOutline": "중복 윤곽선 클린업을 확인하세요.",
-  "autoSetup.motionStressAction.hiddenReveal": "언더페인트를 승인하거나 움직임을 줄이세요.",
+  "autoSetup.motionStressAction.hiddenReveal":
+    "언더페인트를 승인하거나 움직임을 줄이세요.",
   "autoSetup.motionStressCheck.protectedArea": "보호 영역",
   "autoSetup.motionStressCheck.duplicateOutline": "중복 윤곽선",
   "autoSetup.motionStressCheck.hiddenReveal": "숨은 영역 노출",
@@ -207,16 +269,21 @@ export const dialog = {
     "메시 히트맵을 미리 보려면 ViviMesh를 선택하고 클립 대상 메시 편집으로 전환하세요.",
   "quickActions.reason.autoMeshSelection": "자동 메시를 다시 만들 ViviMesh를 선택하세요.",
   "quickActions.reason.autoMeshTexture": "선택한 ViviMesh에는 텍스처가 필요합니다.",
-  "quickActions.reason.autoWeightSkin": "선택한 ViviMesh에는 기존 스킨 바인딩이 필요합니다.",
+  "quickActions.reason.autoWeightSkin":
+    "선택한 ViviMesh에는 기존 스킨 바인딩이 필요합니다.",
   "quickActions.reason.boneSelection": "제거할 본을 선택하세요.",
   "quickActions.reason.orphanSkinsMissing": "고아 스킨이 없습니다.",
-  "quickActions.reason.parameterBindingCleanup": "정리할 오래된 파라미터 바인딩이 없습니다.",
+  "quickActions.reason.parameterBindingCleanup":
+    "정리할 오래된 파라미터 바인딩이 없습니다.",
   "quickActions.reason.stateMachineCleanup": "정리할 오래된 상태 머신 참조가 없습니다.",
   "quickActions.reason.sceneBlendCleanup": "정리할 오래된 씬 블렌드가 없습니다.",
-  "quickActions.reason.animationTrackCleanup": "정리할 오래된 애니메이션 트랙이 없습니다.",
-  "quickActions.reason.seeThroughProjectRequired": "See-through로 가져온 프로젝트가 필요합니다.",
+  "quickActions.reason.animationTrackCleanup":
+    "정리할 오래된 애니메이션 트랙이 없습니다.",
+  "quickActions.reason.seeThroughProjectRequired":
+    "See-through로 가져온 프로젝트가 필요합니다.",
   "quickActions.reason.autoSetupQuickActionRunning": "자동 설정 작업이 실행 중입니다.",
-  "quickActions.reason.seeThroughImportedLayerRequired": "See-through로 가져온 레이어가 필요합니다.",
+  "quickActions.reason.seeThroughImportedLayerRequired":
+    "See-through로 가져온 레이어가 필요합니다.",
   "quickActions.action.readyToRig.title": "리깅 준비 검사 실행",
   "quickActions.action.readyToRig.description":
     "자동 설정을 열고 See-through 정리 및 감지 흐름을 실행합니다.",
@@ -275,7 +342,8 @@ export const dialog = {
   "quickActions.action.normalizeSelectedSkinWeights.description":
     "선택한 ViviMesh의 스킨 가중치 합이 1이 되도록 정규화합니다.",
   "quickActions.action.deleteSelectedBone.title": "선택한 본 삭제",
-  "quickActions.action.deleteSelectedBone.description": "프로젝트에서 선택한 본을 제거합니다.",
+  "quickActions.action.deleteSelectedBone.description":
+    "프로젝트에서 선택한 본을 제거합니다.",
   "quickActions.action.referenceOverlayToggle.enable": "참조 오버레이 활성화",
   "quickActions.action.referenceOverlayToggle.disable": "참조 오버레이 비활성화",
   "quickActions.action.referenceOverlayToggle.description":
@@ -286,19 +354,23 @@ export const dialog = {
   "quickActions.action.referenceOverlayCurrentBounds.title": "참조 오버레이: 현재 경계",
   "quickActions.action.referenceOverlayCurrentBounds.description":
     "현재 메시 경계 사각형을 표시합니다.",
-  "quickActions.action.referenceOverlayImportedBounds.title": "참조 오버레이: 가져온 경계",
+  "quickActions.action.referenceOverlayImportedBounds.title":
+    "참조 오버레이: 가져온 경계",
   "quickActions.action.referenceOverlayImportedBounds.description":
     "See-through 가져오기 시점의 경계 상자를 표시합니다.",
   "quickActions.action.referenceOverlayBoundsCompare.title": "참조 오버레이: 경계 비교",
   "quickActions.action.referenceOverlayBoundsCompare.description":
     "현재 메시 경계와 See-through 가져오기 경계를 함께 겹쳐 표시합니다.",
   "quickActions.action.referenceOverlayComparePrefix": "참조 오버레이 비교:",
-  "quickActions.action.referenceOverlayComparePreset.description": "참조 오버레이 비교 프리셋을 전환합니다.",
+  "quickActions.action.referenceOverlayComparePreset.description":
+    "참조 오버레이 비교 프리셋을 전환합니다.",
   "quickActions.action.referenceOverlayCompareSwap.title": "참조 오버레이 비교: A/B 교체",
   "quickActions.action.referenceOverlayCompareSwap.description":
     "현재 비교 A와 비교 B 모드를 서로 바꿉니다.",
-  "quickActions.action.referenceOverlayPinCompareSummary.enable": "참조 오버레이 비교 요약 고정",
-  "quickActions.action.referenceOverlayPinCompareSummary.disable": "참조 오버레이 비교 요약 고정 해제",
+  "quickActions.action.referenceOverlayPinCompareSummary.enable":
+    "참조 오버레이 비교 요약 고정",
+  "quickActions.action.referenceOverlayPinCompareSummary.disable":
+    "참조 오버레이 비교 요약 고정 해제",
   "quickActions.action.referenceOverlayPinCompareSummary.description":
     "오버레이 모드가 비교 모드에서 벗어나도 비교 요약을 계속 표시합니다.",
   "quickActions.action.referenceOverlayOpacity25.title": "참조 오버레이 불투명도: 25%",
@@ -352,13 +424,17 @@ export const dialog = {
   "imageImportOptions.transparentPaddingWarning":
     "가져온 이미지에 큰 투명 여백이 있습니다. 화면 밖으로 보이면 투명 경계 자르기를 켜세요.",
   "imageImportOptions.focusedViewportOnImport": "가져온 이미지로 보기를 맞췄습니다.",
-  "imageImportOptions.focusedViewportOnImportMultiple": "가져온 이미지로 보기를 맞췄습니다.",
+  "imageImportOptions.focusedViewportOnImportMultiple":
+    "가져온 이미지로 보기를 맞췄습니다.",
   "imageImportOptions.emptyPngFolder": "선택한 폴더에 PNG 이미지가 없습니다.",
-  "imageImportOptions.projectRequiredForLayer": "레이어를 가져오기 전에 프로젝트를 여세요.",
-  "imageImportOptions.projectRequiredForLayers": "여러 레이어를 가져오기 전에 프로젝트를 여세요.",
+  "imageImportOptions.projectRequiredForLayer":
+    "레이어를 가져오기 전에 프로젝트를 여세요.",
+  "imageImportOptions.projectRequiredForLayers":
+    "여러 레이어를 가져오기 전에 프로젝트를 여세요.",
   "imageImportOptions.failedToBuildPngProject": "PNG 프로젝트를 만들지 못했습니다.",
   "imageImportOptions.reimportProjectRequired": "다시 가져오기 전에 프로젝트를 여세요.",
-  "imageImportOptions.reimportEligibility": "이 프로젝트에는 다시 가져올 PNG 소스가 없습니다.",
+  "imageImportOptions.reimportEligibility":
+    "이 프로젝트에는 다시 가져올 PNG 소스가 없습니다.",
   "imageImportOptions.reimportSourceMissing": "원본 PNG 소스를 찾을 수 없습니다.",
   "imageImportOptions.reimportMismatch": "PNG 소스가 현재 프로젝트와 일치하지 않습니다.",
   "imageImportOptions.reimportedPrefix": "다시 가져옴:",

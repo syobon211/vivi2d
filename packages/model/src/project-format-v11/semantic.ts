@@ -89,10 +89,7 @@ export async function validateProjectFormatV11Semantics(
     throw new TypeError("Project Format v11 semantics require a SHA-256 provider");
   }
 
-  const project = wire.project;
-  const layerState = validateProjectGraph(project);
-  validateProjectReferences(project, layerState);
-  validateAtlasCoverage(wire, layerState);
+  validateProjectFormatV11Structure(wire);
 
   const sha256 = options.sha256;
   await validateV11Assets(wire, sha256);
@@ -118,6 +115,17 @@ export async function validateProjectFormatV11Semantics(
     classifiedExtensions: requirements.classified,
     opaqueExtensions,
   };
+}
+
+/** Existing synchronous graph checks, shared by the internal Editor transaction.
+ * The caller must first validate schema; this does not verify image bytes or assets.
+ */
+export function validateProjectFormatV11Structure(wire: ViviFileDataWireV11): void {
+  scanForbiddenCore(wire);
+  validateInMemoryJsonNumbers(wire);
+  const layerState = validateProjectGraph(wire.project);
+  validateProjectReferences(wire.project, layerState);
+  validateAtlasCoverage(wire, layerState);
 }
 
 export function deriveProjectFormatV11Requirements(

@@ -23,14 +23,26 @@ use vivi_runtime_native_preactivation::{
 #[path = "../src/error.rs"]
 mod error;
 #[allow(dead_code)]
+#[path = "../src/lower.rs"]
+mod lower;
+#[allow(dead_code)]
 #[path = "../src/model.rs"]
 mod model;
 #[allow(dead_code)]
 #[path = "../src/reservation.rs"]
 mod reservation;
+#[allow(dead_code)]
+#[path = "../src/topology.rs"]
+mod topology;
+#[allow(dead_code)]
+#[path = "../src/topology_reservation.rs"]
+mod topology_reservation;
+pub use error::{EvaluationLoweringError, EvaluationLoweringErrorKind};
+pub use model::EvaluationLoweringFoundationV1;
 
 const GENERATION: u64 = 37;
 const RESERVATION_SITE_COUNT: usize = 39;
+const OBSERVATION_CAPACITY: usize = 44;
 const PAYLOAD_FIXTURE: &[u8] =
     include_bytes!("../../vivi-runtime-native-evaluation/fixtures/evaluation-payload-v1.json");
 
@@ -57,10 +69,10 @@ static OBSERVED_ALLOCATIONS: AtomicUsize = AtomicUsize::new(0);
 static OBSERVED_AFTER_LAST_RESERVE: AtomicUsize = AtomicUsize::new(0);
 static EXPECTED_RESERVATION_ATTEMPTS: AtomicUsize = AtomicUsize::new(RESERVATION_SITE_COUNT);
 static FAILURE_ORDINAL: AtomicUsize = AtomicUsize::new(NO_FAILURE_ORDINAL);
-static OBSERVED_BYTES: [AtomicUsize; RESERVATION_SITE_COUNT] =
-    [const { AtomicUsize::new(0) }; RESERVATION_SITE_COUNT];
-static OBSERVED_ALIGNS: [AtomicUsize; RESERVATION_SITE_COUNT] =
-    [const { AtomicUsize::new(0) }; RESERVATION_SITE_COUNT];
+static OBSERVED_BYTES: [AtomicUsize; OBSERVATION_CAPACITY] =
+    [const { AtomicUsize::new(0) }; OBSERVATION_CAPACITY];
+static OBSERVED_ALIGNS: [AtomicUsize; OBSERVATION_CAPACITY] =
+    [const { AtomicUsize::new(0) }; OBSERVATION_CAPACITY];
 std::thread_local! {
     static OBSERVING_THREAD: Cell<bool> = const { Cell::new(false) };
 }
@@ -104,7 +116,7 @@ fn observe_allocation(bytes: usize, align: usize) -> bool {
         return false;
     }
     let ordinal = OBSERVED_ALLOCATIONS.fetch_add(1, Ordering::AcqRel);
-    if ordinal < RESERVATION_SITE_COUNT {
+    if ordinal < OBSERVATION_CAPACITY {
         OBSERVED_BYTES[ordinal].store(bytes, Ordering::Release);
         OBSERVED_ALIGNS[ordinal].store(align, Ordering::Release);
     }
@@ -123,8 +135,8 @@ struct ObservationGuard {
 struct Observation {
     allocations: usize,
     after_last_reserve: usize,
-    bytes: [usize; RESERVATION_SITE_COUNT],
-    aligns: [usize; RESERVATION_SITE_COUNT],
+    bytes: [usize; OBSERVATION_CAPACITY],
+    aligns: [usize; OBSERVATION_CAPACITY],
 }
 
 impl ObservationGuard {
@@ -134,7 +146,7 @@ impl ObservationGuard {
 
     fn arm_with_failure(expected_reservation_attempts: usize, failure_ordinal: usize) -> Self {
         assert!(!OBSERVATION_ARMED.load(Ordering::Acquire));
-        assert!(expected_reservation_attempts <= RESERVATION_SITE_COUNT);
+        assert!(expected_reservation_attempts <= OBSERVATION_CAPACITY);
         OBSERVED_ALLOCATIONS.store(0, Ordering::Release);
         OBSERVED_AFTER_LAST_RESERVE.store(0, Ordering::Release);
         for value in &OBSERVED_BYTES {
@@ -473,8 +485,14 @@ fn all_39_reservations_are_the_only_allocations_during_lowering() {
 
     assert_eq!(observation.allocations, RESERVATION_SITE_COUNT);
     assert_eq!(observation.after_last_reserve, 0);
-    assert_eq!(observation.bytes, EXPECTED_RESERVATION_BYTES);
-    assert_eq!(observation.aligns, EXPECTED_RESERVATION_ALIGNS);
+    assert_eq!(
+        observation.bytes[..RESERVATION_SITE_COUNT],
+        EXPECTED_RESERVATION_BYTES
+    );
+    assert_eq!(
+        observation.aligns[..RESERVATION_SITE_COUNT],
+        EXPECTED_RESERVATION_ALIGNS
+    );
 
     let foundation = result.expect("rich all-site payload lowers");
     assert_eq!(foundation.request_generation(), GENERATION);
@@ -747,5 +765,86 @@ fn a_real_production_reserve_failure_maps_to_resource_status_six() {
     );
     assert_eq!(failure.load_status(), 6);
     assert_eq!(observation.allocations, FAIL_AT + 1);
+    assert_eq!(observation.after_last_reserve, 0);
+}
+
+#[test]
+fn sealed_public_entry_has_exact_44_reserves_then_no_fill_query_or_update_allocation() {
+    use vivi_runtime_native_evaluation_lowering::lower_sealed_evaluation_v1;
+    let _single_thread = TEST_GATE.lock().unwrap_or_else(|error| error.into_inner());
+    let payload = rich_all_sites_payload();
+    let (candidate, plan) = candidate_and_plan(&payload);
+    let observation = ObservationGuard::arm(44);
+    let result = lower_sealed_evaluation_v1(GENERATION, candidate, plan);
+    let observation = observation.finish();
+    assert_eq!(observation.allocations, 44);
+    assert_eq!(observation.after_last_reserve, 0);
+    assert_eq!(observation.bytes[..39], EXPECTED_RESERVATION_BYTES);
+    assert_eq!(observation.aligns[..39], EXPECTED_RESERVATION_ALIGNS);
+    assert_eq!(observation.bytes[39..], [23, 72, 8, 8, 816]);
+    assert_eq!(observation.aligns[39..], [1, 4, 4, 4, 4]);
+    let mut sealed = result.expect("actual public C11 construction succeeds");
+    let observation = ObservationGuard::arm(0);
+    let mesh_ok = sealed.mesh_snapshot(0).is_ok() && sealed.mesh_snapshot(1).is_ok();
+    let parameter_ok = sealed.parameter_snapshot(0).is_ok();
+    let preset_ok = sealed.preset_id(0).is_ok();
+    let command_count = sealed.draw_commands().count();
+    let set = sealed.set_input("param2", 0x3fd0_0000_0000_0000);
+    let preset = sealed.apply_preset("expression");
+    let update = sealed.update(0);
+    let generations = (sealed.dynamic_generation(), sealed.topology_generation());
+    let observation = observation.finish();
+    assert!(mesh_ok && parameter_ok && preset_ok && command_count > 0);
+    assert!(set.is_ok() && preset.is_ok() && update.is_ok());
+    assert_eq!(generations, (1, 1));
+    assert_eq!(observation.allocations, 0);
+}
+
+#[test]
+fn all_five_topology_denials_share_the_c9_attempt_counter_and_stop_before_allocator() {
+    use reservation::{
+        Category9ReservationBuffersV1, Category9SiteCountsV1, ReservationDenialKeyV1,
+        ReservationStateV1,
+    };
+    use topology_reservation::{SITE_IDS, TopologyCountsV1};
+    let _single_thread = TEST_GATE.lock().unwrap_or_else(|error| error.into_inner());
+    let mut raw_counts = [0; 39];
+    for (site, count) in [(0, 4), (1, 24), (2, 24), (3, 12), (13, 4)] {
+        raw_counts[site] = count;
+    }
+    let c9 = Category9SiteCountsV1::try_from_ordered(raw_counts).unwrap();
+    let c11 = TopologyCountsV1::checked(8, 4, 3, c9.total_logical_bytes()).unwrap();
+    for (index, count) in [8, 4, 3, 4, 68].into_iter().enumerate() {
+        let mut state = ReservationStateV1::with_denial(ReservationDenialKeyV1 {
+            site_template_id: SITE_IDS[index],
+            owner_slot: None,
+            attempt_ordinal: 5 + index as u32,
+            additional_count: count,
+        });
+        let observation = ObservationGuard::arm(5 + index);
+        let c9_buffers = Category9ReservationBuffersV1::reserve_all_with_state(&c9, &mut state);
+        let result = c11.reserve(&mut state);
+        let observation = observation.finish();
+        assert!(c9_buffers.is_ok());
+        assert_eq!(result.err().unwrap().load_status(), 6);
+        assert_eq!(
+            observation.allocations,
+            5 + index,
+            "denied site has no allocator call"
+        );
+        assert_eq!(observation.after_last_reserve, 0);
+    }
+}
+
+#[test]
+fn real_allocator_failure_in_new_site_is_resource_and_has_no_later_attempt() {
+    use vivi_runtime_native_evaluation_lowering::lower_sealed_evaluation_v1;
+    let _single_thread = TEST_GATE.lock().unwrap_or_else(|error| error.into_inner());
+    let (candidate, plan) = candidate_and_plan(&rich_all_sites_payload());
+    let observation = ObservationGuard::arm_with_failure(41, 40);
+    let result = lower_sealed_evaluation_v1(GENERATION, candidate, plan);
+    let observation = observation.finish();
+    assert_eq!(result.unwrap_err().load_status(), 6);
+    assert_eq!(observation.allocations, 41);
     assert_eq!(observation.after_last_reserve, 0);
 }

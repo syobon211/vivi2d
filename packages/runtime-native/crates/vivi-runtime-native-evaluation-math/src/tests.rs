@@ -324,7 +324,7 @@ fn signed_zero_and_subnormal_semantics_are_preserved() {
 }
 
 #[test]
-fn manifest_and_production_sources_keep_the_consumer_zero_boundary() {
+fn manifest_and_production_sources_keep_the_internal_raw_boundary() {
     let manifest = include_str!("../Cargo.toml");
     assert!(manifest.contains("publish = false"));
     assert!(manifest.contains("crate-type = [\"rlib\"]"));
@@ -352,6 +352,7 @@ fn manifest_and_production_sources_keep_the_consumer_zero_boundary() {
     assert!(library.contains("#![forbid(unsafe_code)]"));
     assert!(library.contains("exact 21-callable"));
     assert!(library.contains("does not implement checkpoints"));
+    assert!(library.contains("pub use crate::binary64::{DetF64 as D64, DetF64Class as Class};"));
 
     let binary64 = include_str!("binary64.rs");
     let transcendental = include_str!("transcendental.rs");
@@ -378,10 +379,41 @@ fn manifest_and_production_sources_keep_the_consumer_zero_boundary() {
                 "forbidden source token: {forbidden}"
             );
         }
-        for line in source.lines() {
-            assert!(!line.trim_start().starts_with("pub "));
-        }
     }
+    let declarations = binary64
+        .lines()
+        .chain(transcendental.lines())
+        .map(str::trim)
+        .filter(|line| line.starts_with("pub "))
+        .collect::<std::vec::Vec<_>>();
+    assert_eq!(
+        declarations,
+        [
+            "pub struct DetF64(u64);",
+            "pub enum DetF64Class {",
+            "pub const fn from_bits(bits: u64) -> Self {",
+            "pub const fn to_bits(self) -> u64 {",
+            "pub const fn classify(self) -> DetF64Class {",
+            "pub const fn is_finite(self) -> bool {",
+            "pub fn add(self, rhs: Self) -> Self {",
+            "pub fn sub(self, rhs: Self) -> Self {",
+            "pub fn mul(self, rhs: Self) -> Self {",
+            "pub fn div(self, rhs: Self) -> Self {",
+            "pub fn c_fmod(self, rhs: Self) -> Self {",
+            "pub const fn neg(self) -> Self {",
+            "pub const fn abs(self) -> Self {",
+            "pub fn eq(self, rhs: Self) -> bool {",
+            "pub fn lt(self, rhs: Self) -> bool {",
+            "pub fn le(self, rhs: Self) -> bool {",
+            "pub fn gt(self, rhs: Self) -> bool {",
+            "pub fn ge(self, rhs: Self) -> bool {",
+            "pub fn sin(self) -> Self {",
+            "pub fn cos(self) -> Self {",
+            "pub fn atan2(self, x: Self) -> Self {",
+            "pub fn acos(self) -> Self {",
+            "pub fn sqrt(self) -> Self {",
+        ]
+    );
     assert_eq!(binary64.matches("Round::NearestTiesToEven").count(), 4);
     assert_eq!(binary64.matches("rustc_apfloat::Float::c_fmod(").count(), 1);
     assert_eq!(transcendental.matches("SoftF64::from_bits").count(), 6);

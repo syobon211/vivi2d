@@ -18,6 +18,7 @@ import {
 } from "@/lib/reference-overlay-utils";
 import { getTexture } from "@/lib/texture-store";
 import { useEditorStore } from "@/stores/editorStore";
+import { v11EntryCanvas } from "@/stores/projectIO/v11Images";
 import { useSelectionStore } from "@/stores/selectionStore";
 import { useViewportStore } from "@/stores/viewportStore";
 import type { PixiAppRefs } from "./usePixiApp";
@@ -119,7 +120,7 @@ export function useReferenceOverlay(pixiRefs: React.RefObject<PixiAppRefs>) {
 
     try {
       if (referenceOverlay.mode === "source") {
-        const canvas = getTexture(selectedLayer.id);
+        const canvas = useEditorStore.getState().projectV11 ? v11EntryCanvas(selectedLayer.id) : getTexture(selectedLayer.id);
         if (!canvas || canvas.width === 0 || canvas.height === 0) {
           destroyOverlayContainer(container);
           containerRef.current = null;

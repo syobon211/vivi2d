@@ -1,6 +1,7 @@
 use std::fmt;
 
 use vivi_asset_resolver::{AssetError, AssetErrorCode};
+#[cfg(feature = "local-store")]
 use vivi_asset_store_local::{LocalStoreError, LocalStoreErrorKind};
 
 /// Stable host-side failure classes. Resolver Asset errors and local-store
@@ -22,6 +23,7 @@ pub enum LocalAssetHostErrorKind {
 pub struct LocalAssetHostError {
     kind: LocalAssetHostErrorKind,
     asset_code: Option<AssetErrorCode>,
+    #[cfg(feature = "local-store")]
     store_kind: Option<LocalStoreErrorKind>,
 }
 
@@ -30,6 +32,7 @@ impl LocalAssetHostError {
         Self {
             kind: LocalAssetHostErrorKind::InvalidTexturePlan,
             asset_code: None,
+            #[cfg(feature = "local-store")]
             store_kind: None,
         }
     }
@@ -38,6 +41,7 @@ impl LocalAssetHostError {
         Self {
             kind: LocalAssetHostErrorKind::ResourceLimitExceeded,
             asset_code: None,
+            #[cfg(feature = "local-store")]
             store_kind: None,
         }
     }
@@ -46,18 +50,22 @@ impl LocalAssetHostError {
         Self {
             kind: LocalAssetHostErrorKind::Asset,
             asset_code: Some(error.code),
+            #[cfg(feature = "local-store")]
             store_kind: None,
         }
     }
 
+    #[cfg(feature = "local-store")]
     pub(crate) const fn from_store(error: LocalStoreError) -> Self {
         Self::from_store_kind(Some(error.kind()))
     }
 
+    #[cfg(feature = "local-store")]
     pub(crate) const fn from_store_kind(kind: Option<LocalStoreErrorKind>) -> Self {
         Self {
             kind: LocalAssetHostErrorKind::Store,
             asset_code: None,
+            #[cfg(feature = "local-store")]
             store_kind: kind,
         }
     }
@@ -76,6 +84,7 @@ impl LocalAssetHostError {
     /// The redacted local-store class, present only for concrete store
     /// failures. No path, principal, SQLite text, or native source is exposed.
     #[must_use]
+    #[cfg(feature = "local-store")]
     pub const fn store_kind(self) -> Option<LocalStoreErrorKind> {
         self.store_kind
     }
@@ -95,3 +104,101 @@ impl fmt::Display for LocalAssetHostError {
 }
 
 impl std::error::Error for LocalAssetHostError {}
+
+/// Transfer-only outcomes do not extend the existing activation host's error
+/// vocabulary or require unrelated exhaustive-match consumers to change.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg(feature = "local-store")]
+pub enum PngTransferErrorKind {
+    CancelledBeforePublication,
+    Host(LocalAssetHostErrorKind),
+}
+
+/// Redacted one-PNG transfer failure. A publication Store error may follow an
+/// actual descriptor commit; callers reconcile with immutable replay, not deletion.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg(feature = "local-store")]
+pub struct PngTransferError {
+    cause: Option<LocalAssetHostError>,
+    outcome_may_have_committed: bool,
+}
+
+#[cfg(feature = "local-store")]
+impl From<LocalAssetHostError> for PngTransferError {
+    fn from(cause: LocalAssetHostError) -> Self {
+        Self {
+            cause: Some(cause),
+            outcome_may_have_committed: false,
+        }
+    }
+}
+
+#[cfg(feature = "local-store")]
+impl PngTransferError {
+    pub(crate) const fn cancelled_before_publication() -> Self {
+        Self {
+            cause: None,
+            outcome_may_have_committed: false,
+        }
+    }
+
+    pub(crate) fn publication_failure(mut self) -> Self {
+        if self
+            .cause
+            .is_some_and(|e| e.kind() == LocalAssetHostErrorKind::Store)
+        {
+            self.outcome_may_have_committed = true;
+        }
+        self
+    }
+
+    #[must_use]
+    pub const fn kind(self) -> PngTransferErrorKind {
+        match self.cause {
+            Some(error) => PngTransferErrorKind::Host(error.kind()),
+            None => PngTransferErrorKind::CancelledBeforePublication,
+        }
+    }
+
+    #[must_use]
+    pub const fn host_error(self) -> Option<LocalAssetHostError> {
+        self.cause
+    }
+
+    #[must_use]
+    pub const fn asset_code(self) -> Option<AssetErrorCode> {
+        match self.cause {
+            Some(error) => error.asset_code(),
+            None => None,
+        }
+    }
+
+    #[must_use]
+    #[cfg(feature = "local-store")]
+    pub const fn store_kind(self) -> Option<LocalStoreErrorKind> {
+        match self.cause {
+            Some(error) => error.store_kind(),
+            None => None,
+        }
+    }
+
+    /// A transfer write began, so immutable objects or the descriptor may have
+    /// committed despite the returned error. False is not a general store probe.
+    #[must_use]
+    pub const fn outcome_may_have_committed(self) -> bool {
+        self.outcome_may_have_committed
+    }
+}
+
+#[cfg(feature = "local-store")]
+impl fmt::Display for PngTransferError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.cause {
+            Some(error) => error.fmt(formatter),
+            None => formatter.write_str("local asset host transfer cancelled before publication"),
+        }
+    }
+}
+
+#[cfg(feature = "local-store")]
+impl std::error::Error for PngTransferError {}

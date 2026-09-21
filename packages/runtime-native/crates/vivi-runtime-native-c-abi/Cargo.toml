@@ -16,10 +16,14 @@ path = "src/lib.rs"
 default = []
 abi-v02 = ["vivi-runtime-native-core/render-v02"]
 png-v1 = ["dep:vivi-png-ref"]
+local-asset-host-v1 = ["dep:vivi-asset-host-local", "vivi-asset-host-local/local-store"]
+evaluation-v1 = ["abi-v02", "vivi-runtime-native-core/evaluation-v1"]
 
 [dependencies]
+vivi-asset-host-local = { path = "../vivi-asset-host-local", optional = true, default-features = false }
 vivi-png-ref = { path = "../vivi-png-ref", optional = true }
 vivi-runtime-native-core = { path = "../vivi-runtime-native-core" }
 
 [dev-dependencies]
 serde_json = "1.0"
+tempfile = "3"

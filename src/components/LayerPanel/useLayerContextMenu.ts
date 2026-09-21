@@ -8,6 +8,7 @@ import { isBone } from "@vivi2d/core/types";
 import { useCallback, useState } from "react";
 import { useArtPathStore } from "@/stores/artPathStore";
 import { useBoneStore } from "@/stores/boneStore";
+import { deleteV11Mesh } from "@/stores/projectIO/v11Images";
 
 export interface ContextMenuState {
   x: number;
@@ -64,7 +65,7 @@ export function useLayerContextMenu(
   const handleDelete = useCallback(() => {
     if (!contextMenu) return;
     const { layer } = contextMenu;
-    if (isBone(layer)) {
+    if (!deleteV11Mesh(layer.id) && isBone(layer)) {
       useBoneStore.getState().removeBone(layer.id);
     }
     setContextMenu(null);

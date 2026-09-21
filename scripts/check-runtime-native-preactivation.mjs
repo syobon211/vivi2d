@@ -21,21 +21,21 @@ const expectedPreactivationFiles = [
 ].sort();
 
 const pinnedPreactivationFiles = [
-  ["Cargo.toml", 612, "d203cbf4a16fd220da0e335d8e872cb02ca25649a0961b4ce22d1d283cbab543"],
+  ["Cargo.toml", 702, "b7b04435652650ec085b7efdb94cddcfa1e17dfea2ebacad5f2872360c0fa00a"],
   [
     "src/coordinator.rs",
-    9_103,
-    "dab960e170b24f39c7dbfaf14a2e9fa0a06610bcdcca0d436721b4181bd872f9",
+    11077,
+    "3cca5512246933fb0d6010bc94e8b9248e99f238bfecc3a51022f66d92656c07",
   ],
   [
     "src/error.rs",
-    4_725,
-    "0eb67e4ce2d32b5f15129db7ab83872fd7c55e7059afbe4ba5910ffac46b62ad",
+    6441,
+    "3a7341db2248ff8f569aae97c5510d9551c77fc6c8fe50e8db41379b6b367ea2",
   ],
   [
     "src/lib.rs",
-    1_946,
-    "3e625af7d5c94f5f91789c3c15d44e711801bca4a73a27354812790f3ff39344",
+    2245,
+    "ca70e628b0d94ac5424f3ab2bea6dedf9a39a5995eb47b2ad563407585243f26",
   ],
   [
     "src/model.rs",
@@ -44,12 +44,14 @@ const pinnedPreactivationFiles = [
   ],
   [
     "src/tests.rs",
-    23_994,
-    "254c23433b8e0209442a1017e05720b89c2ce5049bdf0ac0c328fa4228d58c06",
+    25663,
+    "f697645e67eb8f8dde047c336729a13e3a5d0e97b3ca7078124f0a41e0f76acf",
   ],
 ];
 
 const requiredTestNames = [
+  "all_error_kinds_preserve_the_frozen_outer_load_mapping",
+  "borrowed_plan_reuses_real_ready_missing_and_host_preflight",
   "equal_generation_limit_precedes_plan_correlation_and_is_pre_read",
   "generation_mismatch_precedes_limit_correlation_and_is_pre_read",
   "host_fixed_fields_and_asset_shape_errors_are_redacted_and_typed",
@@ -81,8 +83,10 @@ const expectedPublicFunctionsByFile = {
   "src/coordinator.rs": [
     "correlate_evaluation_activation_v1",
     "prepare_evaluation_activation_v1",
+    "prepare_evaluation_texture_plan_v1",
+    "prepare_evaluation_texture_plan_from_bytes_v1",
   ],
-  "src/error.rs": ["asset_code", "kind", "store_kind"],
+  "src/error.rs": ["asset_code", "kind", "load_status", "store_kind"],
   "src/lib.rs": [],
   "src/model.rs": [
     "candidate",
@@ -101,6 +105,10 @@ const expectedPublicFunctionsByFile = {
   ],
 };
 const expectedRootReexports = [
+  "EvaluationPhysicalObjectV1",
+  "prepare_evaluation_texture_plan_from_bytes_v1",
+  "PrepareActivationTextureSetV1",
+  "prepare_evaluation_texture_plan_v1",
   "AssetErrorCode",
   "AssetRef",
   "CorrelatedEvaluationActivationV1",
@@ -225,7 +233,11 @@ function assertCargoBoundary() {
     pkg.rust_version !== "1.89" ||
     pkg.license !== "Apache-2.0" ||
     JSON.stringify(pkg.publish) !== "[]" ||
-    JSON.stringify(pkg.features) !== "{}" ||
+    JSON.stringify(pkg.features) !==
+      JSON.stringify({
+        default: ["native-host"],
+        "native-host": ["vivi-asset-host-local/local-store"],
+      }) ||
     path.resolve(pkg.manifest_path) !== resolve(preactivationManifestPath)
   ) {
     throw new Error(
@@ -343,6 +355,7 @@ function assertDependencyPins(metadata) {
 }
 
 function assertConsumerGraph(metadata) {
+  assertOptionalLocalAssetCAbi(metadata);
   assertExactJson(
     consumersOf(metadata, "vivi-runtime-native-evaluation"),
     ["vivi-runtime-native-preactivation"],
@@ -350,7 +363,7 @@ function assertConsumerGraph(metadata) {
   );
   assertExactJson(
     consumersOf(metadata, "vivi-asset-host-local"),
-    ["vivi-runtime-native-preactivation"],
+    ["vivi-runtime-native-c-abi", "vivi-runtime-native-preactivation"],
     "local Asset host production consumer graph",
   );
   assertExactJson(
@@ -380,7 +393,17 @@ function assertConsumerGraph(metadata) {
     const boundaryPackage = requirePackage(metadata, packageName);
     if (
       boundaryPackage.dependencies.some(
-        (dependency) => dependency.name === "vivi-runtime-native-preactivation",
+        (dependency) =>
+          dependency.name === "vivi-runtime-native-preactivation" &&
+          !(
+            packageName === "vivi-runtime-native-core" &&
+            dependency.kind === "dev" &&
+            dependency.optional === false &&
+            dependency.uses_default_features === false &&
+            JSON.stringify(dependency.features) === JSON.stringify(["native-host"]) &&
+            dependency.target === null &&
+            path.resolve(dependency.path) === path.dirname(pkg.manifest_path)
+          ),
       )
     ) {
       throw new Error(`${packageName} must remain disconnected from preactivation`);
@@ -518,11 +541,37 @@ function assertPreactivationContract() {
     [
       "correlate_evaluation_activation_v1(",
       "prepare(request_generation, &correlated.texture_plan)",
+      "validate_host_outcome(request_generation, &correlated.texture_plan, outcome)",
       "correlated.into_parts()",
       "match outcome",
     ],
     "preactivation pure-correlation/host composition order",
   );
+  const borrowed = /pub fn prepare_evaluation_texture_plan_v1\([\s\S]*?\n\}/m.exec(
+    coordinator,
+  )?.[0];
+  if (!borrowed) throw new Error("borrowed-plan preparation entry missing");
+  assertOrderedEvidence(
+    borrowed,
+    [
+      ".prepare_activation_texture_set(request_generation, plan)",
+      ".map_err(EvaluationPreactivationError::from_host)?",
+      "validate_host_outcome(request_generation, plan, outcome)",
+    ],
+    "borrowed-plan real-host/validation order",
+  );
+  const validator = /fn validate_host_outcome\([\s\S]*?\n\}/m.exec(coordinator)?.[0];
+  if (
+    !validator ||
+    !validator.includes("validate_ready_output(generation, plan, ready)?") ||
+    !validator.includes("validate_missing_output(generation, plan, missing)?") ||
+    !validator.includes("Ok(outcome)") ||
+    /clone\(|Vec::|prepare_activation/.test(validator)
+  ) {
+    throw new Error(
+      "shared real-host outcome validator must validate then move unchanged",
+    );
+  }
 
   for (const evidence of [
     "pre_read",
@@ -897,6 +946,59 @@ function requirePackage(metadata, packageName) {
   return pkg;
 }
 
+function assertOptionalLocalAssetCAbi(metadata) {
+  const abi = requirePackage(metadata, "vivi-runtime-native-c-abi");
+  const host = requirePackage(metadata, "vivi-asset-host-local");
+  const dependencies = abi.dependencies.filter((v) => v.name === host.name);
+  if (dependencies.length !== 1)
+    throw new Error("C ABI must declare one optional local Asset edge");
+  const edge = dependencies[0];
+  assertExactJson(
+    [
+      edge.kind ?? "normal",
+      edge.optional,
+      edge.uses_default_features,
+      path.resolve(edge.path),
+      edge.features,
+      edge.target,
+    ],
+    ["normal", true, false, path.dirname(host.manifest_path), [], null],
+    "exact optional native C ABI/local Asset declaration",
+  );
+  assertExactJson(
+    abi.features["local-asset-host-v1"],
+    ["dep:vivi-asset-host-local", "vivi-asset-host-local/local-store"],
+    "local Asset opt-in feature",
+  );
+  assertExactJson(abi.features.default, [], "C ABI defaults remain empty");
+  const nodes = new Map(metadata.resolve.nodes.map((v) => [v.id, v]));
+  const packages = new Map(metadata.packages.map((v) => [v.id, v]));
+  const seen = new Set(),
+    pending = [abi.id];
+  while (pending.length) {
+    const id = pending.pop();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const node = nodes.get(id),
+      pkg = packages.get(id);
+    if (!node || !pkg) throw new Error("C ABI default graph node missing");
+    if (
+      [
+        "vivi-asset-host-local",
+        "vivi-asset-store-local",
+        "rusqlite",
+        "libsqlite3-sys",
+      ].includes(pkg.name)
+    ) {
+      throw new Error("Default C ABI must not reach local host/store/SQLite");
+    }
+    for (const dependency of node.deps) {
+      if (dependency.dep_kinds.some((k) => k.kind === null || k.kind === "build"))
+        pending.push(dependency.pkg);
+    }
+  }
+}
+
 function consumersOf(metadata, dependencyName) {
   return metadata.packages
     .filter((pkg) =>
@@ -1050,6 +1152,8 @@ function collectRootReexports(source) {
 
 function assertReferenceAllowlist() {
   const allowed = new Set([
+    "packages/runtime-native/crates/vivi-runtime-native-core/Cargo.toml",
+    "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation/tests.rs",
     ".github/workflows/runtime-native.yml",
     "docs/developer/architecture/overview.md",
     "docs/developer/architecture/package-graph.md",
@@ -1063,13 +1167,15 @@ function assertReferenceAllowlist() {
     "scripts/check-runtime-asset-host-local.mjs",
     "scripts/check-runtime-native-evaluation.mjs",
     "scripts/check-runtime-native-evaluation-lowering.mjs",
+    "scripts/lib/evaluation-lowering-c10-execution.mjs",
+    "scripts/lib/runtime-native-evaluation-wasm.mjs",
     "scripts/check-runtime-native-evaluation-math.mjs",
     "scripts/check-runtime-native-preactivation.mjs",
     "scripts/quality-gate-manifest.json",
     "scripts/run-quality-gates.mjs",
   ]);
   const referencePattern =
-    /vivi[-_]runtime[-_]native[-_]preactivation|(?:prepare|correlate)_evaluation_activation_v1|(?:Correlated|Prepare|Prepared|Missing)EvaluationActivationV1/;
+    /vivi[-_]runtime[-_]native[-_]preactivation|(?:prepare|correlate)_evaluation_activation_v1|prepare_evaluation_texture_plan_v1|(?:Correlated|Prepare|Prepared|Missing)EvaluationActivationV1/;
   const files = runCapture("git", [
     "ls-files",
     "--cached",

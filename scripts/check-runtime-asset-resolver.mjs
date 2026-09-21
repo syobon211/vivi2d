@@ -639,11 +639,38 @@ function assertCargoBoundary() {
     .sort();
   if (
     JSON.stringify(pngConsumers) !==
-    JSON.stringify(["vivi-asset-resolver", "vivi-runtime-native-c-abi"])
+    JSON.stringify([
+      "vivi-asset-resolver",
+      "vivi-runtime-native-c-abi",
+      "vivi-runtime-native-wasm",
+    ])
   ) {
     throw new Error(
       `vivi-png-ref consumer isolation drifted: ${pngConsumers.join(", ")}`,
     );
+  }
+  // PNG and Evaluation remain separate opt-in artifacts; the legacy graph is unchanged.
+  const wasmPackage = metadata.packages.find(
+    (pkg) => pkg.name === "vivi-runtime-native-wasm",
+  );
+  const wasmPng = wasmPackage?.dependencies.find(
+    (dependency) => dependency.name === "vivi-png-ref",
+  );
+  if (
+    !wasmPng?.optional ||
+    wasmPng.kind !== null ||
+    wasmPng.source !== null ||
+    path.resolve(wasmPng.path) !==
+      path.resolve(root, "packages/runtime-native/crates/vivi-png-ref") ||
+    wasmPng.req !== "*" ||
+    JSON.stringify(wasmPng.features) !== "[]" ||
+    JSON.stringify(wasmPackage.features) !==
+      JSON.stringify({
+        "evaluation-v1": ["vivi-runtime-native-core/evaluation-v1"],
+        "png-v1": ["dep:vivi-png-ref"],
+      })
+  ) {
+    throw new Error("WASM PNG dependency must remain the opt-in png-v1 path edge");
   }
   return metadata;
 }
@@ -748,6 +775,12 @@ function assertNoProductionBridge() {
   for (const boundaryRoot of ["packages/editor-host", "electron", "src"]) {
     for (const filePath of walkFiles(resolve(boundaryRoot))) {
       if (!/\.(?:[cm]?[jt]sx?|json)$/i.test(filePath)) continue;
+      // This exact generated SBOM is dependency attribution data, not source wiring.
+      if (
+        toRelative(filePath) ===
+        "electron/generated/native-local-asset/win32-x64/native-local-asset.cdx.json"
+      )
+        continue;
       const text = readFileSync(filePath, "utf8");
       if (/vivi[-_]asset[-_]resolver/i.test(text)) {
         throw new Error(

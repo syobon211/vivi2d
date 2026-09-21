@@ -83,6 +83,8 @@ body:
         - check:runtime-c-abi-link
         - check:runtime-c-abi-v02-host-smoke
         - check:runtime-png
+        - check:local-asset-addon
+        - check:runtime-preview-electron
         - check:runtime-asset-resolver
         - check:runtime-asset-store-local
         - check:runtime-asset-host-local

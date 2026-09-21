@@ -962,6 +962,16 @@ function jobState(input: unknown): LocalJobState {
     decision,
   });
 }
+/** Validate restored metadata only. This never registers a preparation proof. */
+export function restoreLocalSyncState(input: unknown): LocalResult<LocalSyncState> {
+  return transition(() => syncState(input, LOCAL_EXCHANGE_LIMITS));
+}
+
+/** Validate restored metadata only. Byte-backed preparations must be rerun by the host. */
+export function restoreLocalJobState(input: unknown): LocalResult<LocalJobState> {
+  return transition(() => jobState(input));
+}
+
 export function submitLocalJob(
   input: LocalJobState | null,
   prepared: PreparedSubmission,

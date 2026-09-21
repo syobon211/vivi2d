@@ -804,7 +804,11 @@ function assertNativeOnlyIsolation(metadata) {
   const pngConsumers = consumersOf(metadata, "vivi-png-ref");
   if (
     JSON.stringify(pngConsumers) !==
-    JSON.stringify(["vivi-asset-resolver", "vivi-runtime-native-c-abi"])
+    JSON.stringify([
+      "vivi-asset-resolver",
+      "vivi-runtime-native-c-abi",
+      "vivi-runtime-native-wasm",
+    ])
   ) {
     throw new Error(
       `vivi-png-ref direct consumer isolation drifted: ${pngConsumers.join(", ")}`,
@@ -827,6 +831,12 @@ function assertNativeOnlyIsolation(metadata) {
   for (const boundaryRoot of ["packages/editor-host", "electron", "src"]) {
     for (const filePath of walkFiles(resolve(boundaryRoot))) {
       if (!/\.(?:[cm]?[jt]sx?|json)$/i.test(filePath)) continue;
+      // This exact generated SBOM is dependency attribution data, not source wiring.
+      if (
+        toRelative(filePath) ===
+        "electron/generated/native-local-asset/win32-x64/native-local-asset.cdx.json"
+      )
+        continue;
       if (/vivi[-_]asset[-_]store[-_]local/i.test(readFileSync(filePath, "utf8"))) {
         throw new Error(
           `${toRelative(filePath)} wires the store before its bridge slice`,

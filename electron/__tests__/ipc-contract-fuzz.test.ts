@@ -41,6 +41,15 @@ function randomPath(seed: number): string {
 }
 
 describe("IPC payload and path canonicalization deterministic fuzz boundaries", () => {
+  it("admits only the bounded v11 original/current copy guard", () => {
+    const base = { format: "project-v11-json", data: "{}", defaultName: "copy.vivi" };
+    expect(() => validateIpcArgs("save-file", [{ ...base, preserveSourcePaths: ["original.vivi", "current.vivi"] }])).not.toThrow();
+    for (const preserveSourcePaths of [[], ["a", "b", "c"], [""], [7], "a"]) {
+      expect(() => validateIpcArgs("save-file", [{ ...base, preserveSourcePaths }])).toThrow();
+    }
+    expect(() => validateIpcArgs("save-file", [{ data: "{}", preserveSourcePaths: ["original.vivi"] }])).toThrow();
+    expect(() => validateIpcArgs("save-file", [{ ...base, preserveSourcePath: "original.vivi" }])).toThrow();
+  });
   it("never accepts traversal, absolute, or reserved relative export paths", () => {
     const base = path.resolve("tmp", "ipc-fuzz-export");
     for (const candidate of ["layers/body.png", "layers\\body.png"]) {

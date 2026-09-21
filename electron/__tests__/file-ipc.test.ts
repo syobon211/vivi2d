@@ -139,6 +139,50 @@ describe("privileged file writes", () => {
     expect(fs.readFileSync(path.join(testDir, "nested/project.json"), "utf8")).toBe("{}");
     expect([...fs.readFileSync(path.join(testDir, "nested/texture.png"))]).toEqual([1, 2]);
   });
+
+  it("preserves a v11 copy source through same-path, case, and parent-alias targets", async () => {
+    const originalDir = path.join(testDir, "original");
+    const aliasDir = path.join(testDir, "alias");
+    fs.mkdirSync(originalDir);
+    fs.symlinkSync(originalDir, aliasDir, process.platform === "win32" ? "junction" : "dir");
+    const original = path.join(originalDir, "project.vivi");
+    fs.writeFileSync(original, "original");
+    const targets = [original, path.join(aliasDir, "project.vivi")];
+    if (process.platform === "win32") targets.push(original.toUpperCase());
+    for (const target of targets) {
+      await expect(handlers.get("save-file")!({}, { format: "project-v11-json", data: "replacement", filePath: target, preserveSourcePaths: [original] })).rejects.toThrow("Choose a different file");
+      expect(fs.readFileSync(original, "utf8")).toBe("original");
+    }
+    const copy = path.join(aliasDir, "copy.vivi");
+    await handlers.get("save-file")!({}, { format: "project-v11-json", data: "copied", filePath: copy, preserveSourcePaths: [original] });
+    expect(fs.readFileSync(copy, "utf8")).toBe("copied");
+    expect(fs.readFileSync(original, "utf8")).toBe("original");
+    // Save As changes the current target, not the original source authority.
+    for (const target of [original, copy]) {
+      await expect(handlers.get("save-file")!({}, { format: "project-v11-json", data: "replacement", filePath: target, preserveSourcePaths: [original, copy] })).rejects.toThrow("Choose a different file");
+    }
+    expect(fs.readFileSync(copy, "utf8")).toBe("copied");
+    expect(fs.readFileSync(original, "utf8")).toBe("original");
+  });
+
+  it("rejects binary or wrong-extension v11 writes and copy guards on legacy routes", async () => {
+    for (const payload of [
+      { format: "project-v11-json", data: "{}", binary: new ArrayBuffer(0), filePath: path.join(testDir, "project.vivi") },
+      { format: "project-v11-json", data: "{}", filePath: path.join(testDir, "project.vivb") },
+      { data: "{}", filePath: path.join(testDir, "project.vivi"), preserveSourcePaths: ["unapproved"] },
+      ...[[], ["a", "b", "c"], [""]].map((preserveSourcePaths) => ({ format: "project-v11-json", data: "{}", filePath: path.join(testDir, "project.vivi"), preserveSourcePaths })),
+    ]) await expect(handlers.get("save-file")!({}, payload)).rejects.toThrow();
+    expect(fs.readdirSync(testDir)).toEqual([]);
+  });
+
+  it("rejects an unapproved copy source before reading its filesystem metadata", async () => {
+    const target = path.join(testDir, "allowed.vivi");
+    registerFileHandlers({ handle: (channel: string, handler: (...args: any[]) => Promise<unknown>) => handlers.set(channel, handler), getMainWindow: () => ({}), allowlists: { saved: new Set([target]) } });
+    const readMetadata = vi.spyOn(fs, "realpathSync");
+    await expect(handlers.get("save-file")!({}, { format: "project-v11-json", data: "{}", filePath: target, preserveSourcePaths: [path.join(testDir, "not-approved.vivi")] })).rejects.toThrow("Choose a different file");
+    expect(readMetadata).not.toHaveBeenCalled();
+    expect(fs.readdirSync(testDir)).toEqual([]);
+  });
 });
 
 describe("electron/ipc/file.cjs", () => {
@@ -178,6 +222,18 @@ describe("electron/ipc/file.cjs", () => {
     ).rejects.toThrow(".vivi file is too large");
 
     expect(fsModule.readFileSync).not.toHaveBeenCalled();
+  });
+
+  it("returns an owned exact UTF-8 byte range independently of legacy replacement decoding", async () => {
+    const storage = Buffer.from([99, 0xc3, 0x28, 99]);
+    dialogModule.showOpenDialog.mockResolvedValue({ canceled: false, filePaths: [TEST_TMP_HUGE_VIVI_PATH] });
+    fsModule.statSync.mockReturnValue({ size: 2 });
+    fsModule.readFileSync.mockReturnValue(storage.subarray(1, 3));
+    const result = await openViviFile({ dialogModule, fsModule, getMainWindow: () => ({}), allowlists: { opened: { add: vi.fn() }, saved: { add: vi.fn() } } });
+    expect([...new Uint8Array(result.utf8Bytes)]).toEqual([0xc3, 0x28]);
+    storage.fill(0);
+    expect([...new Uint8Array(result.utf8Bytes)]).toEqual([0xc3, 0x28]);
+    expect(() => new TextDecoder("utf-8", { fatal: true }).decode(result.utf8Bytes)).toThrow();
   });
 
   it("rejects oversized PSD files before reading them", async () => {

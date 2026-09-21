@@ -1,5 +1,32 @@
 # Architecture
 
+Current Phase B adds the opt-in native `EvaluationRuntimeV1` CPU owner and real
+EDH `getRequestState()` metadata. It supersedes the older absent-owner statements
+below only for core's `evaluation-v1` feature; no default graph or application
+activation changes. Ready's two values move once, counters retain separate
+ownership, and stale/duplicate/exhausted/never-issued requests preserve the
+incumbent. See the integration document's Phase B section.
+
+The current C2 implementation candidate adds an explicit `evaluation-v1` C ABI
+and separate Evaluation-WASM module over that same owner. A pure byte-backed
+host reuses the existing resolver, strict PNG decoder and Ready/Missing validator;
+the production WASM graph excludes the local store and SQLite. Initial C10/C11
+preparation runs once; Missing retry keeps the same seal. Typed copy-out consumes
+real C11 snapshots and decoded pixels, not a second renderer model. The default
+ABI1 and PNG-WASM modules stay separate. Native/WASM checks do not independently
+prove the application live-session/renderer boundary; C2 implementation review,
+final application evidence and hosted integration remain separate requirements.
+See [the C2 implementation boundary](evaluation-c10-integration.md#current-c2-implementation-candidate).
+
+The [current C10/C11 integration boundary](evaluation-c10-integration.md) supersedes
+disconnected-C10, consumer-zero-math and absent-C11 wording in the historical
+foundation audit paragraphs below. C11 adds internal sealing and borrowed views,
+not active ownership or application activation. Separate post-seal preparation
+now consumes that owner, reuses preactivation's real-host Ready/Missing validator,
+and moves exact CPU texture data without re-evaluation. It adds no production
+dependency edge, freshness or stable API. Other package/publication restrictions
+remain; historical no-host text applies to pure construction, not this entry.
+
 This document describes the repository structure that is currently implemented.
 Vivi2D is a public pre-1.0 OSS alpha, so package boundaries may change before
 the first stable release, but the checked-in code currently follows the

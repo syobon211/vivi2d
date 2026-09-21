@@ -11,9 +11,13 @@ publish = false
 name = "vivi_asset_host_local"
 path = "src/lib.rs"
 
+[features]
+default = ["local-store"]
+local-store = ["dep:vivi-asset-store-local"]
+
 [dependencies]
 vivi-asset-resolver = { path = "../vivi-asset-resolver", default-features = false }
-vivi-asset-store-local = { path = "../vivi-asset-store-local", default-features = false }
+vivi-asset-store-local = { path = "../vivi-asset-store-local", optional = true, default-features = false }
 
 [dev-dependencies]
 base64 = "0.22"

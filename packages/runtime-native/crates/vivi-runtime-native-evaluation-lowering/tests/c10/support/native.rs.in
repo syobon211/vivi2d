@@ -1,0 +1,66 @@
+// Test-only adoption harness. Uses the actual separately compiled math rlib.
+// Lowering source modules remain exact source includes for cfg(test) observation.
+#![allow(dead_code)]
+#![cfg(test)]
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/error.rs"]
+mod error;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/model.rs"]
+mod model;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/reservation.rs"]
+mod reservation;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lower.rs"]
+mod lower;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/observation.rs"]
+mod observation;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/state.rs"]
+mod state;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/derived.rs"]
+mod derived;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/physics.rs"]
+mod physics;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/derived_candidate.rs"]
+mod derived_candidate;
+pub use error::{EvaluationLoweringError, EvaluationLoweringErrorKind};
+pub use model::EvaluationLoweringFoundationV1;
+std::thread_local!{
+    static C9_DENIAL:std::cell::Cell<Option<reservation::ReservationDenialKeyV1>>=const{std::cell::Cell::new(None)};
+    static C10_CASE:std::cell::Cell<Option<u32>>=const{std::cell::Cell::new(None)};
+}
+pub fn lower_evaluation_foundation_v1(generation:u64,candidate:vivi_runtime_native_preactivation::ValidatedEvaluationPayloadV1,plan:vivi_runtime_native_preactivation::EvaluationTexturePlanV1)->Result<EvaluationLoweringFoundationV1,EvaluationLoweringError>{
+    if let Some(denial)=C9_DENIAL.with(|d|d.take()){
+        let correlated=vivi_runtime_native_preactivation::correlate_evaluation_activation_v1(generation,candidate,plan).map_err(EvaluationLoweringError::from_correlation)?;
+        lower::lower_correlated_with_test_denial(correlated,denial)
+    }else{
+        let mut foundation=lower::lower_evaluation_foundation_v1(generation,candidate,plan)?;
+        if let Some(index)=C10_CASE.with(|c|c.take()){
+            injections::before_initial(&mut foundation.reservation_plan,literal_cases::CASES[index as usize].injections);
+        }
+        Ok(foundation)
+    }
+}
+#[path = "@SUPPORT@/../literal_types.rs"]
+mod literal_types;
+use literal_types as expected_types;
+#[path = "@GENERATED@/native-c10-literal-cases-1.rs"]
+mod literal_cases;
+#[path = "@GENERATED@/native-c10-literal-controls-1.rs"]
+mod literal_controls;
+#[path = "@SUPPORT@/compare.rs"] mod compare;
+#[path = "@SUPPORT@/raw_checks.rs"] mod raw_checks;
+#[path = "@SUPPORT@/allocation_guard.rs"] mod allocation_guard;
+#[path="@SUPPORT@/shared_full_route.rs"] mod shared_route;
+#[path = "@SUPPORT@/route_setup.rs"] mod route_setup;
+#[path = "@SUPPORT@/native_prerequisites.rs"] mod native_prerequisites;
+#[path = "@SUPPORT@/state_checks.rs"] mod state_checks;
+#[path = "@SUPPORT@/injections.rs"] mod injections;
+#[path = "@GENERATED@/identity_setup.rs"] mod identity_setup;
+#[path = "@SUPPORT@/helper_checks.rs"] mod helper_checks;
+#[path = "@GENERATED@/projection_scope.rs"] mod projection_scope;
+mod frozen_c9 {
+    use crate::model::*;
+    use vivi_runtime_native_preactivation::{ValidatedEvaluationPayloadV1,EvaluationTexturePlanV1};
+    include!("@FIXTURES@/frozen-c9-setups.rs");
+}
+
+// No test is a pass merely because these modules compile. Fixed-case assertions
+// and allocation guards are connected separately before execution is accepted.

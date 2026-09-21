@@ -1,12 +1,14 @@
 import { decodeVivid, encodeVivid } from "@vivi2d/core/vivid-format";
 import { t as tGlobal } from "@/lib/i18n";
 import { inferProjectSourceKind } from "@/lib/project-source-kind";
-import { getAllTextures } from "@/lib/texture-store";
+import { clearTextures, getAllTextures, setTexture } from "@/lib/texture-store";
 import { useEditorStore } from "../editorStore";
 import { useNotificationStore } from "../notificationStore";
+import { rejectV11LegacyAction } from "../v11LegacyGuard";
 import { initParameterValues, resetRelatedStores } from "./reset";
 
 export async function exportVividProject(password: string): Promise<boolean> {
+  if (rejectV11LegacyAction()) return false;
   const { project } = useEditorStore.getState();
   if (!project) return false;
   if (!password) {
@@ -47,6 +49,8 @@ export async function exportVividProject(password: string): Promise<boolean> {
 }
 
 export async function importVividProject(password: string): Promise<boolean> {
+  if (rejectV11LegacyAction()) return false;
+  const before = useEditorStore.getState();
   if (!password) {
     useNotificationStore
       .getState()
@@ -59,11 +63,21 @@ export async function importVividProject(password: string): Promise<boolean> {
     if (!result) return false;
 
     const viviJson = await decodeVivid(result.binary, password);
-    const { parseViviFile, deserializeProject } = await import(
+    const { parseViviFile, prepareDeserializedProject } = await import(
       "@/lib/project-serializer"
     );
     const fileData = parseViviFile(viviJson);
-    const project = await deserializeProject(fileData);
+    if (rejectV11LegacyAction()) return false;
+    const prepared = await prepareDeserializedProject(fileData);
+    if (
+      rejectV11LegacyAction() ||
+      useEditorStore.getState().projectVersion !== before.projectVersion ||
+      useEditorStore.getState().project !== before.project
+    )
+      return false;
+    const project = prepared.project;
+    clearTextures();
+    for (const [id, canvas] of prepared.textures) setTexture(id, canvas);
     const _inferredSourceKind = inferProjectSourceKind(project);
     project.sourceKind = "vivid";
     useEditorStore.setState((s) => {

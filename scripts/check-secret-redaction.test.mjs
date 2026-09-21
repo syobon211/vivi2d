@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -56,16 +57,54 @@ function runReleaseFixture({ command, env = {}, bufferLimit }) {
 describe("generated WASM Gitleaks exception boundaries", () => {
   const config = fs.readFileSync(path.join(scriptDirectory, "../.gitleaks.toml"), "utf8");
   const generatedPath = "packages/runtime-wasm/src/native-wasm-bytes.ts";
-  const pathExpression = config.match(/paths = \['''([^']+)'''\]/)?.[1];
-  const matchExpressions = [
-    ...(config.match(/^regexes = \[([\s\S]*?)^\]/m)?.[1] ?? "").matchAll(
-      /'''([^']+)'''/g,
-    ),
-  ].map((entry) => new RegExp(entry[1]));
+  const evaluationPath = "packages/runtime-wasm/src/native-evaluation-wasm-bytes.ts";
+  const pngPath = "packages/runtime-wasm/src/native-png-wasm-bytes.ts";
+  const sections = config.replaceAll("\r\n", "\n").split(/^\[\[rules\]\]\n/m);
+  const rules = sections.slice(1).map((source) => {
+    const [header, ...blocks] = source.split(/^\[\[rules.allowlists\]\]\n/m);
+    return {
+      header: header.trim(),
+      id: header.match(/^id = "([^"]+)"$/m)?.[1],
+      blocks: blocks.map((block) => {
+        const regexList = block.match(/^regexes = \[\n([\s\S]*?)^\]/m);
+        return {
+          source: block,
+          condition: block.match(/^condition = "([^"]+)"$/m)?.[1],
+          target: block.match(/^regexTarget = "([^"]+)"$/m)?.[1],
+          path: block.match(/^paths = \['''([^']+)'''\]$/m)?.[1],
+          regexList: regexList?.[1] ?? "",
+          regexes: [...(regexList?.[1] ?? "").matchAll(/^ {2}'''([^']+)''',$/gm)].map(
+            (match) => match[1],
+          ),
+          remainder: block
+            .replace(/^description = "[^"\n]+"$/m, "")
+            .replace(/^condition = "[^"]+"$/m, "")
+            .replace(/^regexTarget = "[^"]+"$/m, "")
+            .replace(/^paths = \['''[^']+'''\]$/m, "")
+            .replace(/^regexes = \[\n[\s\S]*?^\]/m, "")
+            .trim(),
+        };
+      }),
+    };
+  });
+  // JS `$` also matches before a final newline; do not treat that as full membership.
+  const wholeMatch = (expression, value) => {
+    if (expression === undefined) return false;
+    const match = new RegExp(expression).exec(value);
+    return match?.index === 0 && match[0].length === value.length;
+  };
   const allowed = (file, rule, match) =>
-    rule === "generic-api-key" &&
-    new RegExp(pathExpression).test(file) &&
-    matchExpressions.some((expression) => expression.test(match));
+    rules.some(
+      (entry) =>
+        entry.id === rule &&
+        entry.blocks.some(
+          (block) =>
+            block.condition === "AND" &&
+            block.target === "match" &&
+            wholeMatch(block.path, file) &&
+            block.regexes.some((expression) => wholeMatch(expression, match)),
+        ),
+    );
   const chunk = "A".repeat(100);
   const separator = '",\n  "';
   const shapes = [
@@ -86,16 +125,65 @@ describe("generated WASM Gitleaks exception boundaries", () => {
       `${lengths.map((length) => "A".repeat(length)).join("_")}${separator}${chunk}"`,
   );
 
-  it("retains default rules and a single rule-scoped AND allowlist", () => {
-    expect(config.includes("useDefault = true")).toBe(true);
-    expect(config.match(/^\[\[rules\]\]$/gm)).toHaveLength(1);
-    expect(config.match(/^\[\[rules.allowlists\]\]$/gm)).toHaveLength(1);
-    expect(config.includes('id = "generic-api-key"')).toBe(true);
-    expect(config.includes('condition = "AND"')).toBe(true);
-    expect(config.includes('regexTarget = "match"')).toBe(true);
-    expect(config.includes("[allowlist]")).toBe(false);
-    expect(pathExpression).toBe("^packages/runtime-wasm/src/native-wasm-bytes\\.ts$");
-    expect(matchExpressions).toHaveLength(8);
+  it("retains default rules and exactly the reviewed closed rule-scoped blocks", () => {
+    expect(sections[0]).toBe(
+      'title = "Vivi2D Gitleaks configuration"\nminVersion = "8.30.1"\n\n[extend]\nuseDefault = true\n\n',
+    );
+    expect(rules.map((rule) => rule.header)).toEqual([
+      'id = "generic-api-key"',
+      'id = "square-access-token"',
+    ]);
+    expect(
+      rules.flatMap((rule) =>
+        rule.blocks.map((block) => [
+          rule.id,
+          block.condition,
+          block.target,
+          block.path,
+          block.regexes.length,
+        ]),
+      ),
+    ).toEqual([
+      [
+        "generic-api-key",
+        "AND",
+        "match",
+        "^packages/runtime-wasm/src/native-wasm-bytes\\.ts$",
+        8,
+      ],
+      [
+        "generic-api-key",
+        "AND",
+        "match",
+        "^packages/runtime-wasm/src/native-evaluation-wasm-bytes\\.ts$",
+        21,
+      ],
+      [
+        "generic-api-key",
+        "AND",
+        "match",
+        "^packages/runtime-wasm/src/native-png-wasm-bytes\\.ts$",
+        18,
+      ],
+      [
+        "square-access-token",
+        "AND",
+        "match",
+        "^packages/runtime-wasm/src/native-png-wasm-bytes\\.ts$",
+        1,
+      ],
+    ]);
+    for (const rule of rules) {
+      for (const block of rule.blocks) {
+        expect(block.remainder).toBe("");
+        expect(block.regexList.trim().split("\n")).toHaveLength(block.regexes.length);
+        expect(
+          block.regexes.every(
+            (expression) => expression.startsWith("^") && expression.endsWith("$"),
+          ),
+        ).toBe(true);
+      }
+    }
   });
 
   it("accepts only the reviewed generated chunk match shapes", () => {
@@ -168,6 +256,188 @@ describe("generated WASM Gitleaks exception boundaries", () => {
     ]) {
       expect(allowed(generatedPath, "generic-api-key", malformed)).toBe(false);
     }
+  });
+
+  // Independent reviewed membership tables, not values extracted from the regexes.
+  const rawLengths = new Map([
+    [generatedPath, [11, ...Array.from({ length: 59 }, (_, index) => index + 15)]],
+    [
+      evaluationPath,
+      [9, 20, 25, 27, 28, 30, 31, 53, 54, 56, 57, 60, 61, 62, 64, 65, 68, 69, 72, 73],
+    ],
+    [pngPath, [12, 19, 20, 27, 32, 53, 56, 57, 60, 61, 62, 64, 65, 68, 69, 72, 73]],
+  ]);
+  const decodedLengths = new Map([
+    [
+      generatedPath,
+      [
+        [10, 17],
+        [6, 3, 1],
+        [10, 18],
+        [6, 3, 9, 4, 14],
+        [6, 3, 16],
+      ],
+    ],
+    [evaluationPath, [[6, 3, 0]]],
+    [pngPath, [[6, 3, 9, 4, 1]]],
+  ]);
+  const completeShape = (prefix) => `${prefix}${separator}${chunk}"`;
+
+  it("checks 306 raw lengths and 306 truncated-chunk memberships against fixed sets", () => {
+    for (const [file, lengths] of rawLengths) {
+      for (let length = 0; length <= 101; length++) {
+        expect(allowed(file, "generic-api-key", completeShape("A".repeat(length)))).toBe(
+          lengths.includes(length),
+        );
+        const truncated = `${"A".repeat(61)}${separator}${"A".repeat(length)}`;
+        expect(allowed(file, "generic-api-key", truncated)).toBe(
+          file === generatedPath && length >= 10 && length <= 100,
+        );
+      }
+    }
+  });
+
+  it("checks decoded tuple mutations across all paths without rejecting approved overlap", () => {
+    const tuples = [...decodedLengths.values()].flat();
+    for (const tuple of tuples) {
+      const candidates = [tuple];
+      for (let index = 0; index < tuple.length; index++) {
+        for (const delta of [-1, 1]) {
+          if (tuple[index] + delta < 0) continue;
+          const changed = [...tuple];
+          changed[index] += delta;
+          candidates.push(changed);
+        }
+      }
+      for (const candidate of candidates) {
+        const prefix = candidate.map((length) => "A".repeat(length)).join("_");
+        for (const [file, approved] of decodedLengths) {
+          const expected = approved.some(
+            (lengths) => JSON.stringify(lengths) === JSON.stringify(candidate),
+          );
+          expect(allowed(file, "generic-api-key", completeShape(prefix))).toBe(expected);
+        }
+      }
+    }
+    // [6,3,0] includes the trailing underscore; it is not an optional suffix.
+    expect(allowed(evaluationPath, "generic-api-key", completeShape("AAAAAA_AAA"))).toBe(
+      false,
+    );
+    expect(
+      allowed(evaluationPath, "generic-api-key", completeShape("AAAAAA_AAA_A")),
+    ).toBe(false);
+    expect(allowed(generatedPath, "generic-api-key", completeShape("AAAAAA_AAA_A"))).toBe(
+      true,
+    );
+  });
+
+  it("bounds every new shape by rule, path, alphabet and exact chunk layout", () => {
+    for (const file of [evaluationPath, pngPath]) {
+      const rawPrefixes = rawLengths.get(file).map((length) => "A".repeat(length));
+      const decodedPrefixes = decodedLengths
+        .get(file)
+        .map((tuple) => tuple.map((length) => "A".repeat(length)).join("_"));
+      for (const prefix of [...rawPrefixes, ...decodedPrefixes]) {
+        const shape = completeShape(prefix);
+        expect(allowed(file, "generic-api-key", shape)).toBe(true);
+        for (const wrongFile of [
+          path.basename(file),
+          `other/${file}`,
+          `${file}.backup`,
+          `${file}\n`,
+          "src/generated-security-control.ts",
+        ]) {
+          expect(allowed(wrongFile, "generic-api-key", shape)).toBe(false);
+        }
+        for (const wrongRule of ["square-access-token", "github-pat", "unknown-rule"]) {
+          expect(allowed(file, wrongRule, shape)).toBe(false);
+        }
+        for (const character of ["+", "/"]) {
+          expect(
+            allowed(file, "generic-api-key", completeShape(character + prefix.slice(1))),
+          ).toBe(!prefix.includes("_"));
+        }
+        for (const malformed of [
+          ...["-", ".", "_", "!", "="].map((character) => character + shape.slice(1)),
+          `${prefix}${separator}${"A".repeat(99)}"`,
+          `${prefix}${separator}${"A".repeat(101)}"`,
+          `${prefix}${separator}_${chunk.slice(1)}"`,
+          `${prefix}${separator}${chunk.slice(0, -1)}="`,
+          shape.replace(separator, '";\n  "'),
+          shape.replace(separator, '",\n "'),
+          shape.replace(separator, '",\n    "'),
+          shape.replace(separator, '",\r\n  "'),
+          `prefix ${shape}`,
+          `${shape} suffix`,
+          `\n${shape}`,
+          `${shape}\n`,
+          `api_key = ${shape}`,
+        ]) {
+          expect(allowed(file, "generic-api-key", malformed)).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("keeps the Square exception exact, hex-escaped, rule-scoped and PNG-only", () => {
+    // Fixed benign compiler-output witness, assembled independently of its regex.
+    const squareMatch =
+      String.fromCharCode(0x45) +
+      'AAAAAAgIQuQQAAAADQEmNBAAAAAITXl0EAAAAAZc3NQQAAACBfoAJCAAAA"';
+    expect(squareMatch).toHaveLength(60);
+    expect(createHash("sha256").update(squareMatch).digest("hex")).toBe(
+      "c295a85082182cf4e11342dec0d80438aa61b0e3a2ed4835f0d05f404463df73",
+    );
+    expect(rules[1].blocks[0].regexes[0].startsWith("^\\x45")).toBe(true);
+    for (const file of [
+      generatedPath,
+      evaluationPath,
+      pngPath,
+      "src/generated-security-control.ts",
+    ]) {
+      expect(allowed(file, "square-access-token", squareMatch)).toBe(file === pngPath);
+      expect(allowed(file, "generic-api-key", squareMatch)).toBe(false);
+      expect(allowed(file, "github-pat", squareMatch)).toBe(false);
+    }
+    for (const malformed of [
+      `\\x45${squareMatch.slice(1)}`,
+      `${squareMatch.slice(0, -2)}Z"`,
+      squareMatch.slice(1),
+      squareMatch.slice(0, -1),
+      `prefix ${squareMatch}`,
+      `${squareMatch} suffix`,
+      `${squareMatch}\n`,
+      `\n${squareMatch}`,
+    ]) {
+      expect(allowed(pngPath, "square-access-token", malformed)).toBe(false);
+    }
+  });
+
+  it("does not exempt plaintext or encoded synthetic credentials on generated paths", () => {
+    const value = ["Q2w4E6r8", "T1y3U5i7", "O9p0A2s4", "D6f8G1h3"].join("");
+    const github = ["gh", "p_", value, "N8m6"].join("");
+    const square =
+      String.fromCharCode(0x45) +
+      "AAAAAAgIQuQQAAAADQEmNBAAAAAITXl0EAAAAAZc3NQQAAACBfoAJCAAAZ";
+    for (const file of [...rawLengths.keys(), "src/generated-security-control.ts"]) {
+      for (const [rule, token] of [
+        ["generic-api-key", value],
+        ["github-pat", github],
+        ["square-access-token", square],
+      ]) {
+        const assignment = `api_key = "${token}"`;
+        for (const candidate of [
+          token,
+          `${token}"`,
+          assignment,
+          Buffer.from(assignment).toString("base64"),
+        ]) {
+          expect(allowed(file, rule, candidate)).toBe(false);
+        }
+      }
+    }
+    // These are allowlist membership tests. Actual scanner witnesses are separate:
+    // the detector may omit assignment context or decode encoded source first.
   });
 });
 

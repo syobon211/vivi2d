@@ -123,7 +123,7 @@ test("long notification text wraps instead of overflowing horizontally", async (
   await expectElementWithinViewport(window, notification);
 
   const wrapsWithoutOverflow = await message.evaluate((element) => {
-    const style = window.getComputedStyle(element);
+    const style = globalThis.window.getComputedStyle(element);
     const parsedLineHeight = Number.parseFloat(style.lineHeight || "0");
     const parsedFontSize = Number.parseFloat(style.fontSize || "12");
     const effectiveLineHeight = Number.isFinite(parsedLineHeight)

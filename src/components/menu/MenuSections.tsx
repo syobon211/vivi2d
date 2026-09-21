@@ -23,6 +23,11 @@ export function FileMenuSection(props: {
   onOpenVividImport: () => void;
   onSave: () => void;
   onSaveAs: () => void;
+  v11?: boolean;
+  onV11Copy?: () => void;
+  onV11Fork?: () => void;
+  onV11Original?: () => void;
+  onV11Unused?: () => void;
   onOpenExportDialog: () => void;
   onOpenMediaExport: () => void;
   onGlbExport: () => void;
@@ -113,6 +118,35 @@ export function FileMenuSection(props: {
           <MenuDropdownItem onClick={onSaveAs} title={t("menu.saveAsTitle")}>
             {t("menu.saveAs")}
           </MenuDropdownItem>
+          {props.v11 ? (
+            <>
+              <MenuDropdownItem
+                onClick={() => props.onV11Fork?.()}
+                disabled={!props.onV11Fork}
+              >
+                {t("menu.v11Fork")}
+              </MenuDropdownItem>
+              <MenuDropdownItem
+                onClick={() => props.onV11Original?.()}
+                disabled={!props.onV11Original}
+              >
+                {t("menu.v11Original")}
+              </MenuDropdownItem>
+              <MenuDropdownItem
+                onClick={() => props.onV11Unused?.()}
+                disabled={!props.onV11Unused}
+              >
+                {t("menu.v11Unused")}
+              </MenuDropdownItem>
+            </>
+          ) : (
+            <MenuDropdownItem
+              onClick={() => props.onV11Copy?.()}
+              disabled={!props.onV11Copy}
+            >
+              {t("menu.v11Copy")}
+            </MenuDropdownItem>
+          )}
           <div className="menu-dropdown-divider" />
           <MenuDropdownItem onClick={onOpenExportDialog} title={t("menu.sdkExportTitle")}>
             {t("menu.sdkExport")}

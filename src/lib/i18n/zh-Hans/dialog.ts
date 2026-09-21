@@ -2,6 +2,62 @@ import { dialog as enDialog } from "../en/dialog";
 
 export const dialog = {
   ...enDialog,
+  "runtimePreview.title": "Runtime 预览",
+  "runtimePreview.scope": "为此副本选择并预览 .vivi 快照。不会编辑、保存或发布项目。",
+  "runtimePreview.open": "预览项目",
+  "runtimePreview.reload": "重新加载",
+  "runtimePreview.close": "关闭预览",
+  "runtimePreview.loading": "正在准备预览…",
+  "runtimePreview.ready": "预览已就绪",
+  "runtimePreview.warning": "预览状态已应用，但显示或清理未完成。请重新加载。",
+  "runtimePreview.missing": "缺少所需素材。当前画面保持不变。",
+  "runtimePreview.failed": "预览失败。请重新加载后重试。",
+  "runtimePreview.parameter": "参数",
+  "runtimePreview.preset": "表情预设",
+  "runtimePreview.generation": "Runtime 代次",
+  "localExchange.title": "持久化本地 Job 与数据交换",
+  "localAssetCopy.title": "在本地复制引用式项目",
+  "localAssetCopy.scope":
+    "在本地副本间复制已接受的规范化项目及PNG素材。不会在编辑器中打开项目、修改内容或发布Sync修订。",
+  "localAssetCopy.source": "源副本",
+  "localAssetCopy.receiver": "目标副本",
+  "localAssetCopy.prepare": "选择项目",
+  "localAssetCopy.commit": "复制素材并另存为",
+  "localAssetCopy.cancel": "取消剩余操作",
+  "localAssetCopy.consent":
+    "将当前选定的项目及素材复制到目标本地副本吗？下一步将选择保存位置。后续失败或取消时，已复制的不可变素材仍会保留。",
+  "localAssetCopy.unavailable": "当前运行配置不支持复制。",
+  "localAssetCopy.failed":
+    "无法确认复制结果。重试前请检查所选输出位置。已复制的不可变素材可能保留。",
+  "localAssetCopy.ambiguous":
+    "操作可能已完成，但无法确认结果。请检查所选输出位置，然后重新选择同一项目以明确重试。",
+  "localAssetCopy.committed": "已保存规范化项目副本，文档:",
+  "localExchange.scope": "内部本地模式。请求和结果保存在此计算机上，重启后不会自动执行。",
+  "localExchange.refresh": "刷新",
+  "localExchange.createWorkspace": "创建本地工作区",
+  "localExchange.workspace": "工作区",
+  "localExchange.replica": "创建对应副本",
+  "localExchange.publish": "发布当前完整 v11",
+  "localExchange.target": "目标副本",
+  "localExchange.queue": "以目标当前头版本为基准排队 v11",
+  "localExchange.deliver": "发送 / 重发相同请求",
+  "localExchange.queuePrompt": "排队提示词 Job",
+  "localExchange.queueImage": "选择图像并排队 Job",
+  "localExchange.job": "Job",
+  "localExchange.retry": "明确重试",
+  "localExchange.start": "开始",
+  "localExchange.cancel": "取消",
+  "localExchange.selection": "明确选择结果产物",
+  "localExchange.consent": "使用保留的候选内容替换当前编辑器吗？未保存的更改将被替换。",
+  "localExchange.approve": "批准普通导入",
+  "localExchange.reject": "拒绝提案",
+  "localExchange.psd": "排队单独的 PSD 转换（依赖服务器）",
+  "localExchange.openCandidate": "打开保留的已批准候选",
+  "localExchange.legacy":
+    "普通 Provider 导入保留受支持的数据。它不是 v11 Sync 修订，也不是直接接受 Project 产物的证明。",
+  "localExchange.failed": "操作失败或状态已变化。请刷新后再次明确操作。",
+  "localExchange.unavailable": "本地数据交换不可用。",
+  "localExchange.integrity": "部分保存单元未通过完整性检查，现不可用。",
   "media.title": "媒体导出",
   "media.pngSequence": "PNG 序列",
   "media.video": "视频（WebM/MP4）",
@@ -128,46 +184,36 @@ export const dialog = {
   "manualPngSplit.showStressPreview": "显示运动压力预览",
   "manualPngSplit.stressOffset": "压力预览偏移",
   "manualPngSplit.lassoPrecision": "精细模式",
-  "manualPngSplit.lassoWarning.tooFewPoints":
-    "套索笔画太短。请绘制更宽的闭合区域。",
-  "manualPngSplit.lassoWarning.pointLimitReduced":
-    "套索笔画点数较多，已进行简化。",
+  "manualPngSplit.lassoWarning.tooFewPoints": "套索笔画太短。请绘制更宽的闭合区域。",
+  "manualPngSplit.lassoWarning.pointLimitReduced": "套索笔画点数较多，已进行简化。",
   "manualPngSplit.lassoWarning.detailReducedForSmoothing":
     "为平滑处理减少了部分细节。细小边缘请降低平滑度或放大视图。",
-  "manualPngSplit.lassoWarning.areaDeltaTooLarge":
-    "所选区域变化过大，已降低平滑。",
-  "manualPngSplit.lassoWarning.boundsDriftTooLarge":
-    "路径偏离笔画过远，已降低平滑。",
+  "manualPngSplit.lassoWarning.areaDeltaTooLarge": "所选区域变化过大，已降低平滑。",
+  "manualPngSplit.lassoWarning.boundsDriftTooLarge": "路径偏离笔画过远，已降低平滑。",
   "manualPngSplit.lassoWarning.selfIntersectionSuspected":
     "套索路径发生交叉，因此未应用该笔画。",
   "manualPngSplit.lassoWarning.smoothingFallbackToRaw":
     "本次笔画跳过平滑，使用原始套索路径。",
   "manualPngSplit.lassoWarning.degenerateStroke": "套索区域太小，无法应用。",
-  "manualPngSplit.lassoWarning.nonFinitePointDropped":
-    "已忽略部分无效指针采样。",
+  "manualPngSplit.lassoWarning.nonFinitePointDropped": "已忽略部分无效指针采样。",
   "manualLayerSplit.lassoSmoothing": "套索平滑",
   "manualLayerSplit.lassoSmoothing.off": "关闭",
   "manualLayerSplit.lassoSmoothing.low": "低",
   "manualLayerSplit.lassoSmoothing.medium": "中",
   "manualLayerSplit.lassoSmoothing.high": "高",
   "manualLayerSplit.lassoPrecision": "精细模式",
-  "manualLayerSplit.lassoWarning.tooFewPoints":
-    "套索笔画太短。请绘制更宽的闭合区域。",
-  "manualLayerSplit.lassoWarning.pointLimitReduced":
-    "套索笔画点数较多，已进行简化。",
+  "manualLayerSplit.lassoWarning.tooFewPoints": "套索笔画太短。请绘制更宽的闭合区域。",
+  "manualLayerSplit.lassoWarning.pointLimitReduced": "套索笔画点数较多，已进行简化。",
   "manualLayerSplit.lassoWarning.detailReducedForSmoothing":
     "为平滑处理减少了部分细节。细小边缘请降低平滑度或放大视图。",
-  "manualLayerSplit.lassoWarning.areaDeltaTooLarge":
-    "所选区域变化过大，已降低平滑。",
-  "manualLayerSplit.lassoWarning.boundsDriftTooLarge":
-    "路径偏离笔画过远，已降低平滑。",
+  "manualLayerSplit.lassoWarning.areaDeltaTooLarge": "所选区域变化过大，已降低平滑。",
+  "manualLayerSplit.lassoWarning.boundsDriftTooLarge": "路径偏离笔画过远，已降低平滑。",
   "manualLayerSplit.lassoWarning.selfIntersectionSuspected":
     "套索路径发生交叉，因此未应用该笔画。",
   "manualLayerSplit.lassoWarning.smoothingFallbackToRaw":
     "本次笔画跳过平滑，使用原始套索路径。",
   "manualLayerSplit.lassoWarning.degenerateStroke": "套索区域太小，无法应用。",
-  "manualLayerSplit.lassoWarning.nonFinitePointDropped":
-    "已忽略部分无效指针采样。",
+  "manualLayerSplit.lassoWarning.nonFinitePointDropped": "已忽略部分无效指针采样。",
   "manualPngSplit.refineRadius": "调整半径",
   "manualPngSplit.wandTolerance": "魔棒容差",
   "manualPngSplit.growMask": "扩展",
@@ -179,10 +225,8 @@ export const dialog = {
   "manualPngSplit.clearActive": "清除当前蒙版",
   "manualPngSplit.clearAll": "全部清除",
   "manualPngSplit.pixels": "px",
-  "manualPngSplit.needAtLeastTwoMasks":
-    "创建拆分图层前，请至少绘制两个部件蒙版。",
-  "manualPngSplit.noUsableMasks":
-    "没有创建可用的拆分图层。请绘制更大的蒙版后重试。",
+  "manualPngSplit.needAtLeastTwoMasks": "创建拆分图层前，请至少绘制两个部件蒙版。",
+  "manualPngSplit.noUsableMasks": "没有创建可用的拆分图层。请绘制更大的蒙版后重试。",
   "manualPngSplit.created": "已创建手动拆分图层。",
   "quickActions.title": "快速操作",
   "quickActions.searchLabel": "搜索操作",
@@ -195,8 +239,7 @@ export const dialog = {
   "quickActions.section.workspace": "工作区",
   "quickActions.requiresProject": "请先加载项目。",
   "quickActions.requiresClip": "请先选择活动片段。",
-  "quickActions.reason.referenceOverlaySelection":
-    "请选择 ViviMesh 后再使用参考叠加。",
+  "quickActions.reason.referenceOverlaySelection": "请选择 ViviMesh 后再使用参考叠加。",
   "quickActions.reason.referenceOverlayImportedBounds":
     "所选 ViviMesh 需要 See-through 导入元数据。",
   "quickActions.reason.meshHeatmapSelection":
@@ -247,8 +290,7 @@ export const dialog = {
   "quickActions.action.openTimelinePanel.description":
     "切换到动画工作区并检查时间轴轨道。",
   "quickActions.action.cleanParameterBindings.title": "清理参数绑定",
-  "quickActions.action.cleanParameterBindings.description":
-    "移除过期或空的参数绑定。",
+  "quickActions.action.cleanParameterBindings.description": "移除过期或空的参数绑定。",
   "quickActions.action.cleanStateMachines.title": "清理状态机",
   "quickActions.action.cleanStateMachines.description":
     "移除过期状态机引用并重置损坏的默认值。",
@@ -259,8 +301,7 @@ export const dialog = {
   "quickActions.action.cleanAnimationTracks.description":
     "移除片段中的过期轨道引用，并清除损坏的口型同步目标。",
   "quickActions.action.removeOrphanSkins.title": "移除孤立蒙皮",
-  "quickActions.action.removeOrphanSkins.description":
-    "删除引用缺失图层的蒙皮数据。",
+  "quickActions.action.removeOrphanSkins.description": "删除引用缺失图层的蒙皮数据。",
   "quickActions.action.rebuildSelectedMesh.title": "重建选中网格",
   "quickActions.action.rebuildSelectedMesh.description":
     "为选中的 ViviMesh 生成标准自动网格。",
@@ -277,8 +318,7 @@ export const dialog = {
   "quickActions.action.referenceOverlayToggle.description":
     "切换选中网格的参考比较叠加。",
   "quickActions.action.referenceOverlaySource.title": "参考叠加：源图像",
-  "quickActions.action.referenceOverlaySource.description":
-    "显示原始源纹理矩形。",
+  "quickActions.action.referenceOverlaySource.description": "显示原始源纹理矩形。",
   "quickActions.action.referenceOverlayCurrentBounds.title": "参考叠加：当前边界",
   "quickActions.action.referenceOverlayCurrentBounds.description":
     "显示当前网格边界矩形。",
@@ -289,12 +329,14 @@ export const dialog = {
   "quickActions.action.referenceOverlayBoundsCompare.description":
     "同时叠加当前网格边界和 See-through 导入边界。",
   "quickActions.action.referenceOverlayComparePrefix": "参考叠加比较：",
-  "quickActions.action.referenceOverlayComparePreset.description": "切换参考叠加比较预设。",
+  "quickActions.action.referenceOverlayComparePreset.description":
+    "切换参考叠加比较预设。",
   "quickActions.action.referenceOverlayCompareSwap.title": "参考叠加比较：交换 A/B",
   "quickActions.action.referenceOverlayCompareSwap.description":
     "交换当前比较 A 与比较 B 模式。",
   "quickActions.action.referenceOverlayPinCompareSummary.enable": "固定参考叠加比较摘要",
-  "quickActions.action.referenceOverlayPinCompareSummary.disable": "取消固定参考叠加比较摘要",
+  "quickActions.action.referenceOverlayPinCompareSummary.disable":
+    "取消固定参考叠加比较摘要",
   "quickActions.action.referenceOverlayPinCompareSummary.description":
     "即使叠加模式离开比较模式，也保持比较摘要可见。",
   "quickActions.action.referenceOverlayOpacity25.title": "参考叠加不透明度：25%",
@@ -311,8 +353,7 @@ export const dialog = {
     "将参考叠加不透明度设为 100%，并保持当前模式。",
   "quickActions.action.meshHeatmapToggle.enable": "启用网格热力图",
   "quickActions.action.meshHeatmapToggle.disable": "禁用网格热力图",
-  "quickActions.action.meshHeatmapToggle.description":
-    "切换剪辑目标网格热力图叠加。",
+  "quickActions.action.meshHeatmapToggle.description": "切换剪辑目标网格热力图叠加。",
   "quickActions.action.meshHeatmapIntensity50.title": "网格热力图强度：50%",
   "quickActions.action.meshHeatmapIntensity50.description":
     "启用热力图并将强度设为 50%。",
@@ -329,10 +370,8 @@ export const dialog = {
   "imageImportOptions.title.importLayer": "图像导入设置",
   "imageImportOptions.title.importLayers": "多图像导入设置",
   "imageImportOptions.title.importFolder": "文件夹导入设置",
-  "imageImportOptions.description.openProject":
-    "选择将 PNG 作为新项目打开时的放置方式。",
-  "imageImportOptions.description.importLayer":
-    "选择将图像导入当前项目时的放置方式。",
+  "imageImportOptions.description.openProject": "选择将 PNG 作为新项目打开时的放置方式。",
+  "imageImportOptions.description.importLayer": "选择将图像导入当前项目时的放置方式。",
   "imageImportOptions.description.importLayers":
     "选择将多张图像导入当前项目时的放置方式。",
   "imageImportOptions.description.importFolder":
@@ -341,8 +380,7 @@ export const dialog = {
   "imageImportOptions.trimTransparentBounds": "裁剪透明边界",
   "imageImportOptions.createGroupForImportedLayers": "为导入图层创建组",
   "imageImportOptions.autoGenerateMesh": "自动生成网格",
-  "imageImportOptions.dragDropUsesDefaults":
-    "PNG 拖放仍会使用默认导入选项。",
+  "imageImportOptions.dragDropUsesDefaults": "PNG 拖放仍会使用默认导入选项。",
   "imageImportOptions.largeImageAutoCentered":
     "导入图像明显大于当前画布，已自动应用居中到画布。",
   "imageImportOptions.transparentPaddingWarning":

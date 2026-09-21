@@ -1,4 +1,9 @@
 export const menu = {
+  "menu.v11Copy": "v11コピーを保存（対応プロファイル）",
+  "menu.v11Fork": "v11を分岐して保存（新しい文書ID）",
+  "menu.v11Original": "開いた時点のv11原本を複製",
+  "menu.v11Unused": "未使用のv11画像を削除（Undo可）",
+  "menu.v11Replace": "差替えPNGを選択（共有atlasから分離）",
   "menu.fileMenu": "ファイル",
   "menu.viewMenu": "表示",
   "menu.settingsMenu": "設定",
@@ -40,16 +45,17 @@ export const menu = {
   "notify.vividImportFailed": ".vivid インポートに失敗しました",
   "notify.projectLoadFailed": "プロジェクトの読み込みに失敗しました",
   "notify.projectSaveFailed": "プロジェクトの保存に失敗しました",
+  "notify.projectSaveBusy": "プロジェクトの保存が進行中です。",
+  "notify.projectWrittenMetadataFailed":
+    "ファイルは保存されましたが、Editor の保存状態を更新できませんでした。現在の編集は維持されています。",
   "notify.psdLoadFailed": "PSD ファイルの読み込みに失敗しました",
   "notify.undoFailed": "元に戻す操作に失敗しました",
   "notify.redoFailed": "やり直し操作に失敗しました",
   "notify.actionFailed": "操作に失敗しました",
   "notify.cleanedParameterBindings":
     "古いパラメータバインディングを {count} 件削除しました",
-  "notify.cleanedStateMachines":
-    "古いステートマシン参照を {count} 件整理しました",
-  "notify.cleanedSceneBlends":
-    "古いシーンブレンド参照を {count} 件整理しました",
+  "notify.cleanedStateMachines": "古いステートマシン参照を {count} 件整理しました",
+  "notify.cleanedSceneBlends": "古いシーンブレンド参照を {count} 件整理しました",
   "notify.cleanedAnimationTracks":
     "古いアニメーショントラック参照を {count} 件整理しました",
   "notify.defaultFormLocked":

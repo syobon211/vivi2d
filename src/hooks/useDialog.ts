@@ -78,9 +78,21 @@ function getFocusableElements(root: HTMLElement): HTMLElement[] {
     "input:not([disabled])",
     "select:not([disabled])",
     "textarea:not([disabled])",
+    'details > summary:first-of-type:not([tabindex="-1"])',
     '[tabindex]:not([tabindex="-1"])',
   ].join(",");
-  return Array.from(root.querySelectorAll<HTMLElement>(selector)).filter(
-    (el) => !el.hasAttribute("hidden") && el.offsetParent !== null,
-  );
+  return Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((el) => {
+    if (el.hasAttribute("hidden") || el.offsetParent === null) return false;
+    for (let ancestor = el.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      if (
+        ancestor.tagName === "DETAILS" &&
+        !ancestor.hasAttribute("open") &&
+        !ancestor.querySelector(":scope > summary")?.contains(el)
+      ) {
+        return false;
+      }
+      if (ancestor === root) break;
+    }
+    return true;
+  });
 }

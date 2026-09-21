@@ -19,6 +19,7 @@ import { useEditorStore } from "@/stores/editorStore";
 import { _resetMergeTimer, useHistoryStore } from "@/stores/historyStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useSelectionStore } from "@/stores/selectionStore";
+import { rejectV11LegacyAction } from "./v11LegacyGuard";
 
 export interface ManualPngSplitRequest {
   sourceLayerId: string;
@@ -83,6 +84,7 @@ function recordsEqual(left: Record<string, string>, right: Record<string, string
 }
 
 export function splitManualPngLayer(request: ManualPngSplitRequest): boolean {
+  if (rejectV11LegacyAction()) return false;
   const project = useEditorStore.getState().project;
   if (!project) return false;
 

@@ -104,7 +104,6 @@ impl ReservationSiteV1 {
         self as usize
     }
 
-    #[cfg(test)]
     pub(crate) const fn id(self) -> &'static str {
         match self {
             Self::DirectMeshRecords => "direct.mesh-records",
@@ -324,14 +323,14 @@ pub(crate) struct ReservationDenialKeyV1 {
     pub(crate) additional_count: u32,
 }
 
-struct ReservationStateV1 {
+pub(crate) struct ReservationStateV1 {
     attempt_ordinal: u32,
     #[cfg(test)]
     denial: Option<ReservationDenialKeyV1>,
 }
 
 impl ReservationStateV1 {
-    const fn production() -> Self {
+    pub(crate) const fn production() -> Self {
         Self {
             attempt_ordinal: 0,
             #[cfg(test)]
@@ -340,16 +339,16 @@ impl ReservationStateV1 {
     }
 
     #[cfg(test)]
-    const fn with_denial(denial: ReservationDenialKeyV1) -> Self {
+    pub(crate) const fn with_denial(denial: ReservationDenialKeyV1) -> Self {
         Self {
             attempt_ordinal: 0,
             denial: Some(denial),
         }
     }
 
-    fn begin_nonzero_attempt(
+    pub(crate) fn begin_nonzero_attempt(
         &mut self,
-        site: ReservationSiteV1,
+        site_template_id: &'static str,
         additional_count: u32,
     ) -> Result<(), EvaluationLoweringError> {
         let attempt_ordinal = self.attempt_ordinal;
@@ -358,7 +357,7 @@ impl ReservationStateV1 {
         #[cfg(test)]
         if self.denial
             == Some(ReservationDenialKeyV1 {
-                site_template_id: site.id(),
+                site_template_id,
                 owner_slot: None,
                 attempt_ordinal,
                 additional_count,
@@ -368,7 +367,7 @@ impl ReservationStateV1 {
         }
 
         #[cfg(not(test))]
-        let _ = (site, attempt_ordinal, additional_count);
+        let _ = (site_template_id, attempt_ordinal, additional_count);
         Ok(())
     }
 }
@@ -434,7 +433,7 @@ impl Category9ReservationBuffersV1 {
         Self::reserve_all_with_state(counts, &mut state)
     }
 
-    fn reserve_all_with_state(
+    pub(crate) fn reserve_all_with_state(
         counts: &Category9SiteCountsV1,
         state: &mut ReservationStateV1,
     ) -> Result<Self, EvaluationLoweringError> {
@@ -950,7 +949,7 @@ fn reserve_one<T>(
     if additional_count == 0 {
         return Ok(());
     }
-    state.begin_nonzero_attempt(site, additional_count)?;
+    state.begin_nonzero_attempt(site.id(), additional_count)?;
     values
         .try_reserve_exact(counts.count_usize(site))
         .map_err(|_| resource())?;

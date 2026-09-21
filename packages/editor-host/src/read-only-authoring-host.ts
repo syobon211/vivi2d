@@ -20,6 +20,7 @@ import {
   serializeProjectFormatV11LocalDuplicate,
   type ViviRequiredCapabilityV11,
 } from "@vivi2d/model/internal/project-format-v11";
+import { issueRequestGeneration } from "./request-generation";
 
 const PNG_PROFILE_V1 = "vivi2d.png.rgba8.v1" as const;
 const SHA256_PATTERN = /^[A-Fa-f0-9]{64}$/;
@@ -280,6 +281,8 @@ export class ReadOnlyAuthoringHostError extends Error {
 export interface ReadOnlyAuthoringHost {
   initJson(source: string): Promise<ReadOnlyAuthoringHostInitResultV1>;
   initUtf8(bytes: Uint8Array): Promise<ReadOnlyAuthoringHostInitResultV1>;
+  /** Detached issuance metadata, not a session, capability or authentication proof. */
+  getRequestState(): Readonly<{ latestIssuedGeneration: number; exhausted: boolean }>;
   getSnapshot(sessionId: string): ReadOnlyAuthoringSnapshotV1;
   serializeLocalDuplicate(sessionId: string): string;
   buildRuntimePayload(sessionId: string): ReadOnlyRuntimePayloadV1;
@@ -344,7 +347,7 @@ export function createReadOnlyAuthoringHost(
   const hostOrdinal = nextHostOrdinal;
   nextHostOrdinal += 1;
   let nextSessionOrdinal = 1;
-  let nextRequestGeneration = 1;
+  const requestState = { latestIssuedGeneration: 0, exhausted: false };
   const sessions = new Map<string, SessionRecord>();
   const sessionIdPrefix = `read-only-authoring-host-${hostOrdinal}-session-`;
 
@@ -372,18 +375,15 @@ export function createReadOnlyAuthoringHost(
   const publish = async (
     parse: () => Promise<ParsedProjectFormatV11>,
   ): Promise<ReadOnlyAuthoringHostInitResultV1> => {
-    if (!Number.isSafeInteger(nextRequestGeneration)) {
+    // Issue before invoking parse: even a reentrant callback observes this value.
+    const requestGeneration = issueRequestGeneration(requestState);
+    if (requestGeneration === null) {
       throw new ReadOnlyAuthoringHostError(
         "VIVI_EDITOR_HOST_INIT_FAILED",
         "Authoring request generation space is exhausted",
         { causeCode: "VIVI_ERR_LIMIT_EXCEEDED" },
       );
     }
-    // Allocate before the first await. A later, faster init must retain the
-    // larger generation so consumers can discard an older completion.
-    const requestGeneration = nextRequestGeneration;
-    nextRequestGeneration += 1;
-
     let document: ParsedProjectFormatV11;
     try {
       document = await parse();
@@ -458,6 +458,10 @@ export function createReadOnlyAuthoringHost(
 
     initUtf8(bytes: Uint8Array): Promise<ReadOnlyAuthoringHostInitResultV1> {
       return publish(() => parseProjectFormatV11Utf8(new Uint8Array(bytes), stored));
+    },
+
+    getRequestState(): Readonly<{ latestIssuedGeneration: number; exhausted: boolean }> {
+      return { ...requestState };
     },
 
     getSnapshot(sessionId: string): ReadOnlyAuthoringSnapshotV1 {

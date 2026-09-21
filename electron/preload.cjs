@@ -1,6 +1,13 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
+  localExchange: (args) => ipcRenderer.invoke("local-exchange", args),
+  localAssetCopy: (args) => ipcRenderer.invoke("local-asset-copy", args),
+  onLocalExchangeAbort: (callback) => {
+    const listener = (_event, message) => callback(message);
+    ipcRenderer.on("local-exchange-abort", listener);
+    return () => ipcRenderer.removeListener("local-exchange-abort", listener);
+  },
   openPsdFile: () => ipcRenderer.invoke("open-psd-file"),
   saveFile: (args) => ipcRenderer.invoke("save-file", args),
   openViviFile: () => ipcRenderer.invoke("open-vivi-file"),

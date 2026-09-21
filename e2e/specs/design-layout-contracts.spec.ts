@@ -214,7 +214,7 @@ async function addNotification(
   await waitForViviRuntime(window, ["useNotificationStore"]);
   await window.evaluate(
     ({ notificationType, notificationMessage }) => {
-      const runtime = (window as Window & typeof globalThis).__vivi2d as any;
+      const runtime = globalThis.window.__vivi2d as any;
       runtime.useNotificationStore
         .getState()
         .addNotification(notificationType, notificationMessage);
@@ -226,7 +226,7 @@ async function addNotification(
 async function setTheme(window: Page, theme: "light" | "dark"): Promise<void> {
   await waitForViviRuntime(window, ["useThemeStore"]);
   await window.evaluate((nextTheme) => {
-    const runtime = (window as Window & typeof globalThis).__vivi2d as any;
+    const runtime = globalThis.window.__vivi2d as any;
     const store = runtime.useThemeStore.getState();
     if (store.theme !== nextTheme) store.setTheme(nextTheme);
   }, theme);

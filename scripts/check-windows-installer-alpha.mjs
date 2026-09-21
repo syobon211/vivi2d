@@ -60,6 +60,73 @@ regexes = [
   '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{9}_[A-Za-z0-9]{4}_[A-Za-z0-9]{14}",\\n  "[A-Za-z0-9+/]{100}"$''',
   '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{16}",\\n  "[A-Za-z0-9+/]{100}"$''',
 ]
+
+[[rules.allowlists]]
+description = "Reviewed Evaluation generated 100-character chunk boundaries only; unreviewed regenerated shapes remain findings."
+condition = "AND"
+regexTarget = "match"
+paths = ['''^packages/runtime-wasm/src/native-evaluation-wasm-bytes\\.ts$''']
+regexes = [
+  '''^[A-Za-z0-9+/]{20}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{25}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{27}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{28}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{30}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{31}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{53}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{54}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{56}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{57}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{60}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{61}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{62}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{64}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{65}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{68}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{69}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{72}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{73}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{9}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{0}",\\n  "[A-Za-z0-9+/]{100}"$''',
+]
+
+[[rules.allowlists]]
+description = "Reviewed PNG generated 100-character chunk boundaries only; unreviewed regenerated shapes remain findings."
+condition = "AND"
+regexTarget = "match"
+paths = ['''^packages/runtime-wasm/src/native-png-wasm-bytes\\.ts$''']
+regexes = [
+  '''^[A-Za-z0-9+/]{12}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{19}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{20}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{27}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{32}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{53}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{56}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{57}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{60}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{61}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{62}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{64}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{65}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{68}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{69}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{72}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9+/]{73}",\\n  "[A-Za-z0-9+/]{100}"$''',
+  '''^[A-Za-z0-9]{6}_[A-Za-z0-9]{3}_[A-Za-z0-9]{9}_[A-Za-z0-9]{4}_[A-Za-z0-9]{1}",\\n  "[A-Za-z0-9+/]{100}"$''',
+]
+
+[[rules]]
+id = "square-access-token"
+
+[[rules.allowlists]]
+description = "One exact reviewed PNG compiler-output detector match; not a token-format exception."
+condition = "AND"
+regexTarget = "match"
+paths = ['''^packages/runtime-wasm/src/native-png-wasm-bytes\\.ts$''']
+regexes = [
+  '''^\\x45AAAAAAgIQuQQAAAADQEmNBAAAAAITXl0EAAAAAZc3NQQAAACBfoAJCAAAA"$''',
+]
 `;
 const bashAlphaThresholdCheck = `${["$", "{BASH_REMATCH[4]}"].join("")}" -lt 2`;
 const packageJson = readJson("package.json");
@@ -128,6 +195,8 @@ function checkRequiredFiles() {
     reviewPacketScriptPath,
     environmentPolicyPath,
     installerLibPath,
+    "scripts/check-local-asset-after-pack.cjs",
+    "scripts/lib/local-asset-package.mjs",
   ]) {
     if (!fs.existsSync(file))
       failures.push(`Missing Windows installer alpha file: ${file}`);
@@ -165,6 +234,14 @@ function checkElectronBuilderConfig() {
     "productName: Vivi2D",
     "asar: false",
     "publish: null",
+    "afterPack: scripts/check-local-asset-after-pack.cjs",
+    ...[
+      "vivi_local_asset_v1.node",
+      "manifest.json",
+      "NATIVE_LOCAL_ASSET_NOTICES.txt",
+      "native-local-asset.cdx.json",
+      "vcruntime140.dll",
+    ].map((name) => `"generated/native-local-asset/win32-x64/${name}"`),
     electronBuilderArtifactNameLine,
     "output: dist/windows-installer",
     "!windows-installer/**",
@@ -173,7 +250,7 @@ function checkElectronBuilderConfig() {
     "!node_modules/**/src/**",
     "!node_modules/**/tests/**",
     "electron/main.cjs",
-    "THIRD_PARTY_NOTICES.txt",
+    "extraFiles:\n  - from: THIRD_PARTY_NOTICES\n    to: resources/app/THIRD_PARTY_NOTICES.txt",
     "target: nsis",
     "forceCodeSigning: false",
     "signAndEditExecutable: false",
@@ -196,7 +273,7 @@ function checkElectronBuilderConfig() {
     "from: packages/viewer/dist",
     "from: packages/viewer/electron",
     "electron/main.cjs",
-    "THIRD_PARTY_NOTICES.txt",
+    "extraFiles:\n  - from: THIRD_PARTY_NOTICES\n    to: resources/app/THIRD_PARTY_NOTICES.txt",
     "target: nsis",
     "forceCodeSigning: false",
     "signAndEditExecutable: false",
@@ -221,6 +298,14 @@ function checkElectronBuilderConfig() {
     viewerBuilderConfig.includes("app-update.yml")
   ) {
     failures.push(`${viewerBuilderConfigPath}: must not configure auto-update metadata.`);
+  }
+  if (
+    viewerBuilderConfig.includes("native-local-asset") ||
+    viewerBuilderConfig.includes("check-local-asset-after-pack")
+  ) {
+    failures.push(
+      `${viewerBuilderConfigPath}: Editor native package inputs must not leak into Viewer.`,
+    );
   }
 }
 
@@ -331,6 +416,9 @@ function checkWorkflow() {
 
   for (const command of [
     "npm run build",
+    "rustup toolchain install 1.94.1 --profile minimal",
+    "cargo +1.94.1 fetch --locked --manifest-path packages/runtime-native/Cargo.toml",
+    "npm run check:local-asset-addon",
     "npm run build --workspace @vivi2d/viewer",
     "git rev-parse -q --verify $annotatedTagRef",
     "[int]$Matches[4] -lt 2",
@@ -344,6 +432,16 @@ function checkWorkflow() {
     "--sbom tmp/windows-installer-baseline/vivi2d.cdx.json",
   ]) {
     requireRunStep(windowsSteps, command, "windows-packaging");
+  }
+  for (const [before, after] of [
+    ["rustup toolchain install 1.94.1", "cargo +1.94.1 fetch --locked"],
+    ["cargo +1.94.1 fetch --locked", "npm run check:local-asset-addon"],
+    [
+      "npm run check:local-asset-addon",
+      "npx electron-builder --win nsis --x64 --publish never --config electron-builder.yml",
+    ],
+  ]) {
+    assertRunOrder(windowsSteps, before, after, "windows-packaging");
   }
   assertRunOrder(
     windowsSteps,

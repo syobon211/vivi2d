@@ -1,4 +1,13 @@
 export const panel = {
+  "v11.legacyUnavailable":
+    "この旧形式・来歴付き操作はv11プロファイルでは使用できません。別の旧形式プロジェクトを取り込む前に、このプロジェクトを閉じてください。",
+  "v11.atlas": "v11 atlasマッピング",
+  "v11.entry": "エントリ x / y / 幅 / 高さ",
+  "v11.applyEntry": "エントリを適用（atlas空間UVを保持）",
+  "v11.rawUv": "選択頂点のraw UV",
+  "v11.applyUv": "UVを適用",
+  "v11.editFailed": "この変更は対応するv11プロファイルに適用できません。",
+  "v11.sharedPixels": "エントリ削除は共有画像内の画素を消去しません。",
   "prop.title": "プロパティ",
   "prop.layersSelected": "個のレイヤーを選択中",
   "prop.batchAutoMesh": "一括メッシュ自動生成",
@@ -93,16 +102,11 @@ export const panel = {
     "アニメーションクリップに古いトラック参照があります。",
   "prop.rigHealth.message.seeThrough.missingHeadOrFace":
     "顔または頭レイヤーが見つかりません。",
-  "prop.rigHealth.message.seeThrough.missingEyeLeft":
-    "左目レイヤーが見つかりません。",
-  "prop.rigHealth.message.seeThrough.missingEyeRight":
-    "右目レイヤーが見つかりません。",
-  "prop.rigHealth.message.seeThrough.missingMouth":
-    "口レイヤーが見つかりません。",
-  "prop.rigHealth.message.seeThrough.missingBody":
-    "体レイヤーが見つかりません。",
-  "prop.rigHealth.message.seeThrough.duplicateCriticalRole":
-    "{role} が複数あります。",
+  "prop.rigHealth.message.seeThrough.missingEyeLeft": "左目レイヤーが見つかりません。",
+  "prop.rigHealth.message.seeThrough.missingEyeRight": "右目レイヤーが見つかりません。",
+  "prop.rigHealth.message.seeThrough.missingMouth": "口レイヤーが見つかりません。",
+  "prop.rigHealth.message.seeThrough.missingBody": "体レイヤーが見つかりません。",
+  "prop.rigHealth.message.seeThrough.duplicateCriticalRole": "{role} が複数あります。",
   "prop.rigHealth.message.seeThrough.unknownSemanticRole":
     "このレイヤーにはセマンティックロールがありません。",
   "prop.rigHealth.message.seeThrough.lowConfidenceRole":
@@ -111,8 +115,7 @@ export const panel = {
     "ロールが取り込み時の左右ヒントと競合しています。",
   "prop.rigHealth.message.seeThrough.frontBackUnknown":
     "取り込み時の前後ヒントが不明です。",
-  "prop.rigHealth.message.seeThrough.invalidBBox":
-    "取り込み時の境界が不正です。",
+  "prop.rigHealth.message.seeThrough.invalidBBox": "取り込み時の境界が不正です。",
   "prop.rigHealth.message.seeThrough.invalidDepthStats":
     "取り込み時の深度統計が不正です。",
   "multiView.viewAria": "ビュー {id}",

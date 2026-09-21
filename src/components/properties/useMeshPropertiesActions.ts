@@ -63,12 +63,18 @@ export function useMeshPropertiesActions({
 
   const handleMirrorX = useCallback(() => {
     if (layer.kind !== "viviMesh") return;
-    setMeshData(layer.id, mirrorMesh(layer.mesh, "x", layer.width, layer.height));
+    const result = mirrorMesh(layer.mesh, "x", layer.width, layer.height);
+    const mapping = useEditorStore.getState().projectV11?.revision.entry(layer.id);
+    if (mapping) result.uvs = layer.mesh.uvs.map((value, index) => index % 2 === 0 ? (2 * mapping.entry.x + mapping.entry.width) / mapping.atlas.backing.width - value : value);
+    setMeshData(layer.id, result);
   }, [layer, setMeshData]);
 
   const handleMirrorY = useCallback(() => {
     if (layer.kind !== "viviMesh") return;
-    setMeshData(layer.id, mirrorMesh(layer.mesh, "y", layer.width, layer.height));
+    const result = mirrorMesh(layer.mesh, "y", layer.width, layer.height);
+    const mapping = useEditorStore.getState().projectV11?.revision.entry(layer.id);
+    if (mapping) result.uvs = layer.mesh.uvs.map((value, index) => index % 2 === 1 ? (2 * mapping.entry.y + mapping.entry.height) / mapping.atlas.backing.height - value : value);
+    setMeshData(layer.id, result);
   }, [layer, setMeshData]);
 
   const handleRetriangulate = useCallback(() => {

@@ -75,7 +75,7 @@ describe("AIGenerateDialog", () => {
 
   it("閉じるボタンでonCloseが呼ばれる", () => {
     render(<AIGenerateDialog onClose={onClose} />);
-    const closeBtn = screen.getByText(/閉じる|Close/i);
+    const closeBtn = screen.getByRole("button", { name: /^(閉じる|Close)$/i });
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -90,7 +90,7 @@ describe("AIGenerateDialog", () => {
     useComfyUIStore.getState().setGenerating(true);
     render(<AIGenerateDialog onClose={onClose} />);
 
-    const closeBtn = screen.getByText(/閉じる|Close/i);
+    const closeBtn = screen.getByRole("button", { name: /^(閉じる|Close)$/i });
     expect(closeBtn).toBeDisabled();
   });
 

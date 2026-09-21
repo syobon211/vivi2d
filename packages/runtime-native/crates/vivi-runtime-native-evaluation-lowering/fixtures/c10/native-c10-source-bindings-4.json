@@ -1,0 +1,129 @@
+{
+  "kind": "vivi2d.c10.dagSourceBindings.v4",
+  "status": "AUTHOR-RECONCILED-NOT-INDEPENDENTLY-FROZEN",
+  "correction": "Retains v3 flag correction. Makes physics output stage_slot versus owner destination_slot explicit in data writes and stage-to-owner commit projection; no numerical node/checkpoint/owner changed.",
+  "supplements": {
+    "path": "native-c10-machine-dag-physics-slots-1.json",
+    "bytes": 278245,
+    "sha256": "5592bdc24cf768069d0746922c3056aa38e57152aabbef5537e2ea8a211abdfc"
+  },
+  "sourcePins": [
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/model.rs",
+      "bytes": 24803,
+      "sha256": "90c007dabc9994f4c1fe7cd63f78b7c92b5f84119c4b896305d8d4e33a3283da"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lower.rs",
+      "bytes": 101620,
+      "sha256": "aaefd1b24b145048fb80e97e2a00af40cc954717c8249ea8156eff9bf0861cf4"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation/schema/evaluation-payload-v1.schema.json",
+      "bytes": 33961,
+      "sha256": "8d65b5ddea137a71894e57ba6e14c94576aad63b2b7586728fa2bcca5bb125a3"
+    }
+  ],
+  "bindings": {
+    "bind.p": "plan.parameter_current[plan.binding_specs[bindingIndex].parameter_slot].bits at evaluation entry; physics writes only parameter_update",
+    "bind.a.param": "plan.binding_points[plan.binding_specs[bindingIndex].point_range.start + pointIndex + 0].parameter.bits",
+    "bind.a.target": "plan.binding_points[plan.binding_specs[bindingIndex].point_range.start + pointIndex + 0].target.bits",
+    "bind.b.param": "plan.binding_points[plan.binding_specs[bindingIndex].point_range.start + pointIndex + 1].parameter.bits",
+    "bind.b.target": "plan.binding_points[plan.binding_specs[bindingIndex].point_range.start + pointIndex + 1].target.bits",
+    "bind.default": "plan.binding_targets[targetSlot].default.bits; immutable C9-selected field default",
+    "bind.pointCount": "plan.binding_specs[bindingIndex].point_range.len",
+    "bind.first.param": "plan.binding_points[plan.binding_specs[bindingIndex].point_range.start + 0].parameter.bits; selected guard establishes pointCount > 0",
+    "bind.first.target": "plan.binding_points[plan.binding_specs[bindingIndex].point_range.start + 0].target.bits; selected guard establishes pointCount > 0",
+    "bind.last.param": "plan.binding_points[plan.binding_specs[bindingIndex].point_range.start + pointCount - 1].parameter.bits; selected guard establishes pointCount > 0",
+    "bind.last.target": "plan.binding_points[plan.binding_specs[bindingIndex].point_range.start + pointCount - 1].target.bits; selected guard establishes pointCount > 0",
+    "bind.targetSlot": "plan.binding_specs[bindingIndex].target_slot; C9 first global target occurrence",
+    "bind.targetKindProperty": "plan.binding_targets[targetSlot].{kind,property,owner_slot}; kind0 bone properties0..4, kind1 IK properties5..9",
+    "delta.public": "update(delta_bits): exact supplied u64; initial has no supplied public delta and skips physics",
+    "physics.input.parameterSlot": "plan.physics_inputs[plan.inline_physics_group.input_range.start + inputIndex].parameter_slot",
+    "physics.input.weight": "plan.physics_inputs[plan.inline_physics_group.input_range.start + inputIndex].weight.bits",
+    "physics.input.kind": "plan.physics_inputs[plan.inline_physics_group.input_range.start + inputIndex].kind",
+    "physics.gravityDirection": "plan.inline_physics_group.gravity_direction.bits",
+    "physics.gravityStrength": "plan.inline_physics_group.gravity_strength.bits",
+    "physics.wind": "plan.inline_physics_group.wind.bits",
+    "physics.pendulum.mass": "plan.physics_pendulum_configs[plan.inline_physics_group.pendulum_range.start + pendulumIndex].mass.bits",
+    "physics.pendulum.length": "plan.physics_pendulum_configs[plan.inline_physics_group.pendulum_range.start + pendulumIndex].length.bits",
+    "physics.pendulum.damping": "plan.physics_pendulum_configs[plan.inline_physics_group.pendulum_range.start + pendulumIndex].damping.bits",
+    "physics.output.pendulumIndex": "plan.physics_outputs[plan.inline_physics_group.output_range.start + outputIndex].pendulum_index",
+    "physics.output.weight": "plan.physics_outputs[plan.inline_physics_group.output_range.start + outputIndex].weight.bits",
+    "physics.output.kind": "plan.physics_outputs[plan.inline_physics_group.output_range.start + outputIndex].destination_kind",
+    "physics.output.destinationSlot": "plan.physics_outputs[plan.inline_physics_group.output_range.start + outputIndex].destination_slot",
+    "physics.output.parameterDefault": "plan.parameter_specs[plan.physics_outputs[output_range.start + outputIndex].destination_slot].default.bits; only destination_kind=0",
+    "physics.output.parameterMin": "plan.parameter_specs[plan.physics_outputs[output_range.start + outputIndex].destination_slot].min.bits; only destination_kind=0",
+    "physics.output.parameterMax": "plan.parameter_specs[plan.physics_outputs[output_range.start + outputIndex].destination_slot].max.bits; only destination_kind=0",
+    "world.base.x": "plan.bone_specs[plan.bone_world_order_slots[boneDfsIndex].value].x.bits",
+    "world.base.y": "plan.bone_specs[plan.bone_world_order_slots[boneDfsIndex].value].y.bits",
+    "world.base.angle": "plan.bone_specs[plan.bone_world_order_slots[boneDfsIndex].value].angle.bits",
+    "world.base.scaleX": "plan.bone_specs[plan.bone_world_order_slots[boneDfsIndex].value].scale_x.bits",
+    "world.base.scaleY": "plan.bone_specs[plan.bone_world_order_slots[boneDfsIndex].value].scale_y.bits",
+    "world.boneSlot": "plan.bone_world_order_slots[boneDfsIndex].value",
+    "world.parentSlot": "plan.bone_specs[plan.bone_world_order_slots[boneDfsIndex].value].parent_slot; NONE_SLOT_V1=4294967295 means root",
+    "ik.baseTargetX": "plan.inline_ik_controller.target_x.bits",
+    "ik.baseTargetY": "plan.inline_ik_controller.target_y.bits",
+    "ik.basePoleX": "plan.inline_ik_controller.pole_x.bits",
+    "ik.basePoleY": "plan.inline_ik_controller.pole_y.bits",
+    "ik.baseInfluence": "plan.inline_ik_controller.influence.bits",
+    "ik.solverType": "plan.inline_ik_controller.solver",
+    "ik.maxIterations": "plan.inline_ik_controller.max_iterations",
+    "ik.chainLength": "plan.inline_ik_controller.constraint_range.len",
+    "ik.constraintMin": "plan.ik_constraints[constraint_range.start + selectedChainIndex].min.bits; selectedChainIndex=chainIndex for world/local constraint, sweepIndex for CCD candidate constraint",
+    "ik.constraintMax": "plan.ik_constraints[constraint_range.start + selectedChainIndex].max.bits; selectedChainIndex=chainIndex for world/local constraint, sweepIndex for CCD candidate constraint",
+    "ik.chainBoneSlot": "plan.ik_constraints[constraint_range.start + chainIndex].bone_slot",
+    "ik.parentBoneSlot": "plan.bone_specs[plan.ik_constraints[constraint_range.start + chainIndex].bone_slot].parent_slot",
+    "ik.parentChainIndex": "linear exact lookup of ik.parentBoneSlot in plan.ik_constraints[constraint_range]; missing in chain uses pre-world parent angle, root sentinel uses positive zero",
+    "ik.length": "plan.bone_specs[plan.ik_constraints[constraint_range.start + chainIndex].bone_slot].length.bits; active branch establishes index bounds",
+    "ik.lastLength": "plan.bone_specs[plan.ik_constraints[constraint_range.start + chainLength-1].bone_slot].length.bits; active branch establishes index bounds",
+    "ik.previousLength": "plan.bone_specs[plan.ik_constraints[constraint_range.start + chainIndex-1].bone_slot].length.bits; active branch establishes index bounds",
+    "ik.len1": "plan.bone_specs[plan.ik_constraints[constraint_range.start + 0].bone_slot].length.bits; active branch establishes index bounds",
+    "ik.len2": "plan.bone_specs[plan.ik_constraints[constraint_range.start + 1].bone_slot].length.bits; active branch establishes index bounds",
+    "ik.baseLocalAngle": "plan.bone_specs[plan.ik_constraints[constraint_range.start + chainIndex].bone_slot].angle.bits",
+    "skin.restX": "plan.skin_rest_coordinates[plan.skin_mesh_specs[plan.mesh_evaluator_specs[meshSlot].skin_slot].rest_range.start + 2*vertexIndex + 0].bits",
+    "skin.restY": "plan.skin_rest_coordinates[plan.skin_mesh_specs[plan.mesh_evaluator_specs[meshSlot].skin_slot].rest_range.start + 2*vertexIndex + 1].bits",
+    "skin.weight": "plan.skin_weights[plan.skin_weight_rows[skin.weight_row_range.start + vertexIndex].weights.start + weightIndex].weight.bits",
+    "skin.boneSlot": "plan.skin_weights[plan.skin_weight_rows[skin.weight_row_range.start + vertexIndex].weights.start + weightIndex].bone_slot",
+    "skin.inverse.0": "exact bone_slot match in plan.skin_bind_inverses[skin.bind_inverse_range], then .matrix[0].bits; absent match skips this whole weight graph, never a default identity",
+    "skin.inverse.1": "exact bone_slot match in plan.skin_bind_inverses[skin.bind_inverse_range], then .matrix[1].bits; absent match skips this whole weight graph, never a default identity",
+    "skin.inverse.2": "exact bone_slot match in plan.skin_bind_inverses[skin.bind_inverse_range], then .matrix[2].bits; absent match skips this whole weight graph, never a default identity",
+    "skin.inverse.3": "exact bone_slot match in plan.skin_bind_inverses[skin.bind_inverse_range], then .matrix[3].bits; absent match skips this whole weight graph, never a default identity",
+    "skin.inverse.4": "exact bone_slot match in plan.skin_bind_inverses[skin.bind_inverse_range], then .matrix[4].bits; absent match skips this whole weight graph, never a default identity",
+    "skin.inverse.5": "exact bone_slot match in plan.skin_bind_inverses[skin.bind_inverse_range], then .matrix[5].bits; absent match skips this whole weight graph, never a default identity",
+    "mesh.hasSkin": "(plan.mesh_evaluator_specs[meshSlot].static_flags & 1) != 0",
+    "mesh.culling": "(plan.mesh_evaluator_specs[meshSlot].static_flags & 2) != 0",
+    "mesh.effectiveVisible": "(plan.mesh_evaluator_specs[meshSlot].static_flags & 4) != 0; C9 inherited ancestor visibility",
+    "mesh.projectedVertexCount": "skinned: mesh_evaluator_specs[meshSlot].derived_range.len/2; unskinned: direct_mesh_records[meshSlot].vertex_range.len/2",
+    "physics.output.stageSlot": "plan.physics_outputs[plan.inline_physics_group.output_range.start + outputIndex].stage_slot; indexes the destination-kind staging table, not owner storage"
+  },
+  "U1": {
+    "disposition": "resolved-no-absent-constraint-case",
+    "authority": "schema IKBoneConstraintV1 requires minAngle/maxAngle on each boneChain entry; lower.rs materialize_physics_and_ik copies one IkConstraintV1 per entry in order. Neither validated input nor C9 creates an absent interval. No fallback interval, no suppressed repeated normalizer."
+  },
+  "U2": {
+    "disposition": "all-semantic-inputs-bound-to-current-C9-tables",
+    "count": 71,
+    "invariants": [
+      "One retained enabled physics group, not a hidden loop over dropped groups. groupIndex is inline_physics_group.group_index (original payload index), never0 by assumption.",
+      "One retained IK controller. controllerIndex is inline_ik_controller.controller_index (original payload index). Pole presence_flags bit0/bit1 are distinct from zero field words; finalized target bindings explicitly set the relevant presence bit.",
+      "Physics stage_slot is separate from destination_slot: node owner destinationSlot for bone commit is the bone_staged_destinations index, while .owner_slot identifies BoneSlot. The parameter and bone stage-slot spaces are distinct first-appearance domains.",
+      "Bone override presence_mask bits0..4 select x,y,angle,scale_x,scale_y respectively; a zero value with a set bit overrides the immutable default.",
+      "Skin ranges come from the mesh-evaluator selected SkinSlot; inverse entries are matched by BoneSlot only inside that skin range. Original weightIndex is not renumbered when an inverse is absent.",
+      "world_pass is0 before solver when controller exists,1 at final world; boneDfsIndex counts world-order traversal, not storage BoneSlot.",
+      "physics.output.destinationSlot is owner storage; physics.output.stageSlot selects staging. Parameter commit copies stage[destinationSlot] to parameter_update[parameter_staged_destinations[destinationSlot].owner_slot]; bone-commit owner destinationSlot remains the stage index while its write targets bone_staged_destinations[destinationSlot].owner_slot."
+    ]
+  },
+  "remaining": [
+    "U3 full guard/loop producer dominance review",
+    "U4 all82 full numeric traces and9/191/23 bindings",
+    "U5 per-conditional applicability classification"
+  ],
+  "noExecution": true,
+  "noCandidateOutputUsed": true,
+  "previous": {
+    "path": "native-c10-source-bindings-3.json",
+    "bytes": 12245,
+    "sha256": "9407c25f1d96796051e07ddf63240f97b3d0dfb35dd6f6d9b90c274b08ce905d"
+  }
+}

@@ -141,11 +141,26 @@ export function migrateV9toV10(project: ProjectData): ProjectData {
 export function ensureProjectDefaults(project: ProjectData): ProjectData {
   const next: ProjectData = {
     ...project,
+    name: project.name ?? "Untitled",
+    width: project.width ?? 1,
+    height: project.height ?? 1,
+    clips: project.clips ?? [],
     scenes: project.scenes ?? [],
+    physicsGroups: project.physicsGroups ?? [],
+    lipsyncConfig: project.lipsyncConfig ?? {
+      enabled: false,
+      targetParameterId: null,
+      source: "microphone",
+      threshold: 0.02,
+      smoothing: 0.7,
+      gain: 2,
+    },
     skins: project.skins ?? {},
+    parameterBindings: project.parameterBindings ?? [],
     sceneBlends: project.sceneBlends ?? [],
     ikControllers: project.ikControllers ?? [],
     offscreenTargets: project.offscreenTargets ?? [],
+    expressionPresets: project.expressionPresets ?? [],
     colliders: project.colliders ?? [],
     stateMachines: project.stateMachines ?? [],
   };

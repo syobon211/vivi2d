@@ -83,7 +83,7 @@ describe("MenuBar extra coverage", () => {
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("Automatic Model Generation")).toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole("button", { name: /close/i }));
+    await user.click(within(dialog).getByRole("button", { name: "Close" }));
     await waitFor(() => {
       expect(screen.queryByText("Automatic Model Generation")).not.toBeInTheDocument();
     });

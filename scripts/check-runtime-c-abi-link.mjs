@@ -14,19 +14,45 @@ import {
 } from "./lib/runtime-c-abi-compiler.mjs";
 
 const root = process.cwd();
+if (process.argv.slice(2).some((arg) => arg !== "--evaluation-v1")) {
+  throw new Error("Only the fixed --evaluation-v1 profile is supported");
+}
+const evaluationMode = process.argv.includes("--evaluation-v1");
 const nativeManifest = path.join(root, "packages/runtime-native/Cargo.toml");
 const includeDir = path.join(root, "packages/runtime-c-abi/include");
-const samplePath = path.join(root, "packages/runtime-c-abi/samples/minimal-host.c");
-const targetDir = path.join(root, "packages/runtime-native/target/debug");
-const tmpDirRelative = path.join("tmp", "runtime-c-abi-link");
+const samplePath = path.join(
+  root,
+  `packages/runtime-c-abi/samples/${evaluationMode ? "evaluation-host" : "minimal-host"}.c`,
+);
+const targetDir = path.join(
+  root,
+  evaluationMode
+    ? "packages/runtime-native/target/evaluation-abi/debug"
+    : "packages/runtime-native/target/debug",
+);
+const tmpDirRelative = path.join(
+  "tmp",
+  evaluationMode ? "runtime-c-abi-evaluation-link" : "runtime-c-abi-link",
+);
 const tmpDir = path.join(root, tmpDirRelative);
 
 run("cargo", [
+  ...(evaluationMode ? ["+1.89.0"] : []),
   "build",
+  "--locked",
   "--manifest-path",
   nativeManifest,
   "-p",
   "vivi-runtime-native-c-abi",
+  ...(evaluationMode
+    ? [
+        "--no-default-features",
+        "--features",
+        "evaluation-v1",
+        "--target-dir",
+        path.dirname(targetDir),
+      ]
+    : []),
 ]);
 
 rmSync(tmpDir, { recursive: true, force: true });
@@ -42,7 +68,7 @@ if (importLibrary) {
   }
 }
 
-runRustFfiHost();
+if (!evaluationMode) runRustFfiHost();
 runOptionalCHost();
 
 console.log("[runtime-c-abi-link] passed");
@@ -100,6 +126,10 @@ fn main() {
 function runOptionalCHost() {
   const compiler = findCCompiler();
   if (!compiler) {
+    if (evaluationMode)
+      throw new Error(
+        "Evaluation profile requires an actual C header/link/copy-out check",
+      );
     console.log("[runtime-c-abi-link] C host skipped: no C compiler found on PATH");
     return;
   }

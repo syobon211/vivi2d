@@ -53,8 +53,13 @@
       "packages/*/src/**",
       "e2e/**/*.ts",
       "electron/**/*.cjs",
+      "electron/local-asset-copy.ts",
+      "electron/__tests__/local-asset-copy*.test.ts",
       "scripts/**/*.ts",
-      "scripts/**/*.mjs"
+      "scripts/**/*.mjs",
+      "scripts/check-local-asset-after-pack.cjs",
+      "scripts/fixtures/runtime-preview-electron.cjs",
+      "scripts/fixtures/runtime-preview-page.tsx"
     ]
   },
   "overrides": [

@@ -29,88 +29,11 @@
       "text": "abortControllerRef.current = null"
     },
     {
-      "kind": "update",
-      "line": 244,
-      "path": "src/components/AIGenerateDialog.tsx",
-      "signature": "src/components/AIGenerateDialog.tsx:update:!artifact?.data",
-      "text": "!artifact?.data"
-    },
-    {
-      "kind": "update",
-      "line": 359,
-      "path": "src/components/AIGenerateDialog.tsx",
-      "signature": "src/components/AIGenerateDialog.tsx:update:!current.generating",
-      "text": "!current.generating"
-    },
-    {
       "kind": "mutating-call",
       "line": 24,
       "path": "src/components/auto-setup/autoSetupDialogState.ts",
       "signature": "src/components/auto-setup/autoSetupDialogState.ts:mutating-call:[...ids].sort()",
       "text": "[...ids].sort()"
-    },
-    {
-      "kind": "update",
-      "line": 56,
-      "path": "src/components/auto-setup/AutoSetupGenerationOptionsPanel.tsx",
-      "signature": "src/components/auto-setup/AutoSetupGenerationOptionsPanel.tsx:update:!options.generateBones",
-      "text": "!options.generateBones"
-    },
-    {
-      "kind": "update",
-      "line": 56,
-      "path": "src/components/auto-setup/AutoSetupGenerationOptionsPanel.tsx",
-      "signature": "src/components/auto-setup/AutoSetupGenerationOptionsPanel.tsx:update:!options.generateMeshes",
-      "text": "!options.generateMeshes"
-    },
-    {
-      "kind": "update",
-      "line": 404,
-      "path": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx",
-      "signature": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx:update:!depthInspectorAction.enabled",
-      "text": "!depthInspectorAction.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 409,
-      "path": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx",
-      "signature": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx:update:!depthInspectorAction.enabled",
-      "text": "!depthInspectorAction.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 303,
-      "path": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx",
-      "signature": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx:update:!eyeClippingSummary.applied",
-      "text": "!eyeClippingSummary.applied"
-    },
-    {
-      "kind": "update",
-      "line": 322,
-      "path": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx",
-      "signature": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx:update:!eyeRigSummary.applied",
-      "text": "!eyeRigSummary.applied"
-    },
-    {
-      "kind": "update",
-      "line": 355,
-      "path": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx",
-      "signature": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx:update:!leftRightSplitSummary.applied",
-      "text": "!leftRightSplitSummary.applied"
-    },
-    {
-      "kind": "update",
-      "line": 340,
-      "path": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx",
-      "signature": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx:update:!mouthRigSummary.applied",
-      "text": "!mouthRigSummary.applied"
-    },
-    {
-      "kind": "update",
-      "line": 104,
-      "path": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx",
-      "signature": "src/components/auto-setup/AutoSetupSeeThroughPanel.tsx:update:!seeThroughSummary?.isSeeThroughProject",
-      "text": "!seeThroughSummary?.isSeeThroughProject"
     },
     {
       "kind": "assignment",
@@ -132,13 +55,6 @@
       "path": "src/components/auto-setup/useAutoSetupApplyCommand.ts",
       "signature": "src/components/auto-setup/useAutoSetupApplyCommand.ts:assignment:applyInFlightRef.current = true",
       "text": "applyInFlightRef.current = true"
-    },
-    {
-      "kind": "update",
-      "line": 42,
-      "path": "src/components/auto-setup/useAutoSetupApplyCommand.ts",
-      "signature": "src/components/auto-setup/useAutoSetupApplyCommand.ts:update:!isMountedRef.current",
-      "text": "!isMountedRef.current"
     },
     {
       "kind": "assignment",
@@ -323,97 +239,6 @@
       "text": "next.delete(id)"
     },
     {
-      "kind": "update",
-      "line": 233,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!depthRigHintSummary?.isSeeThroughProject",
-      "text": "!depthRigHintSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 404,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!hasCheckedDraftRef.current",
-      "text": "!hasCheckedDraftRef.current"
-    },
-    {
-      "kind": "update",
-      "line": 595,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!isMountedRef.current",
-      "text": "!isMountedRef.current"
-    },
-    {
-      "kind": "update",
-      "line": 850,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!isMountedRef.current",
-      "text": "!isMountedRef.current"
-    },
-    {
-      "kind": "update",
-      "line": 708,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!meshDensitySummary?.isSeeThroughProject",
-      "text": "!meshDensitySummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 257,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!seeThroughSetupChecklist?.isSeeThroughProject",
-      "text": "!seeThroughSetupChecklist?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 641,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!seeThroughSummary?.isSeeThroughProject",
-      "text": "!seeThroughSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 672,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!seeThroughSummary?.isSeeThroughProject",
-      "text": "!seeThroughSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 681,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!seeThroughSummary?.isSeeThroughProject",
-      "text": "!seeThroughSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 690,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!seeThroughSummary?.isSeeThroughProject",
-      "text": "!seeThroughSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 699,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!seeThroughSummary?.isSeeThroughProject",
-      "text": "!seeThroughSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 728,
-      "path": "src/components/AutoSetupDialog.tsx",
-      "signature": "src/components/AutoSetupDialog.tsx:update:!seeThroughSummary?.isSeeThroughProject",
-      "text": "!seeThroughSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 66,
-      "path": "src/components/AutoSetupStepOptions.tsx",
-      "signature": "src/components/AutoSetupStepOptions.tsx:update:!cleanupSummary.applied",
-      "text": "!cleanupSummary.applied"
-    },
-    {
       "kind": "assignment",
       "line": 219,
       "path": "src/components/Canvas.tsx",
@@ -433,13 +258,6 @@
       "path": "src/components/Canvas.tsx",
       "signature": "src/components/Canvas.tsx:mutating-call:world.scale.set(zoom)",
       "text": "world.scale.set(zoom)"
-    },
-    {
-      "kind": "update",
-      "line": 52,
-      "path": "src/components/Canvas.tsx",
-      "signature": "src/components/Canvas.tsx:update:!model?.layerId",
-      "text": "!model?.layerId"
     },
     {
       "kind": "mutating-call",
@@ -484,13 +302,6 @@
       "text": "next.delete(id)"
     },
     {
-      "kind": "update",
-      "line": 50,
-      "path": "src/components/IKPanel.tsx",
-      "signature": "src/components/IKPanel.tsx:update:-Math.PI",
-      "text": "-Math.PI"
-    },
-    {
       "kind": "assignment",
       "line": 89,
       "path": "src/components/LayerPanel.tsx",
@@ -510,20 +321,6 @@
       "path": "src/components/LayerPanel.tsx",
       "signature": "src/components/LayerPanel.tsx:assignment:pointerSelectionHandledRef.current = null",
       "text": "pointerSelectionHandledRef.current = null"
-    },
-    {
-      "kind": "update",
-      "line": 71,
-      "path": "src/components/LayerPanel/Row.tsx",
-      "signature": "src/components/LayerPanel/Row.tsx:update:!layer.visible",
-      "text": "!layer.visible"
-    },
-    {
-      "kind": "update",
-      "line": 115,
-      "path": "src/components/LayerPanel/Row.tsx",
-      "signature": "src/components/LayerPanel/Row.tsx:update:!layer.visible",
-      "text": "!layer.visible"
     },
     {
       "kind": "assignment",
@@ -559,13 +356,6 @@
       "path": "src/components/LayerPanel/useLayerFlatten.ts",
       "signature": "src/components/LayerPanel/useLayerFlatten.ts:mutating-call:out.push({ layer, depth })",
       "text": "out.push({ layer, depth })"
-    },
-    {
-      "kind": "update",
-      "line": 65,
-      "path": "src/components/LayerPanel/useLayerKeyboardNav.ts",
-      "signature": "src/components/LayerPanel/useLayerKeyboardNav.ts:update:!current.layer.expanded",
-      "text": "!current.layer.expanded"
     },
     {
       "kind": "assignment",
@@ -1072,97 +862,6 @@
       "text": "maskCanvasMapRef.current.set(partId, next)"
     },
     {
-      "kind": "update",
-      "line": 712,
-      "path": "src/components/ManualPngSplitDialog.tsx",
-      "signature": "src/components/ManualPngSplitDialog.tsx:update:!paintingRef.current",
-      "text": "!paintingRef.current"
-    },
-    {
-      "kind": "update",
-      "line": 42,
-      "path": "src/components/MediaExportDialog.tsx",
-      "signature": "src/components/MediaExportDialog.tsx:update:!pixiRefs?.app",
-      "text": "!pixiRefs?.app"
-    },
-    {
-      "kind": "update",
-      "line": 23,
-      "path": "src/components/menu/ManualPngReimportMenuItem.tsx",
-      "signature": "src/components/menu/ManualPngReimportMenuItem.tsx:update:!selectedManualPngLayer?.metadata.sourcePath",
-      "text": "!selectedManualPngLayer?.metadata.sourcePath"
-    },
-    {
-      "kind": "update",
-      "line": 26,
-      "path": "src/components/menu/ManualPngReimportMenuItem.tsx",
-      "signature": "src/components/menu/ManualPngReimportMenuItem.tsx:update:!selectedManualPngLayer.metadata.sourcePath",
-      "text": "!selectedManualPngLayer.metadata.sourcePath"
-    },
-    {
-      "kind": "update",
-      "line": 192,
-      "path": "src/components/menu/MenuSections.tsx",
-      "signature": "src/components/menu/MenuSections.tsx:update:!props.canRedo",
-      "text": "!props.canRedo"
-    },
-    {
-      "kind": "update",
-      "line": 183,
-      "path": "src/components/menu/MenuSections.tsx",
-      "signature": "src/components/menu/MenuSections.tsx:update:!props.canUndo",
-      "text": "!props.canUndo"
-    },
-    {
-      "kind": "update",
-      "line": 174,
-      "path": "src/components/menu/MenuSections.tsx",
-      "signature": "src/components/menu/MenuSections.tsx:update:!props.projectLoaded",
-      "text": "!props.projectLoaded"
-    },
-    {
-      "kind": "update",
-      "line": 113,
-      "path": "src/components/menu/registerViewQuickActions.ts",
-      "signature": "src/components/menu/registerViewQuickActions.ts:update:!baseAvailability.enabled",
-      "text": "!baseAvailability.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 146,
-      "path": "src/components/menu/registerViewQuickActions.ts",
-      "signature": "src/components/menu/registerViewQuickActions.ts:update:!baseAvailability.enabled",
-      "text": "!baseAvailability.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 182,
-      "path": "src/components/menu/registerViewQuickActions.ts",
-      "signature": "src/components/menu/registerViewQuickActions.ts:update:!baseAvailability.enabled",
-      "text": "!baseAvailability.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 214,
-      "path": "src/components/menu/registerViewQuickActions.ts",
-      "signature": "src/components/menu/registerViewQuickActions.ts:update:!baseAvailability.enabled",
-      "text": "!baseAvailability.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 64,
-      "path": "src/components/menu/registerViewQuickActions.ts",
-      "signature": "src/components/menu/registerViewQuickActions.ts:update:!current.enabled",
-      "text": "!current.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 331,
-      "path": "src/components/menu/registerViewQuickActions.ts",
-      "signature": "src/components/menu/registerViewQuickActions.ts:update:!current.enabled",
-      "text": "!current.enabled"
-    },
-    {
       "kind": "assignment",
       "line": 38,
       "path": "src/components/menu/ToolButtons.tsx",
@@ -1182,41 +881,6 @@
       "path": "src/components/menu/ToolButtons.tsx",
       "signature": "src/components/menu/ToolButtons.tsx:assignment:pointerToolActivationRef.current = tool",
       "text": "pointerToolActivationRef.current = tool"
-    },
-    {
-      "kind": "update",
-      "line": 91,
-      "path": "src/components/menu/useMenuQuickActionsRegistration.ts",
-      "signature": "src/components/menu/useMenuQuickActionsRegistration.ts:update:!dialogs.showAutoSetup",
-      "text": "!dialogs.showAutoSetup"
-    },
-    {
-      "kind": "update",
-      "line": 96,
-      "path": "src/components/menu/useMenuQuickActionsRegistration.ts",
-      "signature": "src/components/menu/useMenuQuickActionsRegistration.ts:update:!seeThroughSummary?.isSeeThroughProject",
-      "text": "!seeThroughSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 481,
-      "path": "src/components/menu/useMenuQuickActionsRegistration.ts",
-      "signature": "src/components/menu/useMenuQuickActionsRegistration.ts:update:!seeThroughSummary?.isSeeThroughProject",
-      "text": "!seeThroughSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 42,
-      "path": "src/components/MenuDropdown.tsx",
-      "signature": "src/components/MenuDropdown.tsx:update:!panelRef.current",
-      "text": "!panelRef.current"
-    },
-    {
-      "kind": "update",
-      "line": 48,
-      "path": "src/components/MenuDropdown.tsx",
-      "signature": "src/components/MenuDropdown.tsx:update:!panelRef.current",
-      "text": "!panelRef.current"
     },
     {
       "kind": "assignment",
@@ -1273,48 +937,6 @@
       "path": "src/components/MultiViewCanvas.tsx",
       "signature": "src/components/MultiViewCanvas.tsx:mutating-call:refs.world.scale.set(view.zoom)",
       "text": "refs.world.scale.set(view.zoom)"
-    },
-    {
-      "kind": "update",
-      "line": 149,
-      "path": "src/components/MultiViewCanvas.tsx",
-      "signature": "src/components/MultiViewCanvas.tsx:update:!refs?.world",
-      "text": "!refs?.world"
-    },
-    {
-      "kind": "update",
-      "line": 97,
-      "path": "src/components/MultiViewCanvas.tsx",
-      "signature": "src/components/MultiViewCanvas.tsx:update:!refs.app",
-      "text": "!refs.app"
-    },
-    {
-      "kind": "update",
-      "line": 97,
-      "path": "src/components/MultiViewCanvas.tsx",
-      "signature": "src/components/MultiViewCanvas.tsx:update:!refs.background",
-      "text": "!refs.background"
-    },
-    {
-      "kind": "update",
-      "line": 120,
-      "path": "src/components/MultiViewCanvas.tsx",
-      "signature": "src/components/MultiViewCanvas.tsx:update:!refs.background",
-      "text": "!refs.background"
-    },
-    {
-      "kind": "update",
-      "line": 97,
-      "path": "src/components/MultiViewCanvas.tsx",
-      "signature": "src/components/MultiViewCanvas.tsx:update:!refs.world",
-      "text": "!refs.world"
-    },
-    {
-      "kind": "update",
-      "line": 120,
-      "path": "src/components/MultiViewCanvas.tsx",
-      "signature": "src/components/MultiViewCanvas.tsx:update:!refs.world",
-      "text": "!refs.world"
     },
     {
       "kind": "assignment",
@@ -1408,13 +1030,6 @@
       "text": "rendered.add(param.id)"
     },
     {
-      "kind": "update",
-      "line": 174,
-      "path": "src/components/ParameterSlider.tsx",
-      "signature": "src/components/ParameterSlider.tsx:update:!p.pairedParameterId",
-      "text": "!p.pairedParameterId"
-    },
-    {
       "kind": "assignment",
       "line": 71,
       "path": "src/components/ParameterSlider2D.tsx",
@@ -1427,13 +1042,6 @@
       "path": "src/components/ParameterSlider2D.tsx",
       "signature": "src/components/ParameterSlider2D.tsx:assignment:dragging.current = true",
       "text": "dragging.current = true"
-    },
-    {
-      "kind": "update",
-      "line": 64,
-      "path": "src/components/ParameterSlider2D.tsx",
-      "signature": "src/components/ParameterSlider2D.tsx:update:!dragging.current",
-      "text": "!dragging.current"
     },
     {
       "kind": "assignment",
@@ -1457,34 +1065,6 @@
       "text": "updated[i] = { ...input, type: e.target.value as \"x\" | \"y\" | \"angle\", }"
     },
     {
-      "kind": "update",
-      "line": 32,
-      "path": "src/components/properties/ParameterBindingSection.tsx",
-      "signature": "src/components/properties/ParameterBindingSection.tsx:update:!project?.parameterBindings",
-      "text": "!project?.parameterBindings"
-    },
-    {
-      "kind": "update",
-      "line": 69,
-      "path": "src/components/properties/RigHealthSection.tsx",
-      "signature": "src/components/properties/RigHealthSection.tsx:update:!repair?.availability.enabled",
-      "text": "!repair?.availability.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 149,
-      "path": "src/components/properties/RigHealthSection.tsx",
-      "signature": "src/components/properties/RigHealthSection.tsx:update:!repair.availability.enabled",
-      "text": "!repair.availability.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 161,
-      "path": "src/components/properties/RigHealthSection.tsx",
-      "signature": "src/components/properties/RigHealthSection.tsx:update:!repair.availability.enabled",
-      "text": "!repair.availability.enabled"
-    },
-    {
       "kind": "mutating-call",
       "line": 170,
       "path": "src/components/properties/useMeshPropertiesActions.ts",
@@ -1499,39 +1079,11 @@
       "text": "createdIds.push(pinId)"
     },
     {
-      "kind": "update",
-      "line": 159,
-      "path": "src/components/properties/useMeshPropertiesActions.ts",
-      "signature": "src/components/properties/useMeshPropertiesActions.ts:update:!store.symmetryEnabled",
-      "text": "!store.symmetryEnabled"
-    },
-    {
       "kind": "mutating-call",
       "line": 141,
       "path": "src/components/QuickActionsDialog.tsx",
       "signature": "src/components/QuickActionsDialog.tsx:mutating-call:[...delegated, ...directActions].sort((a, b) => { const sectionDelta = SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section); if (sectionDelta !== 0) return sectionDe",
       "text": "[...delegated, ...directActions].sort((a, b) => { const sectionDelta = SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section); if (sectionDelta !== 0) return sectionDe"
-    },
-    {
-      "kind": "update",
-      "line": 179,
-      "path": "src/components/QuickActionsDialog.tsx",
-      "signature": "src/components/QuickActionsDialog.tsx:update:!action.enabled",
-      "text": "!action.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 234,
-      "path": "src/components/QuickActionsDialog.tsx",
-      "signature": "src/components/QuickActionsDialog.tsx:update:!action.enabled",
-      "text": "!action.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 249,
-      "path": "src/components/QuickActionsDialog.tsx",
-      "signature": "src/components/QuickActionsDialog.tsx:update:!action.enabled",
-      "text": "!action.enabled"
     },
     {
       "kind": "assignment",
@@ -1602,34 +1154,6 @@
       "path": "src/components/timeline/AddTrackButton.tsx",
       "signature": "src/components/timeline/AddTrackButton.tsx:mutating-call:options.push({ key, boneId: bone.id, property: prop, label: `${bone.name}:${getBonePropertyLabel(prop, t)}`, })",
       "text": "options.push({ key, boneId: bone.id, property: prop, label: `${bone.name}:${getBonePropertyLabel(prop, t)}`, })"
-    },
-    {
-      "kind": "update",
-      "line": 38,
-      "path": "src/components/timeline/AnimationRetargetDialog.tsx",
-      "signature": "src/components/timeline/AnimationRetargetDialog.tsx:update:-rawSuffix.length",
-      "text": "-rawSuffix.length"
-    },
-    {
-      "kind": "update",
-      "line": 42,
-      "path": "src/components/timeline/FirstMotionDialog.tsx",
-      "signature": "src/components/timeline/FirstMotionDialog.tsx:update:-rawSuffix.length",
-      "text": "-rawSuffix.length"
-    },
-    {
-      "kind": "update",
-      "line": 164,
-      "path": "src/components/timeline/FirstMotionDialog.tsx",
-      "signature": "src/components/timeline/FirstMotionDialog.tsx:update:!plan.hasApplicableWrites",
-      "text": "!plan.hasApplicableWrites"
-    },
-    {
-      "kind": "update",
-      "line": 183,
-      "path": "src/components/timeline/FirstMotionDialog.tsx",
-      "signature": "src/components/timeline/FirstMotionDialog.tsx:update:!plan.hasApplicableWrites",
-      "text": "!plan.hasApplicableWrites"
     },
     {
       "kind": "mutating-call",
@@ -1744,32 +1268,11 @@
       "text": "lastPos.current = { x: e.clientX, y: e.clientY }"
     },
     {
-      "kind": "update",
-      "line": 72,
-      "path": "src/components/timeline/GraphKeyframe.tsx",
-      "signature": "src/components/timeline/GraphKeyframe.tsx:update:!dragTarget.current",
-      "text": "!dragTarget.current"
-    },
-    {
-      "kind": "update",
-      "line": 39,
-      "path": "src/components/timeline/IdleSynthDialog.tsx",
-      "signature": "src/components/timeline/IdleSynthDialog.tsx:update:-rawSuffix.length",
-      "text": "-rawSuffix.length"
-    },
-    {
       "kind": "assignment",
       "line": 270,
       "path": "src/components/timeline/MotionAssistDialog.tsx",
       "signature": "src/components/timeline/MotionAssistDialog.tsx:assignment:event.currentTarget.value = \"\"",
       "text": "event.currentTarget.value = \"\""
-    },
-    {
-      "kind": "update",
-      "line": 37,
-      "path": "src/components/timeline/MotionPresetDialog.tsx",
-      "signature": "src/components/timeline/MotionPresetDialog.tsx:update:-rawSuffix.length",
-      "text": "-rawSuffix.length"
     },
     {
       "kind": "assignment",
@@ -1786,39 +1289,11 @@
       "text": "dragging.current = true"
     },
     {
-      "kind": "update",
-      "line": 55,
-      "path": "src/components/timeline/Playhead.tsx",
-      "signature": "src/components/timeline/Playhead.tsx:update:!dragging.current",
-      "text": "!dragging.current"
-    },
-    {
       "kind": "mutating-call",
       "line": 9,
       "path": "src/components/timeline/TimelineRuler.tsx",
       "signature": "src/components/timeline/TimelineRuler.tsx:mutating-call:result.push({ frame: f, label: `${Math.floor(sec)}s`, major: true, })",
       "text": "result.push({ frame: f, label: `${Math.floor(sec)}s`, major: true, })"
-    },
-    {
-      "kind": "update",
-      "line": 63,
-      "path": "src/components/ValidationDialog.tsx",
-      "signature": "src/components/ValidationDialog.tsx:update:!repair?.availability.enabled",
-      "text": "!repair?.availability.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 165,
-      "path": "src/components/ValidationDialog.tsx",
-      "signature": "src/components/ValidationDialog.tsx:update:!repair.availability.enabled",
-      "text": "!repair.availability.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 177,
-      "path": "src/components/ValidationDialog.tsx",
-      "signature": "src/components/ValidationDialog.tsx:update:!repair.availability.enabled",
-      "text": "!repair.availability.enabled"
     },
     {
       "kind": "mutating-call",
@@ -1933,27 +1408,6 @@
       "text": "screenVertices.push(screen.sx, screen.sy)"
     },
     {
-      "kind": "update",
-      "line": 87,
-      "path": "src/hooks/meshOverlayInteractions.ts",
-      "signature": "src/hooks/meshOverlayInteractions.ts:update:!dragging.current",
-      "text": "!dragging.current"
-    },
-    {
-      "kind": "update",
-      "line": 124,
-      "path": "src/hooks/meshOverlayInteractions.ts",
-      "signature": "src/hooks/meshOverlayInteractions.ts:update:!lassoRef.current",
-      "text": "!lassoRef.current"
-    },
-    {
-      "kind": "update",
-      "line": 139,
-      "path": "src/hooks/meshOverlayInteractions.ts",
-      "signature": "src/hooks/meshOverlayInteractions.ts:update:!lassoRef.current",
-      "text": "!lassoRef.current"
-    },
-    {
       "kind": "assignment",
       "line": 53,
       "path": "src/hooks/useBoneOverlay.ts",
@@ -2003,27 +1457,6 @@
       "text": "rafId.current = requestAnimationFrame(() => { const dd = dragging.current; if (!dd) return; const { zoom: z, panX: px, panY: py } = useViewportStore.getState(); const { wx, wy } = "
     },
     {
-      "kind": "update",
-      "line": 64,
-      "path": "src/hooks/useColliderOverlay.ts",
-      "signature": "src/hooks/useColliderOverlay.ts:update:!c.enabled",
-      "text": "!c.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 64,
-      "path": "src/hooks/useDialog.ts",
-      "signature": "src/hooks/useDialog.ts:update:!e.shiftKey",
-      "text": "!e.shiftKey"
-    },
-    {
-      "kind": "assignment",
-      "line": 14,
-      "path": "src/hooks/useIK.ts",
-      "signature": "src/hooks/useIK.ts:assignment:rafId.current = requestAnimationFrame(() => { const project = useEditorStore.getState().project; if (!project?.ikControllers?.length) return; const worldTransforms = computeBoneWor",
-      "text": "rafId.current = requestAnimationFrame(() => { const project = useEditorStore.getState().project; if (!project?.ikControllers?.length) return; const worldTransforms = computeBoneWor"
-    },
-    {
       "kind": "mutating-call",
       "line": 22,
       "path": "src/hooks/useIK.ts",
@@ -2045,13 +1478,6 @@
       "text": "result.push(layer)"
     },
     {
-      "kind": "update",
-      "line": 16,
-      "path": "src/hooks/useIK.ts",
-      "signature": "src/hooks/useIK.ts:update:!project?.ikControllers?.length",
-      "text": "!project?.ikControllers?.length"
-    },
-    {
       "kind": "assignment",
       "line": 37,
       "path": "src/hooks/useIKOverlay.ts",
@@ -2071,62 +1497,6 @@
       "path": "src/hooks/useIKOverlay.ts",
       "signature": "src/hooks/useIKOverlay.ts:assignment:rafId.current = requestAnimationFrame(() => { const d = dragging.current; if (!d) return; const z = useViewportStore.getState().zoom; const px = useViewportStore.getState().panX; c",
       "text": "rafId.current = requestAnimationFrame(() => { const d = dragging.current; if (!d) return; const z = useViewportStore.getState().zoom; const px = useViewportStore.getState().panX; c"
-    },
-    {
-      "kind": "update",
-      "line": 46,
-      "path": "src/hooks/useIKOverlay.ts",
-      "signature": "src/hooks/useIKOverlay.ts:update:!dragging.current",
-      "text": "!dragging.current"
-    },
-    {
-      "kind": "update",
-      "line": 16,
-      "path": "src/hooks/useIKOverlay.ts",
-      "signature": "src/hooks/useIKOverlay.ts:update:!proj?.ikControllers?.length",
-      "text": "!proj?.ikControllers?.length"
-    },
-    {
-      "kind": "update",
-      "line": 85,
-      "path": "src/hooks/useKeyboardShortcuts.ts",
-      "signature": "src/hooks/useKeyboardShortcuts.ts:update:!e.altKey",
-      "text": "!e.altKey"
-    },
-    {
-      "kind": "update",
-      "line": 83,
-      "path": "src/hooks/useKeyboardShortcuts.ts",
-      "signature": "src/hooks/useKeyboardShortcuts.ts:update:!e.ctrlKey",
-      "text": "!e.ctrlKey"
-    },
-    {
-      "kind": "update",
-      "line": 84,
-      "path": "src/hooks/useKeyboardShortcuts.ts",
-      "signature": "src/hooks/useKeyboardShortcuts.ts:update:!e.metaKey",
-      "text": "!e.metaKey"
-    },
-    {
-      "kind": "update",
-      "line": 77,
-      "path": "src/hooks/useKeyboardShortcuts.ts",
-      "signature": "src/hooks/useKeyboardShortcuts.ts:update:!e.repeat",
-      "text": "!e.repeat"
-    },
-    {
-      "kind": "update",
-      "line": 86,
-      "path": "src/hooks/useKeyboardShortcuts.ts",
-      "signature": "src/hooks/useKeyboardShortcuts.ts:update:!e.shiftKey",
-      "text": "!e.shiftKey"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 40,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:mutating-call:background.clear()",
-      "text": "background.clear()"
     },
     {
       "kind": "assignment",
@@ -2176,13 +1546,6 @@
       "path": "src/hooks/useLipSync.ts",
       "signature": "src/hooks/useLipSync.ts:assignment:smoothedRef.current = smoothVolume(rawVolume, smoothedRef.current, smoothing)",
       "text": "smoothedRef.current = smoothVolume(rawVolume, smoothedRef.current, smoothing)"
-    },
-    {
-      "kind": "update",
-      "line": 51,
-      "path": "src/hooks/useLipSync.ts",
-      "signature": "src/hooks/useLipSync.ts:update:!analyserRef.current",
-      "text": "!analyserRef.current"
     },
     {
       "kind": "assignment",
@@ -2246,20 +1609,6 @@
       "path": "src/hooks/useMeshOverlay.ts",
       "signature": "src/hooks/useMeshOverlay.ts:assignment:model.vertices = overlayDetailsReady ? buildMeshVertexCircles( visibleVertices, layer, zoom, panX, panY, selectedSet, dragVertexIndex, Boolean(heatmap && heatmap.vertices.length > ",
       "text": "model.vertices = overlayDetailsReady ? buildMeshVertexCircles( visibleVertices, layer, zoom, panX, panY, selectedSet, dragVertexIndex, Boolean(heatmap && heatmap.vertices.length > "
-    },
-    {
-      "kind": "update",
-      "line": 540,
-      "path": "src/hooks/useMeshOverlay.ts",
-      "signature": "src/hooks/useMeshOverlay.ts:update:!event.shiftKey",
-      "text": "!event.shiftKey"
-    },
-    {
-      "kind": "update",
-      "line": 571,
-      "path": "src/hooks/useMeshOverlay.ts",
-      "signature": "src/hooks/useMeshOverlay.ts:update:!event.shiftKey",
-      "text": "!event.shiftKey"
     },
     {
       "kind": "assignment",
@@ -2337,20 +1686,6 @@
       "path": "src/hooks/useOnionSkin.ts",
       "signature": "src/hooks/useOnionSkin.ts:mutating-call:originals.set(boneId, { angle: node.bone.angle, scaleX: node.bone.scaleX, scaleY: node.bone.scaleY, })",
       "text": "originals.set(boneId, { angle: node.bone.angle, scaleX: node.bone.scaleX, scaleY: node.bone.scaleY, })"
-    },
-    {
-      "kind": "update",
-      "line": 133,
-      "path": "src/hooks/useOnionSkin.ts",
-      "signature": "src/hooks/useOnionSkin.ts:update:!layer.visible",
-      "text": "!layer.visible"
-    },
-    {
-      "kind": "update",
-      "line": 52,
-      "path": "src/hooks/useOnionSkin.ts",
-      "signature": "src/hooks/useOnionSkin.ts:update:!onionSkin.enabled",
-      "text": "!onionSkin.enabled"
     },
     {
       "kind": "assignment",
@@ -2437,20 +1772,6 @@
       "text": "rafId.current = requestAnimationFrame(tick)"
     },
     {
-      "kind": "update",
-      "line": 59,
-      "path": "src/hooks/usePhysics.ts",
-      "signature": "src/hooks/usePhysics.ts:update:!group.enabled",
-      "text": "!group.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 52,
-      "path": "src/hooks/usePhysics.ts",
-      "signature": "src/hooks/usePhysics.ts:update:!physicsState.isActive",
-      "text": "!physicsState.isActive"
-    },
-    {
       "kind": "assignment",
       "line": 75,
       "path": "src/hooks/usePixiApp.ts",
@@ -2463,13 +1784,6 @@
       "path": "src/hooks/usePixiApp.ts",
       "signature": "src/hooks/usePixiApp.ts:assignment:refs.current = createEmptyPixiAppRefs()",
       "text": "refs.current = createEmptyPixiAppRefs()"
-    },
-    {
-      "kind": "assignment",
-      "line": 53,
-      "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:assignment:refs.current = nextRefs",
-      "text": "refs.current = nextRefs"
     },
     {
       "kind": "assignment",
@@ -2549,34 +1863,6 @@
       "text": "rafId.current = requestAnimationFrame(tick)"
     },
     {
-      "kind": "update",
-      "line": 199,
-      "path": "src/hooks/usePlayback.ts",
-      "signature": "src/hooks/usePlayback.ts:update:!config.enabled",
-      "text": "!config.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 202,
-      "path": "src/hooks/usePlayback.ts",
-      "signature": "src/hooks/usePlayback.ts:update:!lipSyncState.isConnected",
-      "text": "!lipSyncState.isConnected"
-    },
-    {
-      "kind": "update",
-      "line": 38,
-      "path": "src/hooks/usePlayback.ts",
-      "signature": "src/hooks/usePlayback.ts:update:!state.activeClipId",
-      "text": "!state.activeClipId"
-    },
-    {
-      "kind": "update",
-      "line": 38,
-      "path": "src/hooks/usePlayback.ts",
-      "signature": "src/hooks/usePlayback.ts:update:!state.isPlaying",
-      "text": "!state.isPlaying"
-    },
-    {
       "kind": "assignment",
       "line": 118,
       "path": "src/hooks/useReferenceOverlay.ts",
@@ -2626,13 +1912,6 @@
       "text": "containerRef.current = null"
     },
     {
-      "kind": "update",
-      "line": 108,
-      "path": "src/hooks/useReferenceOverlay.ts",
-      "signature": "src/hooks/useReferenceOverlay.ts:update:!referenceOverlay.enabled",
-      "text": "!referenceOverlay.enabled"
-    },
-    {
       "kind": "assignment",
       "line": 43,
       "path": "src/hooks/useViewport.ts",
@@ -2661,20 +1940,6 @@
       "text": "lastMouse.current = { x: e.clientX, y: e.clientY }"
     },
     {
-      "kind": "update",
-      "line": 16,
-      "path": "src/hooks/useViewport.ts",
-      "signature": "src/hooks/useViewport.ts:update:-e.deltaY",
-      "text": "-e.deltaY"
-    },
-    {
-      "kind": "update",
-      "line": 32,
-      "path": "src/hooks/useViewport.ts",
-      "signature": "src/hooks/useViewport.ts:update:!isPanning.current",
-      "text": "!isPanning.current"
-    },
-    {
       "kind": "assignment",
       "line": 14,
       "path": "src/hooks/useVMC.ts",
@@ -2687,13 +1952,6 @@
       "path": "src/hooks/useVMC.ts",
       "signature": "src/hooks/useVMC.ts:assignment:updates[mapping.parameterId] = value * mapping.scale + mapping.offset",
       "text": "updates[mapping.parameterId] = value * mapping.scale + mapping.offset"
-    },
-    {
-      "kind": "update",
-      "line": 10,
-      "path": "src/hooks/useVMC.ts",
-      "signature": "src/hooks/useVMC.ts:update:!state.connected",
-      "text": "!state.connected"
     },
     {
       "kind": "assignment",
@@ -3123,13 +2381,6 @@
       "text": "skippedWeightLayerIds.push(weightResult.layerId)"
     },
     {
-      "kind": "update",
-      "line": 164,
-      "path": "src/lib/auto-setup-preservation-guard.ts",
-      "signature": "src/lib/auto-setup-preservation-guard.ts:update:!risk?.risky",
-      "text": "!risk?.risky"
-    },
-    {
       "kind": "assignment",
       "line": 233,
       "path": "src/lib/auto-setup.ts",
@@ -3284,20 +2535,6 @@
       "text": "ys.push(vertexCoordinates[index * 2 + 1] ?? 0)"
     },
     {
-      "kind": "update",
-      "line": 358,
-      "path": "src/lib/auto-setup.ts",
-      "signature": "src/lib/auto-setup.ts:update:!bone.parentTempId",
-      "text": "!bone.parentTempId"
-    },
-    {
-      "kind": "update",
-      "line": 420,
-      "path": "src/lib/auto-setup.ts",
-      "signature": "src/lib/auto-setup.ts:update:!options?.allowBbwSolver",
-      "text": "!options?.allowBbwSolver"
-    },
-    {
       "kind": "assignment",
       "line": 122,
       "path": "src/lib/export/glb-exporter.ts",
@@ -3394,13 +2631,6 @@
       "path": "src/lib/export/glb-exporter.ts",
       "signature": "src/lib/export/glb-exporter.ts:mutating-call:scene.add(rootBone)",
       "text": "scene.add(rootBone)"
-    },
-    {
-      "kind": "update",
-      "line": 123,
-      "path": "src/lib/export/glb-exporter.ts",
-      "signature": "src/lib/export/glb-exporter.ts:update:-node.y",
-      "text": "-node.y"
     },
     {
       "kind": "mutating-call",
@@ -3569,20 +2799,6 @@
       "path": "src/lib/hair-strand-helper.ts",
       "signature": "src/lib/hair-strand-helper.ts:mutating-call:visited.add(current.id)",
       "text": "visited.add(current.id)"
-    },
-    {
-      "kind": "update",
-      "line": 172,
-      "path": "src/lib/hair-strand-helper.ts",
-      "signature": "src/lib/hair-strand-helper.ts:update:!chainResult.ok",
-      "text": "!chainResult.ok"
-    },
-    {
-      "kind": "update",
-      "line": 118,
-      "path": "src/lib/hair-strand-helper.ts",
-      "signature": "src/lib/hair-strand-helper.ts:update:!current.parentBoneId",
-      "text": "!current.parentBoneId"
     },
     {
       "kind": "assignment",
@@ -4159,27 +3375,6 @@
       "text": "this.stream = stream"
     },
     {
-      "kind": "update",
-      "line": 56,
-      "path": "src/lib/lipsync-engine.ts",
-      "signature": "src/lib/lipsync-engine.ts:update:!this.analyser",
-      "text": "!this.analyser"
-    },
-    {
-      "kind": "update",
-      "line": 107,
-      "path": "src/lib/lipsync-engine.ts",
-      "signature": "src/lib/lipsync-engine.ts:update:!this.analyser",
-      "text": "!this.analyser"
-    },
-    {
-      "kind": "update",
-      "line": 56,
-      "path": "src/lib/lipsync-engine.ts",
-      "signature": "src/lib/lipsync-engine.ts:update:!this.dataArray",
-      "text": "!this.dataArray"
-    },
-    {
       "kind": "mutating-call",
       "line": 537,
       "path": "src/lib/manual-layer-split/lasso-smoothing.ts",
@@ -4318,20 +3513,6 @@
       "path": "src/lib/manual-layer-split/lasso-smoothing.ts",
       "signature": "src/lib/manual-layer-split/lasso-smoothing.ts:mutating-call:warnings.add(\"tooFewPoints\")",
       "text": "warnings.add(\"tooFewPoints\")"
-    },
-    {
-      "kind": "update",
-      "line": 326,
-      "path": "src/lib/manual-layer-split/lasso-smoothing.ts",
-      "signature": "src/lib/manual-layer-split/lasso-smoothing.ts:update:-options.clampMarginPx",
-      "text": "-options.clampMarginPx"
-    },
-    {
-      "kind": "update",
-      "line": 327,
-      "path": "src/lib/manual-layer-split/lasso-smoothing.ts",
-      "signature": "src/lib/manual-layer-split/lasso-smoothing.ts:update:-options.clampMarginPx",
-      "text": "-options.clampMarginPx"
     },
     {
       "kind": "assignment",
@@ -4978,13 +4159,6 @@
       "text": "flattenLayers(layers).reverse()"
     },
     {
-      "kind": "update",
-      "line": 46,
-      "path": "src/lib/psd-loader.ts",
-      "signature": "src/lib/psd-loader.ts:update:!layer.hidden",
-      "text": "!layer.hidden"
-    },
-    {
       "kind": "mutating-call",
       "line": 236,
       "path": "src/lib/psd-reimport.ts",
@@ -5046,20 +4220,6 @@
       "path": "src/lib/psd-reimport.ts",
       "signature": "src/lib/psd-reimport.ts:mutating-call:sources.set(entry.nodeId, { canvas, snapshot: snapshotTextureCanvas(entry.nodeId, canvas), })",
       "text": "sources.set(entry.nodeId, { canvas, snapshot: snapshotTextureCanvas(entry.nodeId, canvas), })"
-    },
-    {
-      "kind": "update",
-      "line": 147,
-      "path": "src/lib/psd-reimport.ts",
-      "signature": "src/lib/psd-reimport.ts:update:!canvases[index]",
-      "text": "!canvases[index]"
-    },
-    {
-      "kind": "update",
-      "line": 159,
-      "path": "src/lib/psd-reimport.ts",
-      "signature": "src/lib/psd-reimport.ts:update:!entry.nodeId",
-      "text": "!entry.nodeId"
     },
     {
       "kind": "mutating-call",
@@ -5130,20 +4290,6 @@
       "path": "src/lib/rig-health-report.ts",
       "signature": "src/lib/rig-health-report.ts:mutating-call:preview.push(next)",
       "text": "preview.push(next)"
-    },
-    {
-      "kind": "update",
-      "line": 222,
-      "path": "src/lib/rig-health-report.ts",
-      "signature": "src/lib/rig-health-report.ts:update:!checklist.isSeeThroughProject",
-      "text": "!checklist.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 190,
-      "path": "src/lib/rig-health-report.ts",
-      "signature": "src/lib/rig-health-report.ts:update:!summary.applicable",
-      "text": "!summary.applicable"
     },
     {
       "kind": "mutating-call",
@@ -5482,27 +4628,6 @@
       "text": "roleToLayerIds.set(layer.semanticRole, ids)"
     },
     {
-      "kind": "update",
-      "line": 317,
-      "path": "src/lib/see-through-setup-checklist.ts",
-      "signature": "src/lib/see-through-setup-checklist.ts:update:!depthRigHintSummary?.isSeeThroughProject",
-      "text": "!depthRigHintSummary?.isSeeThroughProject"
-    },
-    {
-      "kind": "update",
-      "line": 428,
-      "path": "src/lib/see-through-setup-checklist.ts",
-      "signature": "src/lib/see-through-setup-checklist.ts:update:!state.validPair",
-      "text": "!state.validPair"
-    },
-    {
-      "kind": "update",
-      "line": 429,
-      "path": "src/lib/see-through-setup-checklist.ts",
-      "signature": "src/lib/see-through-setup-checklist.ts:update:!state.validPair",
-      "text": "!state.validPair"
-    },
-    {
       "kind": "mutating-call",
       "line": 246,
       "path": "src/lib/selection-overlay-svg.ts",
@@ -5720,13 +4845,6 @@
       "text": "textures.set(layerId, canvas)"
     },
     {
-      "kind": "update",
-      "line": 87,
-      "path": "src/lib/texture-store.ts",
-      "signature": "src/lib/texture-store.ts:update:!entry.canvas",
-      "text": "!entry.canvas"
-    },
-    {
       "kind": "mutating-call",
       "line": 164,
       "path": "src/lib/timeline-animation-retarget.ts",
@@ -5788,20 +4906,6 @@
       "path": "src/lib/timeline-animation-retarget.ts",
       "signature": "src/lib/timeline-animation-retarget.ts:mutating-call:writes.push({ track: ref, keyframes, hadOverlap: collectDestinationOverlap( targetClip, ref, targetStartFrame, targetEndFrame, ), })",
       "text": "writes.push({ track: ref, keyframes, hadOverlap: collectDestinationOverlap( targetClip, ref, targetStartFrame, targetEndFrame, ), })"
-    },
-    {
-      "kind": "update",
-      "line": 196,
-      "path": "src/lib/timeline-animation-retarget.ts",
-      "signature": "src/lib/timeline-animation-retarget.ts:update:!input.includeBones",
-      "text": "!input.includeBones"
-    },
-    {
-      "kind": "update",
-      "line": 196,
-      "path": "src/lib/timeline-animation-retarget.ts",
-      "signature": "src/lib/timeline-animation-retarget.ts:update:!input.includeParameters",
-      "text": "!input.includeParameters"
     },
     {
       "kind": "assignment",
@@ -6068,34 +5172,6 @@
       "path": "src/lib/timeline-motion-assist.ts",
       "signature": "src/lib/timeline-motion-assist.ts:mutating-call:writes.push({ parameterId: parameter.id, label: parameter.name, sourceChannelLabel: channel.name, keyframes, rangeStart, rangeEnd, hadOverlap: overlapFrames.length > 0, })",
       "text": "writes.push({ parameterId: parameter.id, label: parameter.name, sourceChannelLabel: channel.name, keyframes, rangeStart, rangeEnd, hadOverlap: overlapFrames.length > 0, })"
-    },
-    {
-      "kind": "update",
-      "line": 308,
-      "path": "src/lib/timeline-motion-assist.ts",
-      "signature": "src/lib/timeline-motion-assist.ts:update:!mapping.enabled",
-      "text": "!mapping.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 320,
-      "path": "src/lib/timeline-motion-assist.ts",
-      "signature": "src/lib/timeline-motion-assist.ts:update:!mapping.enabled",
-      "text": "!mapping.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 308,
-      "path": "src/lib/timeline-motion-assist.ts",
-      "signature": "src/lib/timeline-motion-assist.ts:update:!mapping.parameterId",
-      "text": "!mapping.parameterId"
-    },
-    {
-      "kind": "update",
-      "line": 324,
-      "path": "src/lib/timeline-motion-assist.ts",
-      "signature": "src/lib/timeline-motion-assist.ts:update:!mapping.parameterId",
-      "text": "!mapping.parameterId"
     },
     {
       "kind": "mutating-call",
@@ -6547,20 +5623,6 @@
     },
     {
       "kind": "assignment",
-      "line": 176,
-      "path": "src/stores/editorStore.ts",
-      "signature": "src/stores/editorStore.ts:assignment:node.mesh = mesh",
-      "text": "node.mesh = mesh"
-    },
-    {
-      "kind": "assignment",
-      "line": 196,
-      "path": "src/stores/editorStore.ts",
-      "signature": "src/stores/editorStore.ts:assignment:node.mesh = mesh",
-      "text": "node.mesh = mesh"
-    },
-    {
-      "kind": "assignment",
       "line": 266,
       "path": "src/stores/editorStore.ts",
       "signature": "src/stores/editorStore.ts:assignment:s.project = structuredClone(snapshot)",
@@ -6579,20 +5641,6 @@
       "path": "src/stores/editorStore.ts",
       "signature": "src/stores/editorStore.ts:mutating-call:invalidatedLayerIds.add(id)",
       "text": "invalidatedLayerIds.add(id)"
-    },
-    {
-      "kind": "update",
-      "line": 106,
-      "path": "src/stores/editorStore.ts",
-      "signature": "src/stores/editorStore.ts:update:!s.project",
-      "text": "!s.project"
-    },
-    {
-      "kind": "update",
-      "line": 47,
-      "path": "src/stores/ikControllerStore.ts",
-      "signature": "src/stores/ikControllerStore.ts:update:!useEditorStore.getState().project",
-      "text": "!useEditorStore.getState().project"
     },
     {
       "kind": "mutating-call",
@@ -6670,20 +5718,6 @@
       "path": "src/stores/manualPngSplit.ts",
       "signature": "src/stores/manualPngSplit.ts:mutating-call:Object.keys(right).sort()",
       "text": "Object.keys(right).sort()"
-    },
-    {
-      "kind": "update",
-      "line": 65,
-      "path": "src/stores/multiViewStore.ts",
-      "signature": "src/stores/multiViewStore.ts:update:!s.enabled",
-      "text": "!s.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 62,
-      "path": "src/stores/parameterBindingStore.ts",
-      "signature": "src/stores/parameterBindingStore.ts:update:!useEditorStore.getState().project",
-      "text": "!useEditorStore.getState().project"
     },
     {
       "kind": "assignment",
@@ -6789,48 +5823,6 @@
       "path": "src/stores/projectIO/image.ts",
       "signature": "src/stores/projectIO/image.ts:mutating-call:reservedNames.add(uniqueName)",
       "text": "reservedNames.add(uniqueName)"
-    },
-    {
-      "kind": "update",
-      "line": 178,
-      "path": "src/stores/projectIO/image.ts",
-      "signature": "src/stores/projectIO/image.ts:update:!analysis.effectiveOptions.trimTransparentBounds",
-      "text": "!analysis.effectiveOptions.trimTransparentBounds"
-    },
-    {
-      "kind": "update",
-      "line": 511,
-      "path": "src/stores/projectIO/image.ts",
-      "signature": "src/stores/projectIO/image.ts:update:!analysis.effectiveOptions.trimTransparentBounds",
-      "text": "!analysis.effectiveOptions.trimTransparentBounds"
-    },
-    {
-      "kind": "update",
-      "line": 558,
-      "path": "src/stores/projectIO/image.ts",
-      "signature": "src/stores/projectIO/image.ts:update:!analysis.effectiveOptions.trimTransparentBounds",
-      "text": "!analysis.effectiveOptions.trimTransparentBounds"
-    },
-    {
-      "kind": "update",
-      "line": 151,
-      "path": "src/stores/projectIO/image.ts",
-      "signature": "src/stores/projectIO/image.ts:update:!options.centerOnCanvas",
-      "text": "!options.centerOnCanvas"
-    },
-    {
-      "kind": "update",
-      "line": 117,
-      "path": "src/stores/projectIO/image.ts",
-      "signature": "src/stores/projectIO/image.ts:update:!options.trimTransparentBounds",
-      "text": "!options.trimTransparentBounds"
-    },
-    {
-      "kind": "update",
-      "line": 732,
-      "path": "src/stores/projectIO/image.ts",
-      "signature": "src/stores/projectIO/image.ts:update:!source?.buffer",
-      "text": "!source?.buffer"
     },
     {
       "kind": "assignment",
@@ -6987,27 +5979,6 @@
       "text": "tokenSet.add(layer.psd_leaf_token)"
     },
     {
-      "kind": "update",
-      "line": 273,
-      "path": "src/stores/projectIO/seeThroughNativeImport.ts",
-      "signature": "src/stores/projectIO/seeThroughNativeImport.ts:update:!annotated.applied",
-      "text": "!annotated.applied"
-    },
-    {
-      "kind": "update",
-      "line": 155,
-      "path": "src/stores/projectIO/seeThroughNativeImport.ts",
-      "signature": "src/stores/projectIO/seeThroughNativeImport.ts:update:!layer.image_path",
-      "text": "!layer.image_path"
-    },
-    {
-      "kind": "update",
-      "line": 147,
-      "path": "src/stores/projectIO/seeThroughNativeImport.ts",
-      "signature": "src/stores/projectIO/seeThroughNativeImport.ts:update:!layer.psd_leaf_token",
-      "text": "!layer.psd_leaf_token"
-    },
-    {
       "kind": "assignment",
       "line": 65,
       "path": "src/stores/projectIO/vivid.ts",
@@ -7040,48 +6011,6 @@
       "line": 68,
       "path": "src/stores/projectIO/vivid.ts",
       "signature": "src/stores/projectIO/vivid.ts:assignment:s.projectVersion += 1",
-      "text": "s.projectVersion += 1"
-    },
-    {
-      "kind": "assignment",
-      "line": 26,
-      "path": "src/stores/projectIO/viviFile.ts",
-      "signature": "src/stores/projectIO/viviFile.ts:assignment:project.sourceKind = inferredSourceKind === \"none\" ? undefined : inferredSourceKind",
-      "text": "project.sourceKind = inferredSourceKind === \"none\" ? undefined : inferredSourceKind"
-    },
-    {
-      "kind": "assignment",
-      "line": 31,
-      "path": "src/stores/projectIO/viviFile.ts",
-      "signature": "src/stores/projectIO/viviFile.ts:assignment:s.currentFilePath = result.filePath",
-      "text": "s.currentFilePath = result.filePath"
-    },
-    {
-      "kind": "assignment",
-      "line": 72,
-      "path": "src/stores/projectIO/viviFile.ts",
-      "signature": "src/stores/projectIO/viviFile.ts:assignment:s.currentFilePath = result.filePath",
-      "text": "s.currentFilePath = result.filePath"
-    },
-    {
-      "kind": "assignment",
-      "line": 29,
-      "path": "src/stores/projectIO/viviFile.ts",
-      "signature": "src/stores/projectIO/viviFile.ts:assignment:s.project = project",
-      "text": "s.project = project"
-    },
-    {
-      "kind": "assignment",
-      "line": 32,
-      "path": "src/stores/projectIO/viviFile.ts",
-      "signature": "src/stores/projectIO/viviFile.ts:assignment:s.projectSourceKind = inferredSourceKind",
-      "text": "s.projectSourceKind = inferredSourceKind"
-    },
-    {
-      "kind": "assignment",
-      "line": 30,
-      "path": "src/stores/projectIO/viviFile.ts",
-      "signature": "src/stores/projectIO/viviFile.ts:assignment:s.projectVersion += 1",
       "text": "s.projectVersion += 1"
     },
     {
@@ -7132,13 +6061,6 @@
       "path": "src/stores/quickActionsStore.ts",
       "signature": "src/stores/quickActionsStore.ts:assignment:state.open = true",
       "text": "state.open = true"
-    },
-    {
-      "kind": "update",
-      "line": 25,
-      "path": "src/stores/quickActionsStore.ts",
-      "signature": "src/stores/quickActionsStore.ts:update:!state.open",
-      "text": "!state.open"
     },
     {
       "kind": "assignment",
@@ -7365,41 +6287,6 @@
       "text": "s.viewMode = mode"
     },
     {
-      "kind": "update",
-      "line": 106,
-      "path": "src/stores/timelineStore.ts",
-      "signature": "src/stores/timelineStore.ts:update:!state.isPlaying",
-      "text": "!state.isPlaying"
-    },
-    {
-      "kind": "update",
-      "line": 111,
-      "path": "src/stores/viewportStore.ts",
-      "signature": "src/stores/viewportStore.ts:update:!s.defaultFormLocked",
-      "text": "!s.defaultFormLocked"
-    },
-    {
-      "kind": "update",
-      "line": 125,
-      "path": "src/stores/viewportStore.ts",
-      "signature": "src/stores/viewportStore.ts:update:!s.meshHeatmap.enabled",
-      "text": "!s.meshHeatmap.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 115,
-      "path": "src/stores/viewportStore.ts",
-      "signature": "src/stores/viewportStore.ts:update:!s.onionSkin.enabled",
-      "text": "!s.onionSkin.enabled"
-    },
-    {
-      "kind": "update",
-      "line": 137,
-      "path": "src/stores/viewportStore.ts",
-      "signature": "src/stores/viewportStore.ts:update:!s.referenceOverlay.enabled",
-      "text": "!s.referenceOverlay.enabled"
-    },
-    {
       "kind": "assignment",
       "line": 43,
       "path": "src/stores/workspaceModeStore.ts",
@@ -7470,11 +6357,1061 @@
       "text": "textures.push({ layerId: id, width: imageData.width, height: imageData.height, buffer: normalized.buffer as ArrayBuffer, })"
     },
     {
+      "kind": "assignment",
+      "line": 22,
+      "path": "src/components/LocalAssetCopyPanel.tsx",
+      "signature": "src/components/LocalAssetCopyPanel.tsx:assignment:mounted.current = true",
+      "text": "mounted.current = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 24,
+      "path": "src/components/LocalAssetCopyPanel.tsx",
+      "signature": "src/components/LocalAssetCopyPanel.tsx:assignment:mounted.current = false",
+      "text": "mounted.current = false"
+    },
+    {
+      "kind": "assignment",
+      "line": 37,
+      "path": "src/components/LocalAssetCopyPanel.tsx",
+      "signature": "src/components/LocalAssetCopyPanel.tsx:assignment:current.current = null",
+      "text": "current.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 49,
+      "path": "src/components/LocalAssetCopyPanel.tsx",
+      "signature": "src/components/LocalAssetCopyPanel.tsx:assignment:active.current = true",
+      "text": "active.current = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 67,
+      "path": "src/components/LocalAssetCopyPanel.tsx",
+      "signature": "src/components/LocalAssetCopyPanel.tsx:assignment:current.current = value",
+      "text": "current.current = value"
+    },
+    {
+      "kind": "assignment",
+      "line": 70,
+      "path": "src/components/LocalAssetCopyPanel.tsx",
+      "signature": "src/components/LocalAssetCopyPanel.tsx:assignment:current.current = null",
+      "text": "current.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 88,
+      "path": "src/components/LocalAssetCopyPanel.tsx",
+      "signature": "src/components/LocalAssetCopyPanel.tsx:assignment:active.current = false",
+      "text": "active.current = false"
+    },
+    {
+      "kind": "assignment",
+      "line": 77,
+      "path": "src/components/LocalExchangePanel.tsx",
+      "signature": "src/components/LocalExchangePanel.tsx:assignment:selectedJob.current = cellId",
+      "text": "selectedJob.current = cellId"
+    },
+    {
+      "kind": "assignment",
+      "line": 68,
+      "path": "src/components/properties/useMeshPropertiesActions.ts",
+      "signature": "src/components/properties/useMeshPropertiesActions.ts:assignment:result.uvs = layer.mesh.uvs.map((value, index) => index % 2 === 0 ? (2 * mapping.entry.x + mapping.entry.width) / mapping.atlas.backing.width - value : value)",
+      "text": "result.uvs = layer.mesh.uvs.map((value, index) => index % 2 === 0 ? (2 * mapping.entry.x + mapping.entry.width) / mapping.atlas.backing.width - value : value)"
+    },
+    {
+      "kind": "assignment",
+      "line": 76,
+      "path": "src/components/properties/useMeshPropertiesActions.ts",
+      "signature": "src/components/properties/useMeshPropertiesActions.ts:assignment:result.uvs = layer.mesh.uvs.map((value, index) => index % 2 === 1 ? (2 * mapping.entry.y + mapping.entry.height) / mapping.atlas.backing.height - value : value)",
+      "text": "result.uvs = layer.mesh.uvs.map((value, index) => index % 2 === 1 ? (2 * mapping.entry.y + mapping.entry.height) / mapping.atlas.backing.height - value : value)"
+    },
+    {
+      "kind": "assignment",
+      "line": 24,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:mounted.current = true",
+      "text": "mounted.current = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 26,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:mounted.current = false",
+      "text": "mounted.current = false"
+    },
+    {
+      "kind": "assignment",
+      "line": 27,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:sequence.current += 1",
+      "text": "sequence.current += 1"
+    },
+    {
+      "kind": "assignment",
+      "line": 28,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:loading.current = false",
+      "text": "loading.current = false"
+    },
+    {
+      "kind": "assignment",
+      "line": 30,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:instance.current = null",
+      "text": "instance.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 60,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:loading.current = true",
+      "text": "loading.current = true"
+    },
+    {
       "kind": "update",
+      "line": 61,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:update:++sequence.current",
+      "text": "++sequence.current"
+    },
+    {
+      "kind": "assignment",
+      "line": 80,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:instance.current = preview",
+      "text": "instance.current = preview"
+    },
+    {
+      "kind": "assignment",
+      "line": 91,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:loading.current = false",
+      "text": "loading.current = false"
+    },
+    {
+      "kind": "assignment",
+      "line": 98,
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:sequence.current += 1",
+      "text": "sequence.current += 1"
+    },
+    {
+      "kind": "assignment",
       "line": 100,
-      "path": "src/workers/psd-parse.worker.ts",
-      "signature": "src/workers/psd-parse.worker.ts:update:!layer.hidden",
-      "text": "!layer.hidden"
+      "path": "src/components/RuntimePreviewPanel.tsx",
+      "signature": "src/components/RuntimePreviewPanel.tsx:assignment:instance.current = null",
+      "text": "instance.current = null"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 65,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:mutating-call:lengths.set(layer.id, layer.bone.length)",
+      "text": "lengths.set(layer.id, layer.bone.length)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 87,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:mutating-call:solutions.set(effective.id, solution)",
+      "text": "solutions.set(effective.id, solution)"
+    },
+    {
+      "kind": "assignment",
+      "line": 171,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:observed.current = null",
+      "text": "observed.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 172,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:ownParameters.current = null",
+      "text": "ownParameters.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 176,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:ownParameters.current = null",
+      "text": "ownParameters.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 180,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:ownParameters.current = null",
+      "text": "ownParameters.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 181,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:observed.current = input",
+      "text": "observed.current = input"
+    },
+    {
+      "kind": "assignment",
+      "line": 191,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:pending.current = \"v11\"",
+      "text": "pending.current = \"v11\""
+    },
+    {
+      "kind": "assignment",
+      "line": 192,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:rafId.current = requestAnimationFrame(() => { pending.current = null; if (isProjectV11Publishing() || !sameV11Input(input, currentV11Input())) return; const oldSolutions = useIKRun",
+      "text": "rafId.current = requestAnimationFrame(() => { pending.current = null; if (isProjectV11Publishing() || !sameV11Input(input, currentV11Input())) return; const oldSolutions = useIKRun"
+    },
+    {
+      "kind": "assignment",
+      "line": 193,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:pending.current = null",
+      "text": "pending.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 199,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:ownParameters.current = value",
+      "text": "ownParameters.current = value"
+    },
+    {
+      "kind": "assignment",
+      "line": 222,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:pending.current = \"legacy\"",
+      "text": "pending.current = \"legacy\""
+    },
+    {
+      "kind": "assignment",
+      "line": 223,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:rafId.current = requestAnimationFrame(() => { pending.current = null; if (isProjectV11Publishing()) return; const current = useEditorStore.getState(); if ( current.project !== capt",
+      "text": "rafId.current = requestAnimationFrame(() => { pending.current = null; if (isProjectV11Publishing()) return; const current = useEditorStore.getState(); if ( current.project !== capt"
+    },
+    {
+      "kind": "assignment",
+      "line": 224,
+      "path": "src/hooks/useIK.ts",
+      "signature": "src/hooks/useIK.ts:assignment:pending.current = null",
+      "text": "pending.current = null"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 103,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:mutating-call:world.scale.set(camera.zoom)",
+      "text": "world.scale.set(camera.zoom)"
+    },
+    {
+      "kind": "assignment",
+      "line": 104,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:world.x = camera.panX",
+      "text": "world.x = camera.panX"
+    },
+    {
+      "kind": "assignment",
+      "line": 105,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:world.y = camera.panY",
+      "text": "world.y = camera.panY"
+    },
+    {
+      "kind": "assignment",
+      "line": 151,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:published.current = input.project",
+      "text": "published.current = input.project"
+    },
+    {
+      "kind": "assignment",
+      "line": 152,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = input.parameterValues",
+      "text": "publishedParameters.current = input.parameterValues"
+    },
+    {
+      "kind": "assignment",
+      "line": 156,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:published.current = oldPublished",
+      "text": "published.current = oldPublished"
+    },
+    {
+      "kind": "assignment",
+      "line": 157,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = oldParameters",
+      "text": "publishedParameters.current = oldParameters"
+    },
+    {
+      "kind": "assignment",
+      "line": 162,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }",
+      "text": "versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }"
+    },
+    {
+      "kind": "assignment",
+      "line": 178,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:published.current = null",
+      "text": "published.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 179,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = null",
+      "text": "publishedParameters.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 180,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: -1, structure: -1 }",
+      "text": "versions.current = { project: -1, structure: -1 }"
+    },
+    {
+      "kind": "assignment",
+      "line": 182,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:refs.disposeScene = dispose",
+      "text": "refs.disposeScene = dispose"
+    },
+    {
+      "kind": "assignment",
+      "line": 185,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:refs.disposeScene = undefined",
+      "text": "refs.disposeScene = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 238,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:published.current = state.project",
+      "text": "published.current = state.project"
+    },
+    {
+      "kind": "assignment",
+      "line": 239,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = capturedParameters",
+      "text": "publishedParameters.current = capturedParameters"
+    },
+    {
+      "kind": "assignment",
+      "line": 240,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }",
+      "text": "versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 326,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:mutating-call:refs.background.clear()",
+      "text": "refs.background.clear()"
+    },
+    {
+      "kind": "assignment",
+      "line": 351,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:published.current = next",
+      "text": "published.current = next"
+    },
+    {
+      "kind": "assignment",
+      "line": 352,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = capturedParameters",
+      "text": "publishedParameters.current = capturedParameters"
+    },
+    {
+      "kind": "assignment",
+      "line": 353,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }",
+      "text": "versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }"
+    },
+    {
+      "kind": "assignment",
+      "line": 28,
+      "path": "src/hooks/useParameterBinding.ts",
+      "signature": "src/hooks/useParameterBinding.ts:assignment:prevValuesRef.current = {}",
+      "text": "prevValuesRef.current = {}"
+    },
+    {
+      "kind": "assignment",
+      "line": 70,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.suspendDisplay = () => app.stop()",
+      "text": "owned.suspendDisplay = () => app.stop()"
+    },
+    {
+      "kind": "assignment",
+      "line": 71,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.retireDisplay = () => { if (owned.displayUnavailable) return; owned.displayUnavailable = true; app.stop(); if (hadReadyScene) queueMicrotask(() => { if (!disposed) setGenerat",
+      "text": "owned.retireDisplay = () => { if (owned.displayUnavailable) return; owned.displayUnavailable = true; app.stop(); if (hadReadyScene) queueMicrotask(() => { if (!disposed) setGenerat"
+    },
+    {
+      "kind": "assignment",
+      "line": 73,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.displayUnavailable = true",
+      "text": "owned.displayUnavailable = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 80,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.renderSafely = (options) => { if (disposed || owned.displayUnavailable) throw new Error(\"V11_MASK_RENDERER_UNAVAILABLE\"); // Once this render entered and did not return, Pixi",
+      "text": "owned.renderSafely = (options) => { if (disposed || owned.displayUnavailable) throw new Error(\"V11_MASK_RENDERER_UNAVAILABLE\"); // Once this render entered and did not return, Pixi"
+    },
+    {
+      "kind": "assignment",
+      "line": 92,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.markDisplayReady = () => { if (disposed || owned.displayUnavailable) return; hadReadyScene = true; app.start(); }",
+      "text": "owned.markDisplayReady = () => { if (disposed || owned.displayUnavailable) return; hadReadyScene = true; app.start(); }"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 97,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:mutating-call:app.ticker.add( () => { if (owned.displayUnavailable) return; try { owned.renderSafely!({ container: app.stage }); } catch { /* The latch already stopped the ticker and scheduled r",
+      "text": "app.ticker.add( () => { if (owned.displayUnavailable) return; try { owned.renderSafely!({ container: app.stage }); } catch { /* The latch already stopped the ticker and scheduled r"
+    },
+    {
+      "kind": "assignment",
+      "line": 111,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:refs.current = owned",
+      "text": "refs.current = owned"
+    },
+    {
+      "kind": "assignment",
+      "line": 118,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:refs.current.displayUnavailable = true",
+      "text": "refs.current.displayUnavailable = true"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 72,
+      "path": "src/lib/local-exchange-staging.ts",
+      "signature": "src/lib/local-exchange-staging.ts:mutating-call:labels.push(label)",
+      "text": "labels.push(label)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 74,
+      "path": "src/lib/local-exchange-staging.ts",
+      "signature": "src/lib/local-exchange-staging.ts:mutating-call:[ ...new Set(manifest.layers.map((layer) => layer.image_path)), ].sort()",
+      "text": "[ ...new Set(manifest.layers.map((layer) => layer.image_path)), ].sort()"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 77,
+      "path": "src/lib/local-exchange-staging.ts",
+      "signature": "src/lib/local-exchange-staging.ts:mutating-call:[...labels].sort()",
+      "text": "[...labels].sort()"
+    },
+    {
+      "kind": "assignment",
+      "line": 96,
+      "path": "src/lib/local-exchange-staging.ts",
+      "signature": "src/lib/local-exchange-staging.ts:assignment:canvas.width = item.imageData.width",
+      "text": "canvas.width = item.imageData.width"
+    },
+    {
+      "kind": "assignment",
+      "line": 97,
+      "path": "src/lib/local-exchange-staging.ts",
+      "signature": "src/lib/local-exchange-staging.ts:assignment:canvas.height = item.imageData.height",
+      "text": "canvas.height = item.imageData.height"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 101,
+      "path": "src/lib/local-exchange-staging.ts",
+      "signature": "src/lib/local-exchange-staging.ts:mutating-call:textures.set(item.layerId, canvas)",
+      "text": "textures.set(item.layerId, canvas)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 31,
+      "path": "src/lib/project-v11-display-projection.ts",
+      "signature": "src/lib/project-v11-display-projection.ts:mutating-call:group.push(binding)",
+      "text": "group.push(binding)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 32,
+      "path": "src/lib/project-v11-display-projection.ts",
+      "signature": "src/lib/project-v11-display-projection.ts:mutating-call:groups.set(key, [binding])",
+      "text": "groups.set(key, [binding])"
+    },
+    {
+      "kind": "assignment",
+      "line": 74,
+      "path": "src/lib/project-v11-display-projection.ts",
+      "signature": "src/lib/project-v11-display-projection.ts:assignment:values[target.property] = value",
+      "text": "values[target.property] = value"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 75,
+      "path": "src/lib/project-v11-display-projection.ts",
+      "signature": "src/lib/project-v11-display-projection.ts:mutating-call:bones.set(target.boneId, values)",
+      "text": "bones.set(target.boneId, values)"
+    },
+    {
+      "kind": "assignment",
+      "line": 78,
+      "path": "src/lib/project-v11-display-projection.ts",
+      "signature": "src/lib/project-v11-display-projection.ts:assignment:values[target.property] = target.property === \"influence\" ? Math.max(0, Math.min(1, value)) : value",
+      "text": "values[target.property] = target.property === \"influence\" ? Math.max(0, Math.min(1, value)) : value"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 80,
+      "path": "src/lib/project-v11-display-projection.ts",
+      "signature": "src/lib/project-v11-display-projection.ts:mutating-call:controllers.set(target.controllerId, values)",
+      "text": "controllers.set(target.controllerId, values)"
+    },
+    {
+      "kind": "assignment",
+      "line": 59,
+      "path": "src/lib/project-v11-native-png.ts",
+      "signature": "src/lib/project-v11-native-png.ts:assignment:expectedSha256[index] = Number.parseInt( digest.slice(index * 2, index * 2 + 2), 16, )",
+      "text": "expectedSha256[index] = Number.parseInt( digest.slice(index * 2, index * 2 + 2), 16, )"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 85,
+      "path": "src/lib/project-v11-native-png.ts",
+      "signature": "src/lib/project-v11-native-png.ts:mutating-call:images.push({ sha256: digest.toLowerCase(), byteLength: owned.byteLength, width, height, rowStride: decoded.rowStride, rgba: decoded.rgba, })",
+      "text": "images.push({ sha256: digest.toLowerCase(), byteLength: owned.byteLength, width, height, rowStride: decoded.rowStride, rgba: decoded.rgba, })"
+    },
+    {
+      "kind": "assignment",
+      "line": 36,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:this.width = verified.width",
+      "text": "this.width = verified.width"
+    },
+    {
+      "kind": "assignment",
+      "line": 37,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:this.height = verified.height",
+      "text": "this.height = verified.height"
+    },
+    {
+      "kind": "assignment",
+      "line": 38,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:this.pngByteLength = verified.byteLength",
+      "text": "this.pngByteLength = verified.byteLength"
+    },
+    {
+      "kind": "assignment",
+      "line": 39,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:this.sha256 = verified.sha256",
+      "text": "this.sha256 = verified.sha256"
+    },
+    {
+      "kind": "assignment",
+      "line": 40,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:this.#rgba = verified.rgba",
+      "text": "this.#rgba = verified.rgba"
+    },
+    {
+      "kind": "assignment",
+      "line": 48,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:canvas.width = this.width",
+      "text": "canvas.width = this.width"
+    },
+    {
+      "kind": "assignment",
+      "line": 49,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:canvas.height = this.height",
+      "text": "canvas.height = this.height"
+    },
+    {
+      "kind": "assignment",
+      "line": 69,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:this.atlases = Object.freeze( atlases.map((atlas) => Object.freeze({ id: atlas.id, backing: atlas.backing, entries: Object.freeze( atlas.entries.map((entry) => Object.freeze({ ...e",
+      "text": "this.atlases = Object.freeze( atlases.map((atlas) => Object.freeze({ id: atlas.id, backing: atlas.backing, entries: Object.freeze( atlas.entries.map((entry) => Object.freeze({ ...e"
+    },
+    {
+      "kind": "assignment",
+      "line": 110,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:this.#surfaces = revision.atlases.map(({ backing, entries }) => { const canvas = backing.createCanvas(); for (const entry of entries) { if (this.#aliases.has(entry.layerId)) throw ",
+      "text": "this.#surfaces = revision.atlases.map(({ backing, entries }) => { const canvas = backing.createCanvas(); for (const entry of entries) { if (this.#aliases.has(entry.layerId)) throw "
+    },
+    {
+      "kind": "mutating-call",
+      "line": 114,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:mutating-call:this.#aliases.set(entry.layerId, canvas)",
+      "text": "this.#aliases.set(entry.layerId, canvas)"
+    },
+    {
+      "kind": "assignment",
+      "line": 148,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:this.#source = source",
+      "text": "this.#source = source"
+    },
+    {
+      "kind": "assignment",
+      "line": 172,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:editable.clipMaskIds = ids",
+      "text": "editable.clipMaskIds = ids"
+    },
+    {
+      "kind": "assignment",
+      "line": 215,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:normalized.clipMasks = ids.map((layerId) => ({ layerId, invert: false }))",
+      "text": "normalized.clipMasks = ids.map((layerId) => ({ layerId, invert: false }))"
+    },
+    {
+      "kind": "assignment",
+      "line": 332,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:canvas.width = entry.width",
+      "text": "canvas.width = entry.width"
+    },
+    {
+      "kind": "assignment",
+      "line": 333,
+      "path": "src/lib/project-v11-serializer.ts",
+      "signature": "src/lib/project-v11-serializer.ts:assignment:canvas.height = entry.height",
+      "text": "canvas.height = entry.height"
+    },
+    {
+      "kind": "assignment",
+      "line": 85,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:result[key] = descriptor!.value",
+      "text": "result[key] = descriptor!.value"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 98,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:mutating-call:result.push(descriptor!.value)",
+      "text": "result.push(descriptor!.value)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 195,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:mutating-call:addresses.add(object.objectAddress as string)",
+      "text": "addresses.add(object.objectAddress as string)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 217,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:mutating-call:atlasIds.add(row.atlasId as string)",
+      "text": "atlasIds.add(row.atlasId as string)"
+    },
+    {
+      "kind": "assignment",
+      "line": 337,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.decoder = initialized.decoder",
+      "text": "attempt.decoder = initialized.decoder"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 364,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:mutating-call:objects.push({ objectAddress: hash, bytes: new Uint8Array(bytes) })",
+      "text": "objects.push({ objectAddress: hash, bytes: new Uint8Array(bytes) })"
+    },
+    {
+      "kind": "update",
+      "line": 383,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:update:attempt.rowIndex++",
+      "text": "attempt.rowIndex++"
+    },
+    {
+      "kind": "assignment",
+      "line": 429,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.session = undefined",
+      "text": "attempt.session = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 433,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.cleanupFailed = true",
+      "text": "attempt.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 437,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.live = false",
+      "text": "attempt.live = false"
+    },
+    {
+      "kind": "assignment",
+      "line": 443,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.cleanupFailed = true",
+      "text": "attempt.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 445,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.commit = undefined",
+      "text": "attempt.commit = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 451,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.cleanupFailed = true",
+      "text": "attempt.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 453,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.gpu = undefined",
+      "text": "attempt.gpu = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 458,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.cleanupFailed = true",
+      "text": "attempt.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 460,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.prepared = undefined",
+      "text": "attempt.prepared = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 464,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.cleanupFailed = true",
+      "text": "attempt.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 466,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.decoder = undefined",
+      "text": "attempt.decoder = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 467,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.capture = null",
+      "text": "attempt.capture = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 495,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.gpu = prepareGpu(snapshot.value)",
+      "text": "attempt.gpu = prepareGpu(snapshot.value)"
+    },
+    {
+      "kind": "assignment",
+      "line": 513,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.commit = permitted.value",
+      "text": "attempt.commit = permitted.value"
+    },
+    {
+      "kind": "assignment",
+      "line": 521,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.cleanupFailed = true",
+      "text": "attempt.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 523,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.commit = undefined",
+      "text": "attempt.commit = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 531,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.gpu = undefined",
+      "text": "attempt.gpu = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 532,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.prepared = undefined",
+      "text": "attempt.prepared = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 536,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.cleanupFailed = true",
+      "text": "attempt.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 539,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.capture = null",
+      "text": "attempt.capture = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 540,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.live = false",
+      "text": "attempt.live = false"
+    },
+    {
+      "kind": "assignment",
+      "line": 544,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.cleanupFailed = true",
+      "text": "attempt.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 557,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:result.cleanupFailed = true",
+      "text": "result.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 627,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.capture = captureOwned(response, cellId)",
+      "text": "attempt.capture = captureOwned(response, cellId)"
+    },
+    {
+      "kind": "assignment",
+      "line": 659,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.session = initialized.sessionId",
+      "text": "attempt.session = initialized.sessionId"
+    },
+    {
+      "kind": "assignment",
+      "line": 686,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.prepared = prepared.value",
+      "text": "attempt.prepared = prepared.value"
+    },
+    {
+      "kind": "assignment",
+      "line": 698,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.cleanupFailed = true",
+      "text": "attempt.cleanupFailed = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 700,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:attempt.decoder = undefined",
+      "text": "attempt.decoder = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 724,
+      "path": "src/lib/runtime-evaluation-preview.ts",
+      "signature": "src/lib/runtime-evaluation-preview.ts:assignment:captureOwner.cancellation = localAssetCopy({ operation: \"cancelPreview\" }).then( () => undefined, () => undefined, )",
+      "text": "captureOwner.cancellation = localAssetCopy({ operation: \"cancelPreview\" }).then( () => undefined, () => undefined, )"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 232,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:textures.set(id, canvas)",
+      "text": "textures.set(id, canvas)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 238,
+      "path": "src/lib/texture-store.ts",
+      "signature": "src/lib/texture-store.ts:mutating-call:textures.set(id, canvas)",
+      "text": "textures.set(id, canvas)"
+    },
+    {
+      "kind": "assignment",
+      "line": 170,
+      "path": "src/stores/editorStore.ts",
+      "signature": "src/stores/editorStore.ts:assignment:node.mesh = mapAtlasEntryUvs( useEditorStore.getState().projectV11?.revision, layerId, node.mesh, )",
+      "text": "node.mesh = mapAtlasEntryUvs( useEditorStore.getState().projectV11?.revision, layerId, node.mesh, )"
+    },
+    {
+      "kind": "assignment",
+      "line": 195,
+      "path": "src/stores/editorStore.ts",
+      "signature": "src/stores/editorStore.ts:assignment:node.mesh = mapAtlasEntryUvs( useEditorStore.getState().projectV11?.revision, layerId, mesh, )",
+      "text": "node.mesh = mapAtlasEntryUvs( useEditorStore.getState().projectV11?.revision, layerId, mesh, )"
+    },
+    {
+      "kind": "assignment",
+      "line": 226,
+      "path": "src/stores/editorStore.ts",
+      "signature": "src/stores/editorStore.ts:assignment:node.mesh = mapAtlasEntryUvs( useEditorStore.getState().projectV11?.revision, id, mesh, )",
+      "text": "node.mesh = mapAtlasEntryUvs( useEditorStore.getState().projectV11?.revision, id, mesh, )"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 284,
+      "path": "src/stores/historyStore.ts",
+      "signature": "src/stores/historyStore.ts:mutating-call:retained.add(backing)",
+      "text": "retained.add(backing)"
+    },
+    {
+      "kind": "assignment",
+      "line": 63,
+      "path": "src/stores/project-v11-transaction.ts",
+      "signature": "src/stores/project-v11-transaction.ts:assignment:parameterValues[parameter.id] = retained === undefined ? parameter.defaultValue : Math.min(parameter.maxValue, Math.max(parameter.minValue, retained))",
+      "text": "parameterValues[parameter.id] = retained === undefined ? parameter.defaultValue : Math.min(parameter.maxValue, Math.max(parameter.minValue, retained))"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 48,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:mutating-call:chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + 8192)))",
+      "text": "chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + 8192)))"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 136,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:mutating-call:project.layers.push(layer)",
+      "text": "project.layers.push(layer)"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 137,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:mutating-call:atlases.push({ id: uniqueAtlasId(atlases), backing, entries: [{ layerId, x: 0, y: 0, width: backing.width, height: backing.height }], })",
+      "text": "atlases.push({ id: uniqueAtlasId(atlases), backing, entries: [{ layerId, x: 0, y: 0, width: backing.width, height: backing.height }], })"
+    },
+    {
+      "kind": "assignment",
+      "line": 213,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:assignment:layer.mesh.uvs = layer.mesh.uvs.map((value, index) => index % 2 === 0 ? (value * atlas.backing.width - entry.x) / entry.width : (value * atlas.backing.height - entry.y) / entry.hei",
+      "text": "layer.mesh.uvs = layer.mesh.uvs.map((value, index) => index % 2 === 0 ? (value * atlas.backing.width - entry.x) / entry.width : (value * atlas.backing.height - entry.y) / entry.hei"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 229,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:mutating-call:atlases.push({ id: uniqueAtlasId(atlases), backing, entries: [nextEntry] })",
+      "text": "atlases.push({ id: uniqueAtlasId(atlases), backing, entries: [nextEntry] })"
+    },
+    {
+      "kind": "assignment",
+      "line": 247,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:assignment:child.parentBoneId = parentBoneId",
+      "text": "child.parentBoneId = parentBoneId"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 249,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:mutating-call:nodes.splice(index, 1, ...node.children)",
+      "text": "nodes.splice(index, 1, ...node.children)"
+    },
+    {
+      "kind": "assignment",
+      "line": 261,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:assignment:node.clipMaskIds = node.clipMaskIds.filter((id) => id !== layerId)",
+      "text": "node.clipMaskIds = node.clipMaskIds.filter((id) => id !== layerId)"
+    },
+    {
+      "kind": "assignment",
+      "line": 336,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:assignment:layer.mesh.uvs[vertex * 2] = u",
+      "text": "layer.mesh.uvs[vertex * 2] = u"
+    },
+    {
+      "kind": "assignment",
+      "line": 337,
+      "path": "src/stores/projectIO/v11Images.ts",
+      "signature": "src/stores/projectIO/v11Images.ts:assignment:layer.mesh.uvs[vertex * 2 + 1] = v",
+      "text": "layer.mesh.uvs[vertex * 2 + 1] = v"
+    },
+    {
+      "kind": "assignment",
+      "line": 112,
+      "path": "src/stores/projectIO/viviFile.ts",
+      "signature": "src/stores/projectIO/viviFile.ts:assignment:state.project = project",
+      "text": "state.project = project"
+    },
+    {
+      "kind": "assignment",
+      "line": 113,
+      "path": "src/stores/projectIO/viviFile.ts",
+      "signature": "src/stores/projectIO/viviFile.ts:assignment:state.projectV11 = null",
+      "text": "state.projectV11 = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 114,
+      "path": "src/stores/projectIO/viviFile.ts",
+      "signature": "src/stores/projectIO/viviFile.ts:assignment:state.projectVersion += 1",
+      "text": "state.projectVersion += 1"
+    },
+    {
+      "kind": "assignment",
+      "line": 115,
+      "path": "src/stores/projectIO/viviFile.ts",
+      "signature": "src/stores/projectIO/viviFile.ts:assignment:state.currentFilePath = result.filePath",
+      "text": "state.currentFilePath = result.filePath"
+    },
+    {
+      "kind": "assignment",
+      "line": 116,
+      "path": "src/stores/projectIO/viviFile.ts",
+      "signature": "src/stores/projectIO/viviFile.ts:assignment:state.projectSourceKind = kind",
+      "text": "state.projectSourceKind = kind"
     }
   ]
 }

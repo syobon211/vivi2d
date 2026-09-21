@@ -1,0 +1,60 @@
+{
+  "kind": "vivi2d-c10-postseal-identity-addendum-v1",
+  "status": "AUTHOR_POSTSEAL_IMPLEMENTATION_REVIEW_PENDING",
+  "cargoLockUpdate": {
+    "historical": {
+      "path": "packages/runtime-native/Cargo.lock",
+      "bytes": 12107,
+      "sha256": "2fb55c803aa22c6a8095f457b95e16ddc1cc951ae4e9c1b0e52fcb6d8f32a2d2"
+    },
+    "current": {
+      "path": "packages/runtime-native/Cargo.lock",
+      "bytes": 12159,
+      "sha256": "c5738848c483397a4cfc23a30d0134d462adcc1bde18f537618deaaaca781279"
+    },
+    "addedEdges": [
+      { "package": "vivi-runtime-native-c-abi", "dependencies": ["tempfile", "vivi-asset-host-local"] },
+      { "package": "vivi-runtime-native-evaluation-lowering", "dependencies": ["tempfile"] }
+    ],
+    "reason": "Existing locked tempfile becomes dev-only for postseal and parallel E C ABI tests; E adds its reviewed optional local host edge. No registry package/version/checksum change. Removing exactly these three lock lines must restore the whole historical lock bytes and hash. This is not E application acceptance."
+  },
+  "historicalC11": {
+    "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-c11-identity-addendum-1.json",
+    "bytes": 5294,
+    "sha256": "96438b584cca5132e62400b08e444a2d4e1bec5d2ff3cf2c3adddfd8fee72863"
+  },
+  "connectionSourceUpdates": [
+    {
+      "historical": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lib.rs",
+        "bytes": 4975,
+        "sha256": "53be073827c3c489d1252ea4689af1e19d011888491f7bd65b8fc096b7d1a42d"
+      },
+      "current": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lib.rs",
+        "bytes": 5505,
+        "sha256": "7d85b1fb9943a0566c12060d0a76decc84d1b19d49f73d177d25f317a6219659"
+      }
+    },
+    {
+      "historical": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/sealed_candidate.rs",
+        "bytes": 8962,
+        "sha256": "dc5990d6053e3fe693fb91b68ea099e676236cfde089d9a23bc9a17650714f83"
+      },
+      "current": {
+        "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/sealed_candidate.rs",
+        "bytes": 9083,
+        "sha256": "5520bf2283169629ed8ac3ae753c8200f0231efea9095c04941da209f45ce8a0"
+      }
+    }
+  ],
+  "claims": {
+    "originalAuthorityBytesPreserved": true,
+    "allFiveC10MappedSourcesUnchangedFromC11": true,
+    "historicalApprovalTransfersToChangedCode": false,
+    "requiresCurrentPostsealTestsAndFullC10Execution": true,
+    "activationOrFreshnessEstablished": false
+  },
+  "change": "Only the C11 root exports and a crate-private immutable texture-plan borrow change here. New preparation moves the sealed owner and validated real-host outcome; all C10 arithmetic, C11 reservation/evaluation/sealing bodies and historical authority artifacts remain unchanged. Current preparation and preactivation source pins are enforced separately by their owning exact source gates. This overlay is not a replacement numerical oracle or an implementation approval."
+}

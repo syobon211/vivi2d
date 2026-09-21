@@ -1,5 +1,45 @@
 # Contributing Architecture Guide
 
+The new internal **Phase B** owner supersedes the older consumer-zero-lowering
+and no-active-owner descriptions below only through core's explicit
+`evaluation-v1` optional edge. Default core/C ABI/runtime-WASM remain disconnected.
+Ready moves once into a uniquely owned sealed candidate plus real CPU textures;
+freshness/exhaustion checks precede the model counter, and C10/C11 remain the
+sole update/topology owners. EDH exposes detached issuance metadata only, not a
+runtime bridge or capability. See the current integration document's Phase B
+section.
+
+C2's current implementation candidate is a separate opt-in `evaluation-v1`
+transport and byte-preparation path; it does not replace ordinary Editor/Viewer
+initialization or promote any stable API. Keep native `local-store`/`native-host`
+defaults out of the pure Evaluation-WASM production graph. Reuse the actual
+resolver, strict PNG decoder, preactivation validator and sealed C10/C11 owner;
+do not add a second parser/evaluator or replay initialization on Missing retry.
+The internal Evaluation and local Asset headers remain excluded from the default
+C ABI npm pack. Pin the fixed shared transport source in both thin ABI adapters,
+including WASM memory-range validation. Preserve typed all-or-nothing copy-out,
+owner/child identity, request freshness and ordinary-error incumbent retention.
+A trapped instance must be retired without subsequent exports. The scoped
+application session/disposal and CPU/GPU publication proofs, implementation
+review and hosted integration are separately required; native checks alone do
+not authorize capability advertisement, publication or release.
+
+The [current C10/C11 integration boundary](../architecture/evaluation-c10-integration.md)
+supersedes the disconnected-C10, consumer-zero-math and absent-C11 descriptions
+in the historical foundation entries below. C11 adds internal move-only sealing
+and borrowed views, not a new dependency edge; the sole new edge remains lowering
+to math. All private-product, publication and downstream activation restrictions
+remain; active ownership and application integration are
+not authorized or completed by this internal implementation.
+
+The separate post-seal entry now consumes a sealed candidate and prepares its
+exact borrowed texture plan through preactivation's existing real-host boundary,
+reusing one Ready/Missing validator and moving the resulting owned data. This
+supersedes historical blanket no-host wording only for that consuming entry;
+pure construction/views remain host-free. No direct lowerer-to-host dependency,
+resealing, active swap, freshness policy or stable API is authorized. Wrapper
+Debug is redacted; authorized borrowed host values are not sanitized log data.
+
 This guide maps common contribution types to the package and safety boundary
 that should own the change.
 

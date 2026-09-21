@@ -32,6 +32,12 @@ import {
 import { create } from "zustand";
 import { generateAutoMesh } from "@/lib/auto-mesh";
 import type { ProjectSourceKind } from "@/lib/project-source-kind";
+import { isProjectV11Publishing } from "@/lib/project-v11-publishing";
+import {
+  createAtlasEntryCanvas,
+  mapAtlasEntryUvs,
+  type V11EditorSession,
+} from "@/lib/project-v11-serializer";
 import { getTexture } from "@/lib/texture-store";
 import { withStandardMiddleware } from "./_middleware";
 import { registerHistoryCallbacks } from "./historyStore";
@@ -48,6 +54,7 @@ export interface EditorState {
   currentFilePath: string | null;
 
   projectSourceKind: ProjectSourceKind;
+  projectV11: V11EditorSession | null;
 }
 
 interface EditorActions {
@@ -95,17 +102,24 @@ export const useEditorStore = create<EditorStore>()(
       projectStructureVersion: 0,
       currentFilePath: null,
       projectSourceKind: "none",
+      projectV11: null,
 
       toggleVisibility: (id) =>
         mutateProject((project) => {
           toggleVisibilityCommand(project, id);
         }),
 
-      toggleExpanded: (id) =>
+      toggleExpanded: (id) => {
+        if (isProjectV11Publishing()) throw new Error("PROJECT_TRANSACTION_BUSY");
+        if (useEditorStore.getState().projectV11) {
+          mutateProject((project) => toggleExpandedCommand(project, id));
+          return;
+        }
         set((s) => {
           if (!s.project) return;
           toggleExpandedCommand(s.project, id);
-        }),
+        });
+      },
 
       setLayerOpacity: (id, opacity) =>
         mutateProject((project) => {
@@ -151,6 +165,13 @@ export const useEditorStore = create<EditorStore>()(
         let replaced = false;
         mutateProject((project) => {
           replaced = setMeshDivisionsCommand(project, layerId, divisionsX, divisionsY);
+          const node = findLayerById(project.layers, layerId);
+          if (replaced && node?.kind === "viviMesh")
+            node.mesh = mapAtlasEntryUvs(
+              useEditorStore.getState().projectV11?.revision,
+              layerId,
+              node.mesh,
+            );
         });
         if (replaced) {
           usePuppetWarpStore.getState().invalidateMesh(layerId);
@@ -162,11 +183,20 @@ export const useEditorStore = create<EditorStore>()(
         mutateProject((project) => {
           const node = findLayerById(project.layers, layerId);
           if (!node || !isViviMesh(node)) return;
-          const canvas = getTexture(layerId);
+          const canvas = useEditorStore.getState().projectV11
+            ? createAtlasEntryCanvas(
+                useEditorStore.getState().projectV11?.revision,
+                layerId,
+              )
+            : getTexture(layerId);
           if (!canvas) return;
           const mesh = generateAutoMesh(canvas, node.width, node.height, preset);
           if (mesh) {
-            node.mesh = mesh;
+            node.mesh = mapAtlasEntryUvs(
+              useEditorStore.getState().projectV11?.revision,
+              layerId,
+              mesh,
+            );
             replaced = true;
           }
         });
@@ -181,7 +211,9 @@ export const useEditorStore = create<EditorStore>()(
           for (const id of layerIds) {
             const node = findLayerById(project.layers, id);
             if (!node || !isViviMesh(node)) continue;
-            const canvas = getTexture(id);
+            const canvas = useEditorStore.getState().projectV11
+              ? createAtlasEntryCanvas(useEditorStore.getState().projectV11?.revision, id)
+              : getTexture(id);
             if (!canvas) continue;
             const effectivePreset = presetOverrides?.[id] ?? preset;
             const mesh = generateAutoMesh(
@@ -191,7 +223,11 @@ export const useEditorStore = create<EditorStore>()(
               effectivePreset,
             );
             if (mesh) {
-              node.mesh = mesh;
+              node.mesh = mapAtlasEntryUvs(
+                useEditorStore.getState().projectV11?.revision,
+                id,
+                mesh,
+              );
               invalidatedLayerIds.add(id);
             }
           }

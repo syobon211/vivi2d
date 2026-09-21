@@ -23,22 +23,28 @@ mod coordinator;
 mod error;
 mod model;
 
-pub use coordinator::{correlate_evaluation_activation_v1, prepare_evaluation_activation_v1};
+pub use coordinator::{
+    correlate_evaluation_activation_v1, prepare_evaluation_texture_plan_from_bytes_v1,
+};
+#[cfg(feature = "native-host")]
+pub use coordinator::{prepare_evaluation_activation_v1, prepare_evaluation_texture_plan_v1};
 pub use error::{EvaluationPreactivationError, EvaluationPreactivationErrorKind};
 pub use model::{
     CorrelatedEvaluationActivationV1, MissingEvaluationActivationV1, PrepareEvaluationActivationV1,
     PreparedEvaluationActivationV1,
 };
 pub use vivi_asset_host_local::{
-    AssetErrorCode, AssetRef, Digest, EvaluationTextureBindingV1, EvaluationTexturePlanV1,
-    LocalAssetHost, LocalStoreErrorKind, MissingActivationTexturesV1,
+    AssetErrorCode, AssetRef, Digest, EvaluationPhysicalObjectV1, EvaluationTextureBindingV1,
+    EvaluationTexturePlanV1, MissingActivationTexturesV1, PrepareActivationTextureSetV1,
     PreparedActivationTextureSetV1, PreparedActivationTextureV1, PrincipalId, ReadyPng,
     StorageKind,
 };
+#[cfg(feature = "native-host")]
+pub use vivi_asset_host_local::{LocalAssetHost, LocalStoreErrorKind};
 pub use vivi_runtime_native_evaluation::{
     EvaluationPayloadError, EvaluationPayloadErrorKind, RequiredTextureBindingV1,
     ValidatedEvaluationPayloadV1, parse_evaluation_payload_v1,
 };
 
-#[cfg(test)]
+#[cfg(all(test, feature = "native-host"))]
 mod tests;

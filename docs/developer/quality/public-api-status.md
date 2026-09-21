@@ -1,5 +1,27 @@
 # Public API Status
 
+Phase B's feature-gated native `EvaluationRuntimeV1` and EDH's detached
+`getRequestState()` are internal implementation surfaces, not stable APIs or a
+completed application runtime capability. The older absent-active-owner wording
+below describes the earlier C10/C11/post-seal slices. Only core's explicit
+`evaluation-v1` optional edge now adopts Ready once into a CPU owner; default
+ABI1 and legacy runtime-WASM remain unchanged. The current C2 implementation
+candidate adds a separate opt-in Evaluation-WASM artifact and internal
+`vivi_runtime_editor.h` ABI; neither is a published or stable API. Both use actual
+byte-backed resolver/PNG preparation and the same C10/C11 owner. Native linked-C,
+real WASM, allocator and copy-out tests do not alone establish application
+session freshness, CPU/GPU atomic publication, capability advertisement or release
+readiness. C2 implementation review and applicable hosted integration remain
+required. See [the current C2 boundary](../architecture/evaluation-c10-integration.md#current-c2-implementation-candidate).
+
+The [current C10/C11 integration boundary](../architecture/evaluation-c10-integration.md)
+supersedes disconnected-C10, consumer-zero-math and absent-C11 wording in the
+historical foundation audit below. Move-only sealing and borrowed snapshot views
+and separate consuming post-seal Ready/Missing preparation are internal
+implementation surfaces, not stable APIs, active ownership, application
+integration or release readiness. Preparation reuses the real host without
+resealing; authorized borrowed host data is not sanitized diagnostic data.
+
 Vivi2D is public and pre-1.0. Package boundaries may change during the alpha
 period. This document records the current publication intent so contributors do
 not accidentally treat internal workspace entry points as stable APIs.

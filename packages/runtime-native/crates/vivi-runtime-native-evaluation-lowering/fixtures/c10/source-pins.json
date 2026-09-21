@@ -1,0 +1,514 @@
+{
+  "kind": "vivi2d.c10.fixed-corpus-pins.v1",
+  "policy": "Original author byte hashes remain provenance. Decoded JSON preserves key order and is verified by parsedCompactSha256, not by reconstructed pretty-byte hashes. No numerical expectations are generated.",
+  "fixtures": [
+    {
+      "name": "native-c10-review-data-bundle-3.json",
+      "bytes": 729926,
+      "sha256": "3d857898abacc4487fceb9a610890cd440e4f29c0307ab6a023fed96b6c2f34f"
+    },
+    {
+      "name": "native-c10-review-input-bundle-1.json",
+      "bytes": 895432,
+      "sha256": "db4c199b6da49167f9e63d1fa761af80d1a7e46ece4a795f9d61a37ab4715b1e"
+    },
+    {
+      "name": "native-c10-case-index-manifest-1.json",
+      "bytes": 124683,
+      "sha256": "3af093cec5c2b43bd8e711a3f4a40b3d496030c15f14870612db281404190ac1"
+    },
+    {
+      "name": "native-c10-freeze-assertion-binding-2.json",
+      "bytes": 44364,
+      "sha256": "0bac949d56bc041899ce7bdbdd5a6949cc94171fbc8855c7e7f9aa3ab369ed0e"
+    },
+    {
+      "name": "native-c10-skinned-offset-invariance-supplement-1.json",
+      "bytes": 10581,
+      "sha256": "ca9b8a299e1e4a5206d5d881c1a6739df1019f087da745ab01071ed815580b87"
+    },
+    {
+      "name": "native-c10-strict-underflow-inputs-1.json",
+      "bytes": 23640,
+      "sha256": "03b73c616f0df051a6cc1a12ee386c9921cb9cb11a701ec973858d187d0099b5"
+    },
+    {
+      "name": "native-c10-strict-underflow-expectations-1.json",
+      "bytes": 36328,
+      "sha256": "00fd92ded8e323ff4d4919f34291052251b400177661e84f7458bd898e36197a"
+    },
+    {
+      "name": "raw-transcendental-edge-matrix-1-inputs.json",
+      "bytes": 193664,
+      "sha256": "bb7cfca12a27fdad8fe7339e0c0cf0e17be29c155b77f697ae39f75d9b40e25e"
+    },
+    {
+      "name": "raw-transcendental-edge-matrix-1-expectations.json",
+      "bytes": 199979,
+      "sha256": "6c1122d2e1aa27299e96ed71adc4825a2069dfee16a2b941c21d0d897ebcf88c"
+    }
+  ],
+  "documents": [
+    {
+      "name": "native-c10-a-expectations-1.json",
+      "originalBytes": 19315,
+      "originalSha256": "1d67ff9aee2f2e5599956a972091b053ea81df4aa511b07f12c603970a18bbc9",
+      "parsedCompactSha256": "87e26d239a094e708d3cea571795ba50c6b6d39c95f8713687c82df673d59174",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 0
+      }
+    },
+    {
+      "name": "native-c10-b-expectations-3.json",
+      "originalBytes": 153981,
+      "originalSha256": "45ae4b078e17134e67b9603be6ec70d34a8da323763e202470f3762282f5169c",
+      "parsedCompactSha256": "5744d8912a395a3317cdb06c6e47bfeb62d8005d0012bf2de621ca5db3e5a96e",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 1
+      }
+    },
+    {
+      "name": "native-c10-e-expectations-2.json",
+      "originalBytes": 101055,
+      "originalSha256": "43b6e67e229fa6cb4b7769430427b1e5b9beb655789dee2eb71276b07f4f65d2",
+      "parsedCompactSha256": "aad198b8bcd2752ea713a4b71ebce3237fde2bcdbb5bcaaaf666075acd2dd406",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 2
+      }
+    },
+    {
+      "name": "native-c10-w-expectations-3.json",
+      "originalBytes": 276492,
+      "originalSha256": "a70cb51179553510480d2caf09bf899717a1139771b2dd3aeccaf9a1f0420140",
+      "parsedCompactSha256": "71673cc00dcee9ea3bc7ce562baac6f0f7f9ad74f25e0f003304399a000c9b94",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 3
+      }
+    },
+    {
+      "name": "native-c10-f-expectations-1.json",
+      "originalBytes": 6920,
+      "originalSha256": "e9bed5ca67f8fba9781053e6eea7ae7effc47ab3fce838e78afbf95179274554",
+      "parsedCompactSha256": "7d013ee5e4ff943cc9a08a633e1b6ec713540e44c576c48d0abfc3515eb9925f",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 4
+      }
+    },
+    {
+      "name": "native-c10-pot-expectations-1.json",
+      "originalBytes": 1423894,
+      "originalSha256": "6828da7e6213c42d52528680986514100d095ce6449deb30d6e17fe029a916a5",
+      "parsedCompactSha256": "b73219047d89ffd215e7b8c3b4c076fcd37a3d795d99ddfc7acbbe7abef69131",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 5
+      }
+    },
+    {
+      "name": "native-c10-s-expectations-1.json",
+      "originalBytes": 1266863,
+      "originalSha256": "4df2e4448b235cbca0903f13fccd585031300592ff800536492af41e828db4d4",
+      "parsedCompactSha256": "2adaca8ae237dc822185387d2b342d8704cfd88cb4eb20e30af3e94d0d9ccc88",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 6
+      }
+    },
+    {
+      "name": "native-c10-u-expectations-2.json",
+      "originalBytes": 368511,
+      "originalSha256": "865f2ca55fbd2a8f6793c4766254eeecfc6206fea6dfef40bf074aab43329c74",
+      "parsedCompactSha256": "4bde155a8b47b37ae883e9c8ade78976a6ba81c518aeafcb1156f37d43035d05",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 7
+      }
+    },
+    {
+      "name": "native-c10-ic-expectations-1.json",
+      "originalBytes": 582380,
+      "originalSha256": "d62d6b33c46a545b3f8e82b7ec3d771a40f4cdf2c5306ae27e8c96962f2e1bed",
+      "parsedCompactSha256": "997db75a006f4a38b31c6ca74f2539daac2c774f4f216a0362859606162192ac",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 8
+      }
+    },
+    {
+      "name": "native-c10-ic-supplement-expectations-1.json",
+      "originalBytes": 97292,
+      "originalSha256": "10e176efe3f816e775e76824923efbb5e038efa79a193e9169d37e2ab3a05f1c",
+      "parsedCompactSha256": "6d2a1c74028360f463fd5a2cc4933da55f62f757d4dc80ca4e194d0dd835fa85",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 9
+      }
+    },
+    {
+      "name": "native-c10-reached-expectations-1.json",
+      "originalBytes": 35513,
+      "originalSha256": "a67421f4d104e6fb5399b50c43d7ba2664a4953d142731c4cf115ca4913022d8",
+      "parsedCompactSha256": "b3003a46a2b184607ba50e28c4dab3b185e14c71af37211ee3adf2490daef3b5",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 10
+      }
+    },
+    {
+      "name": "native-c10-t-prefix-rollback-expectations-1.json",
+      "originalBytes": 200864,
+      "originalSha256": "21b4ea86451adcc5f1dbfd53363f427dfc7fc48ae95e880d80f3d8d1eb433b1f",
+      "parsedCompactSha256": "f67e6ef333ce998bdbab04ffa703c4e4d26c82ca03900ec5c00cd5f7d3824c3c",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 11
+      }
+    },
+    {
+      "name": "native-c10-physics-field-witness-expectations-3.json",
+      "originalBytes": 120447,
+      "originalSha256": "e1b74be5afe847f823dbaaf44ac9f5f04bd82ee28aaac9151852c5ad2955a850",
+      "parsedCompactSha256": "c64f6277087464f9c25815bb4876452b5bbbf10bcfbea4c579c32e14e6481111",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 12
+      }
+    },
+    {
+      "name": "native-c10-inverse-range-expectations-2.json",
+      "originalBytes": 480138,
+      "originalSha256": "f22b033b4ed749224cd0e830941d1bd92424ff8ef26a253c489d7c3be92c4f13",
+      "parsedCompactSha256": "7b59d4ab22df2ba7d880a58af74ba647b5021cb9ed824eb9ce0dcb55447c3491",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 13
+      }
+    },
+    {
+      "name": "native-c10-interior-failure-expectations-1.json",
+      "originalBytes": 228417,
+      "originalSha256": "bc40943a6816bd6bb8e4f3041896ccec42b2d354a7eedce4cb950355daa78b47",
+      "parsedCompactSha256": "1b5ce45fc660c2c060ffd23caa95f4a19926020c5f362676574b1b0e4301ffbb",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 14
+      }
+    },
+    {
+      "name": "native-c10-physics-latefault-expectations-3.json",
+      "originalBytes": 224037,
+      "originalSha256": "fff9407640e4f345e4a1b7c793cf74729ea5a285fb62f48188f0a2d2e5b97d77",
+      "parsedCompactSha256": "3d01708ed9d353f7a7edf6bfa7263ba531c60801336fb91f92958b0915132ed4",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 15
+      }
+    },
+    {
+      "name": "native-c10-shared-ik-skin-expectations-1.json",
+      "originalBytes": 328064,
+      "originalSha256": "7771fa7564a42432446c856f15e48e428fa0f1ac815b372ef36f3c73158ce420",
+      "parsedCompactSha256": "fb305b05c4f5e392291ad67ec076d555f9819b8df4a213bdac0d67f80fd1fc18",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 16
+      }
+    },
+    {
+      "name": "native-c10-shared-ik-skin-late-fault-expectations-1.json",
+      "originalBytes": 494763,
+      "originalSha256": "9928241e3fdbe7b29f09abadf90914b431b94a9dcf7253893718182df7bd32cf",
+      "parsedCompactSha256": "6b752cecd1d7a6c6bc774ae839cf9aaee313346bc7218c319038b934b23a9a27",
+      "storage": {
+        "kind": "expected-bundle",
+        "fixture": "native-c10-review-data-bundle-3.json",
+        "index": 17
+      }
+    },
+    {
+      "name": "native-c10-concrete-inputs-1.json",
+      "originalBytes": 190427,
+      "originalSha256": "a690a20420e2a4d217f675d8f6928eb8cfc532ae9eaf88f19c803ec2aefd6324",
+      "parsedCompactSha256": "352069933beec2345fd5ed9742626e7c274003b1e6a431a27a0102826d5539c9",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 0
+      }
+    },
+    {
+      "name": "native-c10-concrete-inputs-physics-1.json",
+      "originalBytes": 285085,
+      "originalSha256": "32101fdc1b95c2067d0a5ef8340da835506027c8face5abd5fec7146e1e342c3",
+      "parsedCompactSha256": "f00718330defefb0f7c81007f8bc763fc84e44833b5b6ae5f160ce56c336af0d",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 1
+      }
+    },
+    {
+      "name": "native-c10-concrete-inputs-skin-culling-1.json",
+      "originalBytes": 596935,
+      "originalSha256": "2983caf1ac6796464fce251cda1d825558a9848be23dab86873678001e5f1612",
+      "parsedCompactSha256": "54192056ad74639414ad20cd86767ef4873345055798c458c4746345e78e8c2c",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 2
+      }
+    },
+    {
+      "name": "native-c10-concrete-inputs-world-ik-policy-1.json",
+      "originalBytes": 309228,
+      "originalSha256": "0327cd2b75f437a4934306e2ad8875ba45ac1b806ea3dae0f04a2ef2953f0211",
+      "parsedCompactSha256": "21d0c325bdbbc018942d86acff9f31288de5b83076e55b70c47e54654ba422b5",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 3
+      }
+    },
+    {
+      "name": "native-c10-concrete-inputs-union-1.json",
+      "originalBytes": 21299,
+      "originalSha256": "d6395a4da67c6dbc124ebec1198bbfc3b7c310ea8235f3f2e87449cc1977ca00",
+      "parsedCompactSha256": "1f85a808c52b915dad3f6a62f55f12458dc09782b40a42efc93482cc57b98a18",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 4
+      }
+    },
+    {
+      "name": "native-c10-world-distinct-overrides-input-supplement-1.json",
+      "originalBytes": 36688,
+      "originalSha256": "632b4fad4cbaeb0d0128d610c779995e3b34fdd1b00b6f47c64eef26b40df837",
+      "parsedCompactSha256": "3a06da56b7dbae714f7fdd0c899d1b02bf58a96a1d7c15cf3762a155772608bb",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 5
+      }
+    },
+    {
+      "name": "native-c10-t-prefix-rollback-inputs-1.json",
+      "originalBytes": 25912,
+      "originalSha256": "38f6a4c5c6336307c2d50473a29742174ffd03d2026272f429ce5721a7d495a7",
+      "parsedCompactSha256": "01b879b123c80789148f971e70240dbd8e35f3be94a00a3dc7519aa5c2d314ad",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 6
+      }
+    },
+    {
+      "name": "native-c10-ic-supplement-inputs-1.json",
+      "originalBytes": 29310,
+      "originalSha256": "6e29284cd6dd88facf54a9b4d65c9428efa7b42e3088a2bae0e851f7cc186ee1",
+      "parsedCompactSha256": "5101f68272dfc8e46f8edfdb12df00236629e576be341c23c2b6621f2b308743",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 7
+      }
+    },
+    {
+      "name": "native-c10-reached-inputs-1.json",
+      "originalBytes": 21510,
+      "originalSha256": "87dbed92f2bd843dc71c29591870f7a206fed7a7c01c3f3e99696c06c610731b",
+      "parsedCompactSha256": "863dbe04bceac6682fda8c80c21154ab88a7254df4047a525d90b3d975d5248c",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 8
+      }
+    },
+    {
+      "name": "native-c10-physics-field-witness-input-2.json",
+      "originalBytes": 38787,
+      "originalSha256": "371b80e285ad73932fd825856c67764c88cd9c738a768db898f86f36667454b2",
+      "parsedCompactSha256": "2fbec1a20e12b330dfa3a352d308acc6a081adc020e3438140e4be8943b295e4",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 9
+      }
+    },
+    {
+      "name": "native-c10-inverse-range-inputs-1.json",
+      "originalBytes": 33962,
+      "originalSha256": "abf86c0daaa12cc7a268479bbce51e5401c52fe1b65869ebf1b1cb7ca21ac9a1",
+      "parsedCompactSha256": "5134c423587fe0ad6fa2abedfb296e72816dd3c391cdd3e979e57336c126d763",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 10
+      }
+    },
+    {
+      "name": "native-c10-physics-latefault-input-1.json",
+      "originalBytes": 38244,
+      "originalSha256": "6e8bcaadc61dae4b5721d199dd40330b7a618d2e696eabd5649fe1cb396b3771",
+      "parsedCompactSha256": "ffa69adf1af8e24d381e409e4f7a0b182df069c97fa081ab2e8dfb515d7495dd",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 11
+      }
+    },
+    {
+      "name": "native-c10-shared-ik-skin-inputs-1.json",
+      "originalBytes": 19655,
+      "originalSha256": "fd7143309273887caf280a99c1b16b121edb4b54d91396e113849a6f51310157",
+      "parsedCompactSha256": "3fa2138668051f4601f5d0f1ef060fb7fb8a2d69fbb3d2339808ffe1248fa50d",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 12
+      }
+    },
+    {
+      "name": "native-c10-shared-ik-skin-late-fault-inputs-1.json",
+      "originalBytes": 24126,
+      "originalSha256": "64fdade3ed3e1fb09d5645dd45db9ed30dd403798acef50f84c3928492e5a58c",
+      "parsedCompactSha256": "e201ab27475e75bda4b81b80310ac388917cae49d426f04b4dfada9bc7bf1718",
+      "storage": {
+        "kind": "input-bundle",
+        "fixture": "native-c10-review-input-bundle-1.json",
+        "index": 13
+      }
+    },
+    {
+      "name": "native-c10-case-index-manifest-1.json",
+      "originalBytes": 124683,
+      "originalSha256": "3af093cec5c2b43bd8e711a3f4a40b3d496030c15f14870612db281404190ac1",
+      "parsedCompactSha256": "3af093cec5c2b43bd8e711a3f4a40b3d496030c15f14870612db281404190ac1",
+      "storage": {
+        "kind": "direct",
+        "fixture": "native-c10-case-index-manifest-1.json"
+      }
+    },
+    {
+      "name": "native-c10-freeze-assertion-binding-2.json",
+      "originalBytes": 44364,
+      "originalSha256": "0bac949d56bc041899ce7bdbdd5a6949cc94171fbc8855c7e7f9aa3ab369ed0e",
+      "parsedCompactSha256": "215d015814fe1e2f5c8828cd2ddb79d6452d662eb2d4b25de25fd14e8274ad0f",
+      "storage": {
+        "kind": "direct",
+        "fixture": "native-c10-freeze-assertion-binding-2.json"
+      }
+    },
+    {
+      "name": "native-c10-skinned-offset-invariance-supplement-1.json",
+      "originalBytes": 10581,
+      "originalSha256": "ca9b8a299e1e4a5206d5d881c1a6739df1019f087da745ab01071ed815580b87",
+      "parsedCompactSha256": "1488eb8cc47c12205b01a8820a48730b0f3df2bc09ba2f27e44656c9ac55f0cb",
+      "storage": {
+        "kind": "direct",
+        "fixture": "native-c10-skinned-offset-invariance-supplement-1.json"
+      }
+    },
+    {
+      "name": "native-c10-strict-underflow-inputs-1.json",
+      "originalBytes": 23640,
+      "originalSha256": "03b73c616f0df051a6cc1a12ee386c9921cb9cb11a701ec973858d187d0099b5",
+      "parsedCompactSha256": "125685c48ca40c17bae74a6a6ee7fd9fefe7bc803d2a5205a59d8a349a279e74",
+      "storage": {
+        "kind": "direct",
+        "fixture": "native-c10-strict-underflow-inputs-1.json"
+      }
+    },
+    {
+      "name": "native-c10-strict-underflow-expectations-1.json",
+      "originalBytes": 36328,
+      "originalSha256": "00fd92ded8e323ff4d4919f34291052251b400177661e84f7458bd898e36197a",
+      "parsedCompactSha256": "d5df07d9b9acb891dde3dbfd15ee50695e870316c029f29e6b6a14530c6b3142",
+      "storage": {
+        "kind": "direct",
+        "fixture": "native-c10-strict-underflow-expectations-1.json"
+      }
+    },
+    {
+      "name": "raw-transcendental-edge-matrix-1-inputs.json",
+      "originalBytes": 193664,
+      "originalSha256": "bb7cfca12a27fdad8fe7339e0c0cf0e17be29c155b77f697ae39f75d9b40e25e",
+      "parsedCompactSha256": "7414d580c0e8f405e6095a6dcce420dfc44c577e2283c145c7c1c748d6668a5b",
+      "storage": {
+        "kind": "direct",
+        "fixture": "raw-transcendental-edge-matrix-1-inputs.json"
+      }
+    },
+    {
+      "name": "raw-transcendental-edge-matrix-1-expectations.json",
+      "originalBytes": 199979,
+      "originalSha256": "6c1122d2e1aa27299e96ed71adc4825a2069dfee16a2b941c21d0d897ebcf88c",
+      "parsedCompactSha256": "66d8273ae5f431e77a4f73d00280fea18349c55df14e91c275d0be727cb8eaf7",
+      "storage": {
+        "kind": "direct",
+        "fixture": "raw-transcendental-edge-matrix-1-expectations.json"
+      }
+    }
+  ],
+  "generated": [
+    {
+      "name": "native-c10-literal-cases-1.rs",
+      "bytes": 9061599,
+      "sha256": "2f5d8337c63042aab5c620d6748e56829fbf404e50bb9f21641ef79a9e4cae4b"
+    },
+    {
+      "name": "native-c10-literal-controls-1.rs",
+      "bytes": 133881,
+      "sha256": "cb6faeea7d3e6799efedcb927b3d40378d7120fd57bf52c0bfd980254b429ae0"
+    },
+    {
+      "name": "native-c10-literal-scopes-1.rs",
+      "bytes": 5328,
+      "sha256": "f8a3eeb9c63db5e0149282f267a85d2c48e7d2cc65359e67aa7a61382bf6b4d7"
+    },
+    {
+      "name": "projection_scope.rs",
+      "bytes": 4715,
+      "sha256": "a1a08bc1b7c4a7966ffc6de29203e43d05626fa962661b1068b71da7547e8cfa"
+    }
+  ],
+  "counts": {
+    "dispatchEntries": 147,
+    "steps": 290,
+    "compoundCases": 137,
+    "helperCases": 1,
+    "rawCaseDescriptors": 2,
+    "allocationReuseDescriptors": 1,
+    "nativePrerequisites": 6,
+    "rawBase": 108,
+    "rawEdges": 460,
+    "antiFmaRows": 2,
+    "reassociationRows": 4,
+    "allocationReusedCases": 8,
+    "maxTraceRows": 28691,
+    "maxProjectionRows": 6
+  }
+}
+

@@ -10,6 +10,7 @@ import { useEditorStore } from "@/stores/editorStore";
 import { useParameterStore } from "@/stores/parameterStore";
 import { usePhysicsStore } from "@/stores/physicsStore";
 import { useTimelineStore } from "@/stores/timelineStore";
+import { isProjectV11Publishing } from "@/lib/project-v11-publishing";
 
 export function usePhysics() {
   const isActive = usePhysicsStore((s) => s.isActive);
@@ -20,6 +21,7 @@ export function usePhysics() {
   const lastTime = useRef(0);
 
   useEffect(() => {
+    if (isProjectV11Publishing()) return;
     if (!project) return;
     usePhysicsStore.getState().initialize(project.physicsGroups);
   }, [project]);
@@ -45,6 +47,7 @@ export function usePhysics() {
 
 export function stepAllPhysics(deltaTime: number): PhysicsOutputResult {
   const empty: PhysicsOutputResult = { parameters: {}, bones: {} };
+  if (isProjectV11Publishing()) return empty;
   const project = useEditorStore.getState().project;
   if (!project || project.physicsGroups.length === 0) return empty;
 

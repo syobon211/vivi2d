@@ -2,24 +2,27 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
-//! Consumer-zero deterministic binary64 oracle for Evaluation math.
+//! Internal deterministic binary64 primitives for Evaluation math.
 //!
-//! This rlib has no product-public items and no production consumer. It only
-//! contains a kernel candidate implementing the adopted exact 21-callable
-//! raw-bit surface. It does not implement checkpoints, the Evaluation graph,
-//! category 10, projection,
+//! This unpublished rlib exposes the adopted exact 21-callable raw-bit surface
+//! only for the internal Evaluation lowering consumer, not as a stable product
+//! API. It does not implement checkpoints, the Evaluation graph, projection,
 //! status mapping, serialization, I/O, FFI, or a runtime/editor/WASM bridge.
 
 mod binary64;
 mod transcendental;
 
+/// Internal raw-bit primitives; not a stable product or package ABI.
+pub mod raw {
+    pub use crate::binary64::{DetF64 as D64, DetF64Class as Class};
+}
+
 /// Test-only WASM raw-bit dispatch; no module exists in a production build.
 #[cfg(all(test, target_family = "wasm"))]
 pub mod wasm_test_adapter;
 
-// A consumer-zero crate has no caller by construction. Keep every approved
-// crate-private callable live for linting and source review without exporting
-// it or executing any math during initialization.
+// Keep the exact adopted callable signatures checked without executing any
+// math during initialization or adding another forwarding implementation.
 const _: () = {
     use binary64::{DetF64, DetF64Class};
 

@@ -43,103 +43,118 @@ exchange.
 
 ## Summary Matrix
 
-| Contract | Current status | Tracked foundation | Current product connection | Publication and exchange blockers |
+| Contract | Current status | Implemented foundation | Current local connection | Publication and exchange blockers |
 | --- | --- | --- | --- | --- |
-| Project | `internal foundation` | v1-v10 parser/types; internal v11 schema/codec/graph rules; narrow embedded round-trip validator, explicit v9/v10 migration/fork and shared synthetic PNG/document evidence | Ordinary Windows save emits v9; normal parser/runtime accepts through v10; v11 candidate is internal and not connected to ordinary save | Review/promote the complete language-neutral profile and conformance bundle; supply real production PNG wiring; connect adopted Windows load/save and prove an independent consumer |
-| Asset | `internal foundation` | Asset Model v1 schema plus native resolver, principal-bound local store, local host foundations and Project structural drift gate | Native/local only; no public bridge, network transfer, Sync client, capability advertisement, or product activation path | Maintain Asset-owned structure and Project copy parity; publish remaining bounds/errors/closure rules; add portable resolver and transfer conformance |
-| Evaluation | `internal foundation` | Internal payload and texture-plan schemas/builder, native validation and preactivation, and lowering categories 1-9 | Read-only authoring projection only; no complete model-ready evaluator or product runtime connection | Complete categories 10-11, connect deterministic math, seal model-ready output, publish schemas/capabilities/errors/fixtures, and prove execution parity |
-| Runtime ABI | `internal foundation` | Tracked ABI 0.1 header and an opt-in native ABI 0.2 implementation slice | Internal packages only; ABI 0.2 public header and Evaluation load entry point are not tracked public surfaces | Publish one versioned header; complete Evaluation loading, ownership/lifetime/error/generation rules, exports, host tests, and supported-target execution evidence |
-| Sync | `internal foundation` | One internal model-local embedded-revision preparation and deterministic CAS/idempotency/conflict candidate with focused fixtures | No Sync client, durable outbox, account/authorization policy, service, transfer or deployment | Define/publish the full protocol; implement durable object/receipt retention, authenticated scope, transactional persistence, transfer/offline recovery/privacy lifecycle and multi-client evidence |
-| Job | `internal foundation` | Existing in-process Provider SDK plus the internal local six-state attempt/renewal/result/acceptance candidate and focused fixtures | No durable Job protocol, provider adapter for this candidate, runner, scheduler, service or remote worker | Complete durable identity/state/replay, authenticated routing, transactional storage, actual lease controller, verified provider integration and explicit Project/Sync acceptance across consumers |
+| Project | `internal foundation` | Legacy v1-v10 owners; v11 codec/schema; bounded embedded profile, explicit migration/fork, real native PNG verification and ordinary Editor v11 route | Legacy documents retain v9/`.vivb` behavior; adopted supported embedded-v11 documents open, edit, save and reopen through their retained carrier | Review/promote the complete language-neutral profile and public corpus; prove an independent consumer. The internal Windows route does not itself close P1/P2/A1/C1. |
+| Asset | `internal foundation` | Asset-owned structure and Project drift gate; strict resolver/decode, principal-bound local store, native descriptor-last transfer and internal C/Node bridge | Local transfer/authoring ports and bounded physical-closure capture feed the accepted opt-in C2 preview. Main binds the bundled consumer under the existing Windows/native-addon guards; explicit local Copy and receiver Reload are exercised through the real application. | Public contract/portable transfer conformance and capability promotion remain separate; no network service or authenticated remote client is claimed. |
+| Evaluation | `internal foundation` | C1-C11, connected deterministic math, move-only sealing, borrowed views, post-seal Ready/Missing and optional core owner | Native owner and opt-in C ABI/Evaluation-WASM use the same lowerer. The dedicated preview and its production-main binding have separate accepted implementation reviews and finite real-application evidence. | Complete applicable hosted CI; separately review any public schemas/capabilities/errors/fixtures and broad execution-parity claim. |
+| Runtime ABI | `internal foundation` | Unchanged default ABI 0.1; optional ABI 0.2 slice; internal `vivi_runtime_editor.h` and separate Evaluation-WASM artifact | Native linked-C and real WASM exercise Evaluation preparation, copy-out, lifecycle and owner operations; the default legacy interfaces are not replaced | Internal headers are tracked source, not a promoted stable ABI. Complete the selected application/hosted acceptance separately from public versioned-header and supported-target promotion. |
+| Sync | `internal foundation` | Pure model transitions plus main-owned bounded local object/cell storage, outbox, CAS, receipts, conflict retention and restart revalidation | Explicit same-machine embedded-revision publication/delivery through the existing local panel; the OS user and owned root are the local trust boundary | No authenticated remote protocol/service, referenced-Asset Sync protocol, power-loss guarantee or public multi-client compatibility promise. Those are separate future adoption gates. |
+| Job | `internal foundation` | Pure Job transitions plus main-owned retained submissions/results/decisions, fenced attempts/deadlines and real Provider SDK/ComfyUI invocation | Explicit local Start/Retry/Cancel, selected-result approval and retained-candidate resume; ordinary imported proposals remain distinct from exact v11 Project acceptance/CAS | No remote worker/scheduler/service or public provider-neutral durable wire promise. Arbitrary generated imports are not automatically v11 Sync revisions. |
+
+The current implementation boundaries are detailed in
+[C10/C11, post-seal, B and C2 integration](./evaluation-c10-integration.md) and
+[the ordinary Editor v11 route](../api/spec/project-format-v11.draft.md#ordinary-editor-embedded-v11-route).
+The corrected native C2 boundary, application cancellation/result-reporting
+repairs and production-main binding have passed their separate scoped
+implementation reviews. The source-built Windows application exercises finite
+Missing, explicit Copy, receiver Reload Ready and nested/inverted-mask pixels;
+the proof also observes that those actions do not mutate the selected Sync cell.
+This is not same-seal retry, arbitrary-model, packaged-installer or release
+evidence. Whole-suite results and applicable hosted CI remain separate, and no
+row is promoted by this implementation-status update.
 
 ## Contract Detail
 
 ### Project
 
-The current public application path and the Project Format v11 foundation are
-not the same contract:
+The legacy and adopted v11 application paths coexist:
 
-- ordinary Windows serialization emits Project version 9 with the current
-  public-safe profile;
-- the ordinary parser and runtime model accept versions 1 through 10; and
-- Project Format v11 is exposed only through an internal model subpath and a
-  read-only authoring host.
+- ordinary legacy serialization still emits version 9 and retains its existing
+  v1-v10 parser/runtime and `.vivb` behavior;
+- the bounded embedded-v11 route uses the real codec, retained carrier and native
+  PNG WASM verifier to open/edit/save/reopen supported documents; and
+- explicit migration/copy/fork controls identity. Unsupported operations fail
+  before adoption or mutation rather than stripping content or forcing every
+  legacy project into the narrow profile.
 
-The v11 foundation already demonstrates bounded duplicate-aware parsing,
-canonical serialization, embedded and referenced Asset modes, document
-identity, capability classification, and constrained opaque preservation.
-Unsupported render requirements are invalid; unsupported edit-only or opaque
-content is read-only; ordinary edited save requires full compatibility. Those
-are useful candidate semantics, but they are not yet a published exchange
-contract.
+The v11 foundation also supplies bounded duplicate-aware parsing, canonical
+serialization, embedded/referenced representations, capability classification
+and opaque preservation. These broader codec rules do not imply that every
+representation is editable in the narrow ordinary Editor route. The full route,
+supported operations, atlas identity/UV ownership, rollback and save semantics
+are described in the [Project draft](../api/spec/project-format-v11.draft.md).
 
-The
-[Project Format v11 public authoring profile](../api/spec/project-format-v11.draft.md)
-now records both the broader proposed boundary and the implemented narrow internal
-candidate. A fixed allowlist, collection/media ceilings, canonical base64,
-redacted error boundary, explicit identity migration/fork and byte-pinned shared
-PNG/document fixtures exist. Native full PNG fixture execution is distinct from
-the TypeScript wrapper's recorded-outcome port. The broad schema remains wider,
-the full public adoption corpus and language-neutral guarantees are not frozen,
-Asset Model owns the reusable structure and the Project copy is checked for
-structural drift, without a broader semantic-parity proof. No production bridge
-or independent consumer has completed the exchange gates. The Project row
-remains internal.
-
-Before publication, the Project owner must also resolve the current writer v9,
-reader ceiling v10, and authoring candidate v11 split. The normal Windows path
-needs an approved migration into the selected exchange profile and deterministic
-round-trip behavior back from every supported consumer.
+Native full PNG verification is now used by the production validation ports;
+the original shared fixture's recorded-outcome TypeScript port remains historical
+fixture evidence, not the production decoder. Asset Model owns reusable structure
+and the Project copy has an exact structural drift gate, not a blanket semantic-
+parity proof. Public profile promotion and an independently implemented consumer
+still need their own corpus and review. The Project row remains internal.
 
 ### Asset
 
-The tracked Asset Model v1 schema and native crates establish strong local
-foundations: content-addressed references, bounded blob and chunk-manifest
-forms, exact closure validation, strict PNG validation, immutable local storage,
-and descriptor-last publication. The local store and host are native-only. The
-resolver has compile-only portable-target evidence, but no portable execution,
-product integration, public support promise, transfer, Sync integration,
-language bridge, public C ABI, remote lifecycle, capability advertisement, or
-product activation.
+Asset Model and the existing native owners supply content-addressed references,
+bounded blob/chunk-manifest forms, exact physical/logical closure validation,
+strict full PNG decode, immutable storage and descriptor-last publication.
+The local store stays native-only and principal-bound. A native transfer path,
+internal optional C ABI/Node addon and closed main-process copy/preview commands
+now reuse those owners; they do not expose generic filesystem or object-query APIs.
 
-Asset Model v1 owns the reusable `ViviAssetRef`, `EmbeddableBlobAssetRef`, and
-`PngAssetRef` structural definitions. Project retains self-contained copies for
-its compiled validator; the Project schema suite compares all three with the
-tracked Asset schema after local-reference expansion and annotation removal.
-Project's existing semantic validator additionally enforces its placement,
-media-type, digest, and closure rules. This is a structural drift gate, not
-general cross-language semantic equivalence or PNG resolution evidence: the
-native resolver has a narrower input ceiling and separate store/decode checks.
-Referenced transfer, independent consumers, and public promotion remain open.
+C2 separately reuses a pure byte-backed host/resolver/decode path whose normal
+WASM build graph excludes SQLite and the local store. This is actual bounded
+WASM execution, not merely the earlier compile-only resolver evidence. It does
+not establish a network transfer protocol or an independent implementation.
+Main binds the accepted bundled C2 consumer under the existing Windows and
+native-addon guards, creating a fresh capability map containing exactly
+`vivi.cap.referencedAssets@1` and `vivi.cap.maskInvert@1`. Renderer readiness or
+retained metadata cannot authorize copy. The real local Copy and receiver Reload
+path has finite application evidence; it is not a remote transfer protocol or
+general capability promotion.
+
+Asset Model owns `ViviAssetRef`, `EmbeddableBlobAssetRef` and `PngAssetRef`
+structure. Project retains self-contained compiled-schema copies, checked after
+local-reference expansion with only annotation removal. Project placement/media/
+digest rules and native resolver/store/decode semantics remain separately owned.
+Structural equality is not general cross-language semantic equivalence. Referenced
+Sync, remote authorization/lifecycle, public promotion and broader compatibility
+claims remain outside the current bounded local transfer scope.
 
 ### Evaluation
 
-The tracked `vivi2d.evaluationPayload.v1` and
-`vivi2d.evaluationTexturePlan.v1` machine artifacts are internal host seams.
-The native path validates, correlates Assets, and lowers categories 1 through
-9, including the reviewed allocation/reservation foundation. It does not yet
-perform category 10 parameter binding, physics, IK, skinning, and mandatory
-derived evaluation, or category 11 topology, identity, masking, sealing,
-model-ready output, texture attachment, and activation.
+The internal `vivi2d.evaluationPayload.v1` and
+`vivi2d.evaluationTexturePlan.v1` seams now feed the same C1-C11 lowerer.
+The deterministic-math dependency is connected. Category 10 initial/transactional
+derived evaluation and category 11 identity/topology/mask/seal construction exist,
+with their fixed numerical evidence, ordered reservation and borrowed-state rules.
+Post-seal preparation consumes that seal into Ready or same-seal Missing; the
+optional core owner moves Ready without a second initial evaluation.
 
-The deterministic-math foundation is still disconnected from the category 10
-evaluator. Current native preflight also rejects nonempty clips and state
-machines. Category 9 completion therefore must not be described as completed
-Evaluation support.
+The [current integration boundary](./evaluation-c10-integration.md) distinguishes
+each accepted slice, native/test-WASM evidence, pure C2 preparation and application
+freshness/GPU obligations. Existing nonempty clip/state-machine rejection remains.
+The application repairs and production-main binding have their own scoped
+implementation acceptance and actual source-built Windows evidence, distinct
+from the accepted lowerer/native boundary. Only the selected bundled consumer's
+two capabilities are bound; no general input-acceptance or capability expansion
+is claimed. Public Evaluation promotion and broad cross-target parity remain
+separate.
 
 ### Runtime ABI
 
-The repository tracks a default ABI 0.1 header and feature-gated native ABI 0.2
-implementation work. The ABI 0.2 public header and editor Evaluation-loading
-entry point are not tracked public surfaces. The C ABI packages remain internal
-and have no support promise.
+The default ABI 0.1 header and legacy behavior remain unchanged. Optional native
+ABI 0.2 work and the separate internal `vivi_runtime_editor.h` Evaluation
+interface are tracked source. The latter defines typed descriptors/copy-out,
+owner/lifecycle/generation/error rules and a separate opt-in Evaluation-WASM
+artifact; native linked-C and actual WASM checks exercise those surfaces.
 
-Portable-consumer readiness requires a selected, reviewed, publicly promoted
-versioned header that matches its implementation surface, plus exact rules for
-layout, ownership, pointer lifetime, threading, errors, generation, and
-capability behavior. The same fixture corpus must then be executed by the
-TypeScript reference, native implementation, and each claimed portable target.
-Compile evidence, runtime execution, and parity are separate claims.
+All packages remain internal. A tracked header is not a publicly promoted stable
+ABI or a supported-client promise. Native/pure preparation review does not prove
+application session freshness, event-free CPU/GPU publication or production
+capability binding. Portable-consumer promotion still requires a selected
+reviewed versioned boundary and the claimed producer/consumer fixture corpus.
+Compilation, actual execution, independent parity and application integration
+remain distinct claims.
 
 ### Sync
 
@@ -153,13 +168,21 @@ mutation at the 64-receipt ceiling fails rather than evicting idempotency histor
 A conflict preserves its original observed head and candidate identity; it does
 not perform a merge or silent last-write-wins.
 
-These are transient local rules, not a Sync client or durable offline protocol.
-Opaque `scopeId` is a trusted host label, not authentication. A future host must
-retain immutable bytes and receipts, route each cell through an atomic serialized
-transaction, authorize access, and implement transfer, crash recovery and privacy
-lifecycle. Metadata reload is shape-checked but does not recreate prepared
-handles: preparation from actual retained bytes must run again. IDs alone do
-not retain payloads. Durable offline retry remains an open requirement.
+Those model functions remain transient and filesystem-free. The separately owned
+[main-process local host](../../../electron/local-exchange-host.ts) now supplies
+bounded retained object bytes, complete-file cell commits, outbox/receipt/conflict
+retention and restart revalidation. Objects are written before the cell becomes
+visible; recovery checks retained bytes and re-prepares proof handles instead of
+trusting persisted metadata to recreate WeakMap authority. Explicit local delivery
+uses the same CAS/idempotency rules between selected cells/roots, with both conflict
+payloads retained. Corruption freezes the affected cell rather than resetting it.
+
+The process-lock owner and OS user are the local trust boundary; opaque IDs are
+not authentication. The existing flushed-file/rename writer supports the bounded
+process-restart design, not multi-file transactional rollback or directory/power-
+loss durability. No automatic remote retry, account/backend, remote authorization,
+referenced-Asset Sync or destructive retention policy is introduced. The current
+local embedded outbox is implemented; a public remote Sync protocol remains open.
 
 Cloudflare remains an optional implementation candidate for a coordination
 plane. It is not part of the Sync wire contract, and the current tracked
@@ -204,14 +227,31 @@ separate Sync CAS call, which may conflict. TypeScript fixtures execute actual
 Project validation using the byte-bound recorded PNG port; separate Rust
 fixture execution does not create a production language bridge.
 
-The future durable Job contract still must define and prove submission
-idempotency, durable status and
-event replay, worker claims and attempts, terminal/cancellation races, mandatory
-artifact size and integrity metadata, provenance, and atomic result publication.
-A result must never mutate a Project directly. Explicit acceptance creates a
-candidate Project revision, which always passes Project validation. If that
-Project participates in Sync, acceptance also passes the Sync compare-and-swap
-and conflict rules.
+The main-process local host now retains bounded submissions, complete result
+manifests/bytes, decisions and candidate bytes. It persists a version-fenced claim
+before renderer dispatch through the real
+[Provider SDK/ComfyUI adapter](../../../src/lib/local-exchange-provider.ts).
+Explicit Start/Retry never refreshes and replays a stale command automatically.
+A fixed monotonic deadline is checked at new completion adoption; exact committed
+completion replay is handled first. Recovered running attempts are expired before
+commands resume, with no automatic provider restart. Cancellation fences completion
+but does not claim that an uncooperative physical provider stopped; its slot is
+retained until actual settlement or renderer loss.
+
+Selected-result approval reuses the real manifest/PSD import owners and requires
+explicit consent. The [staging boundary](../../../src/lib/local-exchange-staging.ts)
+keeps ordinary validated legacy imports separate from exact embedded-v11 candidate
+acceptance. A retained v11 candidate may enter the existing Sync CAS/outbox path;
+an ordinary generated import is not silently relabelled as such a revision.
+Approval can remain durable when a stale Editor prevents volatile adoption, and
+reopening uses the retained exact bytes rather than regenerating the proposal.
+
+These are bounded local implementation and recovery rules, not a remote worker,
+scheduler, service or promoted durable Job wire contract. Network authorization,
+operational privacy/retention and independent-consumer claims remain separate
+adoption gates. Neither a provider result nor a Sync conflict may silently replace
+the currently open Project. Stored user prompts/image/project data are not public
+test evidence, and content digests are not encryption or secrecy guarantees.
 
 ## Dependency Order
 

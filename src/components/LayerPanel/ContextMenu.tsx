@@ -1,5 +1,6 @@
 import { isBone } from "@vivi2d/core/types";
 import { useT } from "@/lib/i18n";
+import { useEditorStore } from "@/stores/editorStore";
 import type { ContextMenuState } from "./useLayerContextMenu";
 
 export interface LayerContextMenuProps {
@@ -16,6 +17,7 @@ export function LayerContextMenu({
   onDelete,
 }: LayerContextMenuProps) {
   const t = useT();
+  const v11 = useEditorStore((state) => !!state.projectV11);
   return (
     <div
       className="context-menu"
@@ -38,7 +40,7 @@ export function LayerContextMenu({
       >
         {t("artPath.addMenu")}
       </button>
-      {isBone(contextMenu.layer) && (
+      {(isBone(contextMenu.layer) || (v11 && contextMenu.layer.kind === "viviMesh")) && (
         <>
           <div className="context-menu-separator" />
           <button

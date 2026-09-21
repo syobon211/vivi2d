@@ -27,6 +27,7 @@ import {
   loadSeeThroughNativeImportBundleAsync,
 } from "@/stores/projectIO";
 import { DialogShell } from "./DialogShell";
+import { LocalExchangePanel } from "./LocalExchangePanel";
 
 type Mode = "image" | "prompt";
 type CompatMode = "checking" | "ready" | "fallback";
@@ -563,6 +564,7 @@ export function AIGenerateDialog({ onClose }: { onClose: () => void }) {
       }
     >
       {}
+      <LocalExchangePanel endpoint={baseUrl} prompt={prompt.trim()} parameters={{ seed, resolution, numSteps: steps }} />
       <div className="ai-gen-tabs">
         <button
           type="button"
