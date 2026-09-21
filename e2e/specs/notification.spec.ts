@@ -40,7 +40,21 @@ async function readBoxes(
 }
 
 async function waitForNotificationSettle(window: import("playwright").Page) {
-  await window.waitForTimeout(250);
+  await expect
+    .poll(() =>
+      window
+        .locator(".notification")
+        .evaluateAll(
+          (notifications) =>
+            notifications.length > 0 &&
+            notifications.every((notification) =>
+              notification
+                .getAnimations()
+                .every((animation) => animation.playState === "finished"),
+            ),
+        ),
+    )
+    .toBe(true);
 }
 
 test.beforeEach(async ({ window, loadTestPsd }) => {
@@ -90,6 +104,7 @@ test("multiple toasts stack without overlapping and remain inside the viewport",
   await expectElementWithinViewport(window, window.locator(".notification-container"));
 
   const boxes = await readBoxes(notifications);
+  expect(boxes).toHaveLength(3);
   const baselineX = boxes[0]!.x;
   for (let index = 0; index < boxes.length; index += 1) {
     const locator = notifications.nth(index);

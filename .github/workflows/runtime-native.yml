@@ -243,6 +243,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Prepare pinned Electron runtime and notices
+        run: node node_modules/electron/install.js
       - run: rustup toolchain install 1.89.0 --profile minimal --component clippy
       - run: rustup toolchain install 1.94.1 --profile minimal --component clippy
       - name: Verify isolated local Asset C ABI at the minimum Rust version
