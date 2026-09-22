@@ -138,11 +138,19 @@ export async function exportMp4(
   const total = clip.duration;
   const canvas = app.canvas;
 
-  // Manually step the captured stream so the recording stays aligned with the
-  // export loop instead of the browser refresh rate.
-  const stream = canvas.captureStream(0);
+  // Keep an owned bitmap with the display's exact backing dimensions. Copy in
+  // the draw's turn; later capture must not depend on the WebGL display buffer.
+  const captureCanvas = document.createElement("canvas");
+  let stream: MediaStream | undefined;
   let recorder: MediaRecorder | undefined;
   try {
+    captureCanvas.width = canvas.width;
+    captureCanvas.height = canvas.height;
+    const context = captureCanvas.getContext("2d");
+    if (!context || captureCanvas.width === 0 || captureCanvas.height === 0)
+      throw new Error("MEDIA_CAPTURE_UNAVAILABLE");
+    context.globalCompositeOperation = "copy";
+    stream = captureCanvas.captureStream(0);
     const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
       ? "video/webm;codecs=vp9"
       : "video/webm";
@@ -158,10 +166,21 @@ export async function exportMp4(
     };
 
     let recordingFailed = false;
+    let recordingStopped = false;
+    let settleStarted!: (started: boolean) => void;
+    const recordingStarted = new Promise<boolean>((resolve) => {
+      settleStarted = resolve;
+    });
+    recorder.onstart = () => settleStarted(true);
     const recordingDone = new Promise<void>((resolve) => {
-      recorder!.onstop = () => resolve();
+      recorder!.onstop = () => {
+        recordingStopped = true;
+        settleStarted(false);
+        resolve();
+      };
       recorder!.onerror = () => {
         recordingFailed = true;
+        settleStarted(false);
         resolve();
       };
     });
@@ -176,15 +195,35 @@ export async function exportMp4(
     for (let frame = 0; frame < total; frame++) {
       onProgress?.({ current: frame, total, phase: "rendering" });
 
-      if (recordingFailed) throw new Error("MEDIA_CAPTURE_FAILED");
+      if (recordingFailed || recordingStopped) throw new Error("MEDIA_CAPTURE_FAILED");
       flushSync(() => applyFrameToStores(project, clip, frame));
-      videoTrack.requestFrame();
       app.render();
+      if (canvas.width !== captureCanvas.width || canvas.height !== captureCanvas.height)
+        throw new Error("MEDIA_CAPTURE_UNAVAILABLE");
+      context.drawImage(canvas, 0, 0);
+      videoTrack.requestFrame();
+      if (frame === 0) {
+        // Supply a real frame before waiting: a recorder may need input to start.
+        // This is startup readiness, not acknowledgement of each encoded frame.
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+          const started = await Promise.race([
+            recordingStarted,
+            new Promise<boolean>((resolve) => {
+              timer = setTimeout(() => resolve(false), 10_000);
+            }),
+          ]);
+          if (!started || recordingFailed || recordingStopped)
+            throw new Error("MEDIA_CAPTURE_FAILED");
+        } finally {
+          clearTimeout(timer);
+        }
+      }
       await waitForPaint();
       await new Promise((r) => setTimeout(r, 1000 / clip.fps));
     }
 
-    if (recordingFailed) throw new Error("MEDIA_CAPTURE_FAILED");
+    if (recordingFailed || recordingStopped) throw new Error("MEDIA_CAPTURE_FAILED");
     recorder.stop();
     onProgress?.({ current: total, total, phase: "encoding" });
 
@@ -203,7 +242,12 @@ export async function exportMp4(
     try {
       if (recorder && recorder.state !== "inactive") recorder.stop();
     } finally {
-      for (const track of stream.getTracks()) track.stop();
+      try {
+        for (const track of stream?.getTracks() ?? []) track.stop();
+      } finally {
+        captureCanvas.width = 0;
+        captureCanvas.height = 0;
+      }
     }
   }
 }

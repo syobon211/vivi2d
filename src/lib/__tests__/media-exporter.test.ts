@@ -30,6 +30,8 @@ function createProjectWithClip(duration = 2) {
 
 function createBlobCanvas(track = { requestFrame: vi.fn(), stop: vi.fn() }) {
   return {
+    width: 64,
+    height: 65,
     toBlob: vi.fn((callback: BlobCallback) => {
       callback(new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" }));
     }),
@@ -38,6 +40,14 @@ function createBlobCanvas(track = { requestFrame: vi.fn(), stop: vi.fn() }) {
       getTracks: () => [track],
     })),
   } as unknown as HTMLCanvasElement;
+}
+
+function mockCaptureCanvas(track: Parameters<typeof createBlobCanvas>[0]) {
+  const canvas = createBlobCanvas(track);
+  const context = { drawImage: vi.fn(), globalCompositeOperation: "source-over" };
+  Object.assign(canvas, { getContext: () => context });
+  vi.spyOn(document, "createElement").mockReturnValue(canvas);
+  return { canvas, context };
 }
 
 describe("media exporter", () => {
@@ -55,6 +65,7 @@ describe("media exporter", () => {
   afterEach(() => {
     (globalThis as any).requestAnimationFrame = originalRequestAnimationFrame;
     (globalThis as any).MediaRecorder = originalMediaRecorder;
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -96,11 +107,17 @@ describe("media exporter", () => {
   });
 
   it("exports an MP4-compatible webm recording and reports encoding progress", async () => {
+    vi.useFakeTimers();
+    let recorder!: MockMediaRecorder;
     class MockMediaRecorder {
       state = "inactive";
       static isTypeSupported = vi.fn().mockReturnValue(true);
       ondataavailable: ((event: { data: Blob }) => void) | null = null;
       onstop: (() => void) | null = null;
+      onstart: (() => void) | null = null;
+      constructor() {
+        recorder = this;
+      }
       start = vi.fn(() => {
         this.state = "recording";
       });
@@ -116,12 +133,39 @@ describe("media exporter", () => {
     }
     (globalThis as any).MediaRecorder = MockMediaRecorder;
     const project = createProjectWithClip(2);
-    const track = { requestFrame: vi.fn(), stop: vi.fn() };
-    const canvas = createBlobCanvas(track);
+    const order: string[] = [];
+    const track = {
+      requestFrame: vi.fn(() => order.push("request")),
+      stop: vi.fn(),
+    };
+    const canvas = createBlobCanvas();
+    const capture = mockCaptureCanvas(track);
+    capture.context.drawImage.mockImplementation((source, x, y) => {
+      expect([source, x, y]).toEqual([canvas, 0, 0]);
+      order.push("copy");
+    });
     const progress = vi.fn();
 
-    await exportMp4({ render: vi.fn(), canvas }, project, "clip-1", "out", progress);
+    const exported = exportMp4(
+      { render: () => order.push("render"), canvas },
+      project,
+      "clip-1",
+      "out",
+      progress,
+    );
 
+    await vi.advanceTimersByTimeAsync(9_000);
+    expect(order).toEqual(["render", "copy", "request"]);
+    expect(window.electronAPI.writeExportFiles).not.toHaveBeenCalled();
+    recorder.onstart?.();
+    await vi.runAllTimersAsync();
+    await exported;
+    expect(order).toEqual(["render", "copy", "request", "render", "copy", "request"]);
+    expect(canvas.captureStream).not.toHaveBeenCalled();
+    expect(capture.context.globalCompositeOperation).toBe("copy");
+    expect([canvas.width, canvas.height]).toEqual([64, 65]);
+    expect([capture.canvas.width, capture.canvas.height]).toEqual([0, 0]);
+    expect(vi.getTimerCount()).toBe(0);
     expect(window.electronAPI.writeExportFiles).toHaveBeenCalledWith(
       expect.objectContaining({
         dirPath: "out",
@@ -146,6 +190,75 @@ describe("media exporter", () => {
       ),
     ).rejects.toThrow("PROJECT_DISPLAY_UNAVAILABLE");
     expect(track.stop).toHaveBeenCalledTimes(2);
+    expect([capture.canvas.width, capture.canvas.height]).toEqual([0, 0]);
+    expect(window.electronAPI.writeExportFiles).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "error",
+    "stop",
+    "timeout",
+    "started-error",
+    "started-stop",
+  ])("does not save partial video after recorder startup %s", async (failure) => {
+    vi.useFakeTimers();
+    let recorder!: FailedMediaRecorder;
+    class FailedMediaRecorder {
+      static isTypeSupported = () => true;
+      state = "inactive";
+      onstart: (() => void) | null = null;
+      onstop: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor() {
+        recorder = this;
+      }
+      start() {
+        this.state = "recording";
+      }
+      stop() {
+        this.state = "inactive";
+        this.onstop?.();
+      }
+    }
+    (globalThis as any).MediaRecorder = FailedMediaRecorder;
+    const track = { requestFrame: vi.fn(), stop: vi.fn() };
+    const capture = mockCaptureCanvas(track);
+    const render = vi.fn();
+    const exported = exportMp4(
+      { render, canvas: createBlobCanvas(track) },
+      createProjectWithClip(),
+      "clip-1",
+      "out",
+    );
+    const rejected = expect(exported).rejects.toThrow("MEDIA_CAPTURE_FAILED");
+    if (failure.startsWith("started-")) recorder.onstart?.();
+    if (failure.endsWith("error")) recorder.onerror?.();
+    else if (failure.endsWith("stop")) recorder.stop();
+    else await vi.advanceTimersByTimeAsync(10_000);
+    await rejected;
+    expect(render).toHaveBeenCalledOnce();
+    expect(track.requestFrame).toHaveBeenCalledOnce();
+    expect(track.stop).toHaveBeenCalledOnce();
+    expect([capture.canvas.width, capture.canvas.height]).toEqual([0, 0]);
+    expect(recorder.state).toBe("inactive");
+    expect(vi.getTimerCount()).toBe(0);
+    expect(window.electronAPI.writeExportFiles).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unavailable capture context without retaining or saving its bitmap", async () => {
+    const track = { requestFrame: vi.fn(), stop: vi.fn() };
+    const capture = mockCaptureCanvas(track);
+    Object.assign(capture.canvas, { getContext: () => null });
+    await expect(
+      exportMp4(
+        { render: vi.fn(), canvas: createBlobCanvas() },
+        createProjectWithClip(),
+        "clip-1",
+        "out",
+      ),
+    ).rejects.toThrow("MEDIA_CAPTURE_UNAVAILABLE");
+    expect(capture.canvas.captureStream).not.toHaveBeenCalled();
+    expect([capture.canvas.width, capture.canvas.height]).toEqual([0, 0]);
     expect(window.electronAPI.writeExportFiles).not.toHaveBeenCalled();
   });
 
