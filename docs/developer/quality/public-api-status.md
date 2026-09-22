@@ -1,5 +1,25 @@
 # Public API Status
 
+## Reading current implementation status
+
+Use the [current contract status](../architecture/multiplatform-contract-status.md)
+and [bounded application connection](../architecture/evaluation-c10-integration.md#current-bounded-c2-application-connection)
+for the present implementation state. C10 derived evaluation, C11 sealing,
+post-seal preparation, the opt-in CPU owner and the bounded C2 application
+connection have their own scoped implementation acceptance. The selected
+Windows/native-addon consumer does not replace legacy Editor/Viewer initialization.
+Final candidate tests, hosted CI and integration remain separate from those reviews.
+
+The stage-specific notes and foundation audit descriptions below preserve earlier
+slice boundaries. Their disconnected-C10, consumer-zero-math, absent-C11 and
+open-EDH-01 statements are historical prerequisites, not a current backlog.
+Later scoped connections supersede only those absence claims; they do not waive
+the retained parser, ownership, privacy or publication rules. All six contracts
+remain internal foundations, without stable-API promotion, remote-service support,
+private-product approval or release authorization.
+
+### Earlier staged boundary notes
+
 Phase B's feature-gated native `EvaluationRuntimeV1` and EDH's detached
 `getRequestState()` are internal implementation surfaces, not stable APIs or a
 completed application runtime capability. The older absent-active-owner wording

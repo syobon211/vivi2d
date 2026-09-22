@@ -16,6 +16,7 @@ import {
   createSceneAndClip,
   selectLayer,
 } from "../helpers/operations";
+import { decodeThreeVideoFrames } from "../helpers/video-frames";
 
 let tmpDir: string;
 
@@ -850,233 +851,14 @@ for (const profile of ["legacy", "v11"] as const) {
         retry: testInfo.retry,
         retentionStatus,
       };
-      // Keep production CSP unchanged. This sandboxed test-only decoder permits
-      // synthetic blob media and denies all network sources; it has no preload.
-      const decoderPending = app.waitForEvent("window");
-      const decoderId = await app.evaluate(({ BrowserWindow }) => {
-        const decoder = new BrowserWindow({
-          show: false,
-          webPreferences: {
-            sandbox: true,
-            contextIsolation: true,
-            nodeIntegration: false,
-            backgroundThrottling: false,
-          },
-        });
-        void decoder.loadURL(
-          `data:text/html,${encodeURIComponent('<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; media-src blob:">')}`,
-        );
-        return decoder.id;
-      });
-      const decoder = await decoderPending;
-      let frames: number[][][];
+      let frames: number[][][] | undefined;
       try {
-        const observed = await decoder.evaluate(
-          async ({ data, dimensions, finalPose }) => {
-            const bytes = Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
-            const url = URL.createObjectURL(new Blob([bytes], { type: "video/webm" }));
-            const video = document.createElement("video");
-            video.muted = true;
-            const canvas = document.createElement("canvas");
-            const samples: number[][][] = [];
-            const callbacks: { mediaTime: number; presentedFrames: number }[] = [];
-            const deadline = performance.now() + 10_000;
-            let callbackCount = 0;
-            let callback = 0;
-            let timer: ReturnType<typeof setTimeout> | undefined;
-            let seekTimer: ReturnType<typeof setTimeout> | undefined;
-            let settled = false;
-            let primaryStatus = "not-started";
-            const pixels = (): number[][] => {
-              if (
-                video.readyState < video.HAVE_CURRENT_DATA ||
-                video.seeking ||
-                video.videoWidth !== dimensions.width ||
-                video.videoHeight !== dimensions.height ||
-                video.videoWidth === 0 ||
-                video.videoHeight === 0
-              )
-                throw Error("Encoded video pixels unavailable");
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
-              const ctx = canvas.getContext("2d")!;
-              ctx.drawImage(video, 0, 0);
-              return [8, 32].map((x) =>
-                Array.from(
-                  ctx.getImageData(
-                    Math.floor(x * dimensions.scale),
-                    Math.floor(20 * dimensions.scale),
-                    1,
-                    1,
-                  ).data,
-                ).slice(0, 3),
-              );
-            };
-            const observe = () => {
-              const state = {
-                readyState: video.readyState,
-                seeking: video.seeking,
-                width: video.videoWidth,
-                height: video.videoHeight,
-                currentTime: Number.isFinite(video.currentTime)
-                  ? video.currentTime
-                  : null,
-              };
-              try {
-                return { ...state, status: "available", pixels: pixels() };
-              } catch {
-                return { ...state, status: "unavailable", pixels: null };
-              }
-            };
-            const matchesFinal = (value: number[][] | null) =>
-              value?.length === 2 &&
-              value.every((point, p) =>
-                point.every((channel, c) => Math.abs(channel - finalPose[p]![c]!) <= 12),
-              );
-            try {
-              primaryStatus = await new Promise<string>((resolve) => {
-                const finish = (status: string) => {
-                  if (settled) return;
-                  settled = true;
-                  clearTimeout(timer);
-                  video.cancelVideoFrameCallback(callback);
-                  resolve(status);
-                };
-                timer = setTimeout(() => finish("decode-timeout"), 10_000);
-                video.onerror = () => finish("decode-error");
-                video.onended = () => finish("ended");
-                const capture: VideoFrameRequestCallback = (_now, metadata) => {
-                  if (settled) return;
-                  callbackCount++;
-                  try {
-                    if (callbacks.length < 32) {
-                      callbacks.push({
-                        mediaTime: metadata.mediaTime,
-                        presentedFrames: metadata.presentedFrames,
-                      });
-                      samples.push(pixels());
-                    }
-                    callback = video.requestVideoFrameCallback(capture);
-                  } catch {
-                    finish("callback-pixels-unavailable");
-                  }
-                };
-                callback = video.requestVideoFrameCallback(capture);
-                video.src = url;
-                void video.play().catch(() => finish("playback-error"));
-              });
-              // Freeze the original playback observation before any auxiliary seek.
-              const quality = video.getVideoPlaybackQuality();
-              const originalQuality = {
-                totalVideoFrames: quality.totalVideoFrames,
-                droppedVideoFrames: quality.droppedVideoFrames,
-              };
-              const seekableCount = video.seekable.length;
-              const seekable = Array.from(
-                { length: Math.min(4, seekableCount) },
-                (_, i) => ({
-                  start: video.seekable.start(i),
-                  end: video.seekable.end(i),
-                }),
-              );
-              const duration = Number.isFinite(video.duration) ? video.duration : null;
-              const endedPixels = observe();
-              let seek: {
-                status: string;
-                target?: number;
-                observation?: ReturnType<typeof observe>;
-              } = {
-                status: "not-needed",
-              };
-              if (!samples.some(matchesFinal) && !matchesFinal(endedPixels.pixels)) {
-                seek = { status: "unavailable" };
-                const range =
-                  seekableCount > 0 && seekableCount <= 4 ? seekable.at(-1) : undefined;
-                const remaining = deadline - performance.now();
-                if (
-                  primaryStatus === "ended" &&
-                  range &&
-                  Number.isFinite(range.start) &&
-                  Number.isFinite(range.end) &&
-                  range.end > range.start &&
-                  remaining > 0
-                ) {
-                  const target =
-                    range.end - Math.min(0.001, (range.end - range.start) / 2);
-                  if (range.start < target && target < range.end) {
-                    video.pause();
-                    const status = await new Promise<string>((resolve) => {
-                      const finish = (status: string) => {
-                        clearTimeout(seekTimer);
-                        video.onseeked = null;
-                        video.onerror = null;
-                        resolve(status);
-                      };
-                      video.onseeked = () => finish("seeked");
-                      video.onerror = () => finish("seek-error");
-                      seekTimer = setTimeout(
-                        () => finish("seek-timeout"),
-                        Math.min(1000, Math.max(0, deadline - performance.now())),
-                      );
-                      try {
-                        video.currentTime = target;
-                      } catch {
-                        finish("seek-unavailable");
-                      }
-                    });
-                    seek = { status, target, observation: observe() };
-                  }
-                }
-              }
-              return {
-                samples,
-                diagnostic: {
-                  primaryStatus,
-                  callbackCount,
-                  callbacks,
-                  callbacksTruncated: callbackCount > 32,
-                  originalQuality,
-                  duration,
-                  seekableCount,
-                  seekable,
-                  seekableTruncated: seekableCount > 4,
-                  endedPixels,
-                  seek,
-                },
-              };
-            } catch {
-              // Diagnostic failure must not replace the original sample outcome.
-              return {
-                samples,
-                diagnostic: {
-                  primaryStatus,
-                  callbackCount,
-                  callbacks,
-                  diagnosticStatus: "unavailable",
-                },
-              };
-            } finally {
-              clearTimeout(timer);
-              clearTimeout(seekTimer);
-              video.cancelVideoFrameCallback(callback);
-              video.onended = null;
-              video.onerror = null;
-              video.onseeked = null;
-              video.pause();
-              video.removeAttribute("src");
-              video.load();
-              URL.revokeObjectURL(url);
-            }
-          },
-          {
-            data: videoBytes.toString("base64"),
-            dimensions,
-            finalPose: expected[2]!,
-          },
-        );
+        frames = await decodeThreeVideoFrames(videoBytes, dimensions);
+      } finally {
         const diagnostic = {
           recordingIdentity,
-          ...observed.diagnostic,
+          oracle: "encoded-frames",
+          decodeStatus: frames ? "decoded" : "failed",
           diagnosticPersistence: "saved",
         };
         try {
@@ -1088,13 +870,6 @@ for (const profile of ["legacy", "v11"] as const) {
           diagnostic.diagnosticPersistence = "unavailable";
         }
         console.log("[video-capture-diagnostic]", JSON.stringify(diagnostic));
-        frames = observed.samples;
-        expect(observed.diagnostic.primaryStatus).toBe("ended");
-      } finally {
-        await app.evaluate(
-          ({ BrowserWindow }, id) => BrowserWindow.fromId(id)?.destroy(),
-          decoderId,
-        );
       }
       // Decode actual encoded frames, not a requestFrame call-count or Blob-size claim.
       expect(frames).toHaveLength(3);

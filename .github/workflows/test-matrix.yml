@@ -222,6 +222,22 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check:e2e-project-coverage
+      - name: Verify saved-video decoder prerequisites
+        if: matrix.project == 'smoke'
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { spawnSync } from 'node:child_process';
+          const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => key.toUpperCase() !== 'FFREPORT'));
+          for (const tool of ['ffprobe', 'ffmpeg']) {
+            const result = spawnSync(tool, ['-v', 'error', '-version'], { env, shell: false, windowsHide: true, timeout: 5000, maxBuffer: 65536 });
+            if (result.error || result.signal || result.status !== 0 || result.stderr?.length) {
+              console.error('Saved-video verification requires working ffprobe and ffmpeg on PATH.');
+              process.exit(1);
+            }
+          }
+          console.log('Saved-video decoder prerequisites available; real decode is checked by smoke.');
+          NODE
       - name: Typecheck Electron E2E sources
         run: npx tsc --noEmit -p e2e/tsconfig.json
       - run: npx playwright install --with-deps chromium

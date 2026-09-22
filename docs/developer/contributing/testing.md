@@ -39,6 +39,15 @@ npm run test:e2e:full
 Use `check:quality:e2e-workflow-record` for pre-release workflow-sensitive
 changes because it records the Auto Setup workflow project.
 
+The `smoke` project's saved-video check requires `ffprobe` and `ffmpeg` on PATH
+with Matroska/VP9 decode, RGB24 output, `-noautoscale` and `-fps_mode passthrough`
+support. They are test-only prerequisites, not shipped dependencies. The test
+decodes the actual exported bytes and checks all three frames and dimensions;
+it does not count playback callbacks. Missing tools or decode errors fail the
+test, without an automatic download, fallback or skip. Synthetic diagnostic
+files stay local and are not uploaded by CI. This is not a general playback or
+timestamp-accuracy conformance claim.
+
 Pull requests that change editor or E2E inputs run the selected Ubuntu tier:
 `smoke`, `full-dialogs`, `full-integrations`, and `visual`. This closes the
 startup, dialog-inventory, integration, and rendered-state gaps without claiming
