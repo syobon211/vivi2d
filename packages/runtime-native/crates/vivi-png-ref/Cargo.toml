@@ -13,7 +13,7 @@ path = "src/lib.rs"
 
 [dependencies]
 miniz_oxide = { version = "0.8.9", default-features = false }
-sha2 = { version = "0.10", default-features = false }
+sha2 = { version = "0.11", default-features = false }
 
 [dev-dependencies]
 base64 = "0.22"
