@@ -41,10 +41,13 @@ changes because it records the Auto Setup workflow project.
 
 The `smoke` project's saved-video check requires `ffprobe` and `ffmpeg` on PATH
 with Matroska/VP9 decode, RGB24 output, `-noautoscale` and `-fps_mode passthrough`
-support. They are test-only prerequisites, not shipped dependencies. The test
+support. They are test-only prerequisites, not shipped dependencies. Hosted
+`smoke` jobs prepare them with APT, Homebrew or Chocolatey before the strict
+preflight; other matrix projects do not install them. Local users must provide
+both tools on PATH. Neither the test helper nor the product installs tools. The test
 decodes the actual exported bytes and checks all three frames and dimensions;
 it does not count playback callbacks. Missing tools or decode errors fail the
-test, without an automatic download, fallback or skip. Synthetic diagnostic
+test, without a helper-initiated download, fallback or skip. Synthetic diagnostic
 files stay local and are not uploaded by CI. This is not a general playback or
 timestamp-accuracy conformance claim.
 

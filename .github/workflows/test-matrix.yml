@@ -222,6 +222,27 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check:e2e-project-coverage
+      - name: Prepare saved-video decoder tools
+        if: matrix.project == 'smoke'
+        shell: bash
+        timeout-minutes: 5
+        run: |
+          case "$RUNNER_OS" in
+            Linux)
+              sudo apt-get update
+              sudo apt-get install --yes --no-install-recommends ffmpeg
+              ;;
+            macOS)
+              brew install ffmpeg
+              ;;
+            Windows)
+              choco install ffmpeg --yes --no-progress
+              ;;
+            *)
+              echo 'Unsupported saved-video decoder runner.' >&2
+              exit 1
+              ;;
+          esac
       - name: Verify saved-video decoder prerequisites
         if: matrix.project == 'smoke'
         shell: bash
