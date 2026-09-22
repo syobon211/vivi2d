@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -709,7 +710,7 @@ for (const profile of ["legacy", "v11"] as const) {
     profile === "legacy"
       ? "legacy media capture contains repeated and final bound frames with a non-preserved buffer"
       : "v11 clip input stays rejected without replacing the supported incumbent",
-    async ({ app, window }) => {
+    async ({ app, window }, testInfo) => {
       const wire = profile === "legacy" ? legacyBoundFixture() : boundMaskFixture();
       wire.project.ikControllers = [];
       const clip = {
@@ -833,6 +834,22 @@ for (const profile of ["legacy", "v11"] as const) {
       await button.click();
       const videoPath = path.join(tmpDir, "capture.webm");
       await expect.poll(() => fs.existsSync(videoPath)).toBe(true);
+      await expect(button).toBeEnabled();
+      const videoBytes = fs.readFileSync(videoPath);
+      let retentionStatus = "saved";
+      try {
+        const retainedVideo = testInfo.outputPath("synthetic-capture.webm");
+        fs.mkdirSync(path.dirname(retainedVideo), { recursive: true });
+        fs.writeFileSync(retainedVideo, videoBytes);
+      } catch {
+        retentionStatus = "unavailable";
+      }
+      const recordingIdentity = {
+        bytes: videoBytes.length,
+        sha256: createHash("sha256").update(videoBytes).digest("hex"),
+        retry: testInfo.retry,
+        retentionStatus,
+      };
       // Keep production CSP unchanged. This sandboxed test-only decoder permits
       // synthetic blob media and denies all network sources; it has no preload.
       const decoderPending = app.waitForEvent("window");
@@ -854,58 +871,197 @@ for (const profile of ["legacy", "v11"] as const) {
       const decoder = await decoderPending;
       let frames: number[][][];
       try {
-        frames = await decoder.evaluate(
-          async ({ data, scale }) => {
+        const observed = await decoder.evaluate(
+          async ({ data, dimensions, finalPose }) => {
             const bytes = Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
             const url = URL.createObjectURL(new Blob([bytes], { type: "video/webm" }));
             const video = document.createElement("video");
             video.muted = true;
             const canvas = document.createElement("canvas");
             const samples: number[][][] = [];
+            const callbacks: { mediaTime: number; presentedFrames: number }[] = [];
+            const deadline = performance.now() + 10_000;
+            let callbackCount = 0;
             let callback = 0;
+            let timer: ReturnType<typeof setTimeout> | undefined;
+            let seekTimer: ReturnType<typeof setTimeout> | undefined;
+            let settled = false;
+            let primaryStatus = "not-started";
+            const pixels = (): number[][] => {
+              if (
+                video.readyState < video.HAVE_CURRENT_DATA ||
+                video.seeking ||
+                video.videoWidth !== dimensions.width ||
+                video.videoHeight !== dimensions.height ||
+                video.videoWidth === 0 ||
+                video.videoHeight === 0
+              )
+                throw Error("Encoded video pixels unavailable");
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              const ctx = canvas.getContext("2d")!;
+              ctx.drawImage(video, 0, 0);
+              return [8, 32].map((x) =>
+                Array.from(
+                  ctx.getImageData(
+                    Math.floor(x * dimensions.scale),
+                    Math.floor(20 * dimensions.scale),
+                    1,
+                    1,
+                  ).data,
+                ).slice(0, 3),
+              );
+            };
+            const observe = () => {
+              const state = {
+                readyState: video.readyState,
+                seeking: video.seeking,
+                width: video.videoWidth,
+                height: video.videoHeight,
+                currentTime: Number.isFinite(video.currentTime)
+                  ? video.currentTime
+                  : null,
+              };
+              try {
+                return { ...state, status: "available", pixels: pixels() };
+              } catch {
+                return { ...state, status: "unavailable", pixels: null };
+              }
+            };
+            const matchesFinal = (value: number[][] | null) =>
+              value?.length === 2 &&
+              value.every((point, p) =>
+                point.every((channel, c) => Math.abs(channel - finalPose[p]![c]!) <= 12),
+              );
             try {
-              await new Promise<void>((resolve, reject) => {
-                const timer = setTimeout(
-                  () => reject(Error("Encoded video decode timeout")),
-                  10_000,
-                );
-                video.onerror = () => {
+              primaryStatus = await new Promise<string>((resolve) => {
+                const finish = (status: string) => {
+                  if (settled) return;
+                  settled = true;
                   clearTimeout(timer);
-                  reject(Error("Encoded video decode failed"));
+                  video.cancelVideoFrameCallback(callback);
+                  resolve(status);
                 };
-                video.onended = () => {
-                  clearTimeout(timer);
-                  resolve();
-                };
-                const capture = () => {
-                  canvas.width = video.videoWidth;
-                  canvas.height = video.videoHeight;
-                  const ctx = canvas.getContext("2d")!;
-                  ctx.drawImage(video, 0, 0);
-                  samples.push(
-                    [8, 32].map((x) =>
-                      Array.from(
-                        ctx.getImageData(
-                          Math.floor(x * scale),
-                          Math.floor(20 * scale),
-                          1,
-                          1,
-                        ).data,
-                      ).slice(0, 3),
-                    ),
-                  );
-                  callback = video.requestVideoFrameCallback(capture);
+                timer = setTimeout(() => finish("decode-timeout"), 10_000);
+                video.onerror = () => finish("decode-error");
+                video.onended = () => finish("ended");
+                const capture: VideoFrameRequestCallback = (_now, metadata) => {
+                  if (settled) return;
+                  callbackCount++;
+                  try {
+                    if (callbacks.length < 32) {
+                      callbacks.push({
+                        mediaTime: metadata.mediaTime,
+                        presentedFrames: metadata.presentedFrames,
+                      });
+                      samples.push(pixels());
+                    }
+                    callback = video.requestVideoFrameCallback(capture);
+                  } catch {
+                    finish("callback-pixels-unavailable");
+                  }
                 };
                 callback = video.requestVideoFrameCallback(capture);
                 video.src = url;
-                void video.play().catch(() => {
-                  clearTimeout(timer);
-                  reject(Error("Encoded video playback failed"));
-                });
+                void video.play().catch(() => finish("playback-error"));
               });
-              return samples;
+              // Freeze the original playback observation before any auxiliary seek.
+              const quality = video.getVideoPlaybackQuality();
+              const originalQuality = {
+                totalVideoFrames: quality.totalVideoFrames,
+                droppedVideoFrames: quality.droppedVideoFrames,
+              };
+              const seekableCount = video.seekable.length;
+              const seekable = Array.from(
+                { length: Math.min(4, seekableCount) },
+                (_, i) => ({
+                  start: video.seekable.start(i),
+                  end: video.seekable.end(i),
+                }),
+              );
+              const duration = Number.isFinite(video.duration) ? video.duration : null;
+              const endedPixels = observe();
+              let seek: {
+                status: string;
+                target?: number;
+                observation?: ReturnType<typeof observe>;
+              } = {
+                status: "not-needed",
+              };
+              if (!samples.some(matchesFinal) && !matchesFinal(endedPixels.pixels)) {
+                seek = { status: "unavailable" };
+                const range =
+                  seekableCount > 0 && seekableCount <= 4 ? seekable.at(-1) : undefined;
+                const remaining = deadline - performance.now();
+                if (
+                  primaryStatus === "ended" &&
+                  range &&
+                  Number.isFinite(range.start) &&
+                  Number.isFinite(range.end) &&
+                  range.end > range.start &&
+                  remaining > 0
+                ) {
+                  const target =
+                    range.end - Math.min(0.001, (range.end - range.start) / 2);
+                  if (range.start < target && target < range.end) {
+                    video.pause();
+                    const status = await new Promise<string>((resolve) => {
+                      const finish = (status: string) => {
+                        clearTimeout(seekTimer);
+                        video.onseeked = null;
+                        video.onerror = null;
+                        resolve(status);
+                      };
+                      video.onseeked = () => finish("seeked");
+                      video.onerror = () => finish("seek-error");
+                      seekTimer = setTimeout(
+                        () => finish("seek-timeout"),
+                        Math.min(1000, Math.max(0, deadline - performance.now())),
+                      );
+                      try {
+                        video.currentTime = target;
+                      } catch {
+                        finish("seek-unavailable");
+                      }
+                    });
+                    seek = { status, target, observation: observe() };
+                  }
+                }
+              }
+              return {
+                samples,
+                diagnostic: {
+                  primaryStatus,
+                  callbackCount,
+                  callbacks,
+                  callbacksTruncated: callbackCount > 32,
+                  originalQuality,
+                  duration,
+                  seekableCount,
+                  seekable,
+                  seekableTruncated: seekableCount > 4,
+                  endedPixels,
+                  seek,
+                },
+              };
+            } catch {
+              // Diagnostic failure must not replace the original sample outcome.
+              return {
+                samples,
+                diagnostic: {
+                  primaryStatus,
+                  callbackCount,
+                  callbacks,
+                  diagnosticStatus: "unavailable",
+                },
+              };
             } finally {
+              clearTimeout(timer);
+              clearTimeout(seekTimer);
               video.cancelVideoFrameCallback(callback);
+              video.onended = null;
+              video.onerror = null;
+              video.onseeked = null;
               video.pause();
               video.removeAttribute("src");
               video.load();
@@ -913,10 +1069,27 @@ for (const profile of ["legacy", "v11"] as const) {
             }
           },
           {
-            data: fs.readFileSync(videoPath).toString("base64"),
-            scale: dimensions.scale,
+            data: videoBytes.toString("base64"),
+            dimensions,
+            finalPose: expected[2]!,
           },
         );
+        const diagnostic = {
+          recordingIdentity,
+          ...observed.diagnostic,
+          diagnosticPersistence: "saved",
+        };
+        try {
+          fs.writeFileSync(
+            testInfo.outputPath("capture-observation.json"),
+            JSON.stringify(diagnostic, null, 2),
+          );
+        } catch {
+          diagnostic.diagnosticPersistence = "unavailable";
+        }
+        console.log("[video-capture-diagnostic]", JSON.stringify(diagnostic));
+        frames = observed.samples;
+        expect(observed.diagnostic.primaryStatus).toBe("ended");
       } finally {
         await app.evaluate(
           ({ BrowserWindow }, id) => BrowserWindow.fromId(id)?.destroy(),

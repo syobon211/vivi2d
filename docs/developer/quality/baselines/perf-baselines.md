@@ -94,6 +94,27 @@ When CI perf monitoring reports a regression:
 
 ## Editor interaction guidance
 
+On 2026-09-22, the owner approved making `toolButtonClickToNextFrameMs`
+report-only: it spans `setTool` through the next rAF callback and includes
+frame-phase waiting. Samples, median, maximum and the descriptive soft value
+remain recorded; only its former hard `<8ms` condition is retired. This does
+not reinterpret an earlier 10ms failure / 7ms retry as a pass. Historical
+snapshots and failures remain unchanged.
+
+`viewportSetToolMs <8ms` and `meshEditAppReadyMs <20ms` remain enforced, as do
+selection `<10/20ms`, overlay `<8/8ms`, layer-panel `<40ms` and FPS `>=50`.
+Missing, invalid or mismatched probes no longer become zero; measured zero is
+valid. After resetting select mode and Background, events and marks are cleared
+once. Selection and tool collection preserve the current target's cached
+vertex-details event across both phases. Each phase has one bounded 1s poll;
+an unfiltered batch of 512 or more events, or accumulated count above 512,
+fails before accepting any required probe. Collection errors are terminal.
+
+The collection wait only observes producer durations; it does not relax their
+budgets or repeat an operation to obtain a faster sample. The report-only
+`enterMeshEditMs` envelope now includes these waits, so future coarse values
+also reflect the observation-method change, not just product performance.
+
 `perf-editor-interaction` now tracks two metric families:
 
 - coarse browser-visible timings such as `enterMeshEditMs`
@@ -107,7 +128,8 @@ When CI perf monitoring reports a regression:
   - `meshOverlayVertexDetailsReadyMs`
   - `meshOverlayVisualModelBuildMs`
 
-Treat the internal probe family as the primary regression signal when deciding
+Except for the report-only tool-button next-frame metric, treat the internal
+probe family as the primary regression signal when deciding
 whether app-side work actually slowed down. A coarse regression without a
 matching probe regression usually points to DOM interaction overhead, browser
 automation variance, or measurement-boundary drift rather than a real store or
@@ -115,7 +137,8 @@ render hot-path regression.
 
 For this reason, `perf-editor-interaction` may keep coarse envelope metrics
 such as `enterMeshEditMs` in report-only mode while enforcing the app-internal
-probe family. Refreshing the baseline should not be the first reaction to a
+probe family other than tool-button next-frame waiting. Refreshing the baseline
+should not be the first reaction to a
 coarse-only regression if the internal probes remain green.
 
 ## Canvas open guidance
