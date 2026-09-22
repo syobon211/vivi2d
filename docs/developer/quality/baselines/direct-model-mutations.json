@@ -240,21 +240,21 @@
     },
     {
       "kind": "assignment",
-      "line": 219,
+      "line": 220,
       "path": "src/components/Canvas.tsx",
       "signature": "src/components/Canvas.tsx:assignment:world.x = panX",
       "text": "world.x = panX"
     },
     {
       "kind": "assignment",
-      "line": 220,
+      "line": 221,
       "path": "src/components/Canvas.tsx",
       "signature": "src/components/Canvas.tsx:assignment:world.y = panY",
       "text": "world.y = panY"
     },
     {
       "kind": "mutating-call",
-      "line": 218,
+      "line": 219,
       "path": "src/components/Canvas.tsx",
       "signature": "src/components/Canvas.tsx:mutating-call:world.scale.set(zoom)",
       "text": "world.scale.set(zoom)"
@@ -1612,80 +1612,31 @@
     },
     {
       "kind": "assignment",
-      "line": 58,
+      "line": 62,
       "path": "src/hooks/useOnionSkin.ts",
       "signature": "src/hooks/useOnionSkin.ts:assignment:ghostContainer.current = container",
       "text": "ghostContainer.current = container"
     },
     {
       "kind": "assignment",
-      "line": 49,
+      "line": 51,
       "path": "src/hooks/useOnionSkin.ts",
       "signature": "src/hooks/useOnionSkin.ts:assignment:ghostContainer.current = null",
       "text": "ghostContainer.current = null"
     },
     {
       "kind": "assignment",
-      "line": 97,
+      "line": 101,
       "path": "src/hooks/useOnionSkin.ts",
       "signature": "src/hooks/useOnionSkin.ts:assignment:ghostContainer.current = null",
       "text": "ghostContainer.current = null"
     },
     {
       "kind": "assignment",
-      "line": 158,
+      "line": 160,
       "path": "src/hooks/useOnionSkin.ts",
       "signature": "src/hooks/useOnionSkin.ts:assignment:mesh.vertices = new Float32Array(verts)",
       "text": "mesh.vertices = new Float32Array(verts)"
-    },
-    {
-      "kind": "assignment",
-      "line": 200,
-      "path": "src/hooks/useOnionSkin.ts",
-      "signature": "src/hooks/useOnionSkin.ts:assignment:node.bone.angle = orig.angle",
-      "text": "node.bone.angle = orig.angle"
-    },
-    {
-      "kind": "assignment",
-      "line": 190,
-      "path": "src/hooks/useOnionSkin.ts",
-      "signature": "src/hooks/useOnionSkin.ts:assignment:node.bone.angle = override.angle",
-      "text": "node.bone.angle = override.angle"
-    },
-    {
-      "kind": "assignment",
-      "line": 201,
-      "path": "src/hooks/useOnionSkin.ts",
-      "signature": "src/hooks/useOnionSkin.ts:assignment:node.bone.scaleX = orig.scaleX",
-      "text": "node.bone.scaleX = orig.scaleX"
-    },
-    {
-      "kind": "assignment",
-      "line": 191,
-      "path": "src/hooks/useOnionSkin.ts",
-      "signature": "src/hooks/useOnionSkin.ts:assignment:node.bone.scaleX = override.scaleX",
-      "text": "node.bone.scaleX = override.scaleX"
-    },
-    {
-      "kind": "assignment",
-      "line": 202,
-      "path": "src/hooks/useOnionSkin.ts",
-      "signature": "src/hooks/useOnionSkin.ts:assignment:node.bone.scaleY = orig.scaleY",
-      "text": "node.bone.scaleY = orig.scaleY"
-    },
-    {
-      "kind": "assignment",
-      "line": 192,
-      "path": "src/hooks/useOnionSkin.ts",
-      "signature": "src/hooks/useOnionSkin.ts:assignment:node.bone.scaleY = override.scaleY",
-      "text": "node.bone.scaleY = override.scaleY"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 185,
-      "path": "src/hooks/useOnionSkin.ts",
-      "signature": "src/hooks/useOnionSkin.ts:mutating-call:originals.set(boneId, { angle: node.bone.angle, scaleX: node.bone.scaleX, scaleY: node.bone.scaleY, })",
-      "text": "originals.set(boneId, { angle: node.bone.angle, scaleX: node.bone.scaleX, scaleY: node.bone.scaleY, })"
     },
     {
       "kind": "assignment",
@@ -1773,140 +1724,238 @@
     },
     {
       "kind": "assignment",
-      "line": 75,
+      "line": 172,
       "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:assignment:app.renderer.background.color = THEME_BG_COLORS[theme] ?? PIXI_CONFIG.BG_COLOR",
-      "text": "app.renderer.background.color = THEME_BG_COLORS[theme] ?? PIXI_CONFIG.BG_COLOR"
+      "signature": "src/hooks/usePixiApp.ts:assignment:installed.displayReady = false",
+      "text": "installed.displayReady = false"
     },
     {
       "kind": "assignment",
-      "line": 66,
+      "line": 85,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.displayReady = false",
+      "text": "owned.displayReady = false"
+    },
+    {
+      "kind": "assignment",
+      "line": 91,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.displayReady = false",
+      "text": "owned.displayReady = false"
+    },
+    {
+      "kind": "assignment",
+      "line": 113,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.displayReady = true",
+      "text": "owned.displayReady = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 90,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.displayUnavailable = true",
+      "text": "owned.displayUnavailable = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 110,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.markDisplayReady = () => { if (disposed || refs.current !== owned || owned.displayUnavailable) return; hadReadyScene = true; owned.displayReady = true; needsDisplayRender = t",
+      "text": "owned.markDisplayReady = () => { if (disposed || refs.current !== owned || owned.displayUnavailable) return; hadReadyScene = true; owned.displayReady = true; needsDisplayRender = t"
+    },
+    {
+      "kind": "assignment",
+      "line": 117,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.renderDisplay = () => { if (disposed || refs.current !== owned || !owned.displayReady) throw new Error(\"V11_MASK_RENDERER_UNAVAILABLE\"); // Clear before drawing: an invalidat",
+      "text": "owned.renderDisplay = () => { if (disposed || refs.current !== owned || !owned.displayReady) throw new Error(\"V11_MASK_RENDERER_UNAVAILABLE\"); // Clear before drawing: an invalidat"
+    },
+    {
+      "kind": "assignment",
+      "line": 98,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.renderSafely = (options) => { if (disposed || owned.displayUnavailable) throw new Error(\"V11_MASK_RENDERER_UNAVAILABLE\"); // Once this render entered and did not return, Pixi",
+      "text": "owned.renderSafely = (options) => { if (disposed || owned.displayUnavailable) throw new Error(\"V11_MASK_RENDERER_UNAVAILABLE\"); // Once this render entered and did not return, Pixi"
+    },
+    {
+      "kind": "assignment",
+      "line": 80,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.requestDisplayRender = () => { if (!disposed && refs.current === owned && !owned.displayUnavailable) needsDisplayRender = true; }",
+      "text": "owned.requestDisplayRender = () => { if (!disposed && refs.current === owned && !owned.displayUnavailable) needsDisplayRender = true; }"
+    },
+    {
+      "kind": "assignment",
+      "line": 88,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.retireDisplay = () => { if (disposed || owned.displayUnavailable) return; owned.displayUnavailable = true; owned.displayReady = false; app.stop(); if (hadReadyScene) queueMic",
+      "text": "owned.retireDisplay = () => { if (disposed || owned.displayUnavailable) return; owned.displayUnavailable = true; owned.displayReady = false; app.stop(); if (hadReadyScene) queueMic"
+    },
+    {
+      "kind": "assignment",
+      "line": 84,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:owned.suspendDisplay = () => { owned.displayReady = false; app.stop(); }",
+      "text": "owned.suspendDisplay = () => { owned.displayReady = false; app.stop(); }"
+    },
+    {
+      "kind": "assignment",
+      "line": 183,
       "path": "src/hooks/usePixiApp.ts",
       "signature": "src/hooks/usePixiApp.ts:assignment:refs.current = createEmptyPixiAppRefs()",
       "text": "refs.current = createEmptyPixiAppRefs()"
     },
     {
       "kind": "assignment",
-      "line": 126,
+      "line": 153,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:refs.current = owned",
+      "text": "refs.current = owned"
+    },
+    {
+      "kind": "assignment",
+      "line": 160,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:refs.current.displayUnavailable = true",
+      "text": "refs.current.displayUnavailable = true"
+    },
+    {
+      "kind": "assignment",
+      "line": 192,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:assignment:themeApp.renderer.background.color = THEME_BG_COLORS[theme] ?? PIXI_CONFIG.BG_COLOR",
+      "text": "themeApp.renderer.background.color = THEME_BG_COLORS[theme] ?? PIXI_CONFIG.BG_COLOR"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 125,
+      "path": "src/hooks/usePixiApp.ts",
+      "signature": "src/hooks/usePixiApp.ts:mutating-call:app.ticker.add( () => { if (!needsDisplayRender || !owned.displayReady || owned.displayUnavailable) return; try { owned.renderDisplay!(); } catch { /* The latch already stopped the",
+      "text": "app.ticker.add( () => { if (!needsDisplayRender || !owned.displayReady || owned.displayUnavailable) return; try { owned.renderDisplay!(); } catch { /* The latch already stopped the"
+    },
+    {
+      "kind": "assignment",
+      "line": 128,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:audioPreviewRef.current = controller",
       "text": "audioPreviewRef.current = controller"
     },
     {
       "kind": "assignment",
-      "line": 159,
+      "line": 160,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:audioPreviewRef.current = null",
       "text": "audioPreviewRef.current = null"
     },
     {
       "kind": "assignment",
-      "line": 49,
+      "line": 50,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:lastFrameTime.current = now - (elapsed % interval)",
       "text": "lastFrameTime.current = now - (elapsed % interval)"
     },
     {
       "kind": "assignment",
-      "line": 33,
+      "line": 34,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:lastFrameTime.current = performance.now()",
       "text": "lastFrameTime.current = performance.now()"
     },
     {
       "kind": "assignment",
-      "line": 89,
+      "line": 94,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:lastPhysicsTime.current = now",
       "text": "lastPhysicsTime.current = now"
     },
     {
       "kind": "assignment",
-      "line": 34,
+      "line": 35,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:lastPhysicsTime.current = performance.now()",
       "text": "lastPhysicsTime.current = performance.now()"
     },
     {
       "kind": "assignment",
-      "line": 210,
+      "line": 205,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:merged[config.targetParameterId] = param.minValue + lipSyncState.currentVolume * range",
       "text": "merged[config.targetParameterId] = param.minValue + lipSyncState.currentVolume * range"
     },
     {
       "kind": "assignment",
-      "line": 190,
+      "line": 187,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:merged[parameterId] = parameter.minValue + normalized * range",
       "text": "merged[parameterId] = parameter.minValue + normalized * range"
     },
     {
       "kind": "assignment",
-      "line": 176,
+      "line": 177,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:merged[track.targetParameterId] = parameter.minValue",
       "text": "merged[track.targetParameterId] = parameter.minValue"
     },
     {
       "kind": "assignment",
-      "line": 109,
+      "line": 114,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:rafId.current = requestAnimationFrame(tick)",
       "text": "rafId.current = requestAnimationFrame(tick)"
     },
     {
       "kind": "assignment",
-      "line": 112,
+      "line": 117,
       "path": "src/hooks/usePlayback.ts",
       "signature": "src/hooks/usePlayback.ts:assignment:rafId.current = requestAnimationFrame(tick)",
       "text": "rafId.current = requestAnimationFrame(tick)"
     },
     {
       "kind": "assignment",
-      "line": 118,
+      "line": 123,
       "path": "src/hooks/useReferenceOverlay.ts",
       "signature": "src/hooks/useReferenceOverlay.ts:assignment:containerRef.current = container",
       "text": "containerRef.current = container"
     },
     {
       "kind": "assignment",
-      "line": 105,
+      "line": 108,
       "path": "src/hooks/useReferenceOverlay.ts",
       "signature": "src/hooks/useReferenceOverlay.ts:assignment:containerRef.current = null",
       "text": "containerRef.current = null"
     },
     {
       "kind": "assignment",
-      "line": 125,
+      "line": 132,
       "path": "src/hooks/useReferenceOverlay.ts",
       "signature": "src/hooks/useReferenceOverlay.ts:assignment:containerRef.current = null",
       "text": "containerRef.current = null"
     },
     {
       "kind": "assignment",
-      "line": 157,
+      "line": 164,
       "path": "src/hooks/useReferenceOverlay.ts",
       "signature": "src/hooks/useReferenceOverlay.ts:assignment:containerRef.current = null",
       "text": "containerRef.current = null"
     },
     {
       "kind": "assignment",
-      "line": 194,
+      "line": 201,
       "path": "src/hooks/useReferenceOverlay.ts",
       "signature": "src/hooks/useReferenceOverlay.ts:assignment:containerRef.current = null",
       "text": "containerRef.current = null"
     },
     {
       "kind": "assignment",
-      "line": 207,
+      "line": 214,
       "path": "src/hooks/useReferenceOverlay.ts",
       "signature": "src/hooks/useReferenceOverlay.ts:assignment:containerRef.current = null",
       "text": "containerRef.current = null"
     },
     {
       "kind": "assignment",
-      "line": 213,
+      "line": 220,
       "path": "src/hooks/useReferenceOverlay.ts",
       "signature": "src/hooks/useReferenceOverlay.ts:assignment:containerRef.current = null",
       "text": "containerRef.current = null"
@@ -2655,35 +2704,42 @@
     },
     {
       "kind": "assignment",
-      "line": 127,
+      "line": 116,
       "path": "src/lib/export/media-exporter.ts",
       "signature": "src/lib/export/media-exporter.ts:assignment:files.length = 0",
       "text": "files.length = 0"
     },
     {
       "kind": "assignment",
-      "line": 165,
+      "line": 163,
+      "path": "src/lib/export/media-exporter.ts",
+      "signature": "src/lib/export/media-exporter.ts:assignment:recorder!.onerror = () => { recordingFailed = true; resolve(); }",
+      "text": "recorder!.onerror = () => { recordingFailed = true; resolve(); }"
+    },
+    {
+      "kind": "assignment",
+      "line": 162,
+      "path": "src/lib/export/media-exporter.ts",
+      "signature": "src/lib/export/media-exporter.ts:assignment:recorder!.onstop = () => resolve()",
+      "text": "recorder!.onstop = () => resolve()"
+    },
+    {
+      "kind": "assignment",
+      "line": 156,
       "path": "src/lib/export/media-exporter.ts",
       "signature": "src/lib/export/media-exporter.ts:assignment:recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); }",
       "text": "recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); }"
     },
     {
-      "kind": "assignment",
-      "line": 170,
-      "path": "src/lib/export/media-exporter.ts",
-      "signature": "src/lib/export/media-exporter.ts:assignment:recorder.onstop = () => { resolve(new Blob(chunks, { type: mimeType })); }",
-      "text": "recorder.onstop = () => { resolve(new Blob(chunks, { type: mimeType })); }"
-    },
-    {
       "kind": "mutating-call",
-      "line": 166,
+      "line": 157,
       "path": "src/lib/export/media-exporter.ts",
       "signature": "src/lib/export/media-exporter.ts:mutating-call:chunks.push(e.data)",
       "text": "chunks.push(e.data)"
     },
     {
       "kind": "mutating-call",
-      "line": 118,
+      "line": 107,
       "path": "src/lib/export/media-exporter.ts",
       "signature": "src/lib/export/media-exporter.ts:mutating-call:files.push({ path: `${clip.name}_${padded}.png`, content: base64, isBlob: true, })",
       "text": "files.push({ path: `${clip.name}_${padded}.png`, content: base64, isBlob: true, })"
@@ -6602,27 +6658,6 @@
       "text": "pending.current = null"
     },
     {
-      "kind": "mutating-call",
-      "line": 103,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:mutating-call:world.scale.set(camera.zoom)",
-      "text": "world.scale.set(camera.zoom)"
-    },
-    {
-      "kind": "assignment",
-      "line": 104,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:world.x = camera.panX",
-      "text": "world.x = camera.panX"
-    },
-    {
-      "kind": "assignment",
-      "line": 105,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:world.y = camera.panY",
-      "text": "world.y = camera.panY"
-    },
-    {
       "kind": "assignment",
       "line": 151,
       "path": "src/hooks/useLayerSync.ts",
@@ -6631,31 +6666,10 @@
     },
     {
       "kind": "assignment",
-      "line": 152,
+      "line": 365,
       "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = input.parameterValues",
-      "text": "publishedParameters.current = input.parameterValues"
-    },
-    {
-      "kind": "assignment",
-      "line": 156,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:published.current = oldPublished",
-      "text": "published.current = oldPublished"
-    },
-    {
-      "kind": "assignment",
-      "line": 157,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = oldParameters",
-      "text": "publishedParameters.current = oldParameters"
-    },
-    {
-      "kind": "assignment",
-      "line": 162,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }",
-      "text": "versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }"
+      "signature": "src/hooks/useLayerSync.ts:assignment:published.current = next",
+      "text": "published.current = next"
     },
     {
       "kind": "assignment",
@@ -6666,31 +6680,10 @@
     },
     {
       "kind": "assignment",
-      "line": 179,
+      "line": 156,
       "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = null",
-      "text": "publishedParameters.current = null"
-    },
-    {
-      "kind": "assignment",
-      "line": 180,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: -1, structure: -1 }",
-      "text": "versions.current = { project: -1, structure: -1 }"
-    },
-    {
-      "kind": "assignment",
-      "line": 182,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:refs.disposeScene = dispose",
-      "text": "refs.disposeScene = dispose"
-    },
-    {
-      "kind": "assignment",
-      "line": 185,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:refs.disposeScene = undefined",
-      "text": "refs.disposeScene = undefined"
+      "signature": "src/hooks/useLayerSync.ts:assignment:published.current = oldPublished",
+      "text": "published.current = oldPublished"
     },
     {
       "kind": "assignment",
@@ -6708,38 +6701,115 @@
     },
     {
       "kind": "assignment",
-      "line": 240,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }",
-      "text": "versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 326,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:mutating-call:refs.background.clear()",
-      "text": "refs.background.clear()"
-    },
-    {
-      "kind": "assignment",
-      "line": 351,
-      "path": "src/hooks/useLayerSync.ts",
-      "signature": "src/hooks/useLayerSync.ts:assignment:published.current = next",
-      "text": "published.current = next"
-    },
-    {
-      "kind": "assignment",
-      "line": 352,
+      "line": 366,
       "path": "src/hooks/useLayerSync.ts",
       "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = capturedParameters",
       "text": "publishedParameters.current = capturedParameters"
     },
     {
       "kind": "assignment",
-      "line": 353,
+      "line": 152,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = input.parameterValues",
+      "text": "publishedParameters.current = input.parameterValues"
+    },
+    {
+      "kind": "assignment",
+      "line": 179,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = null",
+      "text": "publishedParameters.current = null"
+    },
+    {
+      "kind": "assignment",
+      "line": 157,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:publishedParameters.current = oldParameters",
+      "text": "publishedParameters.current = oldParameters"
+    },
+    {
+      "kind": "assignment",
+      "line": 182,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:refs.disposeScene = dispose",
+      "text": "refs.disposeScene = dispose"
+    },
+    {
+      "kind": "assignment",
+      "line": 185,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:refs.disposeScene = undefined",
+      "text": "refs.disposeScene = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 377,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:refs.prepareDisplayFrame = prepareDisplayFrame",
+      "text": "refs.prepareDisplayFrame = prepareDisplayFrame"
+    },
+    {
+      "kind": "assignment",
+      "line": 391,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:refs.prepareDisplayFrame = undefined",
+      "text": "refs.prepareDisplayFrame = undefined"
+    },
+    {
+      "kind": "assignment",
+      "line": 180,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: -1, structure: -1 }",
+      "text": "versions.current = { project: -1, structure: -1 }"
+    },
+    {
+      "kind": "assignment",
+      "line": 162,
       "path": "src/hooks/useLayerSync.ts",
       "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }",
       "text": "versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }"
+    },
+    {
+      "kind": "assignment",
+      "line": 240,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }",
+      "text": "versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }"
+    },
+    {
+      "kind": "assignment",
+      "line": 367,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }",
+      "text": "versions.current = { project: state.projectVersion, structure: state.projectStructureVersion, }"
+    },
+    {
+      "kind": "assignment",
+      "line": 104,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:world.x = camera.panX",
+      "text": "world.x = camera.panX"
+    },
+    {
+      "kind": "assignment",
+      "line": 105,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:assignment:world.y = camera.panY",
+      "text": "world.y = camera.panY"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 340,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:mutating-call:refs.background.clear()",
+      "text": "refs.background.clear()"
+    },
+    {
+      "kind": "mutating-call",
+      "line": 103,
+      "path": "src/hooks/useLayerSync.ts",
+      "signature": "src/hooks/useLayerSync.ts:mutating-call:world.scale.set(camera.zoom)",
+      "text": "world.scale.set(camera.zoom)"
     },
     {
       "kind": "assignment",
@@ -6747,62 +6817,6 @@
       "path": "src/hooks/useParameterBinding.ts",
       "signature": "src/hooks/useParameterBinding.ts:assignment:prevValuesRef.current = {}",
       "text": "prevValuesRef.current = {}"
-    },
-    {
-      "kind": "assignment",
-      "line": 70,
-      "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:assignment:owned.suspendDisplay = () => app.stop()",
-      "text": "owned.suspendDisplay = () => app.stop()"
-    },
-    {
-      "kind": "assignment",
-      "line": 71,
-      "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:assignment:owned.retireDisplay = () => { if (owned.displayUnavailable) return; owned.displayUnavailable = true; app.stop(); if (hadReadyScene) queueMicrotask(() => { if (!disposed) setGenerat",
-      "text": "owned.retireDisplay = () => { if (owned.displayUnavailable) return; owned.displayUnavailable = true; app.stop(); if (hadReadyScene) queueMicrotask(() => { if (!disposed) setGenerat"
-    },
-    {
-      "kind": "assignment",
-      "line": 73,
-      "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:assignment:owned.displayUnavailable = true",
-      "text": "owned.displayUnavailable = true"
-    },
-    {
-      "kind": "assignment",
-      "line": 80,
-      "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:assignment:owned.renderSafely = (options) => { if (disposed || owned.displayUnavailable) throw new Error(\"V11_MASK_RENDERER_UNAVAILABLE\"); // Once this render entered and did not return, Pixi",
-      "text": "owned.renderSafely = (options) => { if (disposed || owned.displayUnavailable) throw new Error(\"V11_MASK_RENDERER_UNAVAILABLE\"); // Once this render entered and did not return, Pixi"
-    },
-    {
-      "kind": "assignment",
-      "line": 92,
-      "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:assignment:owned.markDisplayReady = () => { if (disposed || owned.displayUnavailable) return; hadReadyScene = true; app.start(); }",
-      "text": "owned.markDisplayReady = () => { if (disposed || owned.displayUnavailable) return; hadReadyScene = true; app.start(); }"
-    },
-    {
-      "kind": "mutating-call",
-      "line": 97,
-      "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:mutating-call:app.ticker.add( () => { if (owned.displayUnavailable) return; try { owned.renderSafely!({ container: app.stage }); } catch { /* The latch already stopped the ticker and scheduled r",
-      "text": "app.ticker.add( () => { if (owned.displayUnavailable) return; try { owned.renderSafely!({ container: app.stage }); } catch { /* The latch already stopped the ticker and scheduled r"
-    },
-    {
-      "kind": "assignment",
-      "line": 111,
-      "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:assignment:refs.current = owned",
-      "text": "refs.current = owned"
-    },
-    {
-      "kind": "assignment",
-      "line": 118,
-      "path": "src/hooks/usePixiApp.ts",
-      "signature": "src/hooks/usePixiApp.ts:assignment:refs.current.displayUnavailable = true",
-      "text": "refs.current.displayUnavailable = true"
     },
     {
       "kind": "mutating-call",

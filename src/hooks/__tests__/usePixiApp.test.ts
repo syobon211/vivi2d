@@ -93,6 +93,77 @@ describe("usePixiApp", () => {
     expect(result.current.current.app).toBeNull();
   });
 
+  it("coalesces ordinary invalidations without losing requests during draw or bypassing suspension", async () => {
+    // A stable ref models the actual Canvas owner across readiness updates.
+    const containerRef = { current: createContainerEl() };
+    const hook = renderHook(() => usePixiApp(containerRef));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const owned = hook.result.current.current,
+      app = owned.app!;
+    const tick = vi.mocked(app.ticker.add).mock.calls[0]![0] as () => void;
+    const draw = vi.mocked(app.renderer.render);
+    tick();
+    expect(draw).not.toHaveBeenCalled();
+    owned.markDisplayReady!();
+    tick();
+    tick();
+    expect(draw).toHaveBeenCalledTimes(1);
+    owned.requestDisplayRender!();
+    owned.requestDisplayRender!();
+    tick();
+    expect(draw).toHaveBeenCalledTimes(2);
+    draw.mockImplementationOnce(() => owned.requestDisplayRender!());
+    owned.requestDisplayRender!();
+    tick();
+    tick();
+    tick();
+    expect(draw).toHaveBeenCalledTimes(4);
+    owned.suspendDisplay!();
+    vi.mocked(app.start).mockClear();
+    owned.requestDisplayRender!();
+    tick();
+    expect(app.start).not.toHaveBeenCalled();
+    expect(() => owned.renderDisplay!()).toThrow("V11_MASK_RENDERER_UNAVAILABLE");
+    expect(draw).toHaveBeenCalledTimes(4);
+    owned.markDisplayReady!();
+    owned.renderDisplay!();
+    owned.renderDisplay!();
+    tick();
+    expect(draw).toHaveBeenCalledTimes(6);
+    hook.unmount();
+    expect(() => owned.renderDisplay!()).toThrow("V11_MASK_RENDERER_UNAVAILABLE");
+  });
+
+  it("retires a context-lost owner and waits for fresh scene preparation on its replacement", async () => {
+    const containerRef = { current: createContainerEl() };
+    const { result } = renderHook(() => usePixiApp(containerRef));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const old = result.current.current,
+      app = old.app!;
+    old.markDisplayReady!();
+    await act(async () => {
+      app.canvas.dispatchEvent(new Event("webglcontextlost"));
+      expect(old.displayUnavailable).toBe(true);
+      expect(old.displayReady).toBe(false);
+      old.requestDisplayRender!();
+      expect(() => old.renderDisplay!()).toThrow("V11_MASK_RENDERER_UNAVAILABLE");
+      await Promise.resolve();
+    });
+    const next = result.current.current;
+    expect(next.app).not.toBe(app);
+    expect(next.app!.start).not.toHaveBeenCalled();
+    // A late event on the destroyed canvas must not revive the old generation.
+    app.canvas.dispatchEvent(new Event("webglcontextrestored"));
+    expect(next.displayReady).toBe(false);
+    next.markDisplayReady!();
+    next.renderDisplay!();
+    expect(next.app!.renderer.render).toHaveBeenCalledTimes(1);
+  });
+
   it("stops draws after an entered render fails and rebuilds via the existing lifecycle before resuming", async () => {
     const containerRef = { current: createContainerEl() };
     const { result } = renderHook(() => usePixiApp(containerRef));

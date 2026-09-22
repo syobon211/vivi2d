@@ -280,83 +280,104 @@ export function useLayerSync(pixiRefs: React.RefObject<PixiAppRefs>) {
       isProjectV11Publishing()
     )
       return;
-    const state = useEditorStore.getState();
-    const next = state.project;
-    const capturedParameters = useParameterStore.getState().parameterValues;
-    try {
-      if (state.projectV11) {
+    // The ordinary effect and explicit media capture share exactly one scene
+    // preparation path. Capture cannot infer readiness from an elapsed rAF.
+    const prepareDisplayFrame = () => {
+      try {
         if (
-          published.current === next &&
-          publishedParameters.current === capturedParameters &&
-          versions.current.project === state.projectVersion &&
-          versions.current.structure === state.projectStructureVersion
+          pixiRefs.current !== refs ||
+          refs.app !== app ||
+          !refs.world ||
+          !refs.background ||
+          refs.displayUnavailable ||
+          isProjectV11Publishing()
         )
-          return;
-        setCamera(refs);
-        const prepared = prepareLayerSyncV11(
-          ctxRef.current,
-          refs.world,
-          refs.background,
-          next ? projectV11DisplayProjection(next, capturedParameters) : next,
-          {
-            getTexture,
-            parameterValues: capturedParameters,
-            features: { v11Masks: true },
-            screenColorSupport,
-            v11MaskResources: resources(refs),
-            rebuild: versions.current.structure !== state.projectStructureVersion,
-            soloLayerIds: solo,
-          },
-        );
-        try {
+          throw new Error("PROJECT_DISPLAY_UNAVAILABLE");
+        const state = useEditorStore.getState();
+        const next = state.project;
+        const capturedParameters = useParameterStore.getState().parameterValues;
+        const currentSolo = useSelectionStore.getState().soloLayerIds;
+        if (state.projectV11) {
           if (
-            useEditorStore.getState().project !== next ||
-            useEditorStore.getState().projectV11 !== state.projectV11 ||
-            useParameterStore.getState().parameterValues !== capturedParameters
+            refs.displayReady &&
+            published.current === next &&
+            publishedParameters.current === capturedParameters &&
+            versions.current.project === state.projectVersion &&
+            versions.current.structure === state.projectStructureVersion
           )
-            throw new Error("PROJECT_DISPLAY_UNAVAILABLE");
-          prepared.commit();
-        } catch (error) {
-          prepared.rollback();
-          throw error;
-        }
-        prepared.finalize();
-      } else if (!next) {
-        destroyLayerSyncContext(ctxRef.current);
-        refs.background.clear();
-      } else if (
-        versions.current.project !== state.projectVersion ||
-        versions.current.structure !== state.projectStructureVersion
-      ) {
-        buildMeshes(
-          ctxRef.current,
-          refs.world,
-          refs.background,
-          next,
-          {},
-          {
-            getTexture,
-            parameterValues,
+            return;
+          setCamera(refs);
+          const prepared = prepareLayerSyncV11(
+            ctxRef.current,
+            refs.world,
+            refs.background,
+            next ? projectV11DisplayProjection(next, capturedParameters) : next,
+            {
+              getTexture,
+              parameterValues: capturedParameters,
+              features: { v11Masks: true },
+              screenColorSupport,
+              v11MaskResources: resources(refs),
+              rebuild: versions.current.structure !== state.projectStructureVersion,
+              soloLayerIds: currentSolo,
+            },
+          );
+          try {
+            if (
+              useEditorStore.getState().project !== next ||
+              useEditorStore.getState().projectV11 !== state.projectV11 ||
+              useParameterStore.getState().parameterValues !== capturedParameters
+            )
+              throw new Error("PROJECT_DISPLAY_UNAVAILABLE");
+            prepared.commit();
+          } catch (error) {
+            prepared.rollback();
+            throw error;
+          }
+          prepared.finalize();
+        } else if (!next) {
+          destroyLayerSyncContext(ctxRef.current);
+          refs.background.clear();
+        } else if (
+          versions.current.project !== state.projectVersion ||
+          versions.current.structure !== state.projectStructureVersion
+        ) {
+          buildMeshes(
+            ctxRef.current,
+            refs.world,
+            refs.background,
+            next,
+            {},
+            {
+              getTexture,
+              parameterValues: capturedParameters,
+              screenColorSupport,
+              notifyWarning: (message) =>
+                useNotificationStore.getState().addNotification("warning", message),
+            },
+          );
+          if (versions.current.project !== state.projectVersion) fitView(app, next);
+        } else
+          syncMeshProperties(ctxRef.current, next, {}, currentSolo, {
+            parameterValues: capturedParameters,
             screenColorSupport,
-            notifyWarning: (message) =>
-              useNotificationStore.getState().addNotification("warning", message),
-          },
-        );
-        if (versions.current.project !== state.projectVersion) fitView(app, next);
-      } else
-        syncMeshProperties(ctxRef.current, next, {}, solo, {
-          parameterValues,
-          screenColorSupport,
-        });
-      published.current = next;
-      publishedParameters.current = capturedParameters;
-      versions.current = {
-        project: state.projectVersion,
-        structure: state.projectStructureVersion,
-      };
-      refs.markDisplayReady?.();
+          });
+        published.current = next;
+        publishedParameters.current = capturedParameters;
+        versions.current = {
+          project: state.projectVersion,
+          structure: state.projectStructureVersion,
+        };
+        refs.markDisplayReady?.();
+      } catch {
+        refs.suspendDisplay?.();
+        throw new Error("PROJECT_DISPLAY_UNAVAILABLE");
+      }
+    };
+    refs.prepareDisplayFrame = prepareDisplayFrame;
+    try {
+      prepareDisplayFrame();
     } catch {
-      refs.suspendDisplay?.();
       try {
         useNotificationStore
           .getState()
@@ -365,6 +386,10 @@ export function useLayerSync(pixiRefs: React.RefObject<PixiAppRefs>) {
         /* No raw GPU details. */
       }
     }
+    return () => {
+      if (refs.prepareDisplayFrame === prepareDisplayFrame)
+        refs.prepareDisplayFrame = undefined;
+    };
   }, [app, parameterValues, pixiRefs, project, projectVersion, solo, structureVersion]);
 }
 

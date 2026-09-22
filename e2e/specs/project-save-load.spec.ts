@@ -5,7 +5,6 @@ import projectV11Manifest from "../../tests/conformance/project-embedded-round-t
   type: "json",
 };
 import { expect, test } from "../fixtures";
-import { waitForAppReady } from "../helpers/app";
 import { mockOpenPng, mockOpenVivi, mockSaveDialog } from "../helpers/dialog-mock";
 import {
   addBone,
@@ -395,6 +394,45 @@ function v11Fixture() {
   return wire;
 }
 
+async function expectCompositorPixels(
+  app: import("playwright").ElectronApplication,
+  window: import("playwright").Page,
+  points: number[][],
+  expected: number[][],
+) {
+  const canvas = window.locator(".canvas-container canvas");
+  await expect(async () => {
+    const rect = await canvas.boundingBox();
+    if (!rect) throw Error("Canvas missing");
+    const png = await canvas.screenshot({ scale: "css", animations: "allow" });
+    const observed = await app.evaluate(
+      ({ nativeImage }, { data, positions }) => {
+        const image = nativeImage.createFromBuffer(Buffer.from(data, "base64"));
+        const { width, height } = image.getSize(),
+          pixels = image.toBitmap();
+        return positions.map(([x, y]) => {
+          if (x! < 0 || y! < 0 || x! >= width || y! >= height)
+            throw Error("Pixel outside canvas");
+          const index = (y! * width + x!) * 4;
+          return [pixels[index + 2], pixels[index + 1], pixels[index]];
+        });
+      },
+      {
+        data: png.toString("base64"),
+        positions: points.map(([x, y]) => [
+          Math.floor(x! + rect.x - Math.floor(rect.x)),
+          Math.floor(y! + rect.y - Math.floor(rect.y)),
+        ]),
+      },
+    );
+    for (let point = 0; point < expected.length; point++)
+      for (let channel = 0; channel < 3; channel++)
+        expect(
+          Math.abs(observed[point]![channel]! - expected[point]![channel]!),
+        ).toBeLessThanOrEqual(3);
+  }).toPass();
+}
+
 function boundMaskFixture() {
   const wire = JSON.parse(projectV11Manifest.documents[0]!.inputUtf8);
   const png = projectV11Manifest.pngCases.find((entry) => entry.id === "frozen-palette")!;
@@ -450,14 +488,459 @@ function boundMaskFixture() {
   return wire;
 }
 
+function legacyBoundFixture() {
+  const wire = boundMaskFixture();
+  wire.version = 9;
+  delete wire.assetMode;
+  delete wire.documentId;
+  wire.project.ikControllers = [];
+  const group = wire.project.layers[0],
+    target = group.children[1];
+  group.children = group.children.slice(0, 2);
+  target.x = 4;
+  target.mesh.vertices = [0, 0, 16, 0, 0, 64, 16, 64];
+  delete target.clipMaskIds;
+  wire.project.skins = { [target.id]: wire.project.skins.mask };
+  wire.atlases[0].entries = wire.atlases[0].entries.slice(0, 1);
+  return wire;
+}
+
+test("legacy onion removal and image-sequence playback update natural pixels", async ({
+  app,
+  window,
+}) => {
+  const wire = legacyBoundFixture();
+  wire.project.parameterBindings = [];
+  const clip = {
+    id: "pixel-clip",
+    name: "Pixel",
+    duration: 3,
+    fps: 4,
+    tracks: [],
+    boneTracks: [
+      {
+        boneId: "bone-0",
+        property: "angle",
+        keyframes: [
+          { frame: 0, value: 0, interpolation: "linear" },
+          { frame: 1, value: -Math.PI / 2, interpolation: "linear" },
+        ],
+      },
+    ],
+  };
+  wire.project.scenes = [{ id: "pixel-scene", name: "Pixel", clips: [clip] }];
+  const source = path.join(tmpDir, "onion.vivi");
+  fs.writeFileSync(source, JSON.stringify(wire));
+  await mockOpenVivi(app, source);
+  await clickFileMenuItem(window, "開く");
+  await expect(window.locator(".project-name")).toHaveText("Bound mask display");
+  await window
+    .getByRole("combobox", { name: "シーン選択", exact: true })
+    .selectOption("pixel-scene");
+  await window
+    .getByRole("combobox", { name: "クリップ選択", exact: true })
+    .selectOption("pixel-clip");
+  const authoringSnapshot = () =>
+    window.evaluate(() => {
+      const api = window.__vivi2d as any;
+      return {
+        project: JSON.stringify(api.useEditorStore.getState().project),
+        undo: api.useHistoryStore.getState().undoStack.length,
+      };
+    });
+  const authoringBefore = await authoringSnapshot();
+  await window.evaluate(() => {
+    const api = window.__vivi2d as any;
+    api.useViewportStore.getState().setZoom(1);
+    api.useViewportStore.getState().setPan(100, 100);
+    api.useThemeStore.getState().setTheme("dark");
+    api.useViewportStore.getState().setOnionSkinSettings({
+      enabled: true,
+      framesBefore: 0,
+      framesAfter: 1,
+      opacity: 0.5,
+    });
+  });
+  // Next-frame bone rotation puts a red ghost above the white project rectangle.
+  await expectCompositorPixels(app, window, [[140, 92]], [[143, 15, 23]]);
+  await window.evaluate(() =>
+    (window.__vivi2d as any).useViewportStore
+      .getState()
+      .setOnionSkinSettings({ enabled: false }),
+  );
+  await expectCompositorPixels(app, window, [[140, 92]], [[30, 30, 46]]);
+  expect(await authoringSnapshot()).toEqual(authoringBefore);
+
+  // Replace the authored fixture, retaining the existing normal load/play route.
+  const sequence = legacyBoundFixture(),
+    visible = sequence.project.layers[0].children[1];
+  const green = structuredClone(visible);
+  green.id = "green-source";
+  green.name = "Green source";
+  green.visible = false;
+  green.mesh.uvs = [0.75, 0.5, 0.75, 0.5, 0.75, 0.5, 0.75, 0.5];
+  sequence.project.layers = [visible, green];
+  sequence.project.skins = {};
+  sequence.project.parameterBindings = [];
+  sequence.atlases[0].entries.push({
+    ...sequence.atlases[0].entries[0],
+    layerId: green.id,
+    x: 1,
+  });
+  sequence.project.scenes = [
+    {
+      id: "sequence-scene",
+      name: "Sequence",
+      clips: [
+        {
+          id: "sequence-clip",
+          name: "Sequence",
+          duration: 3,
+          fps: 4,
+          tracks: [],
+          imageSequenceTracks: [
+            {
+              targetMeshId: visible.id,
+              entries: [
+                { startFrame: 0, imageId: visible.id },
+                { startFrame: 1, imageId: green.id },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+  const sequencePath = path.join(tmpDir, "sequence.vivi");
+  fs.writeFileSync(sequencePath, JSON.stringify(sequence));
+  await mockOpenVivi(app, sequencePath);
+  await clickFileMenuItem(window, "開く");
+  await window
+    .getByRole("combobox", { name: "シーン選択", exact: true })
+    .selectOption("sequence-scene");
+  await window
+    .getByRole("combobox", { name: "クリップ選択", exact: true })
+    .selectOption("sequence-clip");
+  await window.evaluate(() => {
+    const camera = (window.__vivi2d as any).useViewportStore.getState();
+    camera.setZoom(1);
+    camera.setPan(0, 0);
+  });
+  await expectCompositorPixels(app, window, [[8, 20]], [[255, 0, 0]]);
+  await window.getByRole("button", { name: "再生", exact: true }).click();
+  await expectCompositorPixels(app, window, [[8, 20]], [[0, 255, 0]]);
+});
+
+test("idle display updates natural compositor pixels without preserved readback", async ({
+  app,
+  window,
+  loadTestPsd,
+}) => {
+  await loadTestPsd();
+  await window.evaluate(() => {
+    const api = window.__vivi2d as any;
+    const editor = api.useEditorStore.getState();
+    const red = editor.project.layers.find((layer: any) => layer.name === "Red Circle");
+    const background = editor.project.layers.find(
+      (layer: any) => layer.name === "Background",
+    );
+    // Make the tested compositing order explicit, independent of PSD stacking.
+    editor.setDrawOrder(red.id, 600);
+    editor.setDrawOrder(background.id, 0);
+    api.useViewportStore.getState().setZoom(1);
+    api.useViewportStore.getState().setPan(20, 20);
+    api.useThemeStore.getState().setTheme("dark");
+  });
+  const canvas = window.locator(".canvas-container canvas");
+  expect(
+    await canvas.evaluate((element) => {
+      const surface = element as HTMLCanvasElement;
+      const gl = surface.getContext("webgl2") ?? surface.getContext("webgl");
+      if (!gl || gl.isContextLost()) throw Error("Live WebGL required");
+      return gl.getContextAttributes()!.preserveDrawingBuffer;
+    }),
+  ).toBe(false);
+  const expectPixel = (point: [number, number], expected: number[]) =>
+    expectCompositorPixels(app, window, [point], [expected]);
+  // Independent solid PSD colours: red alpha180 over gray200 => (239,59,59).
+  await expectPixel([32, 32], [239, 59, 59]);
+  const toggle = () =>
+    window.evaluate(() => {
+      const state = (window.__vivi2d as any).useEditorStore.getState();
+      const find = (layers: any[]): any =>
+        layers.find((l) => l.name === "Red Circle") ??
+        layers.flatMap((l) => l.children ?? []).find((l) => l.name === "Red Circle");
+      state.toggleVisibility(find(state.project.layers).id);
+    });
+  await toggle();
+  await expectPixel([32, 32], [200, 200, 200]);
+  await window.keyboard.press("Control+z");
+  await expectPixel([32, 32], [239, 59, 59]);
+  await selectLayer(window, "Red Circle");
+  await window.evaluate(() =>
+    (window.__vivi2d as any).useViewportStore
+      .getState()
+      .setReferenceOverlaySettings({ enabled: true, mode: "currentBounds", opacity: 1 }),
+  );
+  await expectPixel([32, 32], [158, 126, 157]);
+  await window.evaluate(() =>
+    (window.__vivi2d as any).useViewportStore
+      .getState()
+      .setReferenceOverlaySettings({ enabled: false }),
+  );
+  await expectPixel([32, 32], [239, 59, 59]);
+  await window.evaluate(() =>
+    (window.__vivi2d as any).useViewportStore.getState().setPan(120, 120),
+  );
+  await expectPixel([32, 32], [30, 30, 46]);
+  await expectPixel([132, 132], [239, 59, 59]);
+  await window.evaluate(() =>
+    (window.__vivi2d as any).useThemeStore.getState().setTheme("light"),
+  );
+  await expectPixel([32, 32], [240, 240, 246]);
+  await window.setViewportSize({ width: 1600, height: 960 });
+  await expectPixel([132, 132], [239, 59, 59]);
+  await closeAndVerify(window);
+  await expectPixel([132, 132], [240, 240, 246]);
+});
+
+for (const profile of ["legacy", "v11"] as const) {
+  test(
+    profile === "legacy"
+      ? "legacy media capture contains repeated and final bound frames with a non-preserved buffer"
+      : "v11 clip input stays rejected without replacing the supported incumbent",
+    async ({ app, window }) => {
+      const wire = profile === "legacy" ? legacyBoundFixture() : boundMaskFixture();
+      wire.project.ikControllers = [];
+      const clip = {
+        id: "capture-clip",
+        name: "capture",
+        duration: 3,
+        fps: 5,
+        tracks: [
+          {
+            parameterId: "Motion.x",
+            keyframes: [
+              { frame: 0, value: 0, interpolation: "linear" },
+              { frame: 1, value: 0, interpolation: "linear" },
+              { frame: 2, value: 1, interpolation: "linear" },
+            ],
+          },
+        ],
+      };
+      wire.project.scenes = [{ id: "capture-scene", name: "Capture", clips: [clip] }];
+      const source = path.join(tmpDir, "capture.vivi");
+      fs.writeFileSync(source, JSON.stringify(wire));
+      if (profile === "v11") {
+        const incumbent = path.join(tmpDir, "incumbent.vivi");
+        fs.writeFileSync(incumbent, JSON.stringify(boundMaskFixture()));
+        await mockOpenVivi(app, incumbent);
+        await clickFileMenuItem(window, "開く");
+        await expect(window.locator(".project-name")).toHaveText("Bound mask display");
+        const before = await window.evaluate(() =>
+          JSON.stringify((window.__vivi2d as any).useEditorStore.getState().project),
+        );
+        await mockOpenVivi(app, source);
+        await clickFileMenuItem(window, "開く");
+        await expect(
+          window
+            .getByRole("alert")
+            .filter({ hasText: "プロジェクトの読み込みに失敗しました" }),
+        ).toBeVisible();
+        expect(
+          await window.evaluate(() =>
+            JSON.stringify((window.__vivi2d as any).useEditorStore.getState().project),
+          ),
+        ).toBe(before);
+        await clickFileMenuItem(window, "メディア出力");
+        await expect(window.locator(".modal-actions .prop-btn").first()).toBeDisabled();
+        return;
+      }
+      await mockOpenVivi(app, source);
+      await clickFileMenuItem(window, "開く");
+      await expect(window.locator(".project-name")).toHaveText("Bound mask display");
+      await window.evaluate(() => {
+        const api = window.__vivi2d as any;
+        api.useViewportStore.getState().setZoom(1);
+        api.useViewportStore.getState().setPan(0, 0);
+        const canvas = document.querySelector(
+          ".canvas-container canvas",
+        ) as HTMLCanvasElement;
+        const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+        if (!gl || gl.isContextLost() || gl.getContextAttributes()!.preserveDrawingBuffer)
+          throw Error("Capture requires live non-preserved WebGL");
+      });
+      await mockOpenVivi(app, tmpDir); // Native directory chooser; real export IPC/write.
+      await clickFileMenuItem(window, "メディア出力");
+      const button = window.locator(".modal-actions .prop-btn").first();
+      await button.click();
+      await expect
+        .poll(() => fs.existsSync(path.join(tmpDir, "capture_00002.png")))
+        .toBe(true);
+      const expected = [
+        [
+          [255, 0, 0],
+          [255, 255, 255],
+        ],
+        [
+          [255, 0, 0],
+          [255, 255, 255],
+        ],
+        [
+          [255, 255, 255],
+          [255, 0, 0],
+        ],
+      ];
+      const dimensions = await window
+        .locator(".canvas-container canvas")
+        .evaluate((element) => {
+          const canvas = element as HTMLCanvasElement;
+          return {
+            width: canvas.width,
+            height: canvas.height,
+            scale: canvas.width / canvas.clientWidth,
+          };
+        });
+      for (let frame = 0; frame < 3; frame++) {
+        const png = fs.readFileSync(
+          path.join(tmpDir, `capture_${String(frame).padStart(5, "0")}.png`),
+        );
+        const samples = await app.evaluate(
+          ({ nativeImage }, { data, dimensions }) => {
+            const image = nativeImage.createFromBuffer(Buffer.from(data, "base64"));
+            const size = image.getSize();
+            if (size.width !== dimensions.width || size.height !== dimensions.height)
+              throw Error("Output size mismatch");
+            const pixels = image.toBitmap();
+            return [8, 32].map((x) => {
+              const i =
+                (Math.floor(20 * dimensions.scale) * size.width +
+                  Math.floor(x * dimensions.scale)) *
+                4;
+              return [pixels[i + 2], pixels[i + 1], pixels[i]];
+            });
+          },
+          { data: png.toString("base64"), dimensions },
+        );
+        for (let point = 0; point < 2; point++)
+          for (let channel = 0; channel < 3; channel++)
+            expect(
+              Math.abs(samples[point]![channel]! - expected[frame]![point]![channel]!),
+            ).toBeLessThanOrEqual(3);
+      }
+      await expect(button).toBeEnabled();
+      await window.locator(".media-export-select").nth(1).selectOption("mp4");
+      await button.click();
+      const videoPath = path.join(tmpDir, "capture.webm");
+      await expect.poll(() => fs.existsSync(videoPath)).toBe(true);
+      // Keep production CSP unchanged. This sandboxed test-only decoder permits
+      // synthetic blob media and denies all network sources; it has no preload.
+      const decoderPending = app.waitForEvent("window");
+      const decoderId = await app.evaluate(({ BrowserWindow }) => {
+        const decoder = new BrowserWindow({
+          show: false,
+          webPreferences: {
+            sandbox: true,
+            contextIsolation: true,
+            nodeIntegration: false,
+            backgroundThrottling: false,
+          },
+        });
+        void decoder.loadURL(
+          `data:text/html,${encodeURIComponent('<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; media-src blob:">')}`,
+        );
+        return decoder.id;
+      });
+      const decoder = await decoderPending;
+      let frames: number[][][];
+      try {
+        frames = await decoder.evaluate(
+          async ({ data, scale }) => {
+            const bytes = Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
+            const url = URL.createObjectURL(new Blob([bytes], { type: "video/webm" }));
+            const video = document.createElement("video");
+            video.muted = true;
+            const canvas = document.createElement("canvas");
+            const samples: number[][][] = [];
+            let callback = 0;
+            try {
+              await new Promise<void>((resolve, reject) => {
+                const timer = setTimeout(
+                  () => reject(Error("Encoded video decode timeout")),
+                  10_000,
+                );
+                video.onerror = () => {
+                  clearTimeout(timer);
+                  reject(Error("Encoded video decode failed"));
+                };
+                video.onended = () => {
+                  clearTimeout(timer);
+                  resolve();
+                };
+                const capture = () => {
+                  canvas.width = video.videoWidth;
+                  canvas.height = video.videoHeight;
+                  const ctx = canvas.getContext("2d")!;
+                  ctx.drawImage(video, 0, 0);
+                  samples.push(
+                    [8, 32].map((x) =>
+                      Array.from(
+                        ctx.getImageData(
+                          Math.floor(x * scale),
+                          Math.floor(20 * scale),
+                          1,
+                          1,
+                        ).data,
+                      ).slice(0, 3),
+                    ),
+                  );
+                  callback = video.requestVideoFrameCallback(capture);
+                };
+                callback = video.requestVideoFrameCallback(capture);
+                video.src = url;
+                void video.play().catch(() => {
+                  clearTimeout(timer);
+                  reject(Error("Encoded video playback failed"));
+                });
+              });
+              return samples;
+            } finally {
+              video.cancelVideoFrameCallback(callback);
+              video.pause();
+              video.removeAttribute("src");
+              video.load();
+              URL.revokeObjectURL(url);
+            }
+          },
+          {
+            data: fs.readFileSync(videoPath).toString("base64"),
+            scale: dimensions.scale,
+          },
+        );
+      } finally {
+        await app.evaluate(
+          ({ BrowserWindow }, id) => BrowserWindow.fromId(id)?.destroy(),
+          decoderId,
+        );
+      }
+      // Decode actual encoded frames, not a requestFrame call-count or Blob-size claim.
+      expect(frames).toHaveLength(3);
+      for (let frame = 0; frame < 3; frame++)
+        for (let point = 0; point < 2; point++)
+          for (let channel = 0; channel < 3; channel++)
+            expect(
+              Math.abs(
+                frames[frame]![point]![channel]! - expected[frame]![point]![channel]!,
+              ),
+            ).toBeLessThanOrEqual(12);
+    },
+  );
+}
+
 test("v11 actual bound mask pixels follow live values and binding Undo without authoring the pose", async ({
   app,
   window,
 }) => {
-  // Reuse the existing E2E readback opt-in; no new production render API.
-  await window.evaluate(() => localStorage.setItem("vivi2d-e2e-canvas-readback", "1"));
-  await window.reload();
-  await waitForAppReady(window);
   const wire = boundMaskFixture(),
     source = path.join(tmpDir, "bound.vivi"),
     saved = path.join(tmpDir, "bound-saved.vivi");
@@ -470,39 +953,23 @@ test("v11 actual bound mask pixels follow live values and binding Undo without a
     api.useViewportStore.getState().setZoom(1);
     api.useViewportStore.getState().setPan(0, 0);
   });
-  const sample = () =>
-    window.evaluate(async () => {
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
-      const sourceCanvas = document.querySelector(
-        ".canvas-container canvas",
-      ) as HTMLCanvasElement;
-      const image = new Image();
-      image.src = sourceCanvas.toDataURL("image/png");
-      await image.decode();
-      const canvas = document.createElement("canvas");
-      canvas.width = sourceCanvas.width;
-      canvas.height = sourceCanvas.height;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(image, 0, 0);
-      const scale = sourceCanvas.width / sourceCanvas.clientWidth;
-      return [8, 32].map((x) =>
-        Array.from(
-          ctx.getImageData(Math.floor(x * scale), Math.floor(20 * scale), 1, 1).data,
-        ).slice(0, 3),
-      );
-    });
-  const expectPixels = async (expected: number[][]) => {
-    await expect(async () => {
-      const observed = await sample();
-      for (let point = 0; point < expected.length; point++)
-        for (let channel = 0; channel < 3; channel++)
-          expect(
-            Math.abs(observed[point]![channel]! - expected[point]![channel]!),
-          ).toBeLessThanOrEqual(3);
-    }).toPass();
-  };
+  expect(
+    await window.locator(".canvas-container canvas").evaluate((element) => {
+      const canvas = element as HTMLCanvasElement;
+      const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+      return gl?.getContextAttributes()?.preserveDrawingBuffer;
+    }),
+  ).toBe(false);
+  const expectPixels = (expected: number[][]) =>
+    expectCompositorPixels(
+      app,
+      window,
+      [
+        [8, 20],
+        [32, 20],
+      ],
+      expected,
+    );
   const snapshot = () =>
     window.evaluate(() => {
       const api = window.__vivi2d as any,
@@ -527,6 +994,28 @@ test("v11 actual bound mask pixels follow live values and binding Undo without a
     [255, 0, 0],
   ]);
   expect(await snapshot()).toEqual(before);
+  await window.evaluate(() =>
+    (window.__vivi2d as any).useViewportStore.getState().setPan(50, 0),
+  );
+  await expectCompositorPixels(
+    app,
+    window,
+    [
+      [58, 20],
+      [82, 20],
+    ],
+    [
+      [255, 255, 255],
+      [255, 0, 0],
+    ],
+  );
+  await window.evaluate(() =>
+    (window.__vivi2d as any).useViewportStore.getState().setPan(0, 0),
+  );
+  await expectPixels([
+    [255, 255, 255],
+    [255, 0, 0],
+  ]);
   await selectLayer(window, "Bound bone");
   const item = window.locator(".binding-item").filter({ hasText: "Bound mask" });
   await item.locator(".binding-toggle").click();
@@ -540,6 +1029,36 @@ test("v11 actual bound mask pixels follow live values and binding Undo without a
     [255, 255, 255],
   ]);
   await window.keyboard.press("Control+z");
+  await expectPixels([
+    [255, 255, 255],
+    [255, 0, 0],
+  ]);
+  // A lost context retires this canvas. Correct coverage must be rebuilt on a
+  // different owner; neither a restored event nor one draw proves mask recovery.
+  await window.evaluate(() => {
+    const canvas = document.querySelector(
+      ".canvas-container canvas",
+    ) as HTMLCanvasElement;
+    const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+    const extension = gl?.getExtension("WEBGL_lose_context");
+    if (!extension) throw Error("Context-loss proof requires WebGL extension");
+    canvas.dataset.contextLossOwner = "old";
+    extension.loseContext();
+  });
+  await expect(
+    window.locator('.canvas-container canvas[data-context-loss-owner="old"]'),
+  ).toHaveCount(0);
+  await expect(window.locator(".canvas-container canvas")).toHaveCount(1);
+  await expectPixels([
+    [255, 255, 255],
+    [255, 0, 0],
+  ]);
+  await slider.fill("0");
+  await expectPixels([
+    [255, 0, 0],
+    [255, 255, 255],
+  ]);
+  await slider.fill("1");
   await expectPixels([
     [255, 255, 255],
     [255, 0, 0],

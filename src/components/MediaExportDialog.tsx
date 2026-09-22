@@ -53,7 +53,19 @@ export function MediaExportDialog({ onClose }: { onClose: () => void }) {
     try {
       const app = pixiRefs.app;
       const appLike = {
-        render: () => app.render(),
+        render: () => {
+          const current = getPixiAppRefs();
+          if (
+            current !== pixiRefs ||
+            current.app !== app ||
+            !current.prepareDisplayFrame ||
+            !current.renderDisplay
+          ) {
+            throw new Error("PROJECT_DISPLAY_UNAVAILABLE");
+          }
+          current.prepareDisplayFrame();
+          current.renderDisplay();
+        },
         canvas: app.canvas as HTMLCanvasElement,
       };
 

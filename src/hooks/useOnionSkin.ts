@@ -1,5 +1,5 @@
-import { computeBoneWorldTransforms } from "@vivi2d/core/bone-utils";
-import { findLayerById, flattenLayers } from "@vivi2d/core/layer-utils";
+import { buildBoneMap, computeBoneWorldTransforms } from "@vivi2d/core/bone-utils";
+import { flattenLayers } from "@vivi2d/core/layer-utils";
 import { meshDataToTypedArrays } from "@vivi2d/core/mesh-utils";
 import { findClipInProject } from "@vivi2d/core/scene-utils";
 import { computeSkinnedVertices } from "@vivi2d/core/skin-utils";
@@ -9,11 +9,11 @@ import {
 } from "@vivi2d/core/timeline-utils";
 import type {
   AnimationClip,
-  ViviMeshNode,
   LayerNode,
   ProjectData,
+  ViviMeshNode,
 } from "@vivi2d/core/types";
-import { isViviMesh, isBone } from "@vivi2d/core/types";
+import { isViviMesh } from "@vivi2d/core/types";
 import {
   createGhostMesh,
   createOverlayContainer,
@@ -34,6 +34,7 @@ const GHOST_ZINDEX = -100;
 
 export function useOnionSkin(pixiRefs: React.RefObject<PixiAppRefs>) {
   const ghostContainer = useRef<EditorOverlayContainer | null>(null);
+  const app = pixiRefs.current.app;
 
   const project = useEditorStore((s) => s.project);
   const currentFrame = useTimelineStore((s) => s.currentFrame);
@@ -42,11 +43,13 @@ export function useOnionSkin(pixiRefs: React.RefObject<PixiAppRefs>) {
 
   useEffect(() => {
     const world = pixiRefs.current.world;
-    if (!world) return;
+    if (!world || pixiRefs.current.app !== app) return;
+    const invalidate = pixiRefs.current.requestDisplayRender;
 
     if (ghostContainer.current) {
       destroyOverlayContainer(ghostContainer.current);
       ghostContainer.current = null;
+      invalidate?.();
     }
 
     if (!onionSkin.enabled || !project || !activeClipId) return;
@@ -54,6 +57,7 @@ export function useOnionSkin(pixiRefs: React.RefObject<PixiAppRefs>) {
     const clip = findClipInProject(project, activeClipId);
     if (!clip) return;
 
+    invalidate?.();
     const container = createOverlayContainer(world, "onion-skin", GHOST_ZINDEX);
     ghostContainer.current = container;
 
@@ -95,6 +99,7 @@ export function useOnionSkin(pixiRefs: React.RefObject<PixiAppRefs>) {
       if (ghostContainer.current) {
         destroyOverlayContainer(ghostContainer.current);
         ghostContainer.current = null;
+        invalidate?.();
       }
     };
   }, [
@@ -106,6 +111,7 @@ export function useOnionSkin(pixiRefs: React.RefObject<PixiAppRefs>) {
     currentFrame,
     activeClipId,
     pixiRefs,
+    app,
   ]);
 }
 
@@ -150,11 +156,7 @@ function renderGhostFrame(
 
       const skin = project.skins[layer.id];
       if (skin) {
-        const verts = computeSkinnedVertices(
-          layer.mesh.vertices,
-          skin,
-          worldTransforms,
-        );
+        const verts = computeSkinnedVertices(layer.mesh.vertices, skin, worldTransforms);
         mesh.vertices = new Float32Array(verts);
       }
 
@@ -165,43 +167,26 @@ function renderGhostFrame(
 
 function computeBoneWorldTransformsWithOverrides(
   layers: LayerNode[],
-  boneOverrides: Record<
-    string,
-    { angle?: number; scaleX?: number; scaleY?: number }
-  >,
+  boneOverrides: Record<string, { angle?: number; scaleX?: number; scaleY?: number }>,
 ): ReturnType<typeof computeBoneWorldTransforms> {
   if (Object.keys(boneOverrides).length === 0) {
     return computeBoneWorldTransforms(layers);
   }
 
-  const originals = new Map<
-    string,
-    { angle: number; scaleX: number; scaleY: number }
-  >();
-
-  for (const [boneId, override] of Object.entries(boneOverrides)) {
-    const node = findLayerById(layers, boneId);
-    if (!node || !isBone(node)) continue;
-    originals.set(boneId, {
-      angle: node.bone.angle,
-      scaleX: node.bone.scaleX,
-      scaleY: node.bone.scaleY,
-    });
-    if (override.angle !== undefined) node.bone.angle = override.angle;
-    if (override.scaleX !== undefined) node.bone.scaleX = override.scaleX;
-    if (override.scaleY !== undefined) node.bone.scaleY = override.scaleY;
-  }
-
-  const result = computeBoneWorldTransforms(layers);
-
-  for (const [boneId, orig] of originals) {
-    const node = findLayerById(layers, boneId);
-    if (node && isBone(node)) {
-      node.bone.angle = orig.angle;
-      node.bone.scaleX = orig.scaleX;
-      node.bone.scaleY = orig.scaleY;
-    }
-  }
-
-  return result;
+  // Authoring state may be frozen. Only temporary bone snapshots receive the
+  // preview pose; the existing utility resolves parents through parentBoneId.
+  const bones = [...buildBoneMap(layers).values()].map((node) => {
+    const override = boneOverrides[node.id] ?? {};
+    return {
+      ...node,
+      children: [],
+      bone: {
+        ...node.bone,
+        angle: override.angle !== undefined ? override.angle : node.bone.angle,
+        scaleX: override.scaleX !== undefined ? override.scaleX : node.bone.scaleX,
+        scaleY: override.scaleY !== undefined ? override.scaleY : node.bone.scaleY,
+      },
+    };
+  });
+  return computeBoneWorldTransforms(bones);
 }

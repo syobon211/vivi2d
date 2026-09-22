@@ -92,6 +92,7 @@ function addDifferenceOverlays(
 
 export function useReferenceOverlay(pixiRefs: React.RefObject<PixiAppRefs>) {
   const containerRef = useRef<EditorOverlayContainer | null>(null);
+  const app = pixiRefs.current.app;
 
   const project = useEditorStore((s) => s.project);
   const selectedLayerId = useSelectionStore((s) => s.selectedLayerId);
@@ -99,11 +100,13 @@ export function useReferenceOverlay(pixiRefs: React.RefObject<PixiAppRefs>) {
 
   useEffect(() => {
     const world = pixiRefs.current.world;
-    if (!world) return;
+    if (!world || pixiRefs.current.app !== app) return;
+    const invalidate = pixiRefs.current.requestDisplayRender;
 
     if (containerRef.current) {
       destroyOverlayContainer(containerRef.current);
       containerRef.current = null;
+      invalidate?.();
     }
 
     if (!referenceOverlay.enabled || !project || !selectedLayerId) return;
@@ -111,6 +114,7 @@ export function useReferenceOverlay(pixiRefs: React.RefObject<PixiAppRefs>) {
     const selectedLayer = findLayerById(project.layers, selectedLayerId);
     if (!selectedLayer || !isViviMesh(selectedLayer)) return;
 
+    invalidate?.();
     const container = createOverlayContainer(
       world,
       "reference-overlay",
@@ -120,7 +124,9 @@ export function useReferenceOverlay(pixiRefs: React.RefObject<PixiAppRefs>) {
 
     try {
       if (referenceOverlay.mode === "source") {
-        const canvas = useEditorStore.getState().projectV11 ? v11EntryCanvas(selectedLayer.id) : getTexture(selectedLayer.id);
+        const canvas = useEditorStore.getState().projectV11
+          ? v11EntryCanvas(selectedLayer.id)
+          : getTexture(selectedLayer.id);
         if (!canvas || canvas.width === 0 || canvas.height === 0) {
           destroyOverlayContainer(container);
           containerRef.current = null;
@@ -212,10 +218,12 @@ export function useReferenceOverlay(pixiRefs: React.RefObject<PixiAppRefs>) {
       if (containerRef.current) {
         destroyOverlayContainer(containerRef.current);
         containerRef.current = null;
+        invalidate?.();
       }
     };
   }, [
     pixiRefs,
+    app,
     project,
     referenceOverlay.enabled,
     referenceOverlay.mode,

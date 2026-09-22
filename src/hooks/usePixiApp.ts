@@ -12,7 +12,11 @@ import { useThemeStore } from "@/stores/themeStore";
 
 export type PixiAppRefs = EditorPixiRefs & {
   displayUnavailable?: boolean;
+  displayReady?: boolean;
   renderSafely?: (options: RenderOptions) => void;
+  renderDisplay?: () => void;
+  requestDisplayRender?: () => void;
+  prepareDisplayFrame?: () => void;
   markDisplayReady?: () => void;
   suspendDisplay?: () => void;
   retireDisplay?: () => void;
@@ -42,6 +46,7 @@ export function usePixiApp(containerRef: React.RefObject<HTMLDivElement | null>)
 
     let disposed = false;
     let installed: PixiAppRefs | null = null;
+    let removeOwnedListeners: (() => void) | undefined;
     const initBg =
       THEME_BG_COLORS[useThemeStore.getState().theme] ?? PIXI_CONFIG.BG_COLOR;
 
@@ -66,11 +71,24 @@ export function usePixiApp(containerRef: React.RefObject<HTMLDivElement | null>)
         app.stop();
         app.ticker.remove(app.render, app);
         let hadReadyScene = false;
-        const owned: PixiAppRefs = { ...nextRefs, displayUnavailable: false };
-        owned.suspendDisplay = () => app.stop();
+        let needsDisplayRender = false;
+        const owned: PixiAppRefs = {
+          ...nextRefs,
+          displayUnavailable: false,
+          displayReady: false,
+        };
+        owned.requestDisplayRender = () => {
+          if (!disposed && refs.current === owned && !owned.displayUnavailable)
+            needsDisplayRender = true;
+        };
+        owned.suspendDisplay = () => {
+          owned.displayReady = false;
+          app.stop();
+        };
         owned.retireDisplay = () => {
-          if (owned.displayUnavailable) return;
+          if (disposed || owned.displayUnavailable) return;
           owned.displayUnavailable = true;
+          owned.displayReady = false;
           app.stop();
           if (hadReadyScene)
             queueMicrotask(() => {
@@ -90,15 +108,26 @@ export function usePixiApp(containerRef: React.RefObject<HTMLDivElement | null>)
           }
         };
         owned.markDisplayReady = () => {
-          if (disposed || owned.displayUnavailable) return;
+          if (disposed || refs.current !== owned || owned.displayUnavailable) return;
           hadReadyScene = true;
+          owned.displayReady = true;
+          needsDisplayRender = true;
           app.start();
+        };
+        owned.renderDisplay = () => {
+          if (disposed || refs.current !== owned || !owned.displayReady)
+            throw new Error("V11_MASK_RENDERER_UNAVAILABLE");
+          // Clear before drawing: an invalidation raised by the draw survives.
+          // Explicit capture always draws, even when the ordinary display is clean.
+          needsDisplayRender = false;
+          owned.renderSafely!({ container: app.stage });
         };
         app.ticker.add(
           () => {
-            if (owned.displayUnavailable) return;
+            if (!needsDisplayRender || !owned.displayReady || owned.displayUnavailable)
+              return;
             try {
-              owned.renderSafely!({ container: app.stage });
+              owned.renderDisplay!();
             } catch {
               /* The latch already stopped the ticker and scheduled recovery. */
             }
@@ -106,6 +135,19 @@ export function usePixiApp(containerRef: React.RefObject<HTMLDivElement | null>)
           app,
           UPDATE_PRIORITY.LOW,
         );
+        const renderer = app.renderer;
+        const invalidate = () => owned.requestDisplayRender!();
+        // GPU-generated mask contents cannot be restored by a dirty flag. Use
+        // the existing new-generation path, including complete scene preparation.
+        const retireContext = () => owned.retireDisplay!();
+        renderer.on("resize", invalidate);
+        app.canvas.addEventListener("webglcontextlost", retireContext);
+        app.canvas.addEventListener("webglcontextrestored", retireContext);
+        removeOwnedListeners = () => {
+          renderer.off("resize", invalidate);
+          app.canvas.removeEventListener("webglcontextlost", retireContext);
+          app.canvas.removeEventListener("webglcontextrestored", retireContext);
+        };
         el.appendChild(app.canvas);
         installed = owned;
         refs.current = owned;
@@ -126,6 +168,8 @@ export function usePixiApp(containerRef: React.RefObject<HTMLDivElement | null>)
     return () => {
       disposed = true;
       observer.disconnect();
+      removeOwnedListeners?.();
+      if (installed) installed.displayReady = false;
       try {
         installed?.disposeScene?.();
       } catch {
@@ -142,11 +186,12 @@ export function usePixiApp(containerRef: React.RefObject<HTMLDivElement | null>)
   }, [containerRef, preserveDrawingBuffer, generation]);
 
   const theme = useThemeStore((s) => s.theme);
+  const themeApp = refs.current.app;
   useEffect(() => {
-    const app = refs.current.app;
-    if (!app) return;
-    app.renderer.background.color = THEME_BG_COLORS[theme] ?? PIXI_CONFIG.BG_COLOR;
-  }, [theme]);
+    if (!themeApp || refs.current.app !== themeApp) return;
+    themeApp.renderer.background.color = THEME_BG_COLORS[theme] ?? PIXI_CONFIG.BG_COLOR;
+    refs.current.requestDisplayRender?.();
+  }, [theme, themeApp]);
 
   return refs;
 }

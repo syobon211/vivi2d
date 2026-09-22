@@ -5,11 +5,8 @@ import {
   evaluateBoneTracksAtFrame,
   evaluateClipAtFrame,
 } from "@vivi2d/core/timeline-utils";
-import {
-  type AnimationClip,
-  isBone,
-  type ProjectData,
-} from "@vivi2d/core/types";
+import { type AnimationClip, isBone, type ProjectData } from "@vivi2d/core/types";
+import { flushSync } from "react-dom";
 import { useBoneStore } from "@/stores/boneStore";
 import { useParameterStore } from "@/stores/parameterStore";
 
@@ -44,26 +41,18 @@ export function applyFrameToStores(
     const boneValues = evaluateBoneTracksAtFrame(clip.boneTracks, frame);
     const boneStore = useBoneStore.getState();
     for (const [boneId, props] of Object.entries(boneValues)) {
-      if (props.angle !== undefined)
-        boneStore.setBoneAngle(boneId, props.angle);
+      if (props.angle !== undefined) boneStore.setBoneAngle(boneId, props.angle);
       if (props.scaleX !== undefined || props.scaleY !== undefined) {
         const node = findLayerById(project.layers, boneId);
         const curSX = node && isBone(node) ? node.bone.scaleX : 1;
         const curSY = node && isBone(node) ? node.bone.scaleY : 1;
-        boneStore.setBoneScale(
-          boneId,
-          props.scaleX ?? curSX,
-          props.scaleY ?? curSY,
-        );
+        boneStore.setBoneScale(boneId, props.scaleX ?? curSX, props.scaleY ?? curSY);
       }
     }
   }
 }
 
-function canvasToBlob(
-  canvas: HTMLCanvasElement,
-  type = "image/png",
-): Promise<Blob> {
+function canvasToBlob(canvas: HTMLCanvasElement, type = "image/png"): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
@@ -86,10 +75,10 @@ async function blobToBase64(blob: Blob): Promise<string> {
   return btoa(binary);
 }
 
-function waitForRender(app: { render: () => void }): Promise<void> {
+function waitForPaint(): Promise<void> {
   return new Promise((resolve) => {
-    app.render();
-    requestAnimationFrame(() => resolve());
+    // A paint opportunity, not proof that a scene or encoded frame is ready.
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
 }
 
@@ -109,9 +98,9 @@ export async function exportPngSequence(
   for (let frame = 0; frame < total; frame++) {
     onProgress?.({ current: frame, total, phase: "rendering" });
 
-    applyFrameToStores(project, clip, frame);
-    await waitForRender(app);
-
+    flushSync(() => applyFrameToStores(project, clip, frame));
+    app.render();
+    // Start readback in the final draw's turn, even with a non-preserved buffer.
     const blob = await canvasToBlob(app.canvas);
     const base64 = await blobToBase64(blob);
     const padded = String(frame).padStart(5, "0");
@@ -152,55 +141,69 @@ export async function exportMp4(
   // Manually step the captured stream so the recording stays aligned with the
   // export loop instead of the browser refresh rate.
   const stream = canvas.captureStream(0);
-  const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-    ? "video/webm;codecs=vp9"
-    : "video/webm";
+  let recorder: MediaRecorder | undefined;
+  try {
+    const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+      ? "video/webm;codecs=vp9"
+      : "video/webm";
 
-  const recorder = new MediaRecorder(stream, {
-    mimeType,
-    videoBitsPerSecond: 8_000_000,
-  });
+    recorder = new MediaRecorder(stream, {
+      mimeType,
+      videoBitsPerSecond: 8_000_000,
+    });
 
-  const chunks: Blob[] = [];
-  recorder.ondataavailable = (e) => {
-    if (e.data.size > 0) chunks.push(e.data);
-  };
-
-  const recordingDone = new Promise<Blob>((resolve) => {
-    recorder.onstop = () => {
-      resolve(new Blob(chunks, { type: mimeType }));
+    const chunks: Blob[] = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunks.push(e.data);
     };
-  });
 
-  recorder.start();
+    let recordingFailed = false;
+    const recordingDone = new Promise<void>((resolve) => {
+      recorder!.onstop = () => resolve();
+      recorder!.onerror = () => {
+        recordingFailed = true;
+        resolve();
+      };
+    });
 
-  const videoTrack = stream.getVideoTracks()[0] as MediaStreamTrack & {
-    requestFrame?: () => void;
-  };
+    recorder.start();
 
-  for (let frame = 0; frame < total; frame++) {
-    onProgress?.({ current: frame, total, phase: "rendering" });
+    const videoTrack = stream.getVideoTracks()[0] as MediaStreamTrack & {
+      requestFrame?: () => void;
+    };
+    if (!videoTrack?.requestFrame) throw new Error("MEDIA_CAPTURE_UNAVAILABLE");
 
-    applyFrameToStores(project, clip, frame);
-    await waitForRender(app);
+    for (let frame = 0; frame < total; frame++) {
+      onProgress?.({ current: frame, total, phase: "rendering" });
 
-    if (videoTrack.requestFrame) {
+      if (recordingFailed) throw new Error("MEDIA_CAPTURE_FAILED");
+      flushSync(() => applyFrameToStores(project, clip, frame));
       videoTrack.requestFrame();
+      app.render();
+      await waitForPaint();
+      await new Promise((r) => setTimeout(r, 1000 / clip.fps));
     }
 
-    await new Promise((r) => setTimeout(r, 1000 / clip.fps));
+    if (recordingFailed) throw new Error("MEDIA_CAPTURE_FAILED");
+    recorder.stop();
+    onProgress?.({ current: total, total, phase: "encoding" });
+
+    await recordingDone;
+    if (recordingFailed) throw new Error("MEDIA_CAPTURE_FAILED");
+    const blob = new Blob(chunks, { type: mimeType });
+    const base64 = await blobToBase64(blob);
+
+    onProgress?.({ current: total, total, phase: "saving" });
+    const ext = mimeType.includes("webm") ? "webm" : "mp4";
+    await window.electronAPI.writeExportFiles({
+      dirPath,
+      files: [{ path: `${clip.name}.${ext}`, content: base64, isBlob: true }],
+    });
+  } finally {
+    try {
+      if (recorder && recorder.state !== "inactive") recorder.stop();
+    } finally {
+      for (const track of stream.getTracks()) track.stop();
+    }
   }
-
-  recorder.stop();
-  onProgress?.({ current: total, total, phase: "encoding" });
-
-  const blob = await recordingDone;
-  const base64 = await blobToBase64(blob);
-
-  onProgress?.({ current: total, total, phase: "saving" });
-  const ext = mimeType.includes("webm") ? "webm" : "mp4";
-  await window.electronAPI.writeExportFiles({
-    dirPath,
-    files: [{ path: `${clip.name}.${ext}`, content: base64, isBlob: true }],
-  });
 }

@@ -28,13 +28,14 @@ function createProjectWithClip(duration = 2) {
   };
 }
 
-function createBlobCanvas() {
+function createBlobCanvas(track = { requestFrame: vi.fn(), stop: vi.fn() }) {
   return {
     toBlob: vi.fn((callback: BlobCallback) => {
       callback(new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" }));
     }),
     captureStream: vi.fn(() => ({
-      getVideoTracks: () => [{ requestFrame: vi.fn() }],
+      getVideoTracks: () => [track],
+      getTracks: () => [track],
     })),
   } as unknown as HTMLCanvasElement;
 }
@@ -96,11 +97,15 @@ describe("media exporter", () => {
 
   it("exports an MP4-compatible webm recording and reports encoding progress", async () => {
     class MockMediaRecorder {
+      state = "inactive";
       static isTypeSupported = vi.fn().mockReturnValue(true);
       ondataavailable: ((event: { data: Blob }) => void) | null = null;
       onstop: (() => void) | null = null;
-      start = vi.fn();
+      start = vi.fn(() => {
+        this.state = "recording";
+      });
       stop = vi.fn(() => {
+        this.state = "inactive";
         this.ondataavailable?.({
           data: new Blob([new Uint8Array([4, 5, 6])], {
             type: "video/webm;codecs=vp9",
@@ -111,7 +116,8 @@ describe("media exporter", () => {
     }
     (globalThis as any).MediaRecorder = MockMediaRecorder;
     const project = createProjectWithClip(2);
-    const canvas = createBlobCanvas();
+    const track = { requestFrame: vi.fn(), stop: vi.fn() };
+    const canvas = createBlobCanvas(track);
     const progress = vi.fn();
 
     await exportMp4({ render: vi.fn(), canvas }, project, "clip-1", "out", progress);
@@ -124,6 +130,23 @@ describe("media exporter", () => {
     );
     expect(progress).toHaveBeenCalledWith({ current: 2, total: 2, phase: "encoding" });
     expect(progress).toHaveBeenCalledWith({ current: 2, total: 2, phase: "saving" });
+    expect(track.stop).toHaveBeenCalledOnce();
+    vi.mocked(window.electronAPI.writeExportFiles).mockClear();
+    await expect(
+      exportMp4(
+        {
+          render: () => {
+            throw Error("PROJECT_DISPLAY_UNAVAILABLE");
+          },
+          canvas,
+        },
+        project,
+        "clip-1",
+        "out",
+      ),
+    ).rejects.toThrow("PROJECT_DISPLAY_UNAVAILABLE");
+    expect(track.stop).toHaveBeenCalledTimes(2);
+    expect(window.electronAPI.writeExportFiles).not.toHaveBeenCalled();
   });
 
   it("rejects MP4 export when the clip is missing", async () => {
