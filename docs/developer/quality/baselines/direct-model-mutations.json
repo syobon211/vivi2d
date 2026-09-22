@@ -2704,6 +2704,41 @@
     },
     {
       "kind": "assignment",
+      "line": 249,
+      "path": "src/lib/export/media-exporter.ts",
+      "signature": "src/lib/export/media-exporter.ts:assignment:captureCanvas.height = 0",
+      "text": "captureCanvas.height = 0"
+    },
+    {
+      "kind": "assignment",
+      "line": 148,
+      "path": "src/lib/export/media-exporter.ts",
+      "signature": "src/lib/export/media-exporter.ts:assignment:captureCanvas.height = canvas.height",
+      "text": "captureCanvas.height = canvas.height"
+    },
+    {
+      "kind": "assignment",
+      "line": 248,
+      "path": "src/lib/export/media-exporter.ts",
+      "signature": "src/lib/export/media-exporter.ts:assignment:captureCanvas.width = 0",
+      "text": "captureCanvas.width = 0"
+    },
+    {
+      "kind": "assignment",
+      "line": 147,
+      "path": "src/lib/export/media-exporter.ts",
+      "signature": "src/lib/export/media-exporter.ts:assignment:captureCanvas.width = canvas.width",
+      "text": "captureCanvas.width = canvas.width"
+    },
+    {
+      "kind": "assignment",
+      "line": 152,
+      "path": "src/lib/export/media-exporter.ts",
+      "signature": "src/lib/export/media-exporter.ts:assignment:context.globalCompositeOperation = \"copy\"",
+      "text": "context.globalCompositeOperation = \"copy\""
+    },
+    {
+      "kind": "assignment",
       "line": 116,
       "path": "src/lib/export/media-exporter.ts",
       "signature": "src/lib/export/media-exporter.ts:assignment:files.length = 0",
@@ -2711,28 +2746,35 @@
     },
     {
       "kind": "assignment",
-      "line": 163,
+      "line": 181,
       "path": "src/lib/export/media-exporter.ts",
-      "signature": "src/lib/export/media-exporter.ts:assignment:recorder!.onerror = () => { recordingFailed = true; resolve(); }",
-      "text": "recorder!.onerror = () => { recordingFailed = true; resolve(); }"
+      "signature": "src/lib/export/media-exporter.ts:assignment:recorder!.onerror = () => { recordingFailed = true; settleStarted(false); resolve(); }",
+      "text": "recorder!.onerror = () => { recordingFailed = true; settleStarted(false); resolve(); }"
     },
     {
       "kind": "assignment",
-      "line": 162,
+      "line": 176,
       "path": "src/lib/export/media-exporter.ts",
-      "signature": "src/lib/export/media-exporter.ts:assignment:recorder!.onstop = () => resolve()",
-      "text": "recorder!.onstop = () => resolve()"
+      "signature": "src/lib/export/media-exporter.ts:assignment:recorder!.onstop = () => { recordingStopped = true; settleStarted(false); resolve(); }",
+      "text": "recorder!.onstop = () => { recordingStopped = true; settleStarted(false); resolve(); }"
     },
     {
       "kind": "assignment",
-      "line": 156,
+      "line": 164,
       "path": "src/lib/export/media-exporter.ts",
       "signature": "src/lib/export/media-exporter.ts:assignment:recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); }",
       "text": "recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); }"
     },
     {
+      "kind": "assignment",
+      "line": 174,
+      "path": "src/lib/export/media-exporter.ts",
+      "signature": "src/lib/export/media-exporter.ts:assignment:recorder.onstart = () => settleStarted(true)",
+      "text": "recorder.onstart = () => settleStarted(true)"
+    },
+    {
       "kind": "mutating-call",
-      "line": 157,
+      "line": 165,
       "path": "src/lib/export/media-exporter.ts",
       "signature": "src/lib/export/media-exporter.ts:mutating-call:chunks.push(e.data)",
       "text": "chunks.push(e.data)"
