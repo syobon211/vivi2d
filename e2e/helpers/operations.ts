@@ -68,107 +68,51 @@ async function clickDropdownItemByAliases(
   return false;
 }
 
-function getFileMenuFallbackIndex(itemText: string): number | undefined {
-  if (/Import PSD|PSD\u3092\u30a4\u30f3\u30dd\u30fc\u30c8/.test(itemText)) return 0;
-  if (/Open Image|\u753b\u50cf\u3092\u958b\u304f/.test(itemText)) return 1;
-  if (
-    /Import Image As Layer|\u753b\u50cf\u3092\u30ec\u30a4\u30e4\u30fc\u3068\u3057\u3066\u8ffd\u52a0/.test(
-      itemText,
-    )
-  )
-    return 2;
-  if (
-    /Import Images As Layers|\u8907\u6570\u753b\u50cf\u3092\u30ec\u30a4\u30e4\u30fc\u3068\u3057\u3066\u8ffd\u52a0/.test(
-      itemText,
-    )
-  )
-    return 3;
-  if (
-    /Import Folder As Layers|\u30d5\u30a9\u30eb\u30c0\u3092\u30ec\u30a4\u30e4\u30fc\u3068\u3057\u3066\u8ffd\u52a0/.test(
-      itemText,
-    )
-  )
-    return 4;
-  if (/Split PNG Into Layers|PNG.*\u30ec\u30a4\u30e4\u30fc/.test(itemText)) return 5;
-  if (/^Open$|\u958b\u304f/.test(itemText)) return 6;
-  if (
-    /Import \.vivid|\.vivid.*Import|\.vivid \u3092\u30a4\u30f3\u30dd\u30fc\u30c8/.test(
-      itemText,
-    )
-  )
-    return 7;
-  if (/^Save$|\u4fdd\u5b58/.test(itemText)) return 8;
-  if (
-    /^Save As$|^Save as$|^Save project as$|\u5225\u540d\u3067\u4fdd\u5b58|\u540d\u524d\u3092\u4ed8\u3051\u3066\u4fdd\u5b58/.test(
-      itemText,
-    )
-  ) {
-    return 9;
-  }
-  if (/SDK Export|Export SDK|SDK\u30a8\u30af\u30b9\u30dd\u30fc\u30c8/.test(itemText))
-    return 10;
-  if (/Media Output|\u30e1\u30c7\u30a3\u30a2\u51fa\u529b/.test(itemText)) return 11;
-  if (/Blender \(\.glb\)/.test(itemText)) return 12;
-  if (
-    /Reimport Image Layer|\u753b\u50cf\u30ec\u30a4\u30e4\u30fc\u3092\u518d\u8aad\u8fbc/.test(
-      itemText,
-    )
-  )
-    return 13;
-  if (/Reimport PSD|PSD\u518d\u8aad\u8fbc/.test(itemText)) return 14;
-  if (
-    /Export as \.vivid|\.vivid \u3067\u30a8\u30af\u30b9\u30dd\u30fc\u30c8/.test(itemText)
-  )
-    return 15;
-  if (/^Validate$|\u691c\u8a3c/.test(itemText)) return 16;
-  if (/Auto Setup|\u81ea\u52d5\u30bb\u30c3\u30c8\u30a2\u30c3\u30d7/.test(itemText))
-    return 17;
-  if (/^Close$|\u9589\u3058\u308b/.test(itemText)) return 18;
-  return undefined;
-}
+const fileMenuAliases: ReadonlyArray<readonly string[]> = [
+  ["Import PSD", "PSDをインポート"],
+  ["Open Image...", "画像を開く..."],
+  ["Import Image As Layer...", "画像をレイヤーとして追加..."],
+  ["Import Images As Layers...", "複数画像をレイヤーとして追加..."],
+  ["Import Folder As Layers...", "フォルダをレイヤーとして追加..."],
+  ["Split PNG Into Layers...", "PNG をレイヤー分割..."],
+  ["Open", "開く"],
+  ["Import .vivid", ".vivid をインポート"],
+  ["Save", "保存"],
+  ["Save As", "Save as", "Save project as", "別名で保存", "名前を付けて保存"],
+  ["Save v11 copy (supported profile)", "v11コピーを保存（対応プロファイル）"],
+  ["Save v11 fork (new document identity)", "v11を分岐して保存（新しい文書ID）"],
+  ["Duplicate originally opened v11 file", "開いた時点のv11原本を複製"],
+  ["Remove unused v11 images (undoable)", "未使用のv11画像を削除（Undo可）"],
+  [
+    "Choose replacement PNG (detach shared atlas)",
+    "差替えPNGを選択（共有atlasから分離）",
+  ],
+  ["SDK Export", "Export SDK", "SDKエクスポート"],
+  ["Media Output", "メディア出力"],
+  ["Blender (.glb)"],
+  ["Reimport Image Layer", "画像レイヤーを再読込"],
+  ["Reimport PSD", "PSD再読込"],
+  ["Export as .vivid", ".vivid でエクスポート"],
+  ["Validate", "検証"],
+  ["Auto Setup", "自動セットアップ"],
+  ["Close", "閉じる"],
+];
 
 export async function clickFileMenuItem(window: Page, itemText: string) {
-  const trigger = await resolveMenuTrigger(window, /File/, 0);
-  const panel = await openDropdownPanelByTrigger(window, trigger);
-  const aliasesByLabel: Record<string, Array<string | RegExp>> = {
-    Open: [/^Open$|^開く$/],
-    Save: [/^Save$|^保存$/],
-    Close: [/^Close$|^閉じる$/],
-    "Auto Setup": [/Auto Setup|自動セットアップ/],
-    "Reimport Image Layer": [/Reimport Image Layer|画像レイヤーを再読込/],
-    "Reimport PSD": [/Reimport PSD|PSD再読込/],
-  };
-  aliasesByLabel.Validate = [/^Validate$|^検証$|^讀懆ｨｼ$/];
-  const aliases = aliasesByLabel[itemText];
-  if (aliases && (await clickDropdownItemByAliases(panel, aliases))) {
-    return;
-  }
-  const fallbackIndex = getFileMenuFallbackIndex(itemText);
-  const commonFallbacks: Record<string, number> = {
-    "PSD\u3092\u30a4\u30f3\u30dd\u30fc\u30c8": 0,
-    "\u753b\u50cf\u3092\u958b\u304f...": 1,
-    "\u753b\u50cf\u3092\u30ec\u30a4\u30e4\u30fc\u3068\u3057\u3066\u8ffd\u52a0...": 2,
-    "\u8907\u6570\u753b\u50cf\u3092\u30ec\u30a4\u30e4\u30fc\u3068\u3057\u3066\u8ffd\u52a0...": 3,
-    "\u30d5\u30a9\u30eb\u30c0\u3092\u30ec\u30a4\u30e4\u30fc\u3068\u3057\u3066\u8ffd\u52a0...": 4,
-    "\u958b\u304f": 6,
-    "Import .vivid": 7,
-    ".vivid \u3092\u30a4\u30f3\u30dd\u30fc\u30c8": 7,
-    "\u4fdd\u5b58": 8,
-    "\u5225\u540d\u3067\u4fdd\u5b58": 9,
-    "\u540d\u524d\u3092\u4ed8\u3051\u3066\u4fdd\u5b58": 9,
-    "SDK\u30a8\u30af\u30b9\u30dd\u30fc\u30c8": 10,
-    "\u30e1\u30c7\u30a3\u30a2\u51fa\u529b": 11,
-    "\u753b\u50cf\u30ec\u30a4\u30e4\u30fc\u3092\u518d\u8aad\u8fbc": 13,
-    "PSD\u518d\u8aad\u8fbc": 14,
-    ".vivid \u3067\u30a8\u30af\u30b9\u30dd\u30fc\u30c8": 15,
-    "\u691c\u8a3c": 16,
-    "\u81ea\u52d5\u30bb\u30c3\u30c8\u30a2\u30c3\u30d7": 17,
-    "\u9589\u3058\u308b": 18,
-  };
-  await clickDropdownItemByTextOrIndex(panel, itemText, {
-    ...commonFallbacks,
-    ...(fallbackIndex === undefined ? {} : { [itemText]: fallbackIndex }),
+  const trigger = window.locator(".menu-dropdown-trigger").filter({
+    hasText: /^(?:File|ファイル)\s*▾$/,
   });
+  await expect(trigger).toHaveCount(1);
+  const panel = await openDropdownPanelByTrigger(window, trigger);
+  const aliases = fileMenuAliases.find((labels) => labels.includes(itemText)) ?? [
+    itemText,
+  ];
+  const name = new RegExp(
+    `^(?:${aliases.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})$`,
+  );
+  const item = panel.getByRole("menuitem", { name });
+  await expect(item).toHaveCount(1);
+  await item.click();
 }
 
 export async function clickIntegrationsMenuItem(window: Page, itemText: string) {
@@ -379,9 +323,9 @@ export async function addTrack(window: Page, label: string) {
       await addTrackSelect.selectOption({ label: fallback });
       return;
     }
-    const values = await addTrackSelect.locator("option").evaluateAll((nodes) =>
-      nodes.map((node) => (node as HTMLOptionElement).value),
-    );
+    const values = await addTrackSelect
+      .locator("option")
+      .evaluateAll((nodes) => nodes.map((node) => (node as HTMLOptionElement).value));
     const angleValue = values.find((value) => /^bone:.+:angle$/.test(value));
     if (angleValue) {
       await addTrackSelect.selectOption(angleValue);

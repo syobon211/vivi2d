@@ -150,6 +150,10 @@ jobs:
           path: tmp/windows-installer-baseline
       - run: node scripts/run-release-step.mjs --name check-viewer-mediapipe-assets -- npm run check:viewer-mediapipe-assets
       - run: node scripts/run-release-step.mjs --name build-editor -- npm run build
+      - run: node scripts/run-release-step.mjs --name install-local-asset-rust -- rustup toolchain install 1.94.1 --profile minimal
+      - run: node scripts/run-release-step.mjs --name fetch-local-asset-rust -- cargo +1.94.1 fetch --locked --manifest-path packages/runtime-native/Cargo.toml
+      - run: node scripts/run-release-step.mjs --name prepare-electron-runtime -- node node_modules/electron/install.js
+      - run: node scripts/run-release-step.mjs --name check-local-asset-addon -- npm run check:local-asset-addon
       - run: node scripts/run-release-step.mjs --name build-viewer -- npm run build --workspace @vivi2d/viewer
       - run: node scripts/run-release-step.mjs --name windows-installer-build -- npx electron-builder --win nsis --x64 --publish never --config electron-builder.yml
       - run: node scripts/run-release-step.mjs --name windows-viewer-installer-build -- npx electron-builder --win nsis --x64 --publish never --config electron-builder.viewer.yml

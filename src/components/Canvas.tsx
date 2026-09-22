@@ -84,6 +84,7 @@ export function Canvas() {
   const referenceOverlayEnabled = useViewportStore((s) => s.referenceOverlay.enabled);
 
   const pixiRefs = usePixiApp(containerRef);
+  const pixiApp = pixiRefs.current.app;
   useLayerSync(pixiRefs);
   const viewport = useViewport(surfaceRef);
   const meshOverlay = useMeshOverlayInteraction(pixiRefs);
@@ -214,11 +215,12 @@ export function Canvas() {
 
   useEffect(() => {
     const world = pixiRefs.current.world;
-    if (!world) return;
+    if (!world || pixiRefs.current.app !== pixiApp) return;
     world.scale.set(zoom);
     world.x = panX;
     world.y = panY;
-  }, [zoom, panX, panY, pixiRefs]);
+    pixiRefs.current.requestDisplayRender?.();
+  }, [zoom, panX, panY, pixiRefs, pixiApp]);
 
   useEffect(() => {
     if (projectLayerCount === 0) return;

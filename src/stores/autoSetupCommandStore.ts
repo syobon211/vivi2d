@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { withStandardMiddleware } from "./_middleware";
+import { rejectV11LegacyAction } from "./v11LegacyGuard";
 
 export type AutoSetupQuickCommandKind =
   | "readyToRig"
@@ -37,10 +38,12 @@ export const useAutoSetupCommandStore = create<AutoSetupCommandStoreState>()(
     (set, get) => ({
       pendingCommand: null,
       commandInFlight: false,
-      requestCommand: (command) =>
+      requestCommand: (command) => {
+        if (rejectV11LegacyAction()) return;
         set((state) => {
           state.pendingCommand = command;
-        }),
+        });
+      },
       clearCommand: () =>
         set((state) => {
           state.pendingCommand = null;

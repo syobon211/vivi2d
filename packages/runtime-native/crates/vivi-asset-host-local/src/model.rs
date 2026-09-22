@@ -1,12 +1,91 @@
 use std::fmt;
 
-use vivi_asset_resolver::{AssetRef, ReadyPng};
+use vivi_asset_resolver::{AssetRef, Digest, ReadyPng};
 
 pub(crate) const EVALUATION_TEXTURE_PLAN_SCHEMA_V1: &str = "vivi2d.evaluationTexturePlan.v1";
+#[cfg(feature = "local-store")]
 pub(crate) const PNG_PROFILE_V1: &str = "vivi2d.png.rgba8.v1";
 pub(crate) const PNG_MEDIA_TYPE: &str = "image/png";
 pub(crate) const SRGB_COLOR_SPACE: &str = "srgb";
 pub(crate) const STRAIGHT_ALPHA_MODE: &str = "straight";
+
+/// One owned exact physical object. This is transfer data, not a validation
+/// proof. Import always revalidates it independently of the exporting host.
+pub struct PngClosureObjectV1 {
+    pub(crate) address: Digest,
+    pub(crate) bytes: Vec<u8>,
+}
+
+impl PngClosureObjectV1 {
+    #[must_use]
+    pub const fn address(&self) -> Digest {
+        self.address
+    }
+
+    #[must_use]
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
+impl fmt::Debug for PngClosureObjectV1 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PngClosureObjectV1")
+            .field("bytes_len", &self.bytes.len())
+            .finish()
+    }
+}
+
+/// Bounded same-process transfer of one PNG's exact physical closure. It owns
+/// no store handle, path, principal, logical reconstruction, or decoded RGBA.
+/// The source host can be closed before importing this value into another host.
+pub struct PngClosureExportV1 {
+    pub(crate) reference: AssetRef,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    pub(crate) objects: Vec<PngClosureObjectV1>,
+}
+
+impl PngClosureExportV1 {
+    #[must_use]
+    pub const fn reference(&self) -> &AssetRef {
+        &self.reference
+    }
+    #[must_use]
+    pub const fn width(&self) -> u32 {
+        self.width
+    }
+    #[must_use]
+    pub const fn height(&self) -> u32 {
+        self.height
+    }
+    #[must_use]
+    pub fn objects(&self) -> &[PngClosureObjectV1] {
+        &self.objects
+    }
+}
+
+impl fmt::Debug for PngClosureExportV1 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let total = self.objects.iter().try_fold(0_u64, |n, o| {
+            u64::try_from(o.bytes.len())
+                .ok()
+                .and_then(|len| n.checked_add(len))
+        });
+        f.debug_struct("PngClosureExportV1")
+            .field("object_count", &self.objects.len())
+            .field("total_payload_bytes", &total)
+            .finish()
+    }
+}
+
+/// Missing remains distinct from a hard resolver/store error. A partial
+/// captured set can never escape as Ready.
+#[derive(Debug)]
+pub enum ExportPngClosureV1 {
+    Ready(PngClosureExportV1),
+    Missing,
+}
 
 /// Exact strict-PNG attestation nested by [`VerifiedAtlasAssetV1`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -25,6 +25,7 @@ import {
 } from "@/lib/texture-store";
 import type { ParsedPsdResult } from "@/lib/workers/psd-parse-client";
 import { useNotificationStore } from "../notificationStore";
+import { rejectV11LegacyAction } from "../v11LegacyGuard";
 import { applyLoadedProject } from "./reset";
 import {
   applySeeThroughImportContext,
@@ -279,6 +280,7 @@ export async function parseSeeThroughNativeImportBundleAsync(
 
   return {
     project: annotated.project,
+    getStagedTextures: () => textures.map((texture) => ({ layerId: texture.layerId, imageData: new ImageData(new Uint8ClampedArray(texture.imageData.data), texture.imageData.width, texture.imageData.height) })),
     commitTextures: () => {
       clearTextures();
       for (const texture of textures) {
@@ -293,9 +295,11 @@ export async function loadSeeThroughNativeImportBundleAsync(
   fileName: string,
   options?: { notifyOnError?: boolean },
 ): Promise<boolean> {
+  if (rejectV11LegacyAction()) return false;
   const previousTextures = new Map(getAllTextures());
   try {
     const parsed = await parseSeeThroughNativeImportBundleAsync(bundle, fileName);
+    if (rejectV11LegacyAction()) return false;
     try {
       parsed.commitTextures();
       applyLoadedProject(parsed.project, null, "seeThrough");

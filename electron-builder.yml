@@ -2,6 +2,7 @@ appId: com.vivi2d.editor
 productName: Vivi2D
 asar: false
 publish: null
+afterPack: scripts/check-local-asset-after-pack.cjs
 artifactName: "vivi2d-${env.VERSION}-windows-x64-setup.${ext}"
 directories:
   output: dist/windows-installer
@@ -16,10 +17,13 @@ files:
     to: electron
     filter:
       - "**/*.cjs"
+      - "generated/native-local-asset/win32-x64/vivi_local_asset_v1.node"
+      - "generated/native-local-asset/win32-x64/manifest.json"
+      - "generated/native-local-asset/win32-x64/NATIVE_LOCAL_ASSET_NOTICES.txt"
+      - "generated/native-local-asset/win32-x64/native-local-asset.cdx.json"
+      - "generated/native-local-asset/win32-x64/vcruntime140.dll"
   - package.json
   - LICENSE
-  - from: THIRD_PARTY_NOTICES
-    to: THIRD_PARTY_NOTICES.txt
   - "!node_modules/**"
   - "!node_modules/**/*.map"
   - "!node_modules/**/*.ts"
@@ -33,6 +37,9 @@ files:
   - "!node_modules/**/doc/**"
   - "!node_modules/**/example/**"
   - "!node_modules/**/examples/**"
+extraFiles:
+  - from: THIRD_PARTY_NOTICES
+    to: resources/app/THIRD_PARTY_NOTICES.txt
 extraMetadata:
   main: electron/main.cjs
 win:

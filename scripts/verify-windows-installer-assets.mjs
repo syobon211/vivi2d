@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { assertLocalAssetPackageEvidence } from "./lib/local-asset-package.mjs";
 import {
   assertWindowsInstallerTag,
   describeFileForRecord,
@@ -140,6 +141,11 @@ function assertRecord(record) {
     throw new Error("installer record must include buildProvenance status.");
   }
   publicWindowsManualReview(record.manualWindowsReview);
+  // Additive evidence: historical alpha records predate the native addon.
+  // Current preparation always checks and emits this exact-input record.
+  if (record.nativePackageInputs !== undefined) {
+    assertLocalAssetPackageEvidence(record.nativePackageInputs);
+  }
   if (record.sizeBudgets?.installerBytes > MAX_INSTALLER_BYTES) {
     throw new Error("installer exceeds size budget.");
   }

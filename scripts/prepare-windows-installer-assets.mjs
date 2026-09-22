@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { verifyLocalAssetPackage } from "./lib/local-asset-package.mjs";
 import { readJson, repoRoot, run } from "./lib/repo.mjs";
 import {
   assertWindowsInstallerTag,
@@ -131,6 +132,10 @@ if (installedFootprintBytes > MAX_INSTALLED_FOOTPRINT_BYTES) {
   );
 }
 scanPackagedApp(packagedAppDir);
+const nativePackageInputs = verifyLocalAssetPackage({
+  root: repoRoot,
+  appOutDir: packagedAppDir,
+});
 const viewerInstalledFootprintBytes = includeViewerInstaller
   ? directorySizeBytes(viewerPackagedAppDir)
   : 0;
@@ -255,6 +260,7 @@ const releaseRecord = {
     exception:
       "GitHub artifact attestation attachment is deferred until its exact filename is allowlisted.",
   },
+  nativePackageInputs,
   manualWindowsReview: manualReview,
   sizeBudgets: {
     maxInstallerBytes: MAX_INSTALLER_BYTES,

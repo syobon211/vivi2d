@@ -54,8 +54,10 @@ jobs:
           if [ "${{ steps.perf.outcome }}" = "failure" ]; then
             echo "- Result: report only (soft/hard regression observed)" >> "$GITHUB_STEP_SUMMARY"
             echo "- Action: reproduce locally and review the result before deciding whether to refresh baselines or tighten budgets." >> "$GITHUB_STEP_SUMMARY"
-          else
+          elif [ "${{ steps.perf.outcome }}" = "success" ]; then
             echo "- Result: perf project passed in report-only mode." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Result: perf project did not complete; no passing result is available." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   perf-enforced:

@@ -418,6 +418,8 @@ name = "vivi-runtime-native-c-abi"
 version = "0.1.0"
 dependencies = [
  "serde_json",
+ "tempfile",
+ "vivi-asset-host-local",
  "vivi-png-ref",
  "vivi-runtime-native-core",
 ]
@@ -427,6 +429,9 @@ name = "vivi-runtime-native-core"
 version = "0.1.0"
 dependencies = [
  "serde_json",
+ "tempfile",
+ "vivi-runtime-native-evaluation-lowering",
+ "vivi-runtime-native-preactivation",
 ]
 
 [[package]]
@@ -443,6 +448,8 @@ version = "0.1.0"
 dependencies = [
  "serde_json",
  "sha2",
+ "tempfile",
+ "vivi-runtime-native-evaluation-math",
  "vivi-runtime-native-preactivation",
 ]
 
@@ -470,6 +477,7 @@ name = "vivi-runtime-native-wasm"
 version = "0.1.0"
 dependencies = [
  "serde_json",
+ "vivi-png-ref",
  "vivi-runtime-native-core",
 ]
 

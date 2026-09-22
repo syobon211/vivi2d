@@ -106,8 +106,12 @@ async function openViviFile({
   }
 
   assertFileSizeWithinLimit(resolved, MAX_VIVI_TEXT_FILE_BYTES, ".vivi file", fsModule);
-  const data = fsModule.readFileSync(resolved, "utf-8");
-  return { data, filePath: resolved };
+  const bytes = fsModule.readFileSync(resolved);
+  return {
+    data: bytes.toString("utf8"),
+    utf8Bytes: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    filePath: resolved,
+  };
 }
 
 function binaryByteLength(value) {
@@ -124,6 +128,29 @@ function binaryBuffer(value) {
 
 function basenameFromAnySeparator(filePath) {
   return path.posix.basename(String(filePath).replaceAll("\\", "/"));
+}
+
+function assertDistinctProjectCopy(sourcePath, targetPath, allowlists) {
+  // Metadata lookup is confined to an already-authorized source and selected target.
+  // This is not a lock against another process concurrently replacing directories.
+  try {
+    const source = assertAllowedPath(sourcePath, allowlists.saved, "copy source");
+    const canonicalSource = fs.realpathSync(source);
+    let canonicalTarget;
+    try {
+      canonicalTarget = fs.realpathSync(targetPath);
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+      canonicalTarget = path.join(
+        fs.realpathSync(path.dirname(path.resolve(targetPath))),
+        path.basename(targetPath),
+      );
+    }
+    if (path.relative(canonicalSource, canonicalTarget) === "")
+      throw new Error("same entry");
+  } catch {
+    throw new Error("Choose a different file to preserve the original Project.");
+  }
 }
 
 async function openImageFile({
@@ -259,41 +286,70 @@ function readAudioFile({ audioPath, allowlists, fsModule = fs }) {
 function register({ handle, getMainWindow, allowlists }) {
   handle("open-psd-file", async () => openPsdFile({ getMainWindow }));
 
-  handle("save-file", async (_event, { data, binary, defaultName, filePath }) => {
-    let targetPath = filePath;
-
-    if (!targetPath) {
-      const result = await dialog.showSaveDialog(getMainWindow(), {
-        title: "Save Project File",
-        defaultPath: defaultName,
-        filters: [
-          { name: "Vivi2D Project", extensions: ["vivi", "vivb"] },
-          { name: "All Files", extensions: ["*"] },
-        ],
-      });
-
-      if (result.canceled || !result.filePath) return null;
-      targetPath = result.filePath;
-    } else {
-      targetPath = assertAllowedPath(targetPath, allowlists.saved, "save path");
-    }
-
-    const ext = path.extname(targetPath).toLowerCase();
-    if (ext === ".vivb" && binary) {
-      if (binaryByteLength(binary) > MAX_SAVE_BINARY_BYTES) {
-        throw new Error("Project binary payload is too large.");
+  handle(
+    "save-file",
+    async (
+      _event,
+      { data, binary, defaultName, filePath, format, preserveSourcePaths },
+    ) => {
+      const v11 = format === "project-v11-json";
+      if (
+        (format !== undefined && !v11) ||
+        (v11 && (typeof data !== "string" || binary !== undefined))
+      ) {
+        throw new Error("Invalid project save format.");
       }
-      writeFileAtomically(targetPath, binaryBuffer(binary));
-    } else {
-      if (Buffer.byteLength(data ?? "", "utf8") > MAX_SAVE_TEXT_BYTES) {
-        throw new Error("Project text payload is too large.");
+      if (
+        preserveSourcePaths !== undefined &&
+        (!v11 ||
+          !Array.isArray(preserveSourcePaths) ||
+          preserveSourcePaths.length < 1 ||
+          preserveSourcePaths.length > 2 ||
+          preserveSourcePaths.some(
+            (value) => typeof value !== "string" || value.length === 0,
+          ))
+      )
+        throw new Error("Invalid project copy source.");
+      let targetPath = filePath;
+
+      if (!targetPath) {
+        const result = await dialog.showSaveDialog(getMainWindow(), {
+          title: "Save Project File",
+          defaultPath: defaultName,
+          filters: v11
+            ? [{ name: "Vivi2D Project v11", extensions: ["vivi"] }]
+            : [
+                { name: "Vivi2D Project", extensions: ["vivi", "vivb"] },
+                { name: "All Files", extensions: ["*"] },
+              ],
+        });
+
+        if (result.canceled || !result.filePath) return null;
+        targetPath = result.filePath;
+      } else {
+        targetPath = assertAllowedPath(targetPath, allowlists.saved, "save path");
       }
-      writeFileAtomically(targetPath, data);
-    }
-    const resolved = path.resolve(targetPath);
-    allowlists.saved.add(resolved);
-    return { filePath: resolved };
-  });
+
+      const ext = path.extname(targetPath).toLowerCase();
+      if (v11 && ext !== ".vivi") throw new Error("Project v11 requires a .vivi target.");
+      for (const sourcePath of preserveSourcePaths ?? [])
+        assertDistinctProjectCopy(sourcePath, targetPath, allowlists);
+      if (ext === ".vivb" && binary) {
+        if (binaryByteLength(binary) > MAX_SAVE_BINARY_BYTES) {
+          throw new Error("Project binary payload is too large.");
+        }
+        writeFileAtomically(targetPath, binaryBuffer(binary));
+      } else {
+        if (Buffer.byteLength(data ?? "", "utf8") > MAX_SAVE_TEXT_BYTES) {
+          throw new Error("Project text payload is too large.");
+        }
+        writeFileAtomically(targetPath, data);
+      }
+      const resolved = path.resolve(targetPath);
+      allowlists.saved.add(resolved);
+      return { filePath: resolved };
+    },
+  );
 
   handle("save-vivid-file", async (_event, { binary, defaultName }) => {
     if (!(binary instanceof ArrayBuffer) && !ArrayBuffer.isView(binary)) {

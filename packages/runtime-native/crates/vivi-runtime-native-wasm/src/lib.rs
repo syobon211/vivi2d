@@ -742,3 +742,9 @@ mod tests {
         assert_eq!(mesh["y"], 4.0);
     }
 }
+
+#[cfg(feature = "png-v1")]
+mod png;
+
+#[cfg(feature = "evaluation-v1")]
+mod evaluation;

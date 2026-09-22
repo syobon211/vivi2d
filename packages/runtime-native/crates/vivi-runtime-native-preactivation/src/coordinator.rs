@@ -1,12 +1,15 @@
 use vivi_asset_host_local::{
-    AssetRef, EvaluationTexturePlanV1, LocalAssetHost, LocalAssetHostError,
-    PrepareActivationTextureSetV1,
+    AssetRef, EvaluationPhysicalObjectV1, EvaluationTexturePlanV1, PrepareActivationTextureSetV1,
+    prepare_activation_texture_set_from_bytes,
 };
+#[cfg(feature = "native-host")]
+use vivi_asset_host_local::{LocalAssetHost, LocalAssetHostError};
 use vivi_runtime_native_evaluation::ValidatedEvaluationPayloadV1;
 
+use crate::{CorrelatedEvaluationActivationV1, EvaluationPreactivationError};
+#[cfg(feature = "native-host")]
 use crate::{
-    CorrelatedEvaluationActivationV1, EvaluationPreactivationError, MissingEvaluationActivationV1,
-    PrepareEvaluationActivationV1, PreparedEvaluationActivationV1,
+    MissingEvaluationActivationV1, PrepareEvaluationActivationV1, PreparedEvaluationActivationV1,
 };
 
 const EVALUATION_TEXTURE_PLAN_SCHEMA_V1: &str = "vivi2d.evaluationTexturePlan.v1";
@@ -29,6 +32,7 @@ const MAX_JAVASCRIPT_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 /// This function moves the candidate, plan, and host output into the result; it
 /// does not clone logical PNG or decoded RGBA buffers. It does not establish
 /// freshness or reject a result that became stale after the call began.
+#[cfg(feature = "native-host")]
 pub fn prepare_evaluation_activation_v1(
     host: &LocalAssetHost,
     request_generation: u64,
@@ -38,6 +42,24 @@ pub fn prepare_evaluation_activation_v1(
     prepare_with(request_generation, candidate, plan, |generation, plan| {
         host.prepare_activation_texture_set(generation, plan)
     })
+}
+
+/// Prepares a borrowed texture plan using the real principal-bound host once.
+///
+/// This preserves the host's complete preflight and the existing Ready/Missing
+/// output checks. It does not prove prior payload correlation: the consuming
+/// lowerer supplies that separate proof through its sealed owner. Returned host
+/// data is authorized model data, not sanitized diagnostic material.
+#[cfg(feature = "native-host")]
+pub fn prepare_evaluation_texture_plan_v1(
+    host: &LocalAssetHost,
+    request_generation: u64,
+    plan: &EvaluationTexturePlanV1,
+) -> Result<PrepareActivationTextureSetV1, EvaluationPreactivationError> {
+    let outcome = host
+        .prepare_activation_texture_set(request_generation, plan)
+        .map_err(EvaluationPreactivationError::from_host)?;
+    validate_host_outcome(request_generation, plan, outcome)
 }
 
 /// Purely correlates one request generation, validated candidate, and typed
@@ -67,6 +89,7 @@ pub fn correlate_evaluation_activation_v1(
     })
 }
 
+#[cfg(feature = "native-host")]
 pub(crate) fn prepare_with<F>(
     request_generation: u64,
     candidate: ValidatedEvaluationPayloadV1,
@@ -82,30 +105,52 @@ where
     let correlated = correlate_evaluation_activation_v1(request_generation, candidate, plan)?;
     let outcome = prepare(request_generation, &correlated.texture_plan)
         .map_err(EvaluationPreactivationError::from_host)?;
+    let outcome = validate_host_outcome(request_generation, &correlated.texture_plan, outcome)?;
     let (candidate, plan) = correlated.into_parts();
 
     match outcome {
-        PrepareActivationTextureSetV1::Ready(prepared_textures) => {
-            validate_ready_output(request_generation, &plan, &prepared_textures)?;
-            Ok(PrepareEvaluationActivationV1::Ready(
-                PreparedEvaluationActivationV1 {
-                    candidate,
-                    texture_plan: plan,
-                    prepared_textures,
-                },
-            ))
+        PrepareActivationTextureSetV1::Ready(prepared_textures) => Ok(
+            PrepareEvaluationActivationV1::Ready(PreparedEvaluationActivationV1 {
+                candidate,
+                texture_plan: plan,
+                prepared_textures,
+            }),
+        ),
+        PrepareActivationTextureSetV1::Missing(missing_textures) => Ok(
+            PrepareEvaluationActivationV1::Missing(MissingEvaluationActivationV1 {
+                candidate,
+                texture_plan: plan,
+                missing_textures,
+            }),
+        ),
+    }
+}
+
+/// Prepares captured untrusted bytes through the same resolver and output checks.
+pub fn prepare_evaluation_texture_plan_from_bytes_v1(
+    request_generation: u64,
+    plan: &EvaluationTexturePlanV1,
+    objects: Vec<EvaluationPhysicalObjectV1>,
+) -> Result<PrepareActivationTextureSetV1, EvaluationPreactivationError> {
+    let outcome = prepare_activation_texture_set_from_bytes(request_generation, plan, objects)
+        .map_err(EvaluationPreactivationError::from_host)?;
+    validate_host_outcome(request_generation, plan, outcome)
+}
+
+fn validate_host_outcome(
+    generation: u64,
+    plan: &EvaluationTexturePlanV1,
+    outcome: PrepareActivationTextureSetV1,
+) -> Result<PrepareActivationTextureSetV1, EvaluationPreactivationError> {
+    match &outcome {
+        PrepareActivationTextureSetV1::Ready(ready) => {
+            validate_ready_output(generation, plan, ready)?;
         }
-        PrepareActivationTextureSetV1::Missing(missing_textures) => {
-            validate_missing_output(request_generation, &plan, &missing_textures)?;
-            Ok(PrepareEvaluationActivationV1::Missing(
-                MissingEvaluationActivationV1 {
-                    candidate,
-                    texture_plan: plan,
-                    missing_textures,
-                },
-            ))
+        PrepareActivationTextureSetV1::Missing(missing) => {
+            validate_missing_output(generation, plan, missing)?;
         }
     }
+    Ok(outcome)
 }
 
 fn correlate(

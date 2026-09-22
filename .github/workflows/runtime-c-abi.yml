@@ -11,6 +11,7 @@ on:
       - "packages/runtime-c-abi/**"
       - "scripts/check-runtime-c-abi.mjs"
       - "scripts/check-runtime-c-abi-link.mjs"
+      - "scripts/lib/runtime-c-abi-compiler.mjs"
   workflow_dispatch:
 
 permissions:

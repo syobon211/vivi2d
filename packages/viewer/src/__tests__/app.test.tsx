@@ -258,6 +258,7 @@ describe("App (viewer root) loaded=true 系", () => {
     resetMockInstances();
   });
   afterEach(() => {
+    // Unmount while the matching RAF/cancel pair still owns queued callbacks.
     cleanup();
     vi.clearAllMocks();
     vi.restoreAllMocks();
@@ -276,8 +277,6 @@ describe("App (viewer root) loaded=true 系", () => {
     expect(screen.getByText(t("gamepadStart"))).toBeInTheDocument();
     expect(screen.getByText(t("midiStart"))).toBeInTheDocument();
     expect(screen.getByText(t("saveThumbnail"))).toBeInTheDocument();
-
-    rafSpy.mockRestore();
   });
 
   it("背景モード select 変更で updateSettings が呼ばれる", async () => {
@@ -291,8 +290,6 @@ describe("App (viewer root) loaded=true 系", () => {
     const select = screen.getByDisplayValue(t("bgTransparent")) as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "green" } });
     expect(updateSettingsMock).toHaveBeenCalledWith({ bgMode: "green" });
-
-    rafSpy.mockRestore();
   });
 
   it("smoothing スライダー変更で updateSettings(smoothing) が呼ばれる", async () => {
@@ -308,8 +305,6 @@ describe("App (viewer root) loaded=true 系", () => {
     expect(updateSettingsMock).toHaveBeenCalledWith(
       expect.objectContaining({ smoothing: expect.any(Number) }),
     );
-
-    rafSpy.mockRestore();
   });
 
   it("HUD ボタンで showHud がトグルされ、HudOverlay が描画される", async () => {
@@ -325,8 +320,6 @@ describe("App (viewer root) loaded=true 系", () => {
     await waitFor(() => {
       expect(container.textContent).toMatch(/FPS|fps/i);
     });
-
-    rafSpy.mockRestore();
   });
 
   it("locale selector switches viewer copy without reloading", async () => {
@@ -340,8 +333,6 @@ describe("App (viewer root) loaded=true 系", () => {
     });
 
     await screen.findByRole("combobox", { name: jaT("language") });
-
-    rafSpy.mockRestore();
   });
 
   it("コライダー反応 ボタンで colliderEffects がトグルされる", async () => {
@@ -355,8 +346,6 @@ describe("App (viewer root) loaded=true 系", () => {
     const offBtn = screen.getByText(t("colliderEffectsOff"));
     fireEvent.click(offBtn);
     expect(updateSettingsMock).toHaveBeenCalledWith({ colliderEffects: true });
-
-    rafSpy.mockRestore();
   });
 
   it("エフェクト confetti ボタンで particles.play が呼ばれる", async () => {
@@ -369,8 +358,6 @@ describe("App (viewer root) loaded=true 系", () => {
 
     fireEvent.click(screen.getByText(t("confetti")));
     expect(particleInstance.play).toHaveBeenCalledWith("confetti");
-
-    rafSpy.mockRestore();
   });
 
   it("録画フォーマット select 変更で updateSettings(recordingFormat) が呼ばれる", async () => {
@@ -384,8 +371,6 @@ describe("App (viewer root) loaded=true 系", () => {
     const recSelect = screen.getByDisplayValue(t("recFormatWebm")) as HTMLSelectElement;
     fireEvent.change(recSelect, { target: { value: "mp4" } });
     expect(updateSettingsMock).toHaveBeenCalledWith({ recordingFormat: "mp4" });
-
-    rafSpy.mockRestore();
   });
 
   it("リップシンクモード select 変更で updateSettings(lipSyncMode) が呼ばれる", async () => {
@@ -397,8 +382,6 @@ describe("App (viewer root) loaded=true 系", () => {
     const lsSelect = screen.getByDisplayValue(t("lipSyncRms")) as HTMLSelectElement;
     fireEvent.change(lsSelect, { target: { value: "viseme" } });
     expect(updateSettingsMock).toHaveBeenCalledWith({ lipSyncMode: "viseme" });
-
-    rafSpy.mockRestore();
   });
 
   it("エクスポート設定ボタンで downloadConfig が呼ばれる", async () => {
@@ -410,8 +393,6 @@ describe("App (viewer root) loaded=true 系", () => {
 
     fireEvent.click(screen.getByText(t("exportConfig")));
     expect(downloadConfigMock).toHaveBeenCalled();
-
-    rafSpy.mockRestore();
   });
 
   it("インポート設定ボタンで <input type=file> が組み立てられる", async () => {
@@ -425,7 +406,6 @@ describe("App (viewer root) loaded=true 系", () => {
     fireEvent.click(screen.getByText(t("importConfig")));
     expect(createElSpy).toHaveBeenCalledWith("input");
 
-    rafSpy.mockRestore();
     createElSpy.mockRestore();
   });
 
@@ -439,8 +419,6 @@ describe("App (viewer root) loaded=true 系", () => {
 
     fireEvent.click(canvas);
     expect(modelInstance.hitTest).toHaveBeenCalled();
-
-    rafSpy.mockRestore();
   });
 
   it("canvas クリック ヒット成功時に showHit overlay が表示される", async () => {
@@ -458,8 +436,6 @@ describe("App (viewer root) loaded=true 系", () => {
     await waitFor(() => {
       expect(screen.getByTestId("hit-overlay")).toBeInTheDocument();
     });
-
-    rafSpy.mockRestore();
   });
 
   it("colliderEffects 有効時の hit でパーティクル play(コライダーtag) が呼ばれる", async () => {
@@ -478,8 +454,6 @@ describe("App (viewer root) loaded=true 系", () => {
 
     fireEvent.click(canvas);
     expect(particleInstance.play).toHaveBeenCalled();
-
-    rafSpy.mockRestore();
   });
 
   it("URL 読込ボタンで handleUrlLoad → prompt が呼ばれる", async () => {
@@ -493,7 +467,6 @@ describe("App (viewer root) loaded=true 系", () => {
     expect(promptSpy).toHaveBeenCalled();
 
     promptSpy.mockRestore();
-    rafSpy.mockRestore();
   });
 
   it("ゲームパッド開始ボタンで toggleGamepad 経路が走る（loaded=true）", async () => {
@@ -506,8 +479,6 @@ describe("App (viewer root) loaded=true 系", () => {
 
     const gpBtn = screen.getByText(t("gamepadStart"));
     expect(() => fireEvent.click(gpBtn)).not.toThrow();
-
-    rafSpy.mockRestore();
   });
 
   it("MIDI 開始ボタンで toggleMidi 経路が走る（loaded=true）", async () => {
@@ -520,8 +491,6 @@ describe("App (viewer root) loaded=true 系", () => {
 
     const midiBtn = screen.getByText(t("midiStart"));
     expect(() => fireEvent.click(midiBtn)).not.toThrow();
-
-    rafSpy.mockRestore();
   });
 
   it("最前面 ON/OFF ボタンを click しても例外を投げない（viviAPI 未注入）", async () => {
@@ -532,21 +501,19 @@ describe("App (viewer root) loaded=true 系", () => {
     fireEvent.click(screen.getByTestId("settings-toggle"));
     const aotBtn = screen.getByText(t("alwaysOnTopOff"));
     expect(() => fireEvent.click(aotBtn)).not.toThrow();
-
-    rafSpy.mockRestore();
   });
 
   it(".vivi ドロップ成功で canvas が表示状態になり renderer.render が走る", async () => {
     const rafSpy = vi.spyOn(global, "requestAnimationFrame");
     let callCount = 0;
     rafSpy.mockImplementation((cb) => {
-      if (callCount === 0) {
-        callCount++;
-        setTimeout(() => cb(16), 0);
-      }
-      return 1 as unknown as number;
+      if (callCount !== 0) return 0;
+      callCount++;
+      return window.setTimeout(() => cb(16), 0);
     });
-    vi.spyOn(global, "cancelAnimationFrame").mockImplementation(() => {});
+    vi.spyOn(global, "cancelAnimationFrame").mockImplementation((id) => {
+      window.clearTimeout(id);
+    });
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -554,23 +521,19 @@ describe("App (viewer root) loaded=true 系", () => {
       expect(rendererInstance.render).toHaveBeenCalled();
     });
     expect(modelInstance.update).toHaveBeenCalled();
-
-    rafSpy.mockRestore();
   });
 });
 
 function installMultiRafSpy(maxCalls: number) {
-  const rafSpy = vi.spyOn(global, "requestAnimationFrame");
   let count = 0;
-  rafSpy.mockImplementation((cb) => {
-    if (count < maxCalls) {
-      count++;
-      setTimeout(() => cb(16 + count * 16), 0);
-    }
-    return 1 as unknown as number;
+  vi.spyOn(global, "requestAnimationFrame").mockImplementation((cb) => {
+    if (count >= maxCalls) return 0;
+    count++;
+    return window.setTimeout(() => cb(16 + count * 16), 0);
   });
-  vi.spyOn(global, "cancelAnimationFrame").mockImplementation(() => {});
-  return rafSpy;
+  vi.spyOn(global, "cancelAnimationFrame").mockImplementation((id) => {
+    window.clearTimeout(id);
+  });
 }
 
 describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
@@ -590,6 +553,7 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
     lipSyncMockState.toggleLipSyncMock.mockClear();
   });
   afterEach(() => {
+    // Unmount while the matching RAF/cancel pair still owns queued callbacks.
     cleanup();
     vi.clearAllMocks();
     vi.restoreAllMocks();
@@ -600,7 +564,7 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
   it("vol>0 + viseme モードで RAF が走ると model.setParameter (mouth/form) が呼ばれる", async () => {
     lipSyncMockState.lipSyncVolumeRef.current = 0.6;
     lipSyncMockState.lipSyncVowelRef.current = "a";
-    const rafSpy = installMultiRafSpy(2);
+    installMultiRafSpy(2);
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -613,14 +577,12 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
       expect(modelInstance.update).toHaveBeenCalled();
     });
     expect(modelInstance.update.mock.calls.length).toBeGreaterThanOrEqual(1);
-
-    rafSpy.mockRestore();
   });
 
   it("vol>0 + RMS モードで RAF が走り renderer.render が呼ばれる", async () => {
     lipSyncMockState.lipSyncVolumeRef.current = 0.4;
     lipSyncMockState.lipSyncVowelRef.current = "silent";
-    const rafSpy = installMultiRafSpy(3);
+    installMultiRafSpy(3);
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -629,12 +591,10 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
       expect(rendererInstance.render).toHaveBeenCalled();
     });
     expect(particleInstance.update).toHaveBeenCalled();
-
-    rafSpy.mockRestore();
   });
 
   it("vol=0 (silent) でも RAF が走り renderer.render は呼ばれる", async () => {
-    const rafSpy = installMultiRafSpy(3);
+    installMultiRafSpy(3);
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -643,8 +603,6 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
       expect(rendererInstance.render).toHaveBeenCalled();
     });
     expect(modelInstance.update).toHaveBeenCalled();
-
-    rafSpy.mockRestore();
   });
 
   it("showHud=true 後の RAF で model.update / renderer.render が継続して呼ばれる", async () => {
@@ -655,7 +613,7 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
     ]);
     modelInstance.getAllMeshStates = () => meshStates as never;
 
-    const rafSpy = installMultiRafSpy(30);
+    installMultiRafSpy(30);
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -671,7 +629,6 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
       expect(modelInstance.update.mock.calls.length).toBeGreaterThan(10);
     });
 
-    rafSpy.mockRestore();
     modelInstance.getAllMeshStates = () => new Map();
   });
 
@@ -686,7 +643,7 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
         getUserMedia: vi.fn().mockRejectedValue(new Error("no perm")),
       },
     });
-    const rafSpy = installMultiRafSpy(1);
+    installMultiRafSpy(1);
 
     const { container } = render(<App />);
     fireEvent.click(screen.getByTestId("settings-toggle"));
@@ -705,8 +662,6 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
     expect(select).toBeTruthy();
     fireEvent.change(select, { target: { value: "cam2" } });
     expect(updateSettingsMock).toHaveBeenCalledWith({ cameraDeviceId: "cam2" });
-
-    rafSpy.mockRestore();
   });
 
   it("window.viviAPI 注入時に最前面ボタンで toggleAlwaysOnTop が呼ばれる", async () => {
@@ -716,7 +671,7 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
       toggleAlwaysOnTop: toggleAOT,
       setBackgroundMode: setBgMode,
     };
-    const rafSpy = installMultiRafSpy(1);
+    installMultiRafSpy(1);
 
     const { container: _c } = render(<App />);
     fireEvent.click(screen.getByTestId("settings-toggle"));
@@ -728,8 +683,6 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
       expect(screen.getByText(t("alwaysOnTopOn"))).toBeInTheDocument();
       expect(updateSettingsMock).toHaveBeenCalledWith({ alwaysOnTop: true });
     });
-
-    rafSpy.mockRestore();
   });
 
   it("window.viviAPI 注入時に背景モード変更で setBackgroundMode も呼ばれる", async () => {
@@ -738,7 +691,7 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
       toggleAlwaysOnTop: vi.fn().mockResolvedValue(false),
       setBackgroundMode: setBgMode,
     };
-    const rafSpy = installMultiRafSpy(1);
+    installMultiRafSpy(1);
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -749,12 +702,10 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
     expect(setBgMode).toHaveBeenCalledWith("green");
     expect(select.value).toBe("green");
     expect(updateSettingsMock).toHaveBeenCalledWith({ bgMode: "green" });
-
-    rafSpy.mockRestore();
   });
 
   it("リップシンク切替ボタンで toggleLipSync mock が呼ばれる", async () => {
-    const rafSpy = installMultiRafSpy(1);
+    installMultiRafSpy(1);
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -763,8 +714,6 @@ describe("App (viewer root) loaded=true 系 RAF 深掘り", () => {
     const lsBtn = screen.getByTestId("viewer-toggle-lip-sync");
     fireEvent.click(lsBtn);
     expect(lipSyncMockState.toggleLipSyncMock).toHaveBeenCalled();
-
-    rafSpy.mockRestore();
   });
 });
 
@@ -792,6 +741,7 @@ describe("App (viewer root) loaded=true + lipSync=true", () => {
     } as never;
   });
   afterEach(() => {
+    // Unmount while the matching RAF/cancel pair still owns queued callbacks.
     cleanup();
     vi.clearAllMocks();
     vi.restoreAllMocks();
@@ -803,7 +753,7 @@ describe("App (viewer root) loaded=true + lipSync=true", () => {
   it("lipSync=true + viseme + vol>0 で setParameter (mouth/form) が呼ばれる", async () => {
     lipSyncMockState.lipSyncVolumeRef.current = 0.7;
     lipSyncMockState.lipSyncVowelRef.current = "a";
-    const rafSpy = installMultiRafSpy(20);
+    installMultiRafSpy(20);
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -818,14 +768,12 @@ describe("App (viewer root) loaded=true + lipSync=true", () => {
     });
     const patches = modelInstance.setParameters.mock.calls.map((c) => c[0]);
     expect(patches.some((patch) => "mouth_open" in patch)).toBe(true);
-
-    rafSpy.mockRestore();
   });
 
   it("lipSync=true + RMS + vol>0 で setParameter (mouth_open) のみ呼ばれる", async () => {
     lipSyncMockState.lipSyncVolumeRef.current = 0.5;
     lipSyncMockState.lipSyncVowelRef.current = "silent";
-    const rafSpy = installMultiRafSpy(20);
+    installMultiRafSpy(20);
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -838,14 +786,12 @@ describe("App (viewer root) loaded=true + lipSync=true", () => {
     });
     const patches = modelInstance.setParameters.mock.calls.map((c) => c[0]);
     expect(patches.some((patch) => "mouth_open" in patch)).toBe(true);
-
-    rafSpy.mockRestore();
   });
 
   it("lipSync=true + viseme で多回 RAF が走ると model.update が継続して呼ばれる", async () => {
     lipSyncMockState.lipSyncVolumeRef.current = 0.4;
     lipSyncMockState.lipSyncVowelRef.current = "i";
-    const rafSpy = installMultiRafSpy(40);
+    installMultiRafSpy(40);
 
     const { container } = render(<App />);
     await loadModelAndWait(container);
@@ -858,7 +804,5 @@ describe("App (viewer root) loaded=true + lipSync=true", () => {
     await waitFor(() => {
       expect(modelInstance.update.mock.calls.length).toBeGreaterThan(5);
     });
-
-    rafSpy.mockRestore();
   });
 });

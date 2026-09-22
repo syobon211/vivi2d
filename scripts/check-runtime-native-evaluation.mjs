@@ -1346,6 +1346,7 @@ function assertDependencyClosure(metadata) {
 }
 
 function assertConsumerZeroAndBridgeIsolation(metadata) {
+  assertOptionalLocalAssetCAbi(metadata);
   const consumers = consumersOf(metadata, "vivi-runtime-native-evaluation");
   assertExactJson(
     consumers,
@@ -1372,15 +1373,18 @@ function assertConsumerZeroAndBridgeIsolation(metadata) {
   }
 
   const cAbiPackage = requirePackage(metadata, "vivi-runtime-native-c-abi");
-  if (
-    Object.keys(cAbiPackage.features).some((feature) =>
+  assertExactJson(
+    cAbiPackage.features["evaluation-v1"],
+    ["abi-v02", "vivi-runtime-native-core/evaluation-v1"],
+    "C2 explicit opt-in feature; no direct Evaluation parser edge",
+  );
+  assertExactJson(
+    Object.keys(cAbiPackage.features).filter((feature) =>
       /editor|evaluation/i.test(feature),
-    )
-  ) {
-    throw new Error(
-      "C ABI must not gain an editor/evaluation feature in this foundation slice",
-    );
-  }
+    ),
+    ["evaluation-v1"],
+    "only the reviewed internal C2 feature",
+  );
 
   const trackedBoundaryFiles = gitTrackedFiles([
     "packages/runtime-c-abi",
@@ -1388,11 +1392,7 @@ function assertConsumerZeroAndBridgeIsolation(metadata) {
     "packages/runtime-native/crates/vivi-runtime-native-core",
     "packages/runtime-native/crates/vivi-runtime-native-wasm",
   ]);
-  if (
-    trackedBoundaryFiles.includes("packages/runtime-c-abi/include/vivi_runtime_editor.h")
-  ) {
-    throw new Error("the local editor-only C header must remain untracked");
-  }
+  // The internal C2 header is tracked but remains excluded from the npm surface.
   for (const filePath of trackedBoundaryFiles) {
     if (
       !existsSync(resolve(filePath)) ||
@@ -1405,7 +1405,7 @@ function assertConsumerZeroAndBridgeIsolation(metadata) {
       throw new Error(`${filePath} tracks the editor-only C ABI symbol`);
     }
     if (
-      /vivi[-_]runtime[-_]native[-_]evaluation/i.test(source) ||
+      /vivi[-_]runtime[-_]native[-_]evaluation(?![-_]lowering)/i.test(source) ||
       /\bload_evaluation_payload\b/.test(source)
     ) {
       throw new Error(`${filePath} wires the Evaluation crate outside preactivation`);
@@ -1432,6 +1432,9 @@ function assertConsumerZeroAndBridgeIsolation(metadata) {
   const npmIgnore = readText("packages/runtime-c-abi/.npmignore");
   if (!npmIgnore.includes("include/vivi_runtime_editor.h")) {
     throw new Error("runtime-c-abi npm ignore must retain editor-header isolation");
+  }
+  if (!npmIgnore.split(/\r?\n/).includes("include/vivi_local_asset.h")) {
+    throw new Error("internal local Asset header must not enter the default npm pack");
   }
   const packOutput = runNpmCapture([
     "pack",
@@ -2001,6 +2004,59 @@ function resolvedClosureInventory(
       };
     })
     .sort(compareDependencies);
+}
+
+function assertOptionalLocalAssetCAbi(metadata) {
+  const abi = requirePackage(metadata, "vivi-runtime-native-c-abi");
+  const host = requirePackage(metadata, "vivi-asset-host-local");
+  const dependencies = abi.dependencies.filter((v) => v.name === host.name);
+  if (dependencies.length !== 1)
+    throw new Error("C ABI must declare one optional local Asset edge");
+  const edge = dependencies[0];
+  assertExactJson(
+    [
+      edge.kind ?? "normal",
+      edge.optional,
+      edge.uses_default_features,
+      path.resolve(edge.path),
+      edge.features,
+      edge.target,
+    ],
+    ["normal", true, false, path.dirname(host.manifest_path), [], null],
+    "exact optional native C ABI/local Asset declaration",
+  );
+  assertExactJson(
+    abi.features["local-asset-host-v1"],
+    ["dep:vivi-asset-host-local", "vivi-asset-host-local/local-store"],
+    "local Asset opt-in feature",
+  );
+  assertExactJson(abi.features.default, [], "C ABI defaults remain empty");
+  const nodes = new Map(metadata.resolve.nodes.map((v) => [v.id, v]));
+  const packages = new Map(metadata.packages.map((v) => [v.id, v]));
+  const seen = new Set(),
+    pending = [abi.id];
+  while (pending.length) {
+    const id = pending.pop();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const node = nodes.get(id),
+      pkg = packages.get(id);
+    if (!node || !pkg) throw new Error("C ABI default graph node missing");
+    if (
+      [
+        "vivi-asset-host-local",
+        "vivi-asset-store-local",
+        "rusqlite",
+        "libsqlite3-sys",
+      ].includes(pkg.name)
+    ) {
+      throw new Error("Default C ABI must not reach local host/store/SQLite");
+    }
+    for (const dependency of node.deps) {
+      if (dependency.dep_kinds.some((k) => k.kind === null || k.kind === "build"))
+        pending.push(dependency.pkg);
+    }
+  }
 }
 
 function consumersOf(metadata, dependencyName) {

@@ -1,5 +1,7 @@
 use std::collections::BTreeSet;
 
+mod c11;
+
 use serde_json::{Map, Value, json};
 use sha2::{Digest as _, Sha256};
 use vivi_runtime_native_preactivation::{
@@ -1798,6 +1800,9 @@ fn plan_host_fields_and_category_ten_eleven_remain_outside_foundation() {
 fn fixed_source_manifest_has_no_accidental_direct_dependency_or_publication_edge() {
     let manifest = include_str!("../Cargo.toml");
     assert!(manifest.contains("vivi-runtime-native-preactivation"));
+    assert!(manifest.contains(
+        "vivi-runtime-native-evaluation-math = { path = \"../vivi-runtime-native-evaluation-math\", default-features = false }"
+    ));
     assert!(manifest.contains("serde_json"));
     assert!(!manifest.contains("vivi-runtime-native-core"));
     assert!(!manifest.contains("vivi-runtime-native-c-abi"));
@@ -1828,4 +1833,575 @@ fn root_helpers_are_not_dependent_on_json_object_member_order() {
     assert_eq!(root(&value)["schema"], "vivi2d.evaluationPayload.v1");
     let foundation = lower_value(&value).expect("canonical base payload lowers");
     assert_eq!(foundation.direct_projected_scalar_count(), 15);
+}
+
+#[test]
+fn selected_direct_fields_use_frozen_projection_vectors() {
+    let vectors = vectors();
+    let projection = vectors["numericProjection"]
+        .as_array()
+        .expect("projection vectors");
+    let classes = [
+        "decimal-point-one-normal-loss",
+        "binary32-overflow-rounding-boundary",
+        "negative-binary32-overflow-rounding-boundary",
+        "half-minimum-subnormal-underflow",
+        "negative-half-minimum-subnormal-underflow",
+    ];
+    // The target tag is local to this fixed table, not a runtime dispatch API.
+    let fields = [
+        ("/multiplyColor/r", 0, 0),
+        ("/multiplyColor/g", 0, 1),
+        ("/multiplyColor/b", 0, 2),
+        ("/screenColor/r", 1, 0),
+        ("/screenColor/g", 1, 1),
+        ("/screenColor/b", 1, 2),
+        ("/mesh/uvs/0", 2, 0),
+        ("/mesh/uvs/1", 2, 1),
+        ("/opacity", 3, 0),
+        ("/mesh/vertices/0", 4, 0),
+        ("/mesh/vertices/1", 4, 1),
+        ("/x", 5, 0),
+        ("/y", 6, 0),
+    ];
+    for (pointer, target, component) in fields {
+        for id in classes {
+            let case = projection
+                .iter()
+                .find(|case| case["id"] == id)
+                .expect("frozen case");
+            let bits = u64::from_str_radix(case["inputBinary64Bits"].as_str().expect("bits"), 16)
+                .expect("binary64 bits");
+            let mut payload = base_payload();
+            let layer = &mut layers_mut(&mut payload)[0];
+            if target == 0 {
+                layer["multiplyColor"] = json!({"r": 1, "g": 1, "b": 1});
+            }
+            if target == 1 {
+                layer["screenColor"] = json!({"r": 1, "g": 1, "b": 1});
+            }
+            *layer.pointer_mut(pointer).expect("selected direct leaf") =
+                json!(f64::from_bits(bits));
+            match case["expected"].as_str().expect("outcome") {
+                "accept" => {
+                    let foundation = lower_value(&payload).expect("selected field accepts");
+                    let plan = &foundation.reservation_plan;
+                    let actual = match target {
+                        0 => plan.direct_mesh_records[0].multiply[component].bits,
+                        1 => plan.direct_mesh_records[0].screen[component].bits,
+                        2 => plan.direct_uvs[component].bits,
+                        3 => plan.direct_mesh_records[0].opacity.bits,
+                        4 => plan.direct_unskinned_vertices[component].bits,
+                        5 => plan.direct_mesh_records[0].x.bits,
+                        6 => plan.direct_mesh_records[0].y.bits,
+                        _ => unreachable!("fixed direct target"),
+                    };
+                    let expected = u32::from_str_radix(
+                        case["outputBinary32Bits"].as_str().expect("output bits"),
+                        16,
+                    )
+                    .expect("binary32 bits");
+                    assert_eq!(actual, expected, "{pointer} {id}");
+                }
+                "reject" => {
+                    let expected = match case["privateKind"].as_str().expect("error kind") {
+                        "NumericOverflow" => EvaluationLoweringErrorKind::NumericOverflow,
+                        "NumericUnderflow" => EvaluationLoweringErrorKind::NumericUnderflow,
+                        _ => unreachable!("fixed direct error kind"),
+                    };
+                    let error = lower_value(&payload).expect_err("selected field rejects");
+                    assert_eq!(error.kind(), expected, "{pointer} {id}");
+                    assert_eq!(error.load_status(), 14);
+                }
+                _ => unreachable!("fixed projection outcome"),
+            }
+        }
+    }
+}
+
+#[test]
+fn integer_metadata_and_erased_fields_preserve_their_routes() {
+    fn rejects_upstream(payload: &Value) {
+        let bytes = serde_json::to_vec(payload).expect("fixed input serializes");
+        let error = parse_evaluation_payload_v1(&bytes, 5).expect_err("invalid public input");
+        assert_eq!(error.status(), 14);
+    }
+    fn same_numeric_tables(
+        left: &crate::EvaluationLoweringFoundationV1,
+        right: &crate::EvaluationLoweringFoundationV1,
+    ) {
+        let (a, b) = (&left.reservation_plan, &right.reservation_plan);
+        // Eq avoids adding Debug/source disclosure to private production records.
+        assert!(a.direct_mesh_records == b.direct_mesh_records);
+        assert!(a.direct_unskinned_vertices == b.direct_unskinned_vertices);
+        assert!(a.direct_uvs == b.direct_uvs);
+        assert!(a.direct_indices == b.direct_indices);
+        assert!(a.bone_specs == b.bone_specs);
+        assert!(a.mesh_evaluator_specs == b.mesh_evaluator_specs);
+        assert_eq!(
+            left.direct_projected_scalar_count,
+            right.direct_projected_scalar_count
+        );
+        assert_eq!(
+            left.derived_evaluation_mesh_count,
+            right.derived_evaluation_mesh_count
+        );
+        assert_eq!(left.mask_edge_count, right.mask_edge_count);
+        assert_eq!(
+            left.texture_plan.textures.len(),
+            right.texture_plan.textures.len()
+        );
+        for (a, b) in left
+            .texture_plan
+            .textures
+            .iter()
+            .zip(&right.texture_plan.textures)
+        {
+            assert!(a.id == b.id);
+            assert_eq!((a.width, a.height), (b.width, b.height));
+        }
+    }
+    for axis in ["width", "height"] {
+        for value in [1_u64, 16_777_217, MAX_SAFE_GENERATION] {
+            let mut payload = base_payload();
+            payload["canvas"][axis] = json!(value);
+            let foundation = lower_value(&payload).expect("canvas integer admitted");
+            let actual = if axis == "width" {
+                foundation.canvas_width
+            } else {
+                foundation.canvas_height
+            };
+            assert_eq!(actual, value);
+        }
+        for value in [0, MAX_SAFE_GENERATION + 1] {
+            let mut payload = base_payload();
+            payload["canvas"][axis] = json!(value);
+            rejects_upstream(&payload);
+        }
+    }
+    let mut indices = base_payload();
+    add_mesh(&mut indices, "mesh2", "normal");
+    indices["layers"][1]["mesh"]["indices"] = json!([2, 1, 0]);
+    let foundation = lower_value(&indices).expect("local indices admitted");
+    let plan = &foundation.reservation_plan;
+    assert_eq!(
+        plan.direct_indices
+            .iter()
+            .map(|index| index.value)
+            .collect::<Vec<_>>(),
+        [0, 1, 2, 2, 1, 0]
+    );
+    assert_eq!(
+        plan.direct_mesh_records
+            .iter()
+            .map(|mesh| (mesh.index_range.start, mesh.index_range.len))
+            .collect::<Vec<_>>(),
+        [(0, 3), (3, 3)]
+    );
+    for value in [-1, 3] {
+        let mut payload = base_payload();
+        payload["layers"][0]["mesh"]["indices"][2] = json!(value);
+        rejects_upstream(&payload);
+    }
+    for axis in ["divisionsX", "divisionsY"] {
+        let first = lower_value(&base_payload()).expect("division baseline");
+        let mut payload = base_payload();
+        payload["layers"][0]["mesh"][axis] = json!(16_777_217);
+        same_numeric_tables(&first, &lower_value(&payload).expect("division erased"));
+    }
+    for (value, expected_bits) in [
+        (None, None),
+        (Some(16_777_217_i64), Some(0x4170_0000_1000_0000)),
+        (Some(i64::from(i32::MIN)), Some(0xc1e0_0000_0000_0000)),
+        (Some(i64::from(i32::MAX)), Some(0x41df_ffff_ffc0_0000)),
+        (Some(-1), Some(0xbff0_0000_0000_0000)),
+    ] {
+        let mut payload = base_payload();
+        if let Some(value) = value {
+            payload["layers"][0]["drawOrder"] = json!(value);
+        }
+        let foundation = lower_value(&payload).expect("draw order admitted");
+        assert_eq!(
+            foundation.candidate.value()["layers"][0]
+                .get("drawOrder")
+                .and_then(Value::as_f64)
+                .map(f64::to_bits),
+            expected_bits
+        );
+        // Validated JSON is binary64-normalized. Final i32/default500 is C11.
+    }
+    for value in [None, Some(1), Some(1024), Some(0), Some(1025)] {
+        let mut payload = with_bone(base_payload());
+        let mut controller = ik_controller("ik", 0.5, -1.0, 1.0);
+        if let Some(value) = value {
+            controller["maxIterations"] = json!(value);
+        }
+        payload["ikControllers"] = json!([controller]);
+        if matches!(value, Some(0 | 1025)) {
+            rejects_upstream(&payload);
+            continue;
+        }
+        let foundation = lower_value(&payload).expect("checked iteration count");
+        assert_eq!(
+            foundation
+                .reservation_plan
+                .inline_ik_controller
+                .max_iterations,
+            value.unwrap_or(10)
+        );
+    }
+    for index in [0_u32, 1, 2] {
+        let mut payload = base_payload();
+        let mut group = physics_group("physics", true);
+        group["pendulums"] =
+            json!([{"length":1,"mass":1,"damping":0}, {"length":2,"mass":0.5,"damping":0.25}]);
+        group["outputs"] =
+            json!([{"parameterId":"parameter","pendulumIndex":index,"weight":1,"type":"angle"}]);
+        payload["physicsGroups"] = json!([group]);
+        if index == 2 {
+            rejects_upstream(&payload);
+            continue;
+        }
+        let foundation = lower_value(&payload).expect("checked pendulum index");
+        assert_eq!(
+            foundation.reservation_plan.physics_outputs[0].pendulum_index,
+            index
+        );
+    }
+    for (value, expected_bits) in [
+        (None, None),
+        (Some(16_777_217_u64), Some(0x4170_0000_1000_0000)),
+        (Some(MAX_SAFE_GENERATION), Some(0x433f_ffff_ffff_ffff)),
+    ] {
+        let mut payload = base_payload();
+        payload["expressionPresets"] =
+            json!([{"id":"expression","name":"Expression","values":{"parameter":0}}]);
+        if let Some(value) = value {
+            payload["expressionPresets"][0]["hotkey"] = json!(value);
+        }
+        let foundation = lower_value(&payload).expect("hotkey retained");
+        assert_eq!(
+            foundation.candidate.value()["expressionPresets"][0]
+                .get("hotkey")
+                .and_then(Value::as_f64)
+                .map(f64::to_bits),
+            expected_bits
+        );
+        // A future canonical-decimal metadata consumer is not executed here.
+    }
+    for axis in ["width", "height"] {
+        for value in [1_u32, 8192, 0, 8193] {
+            let mut payload = base_payload();
+            payload["atlases"][0][axis] = json!(value);
+            if value == 0 || value == 8193 {
+                rejects_upstream(&payload);
+                continue;
+            }
+            let foundation = lower_value(&payload).expect("texture dimension admitted");
+            let required = &foundation.candidate.texture_bindings()[0];
+            let supplied = &foundation.texture_plan.textures[0];
+            assert_eq!(
+                if axis == "width" {
+                    required.width()
+                } else {
+                    required.height()
+                },
+                value
+            );
+            assert_eq!(
+                if axis == "width" {
+                    supplied.width
+                } else {
+                    supplied.height
+                },
+                value
+            );
+        }
+    }
+    for (axis, first, second) in [("x", 0, 1), ("y", 0, 1), ("width", 1, 2), ("height", 1, 2)] {
+        let mut payload = base_payload();
+        payload["atlases"][0]["width"] = json!(4);
+        payload["atlases"][0]["height"] = json!(4);
+        payload["atlases"][0]["entries"][0][axis] = json!(first);
+        let baseline = lower_value(&payload).expect("valid atlas rectangle");
+        payload["atlases"][0]["entries"][0][axis] = json!(second);
+        same_numeric_tables(
+            &baseline,
+            &lower_value(&payload).expect("atlas rectangle erased"),
+        );
+    }
+    for owner in ["group", "bone", "viviMesh"] {
+        let mut fields = vec!["/width", "/height"];
+        if owner != "viviMesh" {
+            fields.extend([
+                "/opacity",
+                "/drawOrder",
+                "/multiplyColor/r",
+                "/multiplyColor/g",
+                "/multiplyColor/b",
+                "/screenColor/r",
+                "/screenColor/g",
+                "/screenColor/b",
+            ]);
+        }
+        if owner == "group" {
+            fields.extend(["/x", "/y"]);
+        }
+        for pointer in fields {
+            let mut payload = base_payload();
+            let index = match owner {
+                "group" => {
+                    layers_mut(&mut payload).push(group_layer("group", "normal"));
+                    1
+                }
+                "bone" => {
+                    layers_mut(&mut payload).push(bone_layer("bone", "normal"));
+                    1
+                }
+                _ => 0,
+            };
+            let layer = &mut payload["layers"][index];
+            if pointer.starts_with("/multiplyColor/") {
+                layer["multiplyColor"] = json!({"r":1,"g":1,"b":1});
+            }
+            if pointer.starts_with("/screenColor/") {
+                layer["screenColor"] = json!({"r":1,"g":1,"b":1});
+            }
+            if pointer == "/drawOrder" {
+                layer["drawOrder"] = json!(1);
+            } else {
+                *layer.pointer_mut(pointer).expect("erased leaf") = json!(0.1);
+            }
+            let baseline = lower_value(&payload).expect("erasure baseline");
+            *payload["layers"][index]
+                .pointer_mut(pointer)
+                .expect("erased leaf") = if pointer == "/drawOrder" {
+                json!(16_777_217)
+            } else {
+                json!(f64::from_bits(0x47f0_0000_0000_0000))
+            };
+            same_numeric_tables(
+                &baseline,
+                &lower_value(&payload).expect("metadata must not project"),
+            );
+        }
+    }
+    for (index, key) in [
+        (0, "x"),
+        (1, "x"),
+        (0, "y"),
+        (1, "y"),
+        (0, "width"),
+        (0, "height"),
+        (1, "radius"),
+    ] {
+        let mut payload = base_payload();
+        payload["colliders"] = json!([
+            {"id":"rect","name":"Rectangle","enabled":true,"shape":{"type":"rectangle","x":0,"y":0,"width":1,"height":1}},
+            {"id":"circle","name":"Circle","enabled":true,"shape":{"type":"circle","x":0,"y":0,"radius":1}}
+        ]);
+        let mut baseline = None;
+        for bits in [0x3fb9_9999_9999_999a, 0x47f0_0000_0000_0000] {
+            payload["colliders"][index]["shape"][key] = json!(f64::from_bits(bits));
+            let foundation = lower_value(&payload).expect("collider remains binary64");
+            assert_eq!(
+                foundation.candidate.value()["colliders"][index]["shape"][key]
+                    .as_f64()
+                    .expect("retained geometry")
+                    .to_bits(),
+                bits
+            );
+            if let Some(first) = &baseline {
+                same_numeric_tables(first, &foundation);
+            } else {
+                baseline = Some(foundation);
+            }
+        }
+    }
+}
+
+#[test]
+fn unsupported_numeric_owners_follow_their_preflight_boundaries() {
+    use vivi_runtime_native_preactivation::EvaluationPayloadErrorKind as PayloadKind;
+    fn set(value: &mut Value, pointer: &str, replacement: Value) {
+        *value
+            .pointer_mut(pointer)
+            .expect("fixed numeric-input pointer exists") = replacement;
+    }
+    fn upstream_base() -> Value {
+        let mut value = base_payload();
+        value["canvas"]["height"] = json!(32);
+        value["layers"][0]["id"] = json!("mesh-body");
+        value["layers"][0]["name"] = json!("Body");
+        value["parameters"] = json!([{
+            "id": "vivi.head.yaw", "name": "Yaw", "minValue": -1, "maxValue": 1, "defaultValue": 0
+        }]);
+        value["atlases"][0]["id"] = json!("body_atlas");
+        value["atlases"][0]["entries"][0]["layerId"] = json!("mesh-body");
+        value
+    }
+    fn clip_payload() -> Value {
+        let mut value = upstream_base();
+        let mut bone = bone_layer("bone-root", "normal");
+        bone["name"] = json!("Body");
+        layers_mut(&mut value).push(bone);
+        let mut controller = ik_controller("controller", 1.0, -1.0, 1.0);
+        controller["name"] = json!("Controller");
+        controller["boneChain"][0]["boneId"] = json!("bone-root");
+        value["ikControllers"] = json!([controller]);
+        let keyframe = json!({"frame": 0, "value": 0, "interpolation": "linear",
+            "cp1x": 0.25, "cp1y": 0.25, "cp2x": 0.75, "cp2y": 0.75,
+            "ellipseRatio": 0.5, "ellipseDirection": "cw", "snsOscillations": 1, "snsDamping": 0.5});
+        value["clips"] = json!([{"id": "clip", "name": "Clip", "duration": 1, "fps": 60,
+            "tracks": [{"parameterId": "vivi.head.yaw", "keyframes": [keyframe.clone()]}],
+            "boneTracks": [{"boneId": "bone-root", "property": "angle", "keyframes": [keyframe.clone()]}],
+            "imageSequenceTracks": [{"targetMeshId": "mesh-body", "entries": [{"startFrame": 0, "imageId": "image"}]}],
+            "audioTracks": [{"id": "audio", "name": "Audio", "sourcePath": "", "startFrame": 0,
+                "sourceDurationSeconds": 1, "gain": 1, "muted": false}],
+            "lipSyncTracks": [{"id": "lipsync", "name": "Lip Sync", "sourceAudioTrackId": "audio",
+                "analysisType": "rms", "analysisFps": 60, "samples": [0], "targetParameterId": "vivi.head.yaw",
+                "sourcePathAtBake": "", "sourceDurationSecondsAtBake": 1, "gain": 1, "muted": false}],
+            "ikControllerTracks": [{"controllerId": "controller", "targetXKeyframes": [keyframe.clone()],
+                "targetYKeyframes": [keyframe]}]}]);
+        value
+    }
+    fn machine_payload() -> Value {
+        let mut value = upstream_base();
+        value["parameters"].as_array_mut().unwrap().push(json!({
+            "id": "param2", "name": "Second", "minValue": -1, "maxValue": 1, "defaultValue": 0}));
+        value["clips"] =
+            json!([{"id": "clip", "name": "Clip", "duration": 0, "fps": 1, "tracks": []}]);
+        value["stateMachines"] = json!([{"id": "machine", "name": "Machine", "states": [
+            {"id": "state-a", "name": "A", "clipId": "clip", "loop": true},
+            {"id": "state-b", "name": "B", "blendTree": {"parameterId": "param2",
+                "entries": [{"threshold": 0, "clipId": "clip"}]}, "loop": true}],
+            "transitions": [{"id": "transition", "fromStateId": "state-a", "toStateId": "state-b",
+                "conditions": [{"parameterId": "vivi.head.yaw", "operator": ">", "threshold": 0}],
+                "transitionDuration": 0, "priority": 0}], "initialStateId": "state-a", "enabled": true, "weight": 1}]);
+        value
+    }
+    fn isolate_machine(value: &mut Value) {
+        value["stateMachines"][0]["states"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("clipId");
+        value["stateMachines"][0]["states"][1]
+            .as_object_mut()
+            .unwrap()
+            .remove("blendTree");
+        value["clips"] = json!([]);
+    }
+    let check_parser = |value: &Value, kind: PayloadKind, status: i32, label: &str| {
+        let error = parse_evaluation_payload_v1(
+            &serde_json::to_vec(value).expect("fixed payload serializes"),
+            5,
+        )
+        .expect_err("unsupported or invalid upstream input must not produce a candidate");
+        assert_eq!(error.kind(), kind, "{label}");
+        assert_eq!(error.status(), status, "{label}");
+    };
+    let clip = clip_payload();
+    check_parser(&clip, PayloadKind::UnsupportedOperation, 2, "clip baseline");
+    let mut bad_clip = clip.clone();
+    set(
+        &mut bad_clip,
+        "/clips/0/tracks/0/parameterId",
+        json!("missing"),
+    );
+    check_parser(
+        &bad_clip,
+        PayloadKind::EvaluationPayload,
+        14,
+        "missing clip parameter",
+    );
+    // All optional numeric leaves exist in the shared seeds. Their owners are
+    // unsupported as a whole, so repeated same-status leaf mutations add no oracle.
+    // The blend-tree threshold needs a real clip: this is not isolated machine causation.
+    let machine = machine_payload();
+    check_parser(
+        &machine,
+        PayloadKind::UnsupportedOperation,
+        2,
+        "linked machine baseline",
+    );
+    let mut isolated = machine.clone();
+    isolate_machine(&mut isolated);
+    check_parser(
+        &isolated,
+        PayloadKind::UnsupportedOperation,
+        2,
+        "state-only baseline",
+    );
+    set(
+        &mut isolated,
+        "/stateMachines/0/initialStateId",
+        json!("missing"),
+    );
+    check_parser(
+        &isolated,
+        PayloadKind::EvaluationPayload,
+        14,
+        "missing initial state",
+    );
+
+    let check_lowering =
+        |value: &Value, kind: EvaluationLoweringErrorKind, status: i32, label: &str| {
+            let error = lower_value(value)
+                .expect_err("admitted input must fail the specified C9 preflight");
+            assert_eq!(error.kind(), kind, "{label}");
+            assert_eq!(error.load_status(), status, "{label}");
+        };
+    let mut art = base_payload();
+    let mut path = art_path_layer("path");
+    path["controlPoints"] = json!([{"x": 0, "y": 0, "handleInX": 0, "handleInY": 0,
+        "handleOutX": 0, "handleOutY": 0, "width": 1, "opacity": 1}]);
+    path["multiplyColor"] = json!({"r": 0.5, "g": 0.5, "b": 0.5});
+    path["screenColor"] = json!({"r": 0.5, "g": 0.5, "b": 0.5});
+    path["drawOrder"] = json!(0);
+    layers_mut(&mut art).insert(0, path);
+    check_lowering(
+        &art,
+        EvaluationLoweringErrorKind::UnsupportedLayer,
+        2,
+        "art baseline",
+    );
+    set(&mut art, "/layers/1/mesh/vertices/0", json!(f64::MAX));
+    check_lowering(
+        &art,
+        EvaluationLoweringErrorKind::UnsupportedLayer,
+        2,
+        "populated art before overflow",
+    );
+    layers_mut(&mut art).remove(0);
+    check_lowering(
+        &art,
+        EvaluationLoweringErrorKind::NumericOverflow,
+        14,
+        "art removed overflow",
+    );
+    let mut mapping = with_bone(base_payload());
+    let mut controller = ik_controller("ik", 0.5, -1.0, 1.0);
+    controller["parameterMappings"] = json!([{"boneId": "bone", "parameterId": "parameter",
+        "angleMin": -1, "angleMax": 1, "paramMin": -1, "paramMax": 1}]);
+    mapping["ikControllers"] = json!([controller]);
+    check_lowering(
+        &mapping,
+        EvaluationLoweringErrorKind::UnsupportedIkParameterMappings,
+        2,
+        "mapping baseline",
+    );
+    set(&mut mapping, "/layers/0/mesh/vertices/0", json!(f64::MAX));
+    check_lowering(
+        &mapping,
+        EvaluationLoweringErrorKind::UnsupportedIkParameterMappings,
+        2,
+        "mapping before overflow",
+    );
+    mapping["ikControllers"][0]["parameterMappings"] = json!([]);
+    check_lowering(
+        &mapping,
+        EvaluationLoweringErrorKind::NumericOverflow,
+        14,
+        "empty mapping overflow",
+    );
 }

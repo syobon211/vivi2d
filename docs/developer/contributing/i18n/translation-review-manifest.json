@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "status": "provisional-technical-review",
-  "lastUpdated": "2026-09-19",
+  "lastUpdated": "2026-09-21",
   "notes": "This manifest tracks reviewed translation source snapshots. zh-Hans and ko-KR copy is ready for implementation testing; native-speaker human review remains a release-candidate checklist item.",
   "entries": [
     {
@@ -24,15 +24,15 @@
       "surface": "editor",
       "namespace": "dialog",
       "sourcePath": "src/lib/i18n/ja/dialog.ts",
-      "sourceHash": "sha256:c1274b5344a041256aee4b31aeb768aa9f734c4de6e7b9ad7e8a96b2de7395dc",
+      "sourceHash": "sha256:8da46fa23a9500bce70955d87238513ef96a749c3e55b6ab8d3f6f1835c6b8af",
       "reviewedBy": "Vivi2D provisional i18n review; Codex follow-up technical review",
-      "reviewedAt": "2026-09-19",
+      "reviewedAt": "2026-09-21",
       "reviewStatus": "provisional-technical-review",
       "machineDraftUsed": true,
       "keysReviewed": [
         "*"
       ],
-      "notes": "Retains the 2026-05-20 review for unchanged copy. Follow-up technical review covers changed PSD reimport notices, resolution/framing confirmation, held reasons, fixed errors, removed unused keys, and PNG reimport failure/stale messages against the English copy and authoring contract. Formatting-only changes do not alter other text. This is not native-speaker human review; that remains required before a public release candidate."
+      "notes": "Retains the prior reviews for unchanged copy, including the 2026-09-19 PSD and PNG reimport follow-up. The 2026-09-21 technical follow-up covers the 26 localExchange keys: key parity, mojibake hygiene, stable identifiers, explicit Start/Retry/approval, restart non-resumption, and ordinary-import versus v11 Sync terminology against the English copy and approved local exchange contract. The additional 13 runtimePreview and 12 localAssetCopy keys were checked against English for preview non-edit/save/publication scope, pre-publication Missing display retention and explicit Reload, canonical local copy without Sync publication, explicit consent, retained immutable partial work, cancellation and ambiguous retry. The C2 I02 amendment adds a neutral post-publication display-or-cleanup warning while preserving committed state, and removes the false unchanged-display guarantee from generic failure copy. This is not native-speaker human review; that remains required before a public release candidate."
     },
     {
       "locale": "ja",
@@ -54,30 +54,30 @@
       "surface": "editor",
       "namespace": "menu",
       "sourcePath": "src/lib/i18n/ja/menu.ts",
-      "sourceHash": "sha256:61c238808ad5499b1581dc748d15d5d4321cea10e6aa56ab4ce62506062f87df",
-      "reviewedBy": "Vivi2D provisional i18n review",
-      "reviewedAt": "2026-05-20",
+      "sourceHash": "sha256:a5128defe0a039b8ce6aad92fabe6b4b961cbf265ee4550e0b8bce7da5833ec4",
+      "reviewedBy": "Vivi2D provisional i18n review; Codex follow-up technical review",
+      "reviewedAt": "2026-09-21",
       "reviewStatus": "provisional-technical-review",
       "machineDraftUsed": true,
       "keysReviewed": [
         "*"
       ],
-      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+      "notes": "Retains prior review for unchanged copy. Technical follow-up checks the v11 copy/fork/original/unused/replace labels and save-in-progress/written-metadata warning against the English copy and scoped Editor contract. This is not native-speaker human approval; that remains required before a public release candidate."
     },
     {
       "locale": "ja",
       "surface": "editor",
       "namespace": "panel",
       "sourcePath": "src/lib/i18n/ja/panel.ts",
-      "sourceHash": "sha256:78c28fadf47aa5fd504549f6aeca8adc7b85a2c20146d08c34be6377b68562dc",
-      "reviewedBy": "Vivi2D provisional i18n review",
-      "reviewedAt": "2026-05-20",
+      "sourceHash": "sha256:d26c844572693b725de7accbed7fc06540ab48f674905d16c23b77605988784f",
+      "reviewedBy": "Vivi2D provisional i18n review; Codex follow-up technical review",
+      "reviewedAt": "2026-09-21",
       "reviewStatus": "provisional-technical-review",
       "machineDraftUsed": true,
       "keysReviewed": [
         "*"
       ],
-      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+      "notes": "Retains prior review for unchanged copy. Technical follow-up checks v11 atlas/entry/raw-UV controls, fixed edit failure, shared-pixel disclosure and legacy capability boundary against the English copy and scoped Editor contract. This is not native-speaker human approval; that remains required before a public release candidate."
     },
     {
       "locale": "ja",
@@ -129,15 +129,15 @@
       "surface": "editor",
       "namespace": "dialog",
       "sourcePath": "src/lib/i18n/zh-Hans/dialog.ts",
-      "sourceHash": "sha256:da2588d708998501215fba8d006dbb5c416a119badb38dc5a77f7ad1855379e6",
-      "reviewedBy": "Vivi2D provisional i18n review",
-      "reviewedAt": "2026-05-20",
+      "sourceHash": "sha256:17ec54d2985d569aa6b1156ae510cbf2e653107592c02bd61de2102c8ce357ff",
+      "reviewedBy": "Vivi2D provisional i18n review; Codex follow-up technical review",
+      "reviewedAt": "2026-09-21",
       "reviewStatus": "provisional-technical-review",
       "machineDraftUsed": true,
       "keysReviewed": [
         "*"
       ],
-      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+      "notes": "Retains the prior review for unchanged copy. The 2026-09-21 technical follow-up covers the 26 localExchange keys: key parity, mojibake hygiene, stable identifiers, explicit Start/Retry/approval, restart non-resumption, and ordinary-import versus v11 Sync terminology against the English copy and approved local exchange contract. The additional 13 runtimePreview and 12 localAssetCopy keys were checked against English for preview non-edit/save/publication scope, pre-publication Missing display retention and explicit Reload, canonical local copy without Sync publication, explicit consent, retained immutable partial work, cancellation and ambiguous retry. The C2 I02 amendment adds a neutral post-publication display-or-cleanup warning while preserving committed state, and removes the false unchanged-display guarantee from generic failure copy. This is not native-speaker human review; that remains required before a public release candidate."
     },
     {
       "locale": "zh-Hans",
@@ -234,15 +234,15 @@
       "surface": "editor",
       "namespace": "dialog",
       "sourcePath": "src/lib/i18n/ko-KR/dialog.ts",
-      "sourceHash": "sha256:0b67e44bf705143e8b4af4dab26360ffc1bfef0d38693aadac2c437f8531c548",
-      "reviewedBy": "Vivi2D provisional i18n review",
-      "reviewedAt": "2026-05-20",
+      "sourceHash": "sha256:1ec4aaed8d586b001b84beb9b519da0e7dcb6c99f2a0d4858bd3401549f398f6",
+      "reviewedBy": "Vivi2D provisional i18n review; Codex follow-up technical review",
+      "reviewedAt": "2026-09-21",
       "reviewStatus": "provisional-technical-review",
       "machineDraftUsed": true,
       "keysReviewed": [
         "*"
       ],
-      "notes": "Technical review covers key parity, mojibake hygiene, and product/IP terminology. Native-speaker human review remains required before a public release candidate."
+      "notes": "Retains the prior review for unchanged copy. The 2026-09-21 technical follow-up covers the 26 localExchange keys: key parity, mojibake hygiene, stable identifiers, explicit Start/Retry/approval, restart non-resumption, and ordinary-import versus v11 Sync terminology against the English copy and approved local exchange contract. The additional 13 runtimePreview and 12 localAssetCopy keys were checked against English for preview non-edit/save/publication scope, pre-publication Missing display retention and explicit Reload, canonical local copy without Sync publication, explicit consent, retained immutable partial work, cancellation and ambiguous retry. The C2 I02 amendment adds a neutral post-publication display-or-cleanup warning while preserving committed state, and removes the false unchanged-display guarantee from generic failure copy. This is not native-speaker human review; that remains required before a public release candidate."
     },
     {
       "locale": "ko-KR",

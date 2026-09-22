@@ -1,5 +1,47 @@
 # Public API Status
 
+## Reading current implementation status
+
+Use the [current contract status](../architecture/multiplatform-contract-status.md)
+and [bounded application connection](../architecture/evaluation-c10-integration.md#current-bounded-c2-application-connection)
+for the present implementation state. C10 derived evaluation, C11 sealing,
+post-seal preparation, the opt-in CPU owner and the bounded C2 application
+connection have their own scoped implementation acceptance. The selected
+Windows/native-addon consumer does not replace legacy Editor/Viewer initialization.
+Final candidate tests, hosted CI and integration remain separate from those reviews.
+
+The stage-specific notes and foundation audit descriptions below preserve earlier
+slice boundaries. Their disconnected-C10, consumer-zero-math, absent-C11 and
+open-EDH-01 statements are historical prerequisites, not a current backlog.
+Later scoped connections supersede only those absence claims; they do not waive
+the retained parser, ownership, privacy or publication rules. All six contracts
+remain internal foundations, without stable-API promotion, remote-service support,
+private-product approval or release authorization.
+
+### Earlier staged boundary notes
+
+Phase B's feature-gated native `EvaluationRuntimeV1` and EDH's detached
+`getRequestState()` are internal implementation surfaces, not stable APIs or a
+completed application runtime capability. The older absent-active-owner wording
+below describes the earlier C10/C11/post-seal slices. Only core's explicit
+`evaluation-v1` optional edge now adopts Ready once into a CPU owner; default
+ABI1 and legacy runtime-WASM remain unchanged. The current C2 implementation
+candidate adds a separate opt-in Evaluation-WASM artifact and internal
+`vivi_runtime_editor.h` ABI; neither is a published or stable API. Both use actual
+byte-backed resolver/PNG preparation and the same C10/C11 owner. Native linked-C,
+real WASM, allocator and copy-out tests do not alone establish application
+session freshness, CPU/GPU atomic publication, capability advertisement or release
+readiness. C2 implementation review and applicable hosted integration remain
+required. See [the current C2 boundary](../architecture/evaluation-c10-integration.md#current-c2-implementation-candidate).
+
+The [current C10/C11 integration boundary](../architecture/evaluation-c10-integration.md)
+supersedes disconnected-C10, consumer-zero-math and absent-C11 wording in the
+historical foundation audit below. Move-only sealing and borrowed snapshot views
+and separate consuming post-seal Ready/Missing preparation are internal
+implementation surfaces, not stable APIs, active ownership, application
+integration or release readiness. Preparation reuses the real host without
+resealing; authorized borrowed host data is not sanitized diagnostic data.
+
 Vivi2D is public and pre-1.0. Package boundaries may change during the alpha
 period. This document records the current publication intent so contributors do
 not accidentally treat internal workspace entry points as stable APIs.

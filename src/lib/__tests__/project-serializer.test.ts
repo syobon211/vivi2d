@@ -1,9 +1,11 @@
+import { ensureProjectDefaults } from "@vivi2d/core/project-migration";
 import type { AtlasData, ProjectData, ViviFileData } from "@vivi2d/core/types";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { remapUvs } from "@/lib/atlas-packer";
 import {
   deserializeProject,
   parseViviFile,
+  prepareDeserializedProject,
   serializeProject,
 } from "@/lib/project-serializer";
 import {
@@ -13,6 +15,7 @@ import {
   setTexture,
 } from "@/lib/texture-store";
 import {
+  createAnimationClip,
   createBoneNode,
   createEmptyProject,
   createGroup,
@@ -20,6 +23,7 @@ import {
   createViviMesh,
 } from "@/test/fixtures";
 import { MOCK_PNG_BASE64, mockCanvasContext, mockImageLoad } from "@/test/mocks";
+import embeddedManifest from "../../../tests/conformance/project-embedded-round-trip-v11/manifest.json";
 
 function makeCanvas(w: number, h: number): HTMLCanvasElement {
   const c = document.createElement("canvas");
@@ -186,6 +190,104 @@ describe("deserializeProject", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     clearTextures();
+  });
+
+  it("opens the unchanged admitted v9 corpus with owned runtime defaults, without a phantom scene", async () => {
+    const source = embeddedManifest.documents.find(
+      (row) => row.id === "core-v9-migration",
+    )!.inputUtf8;
+    const incumbent = makeCanvas(2, 2);
+    setTexture("incumbent", incumbent);
+    const prepared = await prepareDeserializedProject(parseViviFile(source));
+    expect(prepared.project.scenes).toEqual([]);
+    expect(prepared.project.clips).toEqual([]);
+    expect(prepared.project.physicsGroups).toEqual([]);
+    expect(prepared.project.lipsyncConfig).toEqual({
+      enabled: false,
+      targetParameterId: null,
+      source: "microphone",
+      threshold: 0.02,
+      smoothing: 0.7,
+      gain: 2,
+    });
+    expect(prepared.textures.size).toBeGreaterThan(0);
+    expect(getAllTextureIds()).toEqual(["incumbent"]);
+    expect(getTexture("incumbent")).toBe(incumbent);
+    const other = ensureProjectDefaults(parseViviFile(source).project);
+    prepared.project.lipsyncConfig.gain = 5;
+    prepared.project.physicsGroups.push({} as ProjectData["physicsGroups"][number]);
+    expect(other.lipsyncConfig.gain).toBe(2);
+    expect(other.physicsGroups).toEqual([]);
+    const omitted = parseViviFile(
+      JSON.stringify({
+        version: 9,
+        project: { layers: [], parameters: [] },
+        atlases: [],
+      }),
+    );
+    expect((await prepareDeserializedProject(omitted)).project).toMatchObject({
+      name: "Untitled",
+      width: 1,
+      height: 1,
+    });
+  });
+
+  it("routes historical clips only for pre-v2 while preserving authored v9 settings", async () => {
+    const clip = createAnimationClip({ id: "retained-clip" });
+    for (const version of [1, 9] as const) {
+      const parsed = parseViviFile(
+        JSON.stringify({
+          version,
+          project: createProject({ clips: [clip], scenes: [] }),
+          atlases: [],
+        }),
+      );
+      const { project } = await prepareDeserializedProject(parsed);
+      if (version === 1) {
+        expect(project.clips).toEqual([]);
+        expect(project.scenes).toEqual([
+          { id: expect.any(String), name: "Scene 1", clips: [clip] },
+        ]);
+      } else {
+        expect(project.scenes).toEqual([]);
+        expect(project.clips).toEqual([clip]);
+      }
+    }
+    const authored = createProject({
+      scenes: [{ id: "retained-scene", name: "Authored scene", clips: [clip] }],
+    });
+    authored.lipsyncConfig = { ...authored.lipsyncConfig, enabled: true, gain: 3 };
+    const parsed = parseViviFile(
+      JSON.stringify({ version: 9, project: authored, atlases: [] }),
+    );
+    const scenes = parsed.project.scenes,
+      lipsync = parsed.project.lipsyncConfig;
+    const prepared = await prepareDeserializedProject(parsed);
+    expect(prepared.project.scenes).toBe(scenes);
+    expect(prepared.project.lipsyncConfig).toBe(lipsync);
+    expect(prepared.project.scenes).toEqual(authored.scenes);
+    expect(prepared.project.lipsyncConfig).toEqual(authored.lipsyncConfig);
+  });
+
+  it("rejects supplied malformed lip config before image decode, preserving incumbent textures", async () => {
+    const source = JSON.parse(
+      embeddedManifest.documents.find((row) => row.id === "core-v9-migration")!.inputUtf8,
+    );
+    const incumbent = makeCanvas(2, 2);
+    setTexture("incumbent", incumbent);
+    vi.mocked(Image).mockClear();
+    for (const config of [
+      null,
+      { ...ensureProjectDefaults(source.project).lipsyncConfig, enabled: "true" },
+    ]) {
+      source.project.lipsyncConfig = config;
+      await expect(
+        (async () => prepareDeserializedProject(parseViviFile(JSON.stringify(source))))(),
+      ).rejects.toThrow();
+    }
+    expect(Image).not.toHaveBeenCalled();
+    expect(getAllTextureIds()).toEqual(["incumbent"]);
+    expect(getTexture("incumbent")).toBe(incumbent);
   });
 
   it("アトラスなしのプロジェクトを復元できる", async () => {

@@ -17,8 +17,6 @@ files:
       - "**/*.cjs"
   - package.json
   - LICENSE
-  - from: THIRD_PARTY_NOTICES
-    to: THIRD_PARTY_NOTICES.txt
   - "!node_modules/**"
   - "!node_modules/**/*.map"
   - "!node_modules/**/*.ts"
@@ -32,6 +30,9 @@ files:
   - "!node_modules/**/doc/**"
   - "!node_modules/**/example/**"
   - "!node_modules/**/examples/**"
+extraFiles:
+  - from: THIRD_PARTY_NOTICES
+    to: resources/app/THIRD_PARTY_NOTICES.txt
 extraMetadata:
   name: vivi2d-viewer
   productName: Vivi2DViewer

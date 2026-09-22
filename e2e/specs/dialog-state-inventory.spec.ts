@@ -172,7 +172,7 @@ async function openProjectDialog(
 async function corruptFirstViviMeshForValidation(window: Page): Promise<void> {
   await waitForViviRuntime(window, ["useEditorStore"]);
   await window.evaluate(() => {
-    const runtime = (window as Window & typeof globalThis).__vivi2d as any;
+    const runtime = globalThis.window.__vivi2d as any;
     const editorStore = runtime.useEditorStore;
     const project = editorStore.getState().project;
     if (!project) throw new Error("Project is unavailable");
@@ -197,7 +197,7 @@ async function corruptFirstViviMeshForValidation(window: Page): Promise<void> {
 async function seedSceneClip(window: Page): Promise<void> {
   await waitForViviRuntime(window, ["useEditorStore"]);
   await window.evaluate(() => {
-    const runtime = (window as Window & typeof globalThis).__vivi2d as any;
+    const runtime = globalThis.window.__vivi2d as any;
     const editorStore = runtime.useEditorStore;
     const project = editorStore.getState().project;
     if (!project) throw new Error("Project is unavailable");

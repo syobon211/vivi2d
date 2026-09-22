@@ -17,7 +17,6 @@ import {
 } from "@/test/store-reset";
 import { usePlayback } from "../usePlayback";
 
-
 let rafCallbacks: Array<(time: number) => void> = [];
 let rafIdCounter = 1;
 
@@ -57,7 +56,6 @@ function createAndActivateClip(): string {
   return id;
 }
 
-
 describe("usePlayback — 画像シーケンス評価分岐（lines 96-108）", () => {
   beforeEach(() => {
     resetStores();
@@ -85,14 +83,25 @@ describe("usePlayback — 画像シーケンス評価分岐（lines 96-108）", 
     useEditorStore.setState({
       project: {
         ...project,
-        clips: [{
-          ...project.clips[0]!,
-          imageSequenceTracks: [
-            { targetMeshId: "mesh-target", entries: [{ startFrame: 0, imageId: "img-source" }] },
-            { targetMeshId: "same-target", entries: [{ startFrame: 0, imageId: "same-target" }] },
-            { targetMeshId: "missing-target", entries: [{ startFrame: 0, imageId: "missing-source" }] },
-          ],
-        }],
+        clips: [
+          {
+            ...project.clips[0]!,
+            imageSequenceTracks: [
+              {
+                targetMeshId: "mesh-target",
+                entries: [{ startFrame: 0, imageId: "img-source" }],
+              },
+              {
+                targetMeshId: "same-target",
+                entries: [{ startFrame: 0, imageId: "same-target" }],
+              },
+              {
+                targetMeshId: "missing-target",
+                entries: [{ startFrame: 0, imageId: "missing-source" }],
+              },
+            ],
+          },
+        ],
       },
     });
     const source = document.createElement("canvas");
@@ -103,6 +112,7 @@ describe("usePlayback — 画像シーケンス評価分岐（lines 96-108）", 
     textureStore.setTexture("missing-target", missing);
     textureStore.deleteTexture("missing-source");
     const set = vi.spyOn(textureStore, "setTexture");
+    const structureBefore = useEditorStore.getState().projectStructureVersion;
 
     useTimelineStore.setState({ isPlaying: true, currentFrame: 0 });
     renderHook(() => usePlayback());
@@ -114,9 +124,11 @@ describe("usePlayback — 画像シーケンス評価分岐（lines 96-108）", 
     expect(textureStore.getTexture("mesh-target")).toBe(source);
     expect(textureStore.getTexture("same-target")).toBe(same);
     expect(textureStore.getTexture("missing-target")).toBe(missing);
+    expect(useEditorStore.getState().projectStructureVersion).toBe(structureBefore + 1);
+    flushRaf(interval * 2);
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(useEditorStore.getState().projectStructureVersion).toBe(structureBefore + 1);
   });
-
-
 
   it("activeClipId が null の場合 tick は早期リターンする", () => {
     setupProject();

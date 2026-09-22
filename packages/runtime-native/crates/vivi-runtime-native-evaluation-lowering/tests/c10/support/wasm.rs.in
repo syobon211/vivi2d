@@ -1,0 +1,146 @@
+// Test-only fixed-case WASM with the actual math rlib. No product ABI or C9 execution.
+#![allow(dead_code)]
+extern crate self as vivi_runtime_native_preactivation;
+
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/error.rs"]
+mod error;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/model.rs"]
+mod model;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/reservation.rs"]
+mod reservation;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lower.rs"]
+mod lower;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/observation.rs"]
+mod observation;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/state.rs"]
+mod state;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/derived.rs"]
+mod derived;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/physics.rs"]
+mod physics;
+#[path = "@REPO@/packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/derived_candidate.rs"]
+mod derived_candidate;
+pub use error::{EvaluationLoweringError,EvaluationLoweringErrorKind};
+pub use model::EvaluationLoweringFoundationV1;
+
+// Only prerequisite types are substituted. Actual C9 source stays included so
+// the binary64 -> binary32 projection called by derived is its real definition.
+pub struct ValidatedEvaluationPayloadV1 { generation:u64, value:serde_json::Value }
+impl ValidatedEvaluationPayloadV1 {
+    pub const fn request_generation(&self)->u64{self.generation}
+    pub const fn value(&self)->&serde_json::Value{&self.value}
+}
+pub struct EvaluationTextureBindingV1;
+pub struct EvaluationTexturePlanV1 { pub textures:Vec<EvaluationTextureBindingV1> }
+#[derive(Clone,Copy)]
+pub enum EvaluationPreactivationErrorKind { Correlation,ResourceLimitExceeded,InvalidTexturePlan,Asset,Store,Internal }
+#[derive(Clone,Copy)]
+pub struct EvaluationPreactivationError { kind:EvaluationPreactivationErrorKind }
+impl EvaluationPreactivationError { pub const fn kind(self)->EvaluationPreactivationErrorKind{self.kind} }
+pub struct CorrelatedEvaluationActivationV1 { candidate:ValidatedEvaluationPayloadV1, texture_plan:EvaluationTexturePlanV1 }
+impl CorrelatedEvaluationActivationV1 {
+    pub const fn request_generation(&self)->u64{self.candidate.request_generation()}
+    pub fn into_parts(self)->(ValidatedEvaluationPayloadV1,EvaluationTexturePlanV1){(self.candidate,self.texture_plan)}
+}
+pub fn correlate_evaluation_activation_v1(_:u64,_:ValidatedEvaluationPayloadV1,_:EvaluationTexturePlanV1)->Result<CorrelatedEvaluationActivationV1,EvaluationPreactivationError>{
+    // Never impersonate C9 parsing/correlation execution in this evidence.
+    Err(EvaluationPreactivationError{kind:EvaluationPreactivationErrorKind::Internal})
+}
+
+mod frozen_c9 {
+    use crate::model::*;
+    use crate::{ValidatedEvaluationPayloadV1,EvaluationTexturePlanV1};
+    include!("@FIXTURES@/frozen-c9-setups.rs");
+}
+std::thread_local!{
+    static PREPARED:std::cell::RefCell<Option<EvaluationLoweringFoundationV1>>=const{std::cell::RefCell::new(None)};
+    static DIAGNOSTIC:std::cell::Cell<[u32;8]>=const{std::cell::Cell::new([0;8])};
+}
+pub fn lower_evaluation_foundation_v1(_:u64,_:ValidatedEvaluationPayloadV1,_:EvaluationTexturePlanV1)->Result<EvaluationLoweringFoundationV1,EvaluationLoweringError>{
+    PREPARED.with(|slot|slot.borrow_mut().take()).ok_or_else(||EvaluationLoweringError::new(EvaluationLoweringErrorKind::Internal))
+}
+
+#[path = "@SUPPORT@/../literal_types.rs"] mod literal_types;
+use literal_types as expected_types;
+#[path = "@GENERATED@/native-c10-literal-cases-1.rs"] mod literal_cases;
+#[path = "@GENERATED@/native-c10-literal-controls-1.rs"] mod literal_controls;
+#[path = "@SUPPORT@/compare.rs"] mod compare;
+#[path = "@SUPPORT@/raw_checks.rs"] mod raw_checks;
+#[path = "@SUPPORT@/allocation_guard.rs"] mod allocation_guard;
+#[path = "@SUPPORT@/shared_full_route.rs"] mod shared_route;
+#[path = "@SUPPORT@/state_checks.rs"] mod state_checks;
+#[path = "@SUPPORT@/injections.rs"] mod injections;
+#[path = "@GENERATED@/identity_setup.rs"] mod identity_setup;
+#[path = "@SUPPORT@/helper_checks.rs"] mod helper_checks;
+#[path = "@GENERATED@/projection_scope.rs"] mod projection_scope;
+mod route_setup{
+    use crate::*;
+    pub(crate) fn prepare(index:u32,requested:Option<u64>)->(u64,ValidatedEvaluationPayloadV1,EvaluationTexturePlanV1,Vec<(usize,usize)>,state_checks::CapturedState){
+        let(generation,..)=frozen_c9::case_metadata(index).expect("admitted fixed setup");
+        assert!(requested.is_none()||requested==Some(generation),"input generation binding");
+        let placeholder=||ValidatedEvaluationPayloadV1{generation,value:serde_json::Value::Null};
+        let plan=||EvaluationTexturePlanV1{textures:Vec::new()};
+        let mut foundation=frozen_c9::materialize_case_foundation(index,placeholder(),plan()).expect("admitted fixed foundation");
+        injections::before_initial(&mut foundation.reservation_plan,literal_cases::CASES[index as usize].injections);
+        let baseline=state_checks::CapturedState::capture(&foundation,None);
+        PREPARED.with(|slot|{assert!(slot.borrow().is_none());*slot.borrow_mut()=Some(foundation);});
+        (generation,placeholder(),plan(),Vec::new(),baseline)
+    }
+    pub(crate) fn companion(index:u32,requested:Option<u64>)->EvaluationLoweringFoundationV1{
+        let(generation,_,_,_,_)=prepare(index,requested);
+        let foundation=PREPARED.with(|slot|slot.borrow_mut().take()).expect("same prepared setup");
+        assert_eq!(generation,foundation.request_generation());
+        foundation
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn c10_compound_case(index:u32)->u32{
+    DIAGNOSTIC.with(|d|d.set([0;8]));
+    let case=&literal_cases::CASES[index as usize];
+    assert!(case.wasm_eligible,"native-only case cannot be dispatched by WASM");
+    if !shared_route::eligible(case){return 2;}
+    checked(shared_route::run(case))
+}
+
+fn checked(result:compare::Check)->u32{
+    match result{Ok(())=>0,Err(words)=>{DIAGNOSTIC.with(|d|d.set(words));core::arch::wasm32::unreachable()}}
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn c10_helper_case()->u32{
+    DIAGNOSTIC.with(|d|d.set([0;8]));
+    checked(helper_checks::run())
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn c10_reuse_and_negative_controls()->u32{
+    DIAGNOSTIC.with(|d|d.set([0;8]));
+    let result=shared_route::reuse_checks().and_then(|_|shared_route::negative_comparison());
+    checked(result)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn c10_allocator_positive_control()->u32{
+    let guard=allocation_guard::Guard::arm();
+    let value=std::hint::black_box(Box::new(42_u64));
+    let record=guard.finish();
+    drop(value);
+    assert_eq!((record.count,record.sizes[0],record.aligns[0]),(1,8,std::mem::align_of::<u64>()));
+    0
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn c10_observer_exhaustion_control(projection:u32){
+    shared_route::exhaustion_control(projection!=0)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn c10_raw_checks()->u32{
+    DIAGNOSTIC.with(|d|d.set([0;8]));
+    checked(raw_checks::run())
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn c10_diagnostic_word(index:u32)->u32{
+    DIAGNOSTIC.with(|d|d.get()[usize::try_from(index).expect("bounded diagnostic")])
+}

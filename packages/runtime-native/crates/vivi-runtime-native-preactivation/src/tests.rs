@@ -507,6 +507,46 @@ fn real_sqlite_later_hard_error_wins_over_earlier_missing() {
 }
 
 #[test]
+fn borrowed_plan_reuses_real_ready_missing_and_host_preflight() {
+    use crate::{PrepareActivationTextureSetV1, prepare_evaluation_texture_plan_v1};
+    let temp = private_tempdir();
+    let mut host = open_host(&temp);
+    let png = STANDARD.decode(PNG_BASE64).unwrap();
+    let asset = host.materialize_embedded_png(&png, 1, 1).unwrap().asset;
+    let mut plan = texture_plan(vec![texture_binding("atlas:a", asset, 1, 1)]);
+    let PrepareActivationTextureSetV1::Ready(ready) =
+        prepare_evaluation_texture_plan_v1(&host, 0, &plan).unwrap()
+    else {
+        panic!("real borrowed-plan Ready");
+    };
+    assert_eq!(ready.request_generation(), 0);
+    assert_eq!(ready.textures()[0].ready_png().logical_bytes(), png);
+    plan.textures
+        .push(texture_binding("atlas:b", missing_blob(8), 1, 1));
+    let PrepareActivationTextureSetV1::Missing(missing) =
+        prepare_evaluation_texture_plan_v1(&host, 3, &plan).unwrap()
+    else {
+        panic!("real borrowed-plan Missing");
+    };
+    assert_eq!(missing.request_generation(), 3);
+    assert_eq!(missing.texture_ids(), &["atlas:b"]);
+    plan.textures[0].alpha_mode = "premultiplied".to_owned();
+    let error = prepare_evaluation_texture_plan_v1(&host, 3, &plan).unwrap_err();
+    assert_eq!(
+        error.kind(),
+        EvaluationPreactivationErrorKind::InvalidTexturePlan
+    );
+    assert_eq!(error.load_status(), 14);
+    let error =
+        prepare_evaluation_texture_plan_v1(&host, MAX_SAFE_GENERATION + 1, &plan).unwrap_err();
+    assert_eq!(
+        error.kind(),
+        EvaluationPreactivationErrorKind::ResourceLimitExceeded
+    );
+    assert_eq!(error.load_status(), 6);
+}
+
+#[test]
 fn ready_postcondition_defense_rejects_every_shape_contradiction() {
     let expected_asset = missing_blob(1);
     let other_asset = missing_blob(2);

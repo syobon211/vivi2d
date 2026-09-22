@@ -237,6 +237,8 @@ function assertProjectFormatV11InternalBoundary(packByName) {
 
   const internalExportName = "./internal/project-format-v11";
   const internalExportTarget = "./src/internal/project-format-v11.ts";
+  const exchangeExportName = "./internal/local-exchange";
+  const exchangeExportTarget = "./src/internal/local-exchange.ts";
   const requiredPackFiles = [
     "src/internal/project-format-v11.ts",
     "src/internal/generated/project-format-v11-validator.mjs",
@@ -257,6 +259,18 @@ function assertProjectFormatV11InternalBoundary(packByName) {
     );
   }
   const packageRoot = path.resolve(root, model.dir);
+  const exchangeEntrypoint = path.resolve(packageRoot, exchangeExportTarget);
+  const validExchangeFriend =
+    exports[exchangeExportName] === exchangeExportTarget &&
+    model.pkg.private === true &&
+    model.pkg.vivi2d?.publication === "internal" &&
+    fs.existsSync(exchangeEntrypoint) &&
+    fs.lstatSync(exchangeEntrypoint).isFile();
+  if (!validExchangeFriend) {
+    failures.push(
+      `@vivi2d/model must keep ${exchangeExportName} -> ${exchangeExportTarget} as an exact regular-file private/internal friend.`,
+    );
+  }
   const internalCodecRoot = path.join(packageRoot, "src", "project-format-v11");
   const generatedValidator = path.join(
     packageRoot,
@@ -292,6 +306,7 @@ function assertProjectFormatV11InternalBoundary(packByName) {
   } else {
     for (const [exportName, exportTarget] of Object.entries(exports)) {
       if (exportName === internalExportName) continue;
+      if (exportName === exchangeExportName && validExchangeFriend) continue;
       for (const target of flattenExportTargets(exportTarget)) {
         const absoluteTarget = path.resolve(packageRoot, target);
         if (!fs.existsSync(absoluteTarget) || !fs.statSync(absoluteTarget).isFile()) {
@@ -303,7 +318,7 @@ function assertProjectFormatV11InternalBoundary(packByName) {
           moduleGraphReachesDirectory(absoluteTarget, packageRoot, generatedValidator)
         ) {
           failures.push(
-            `@vivi2d/model entry ${exportName} reaches the internal Project Format v11 codec; only ${internalExportName} may reach it.`,
+            `@vivi2d/model entry ${exportName} reaches the internal Project Format v11 codec; only the exact ${internalExportName} and ${exchangeExportName} friends may reach it.`,
           );
         }
       }
@@ -564,6 +579,7 @@ function assertEditorHostInternalBoundary(packByName) {
       new Set([
         "buildRuntimePayload",
         "dispose",
+        "getRequestState",
         "getSnapshot",
         "initJson",
         "initUtf8",

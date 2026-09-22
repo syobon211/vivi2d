@@ -79,6 +79,8 @@ const commands = [
   ["npm", ["run", "check:runtime-c-abi-link"]],
   ["npm", ["run", "check:runtime-c-abi-v02-host-smoke"]],
   ["npm", ["run", "check:runtime-png"]],
+  ["npm", ["run", "check:local-asset-addon"]],
+  ["npm", ["run", "check:runtime-preview-electron"]],
   ["npm", ["run", "check:runtime-asset-resolver"]],
   ["npm", ["run", "check:runtime-asset-store-local"]],
   ["npm", ["run", "check:runtime-asset-host-local"]],
@@ -119,6 +121,15 @@ if (process.argv.includes("--list")) {
 }
 
 for (const [command, args] of commands) {
+  if (
+    ["check:local-asset-addon", "check:runtime-preview-electron"].includes(args[1]) &&
+    process.platform !== "win32"
+  ) {
+    console.log(
+      `[quality] ${args[1]}: not applicable on this host; actual Windows verification is required in Runtime Native CI.`,
+    );
+    continue;
+  }
   console.log(`\n[quality] ${command} ${args.join(" ")}`);
   const result =
     process.platform === "win32"

@@ -11,6 +11,10 @@ publish = false
 name = "vivi_runtime_native_preactivation"
 path = "src/lib.rs"
 
+[features]
+default = ["native-host"]
+native-host = ["vivi-asset-host-local/local-store"]
+
 [dependencies]
 vivi-asset-host-local = { path = "../vivi-asset-host-local", default-features = false }
 vivi-runtime-native-evaluation = { path = "../vivi-runtime-native-evaluation", default-features = false }

@@ -14,7 +14,8 @@ import {
   utf8ByteLength,
 } from "./portable-primitives";
 import { validateProjectFormatV11Schema } from "./schema";
-import type { Sha256V11 } from "./types";
+import { validateProjectFormatV11Structure } from "./semantic";
+import type { Sha256V11, ViviFileDataWireV11 } from "./types";
 
 export type ProjectCandidateErrorCode =
   | "PROJECT_CARRIER_INVALID"
@@ -268,6 +269,11 @@ export function checkCandidateProfile(wire: ObjectValue, legacy = false): void {
             : null;
     if (!specific) candidateFailure("PROJECT_PROFILE_UNSUPPORTED", `${path}/kind`);
     closed(layer, [...COMMON_LAYER_FIELDS, ...specific], path);
+    if (
+      kind !== "viviMesh" &&
+      (Object.hasOwn(layer, "clipMaskIds") || Object.hasOwn(layer, "clipMasks"))
+    )
+      candidateFailure("PROJECT_PROFILE_UNSUPPORTED", path);
     if (++layers > LIMITS.layers)
       candidateFailure("PROJECT_LIMIT_EXCEEDED", "/project/layers");
     identifier(layer.id, `${path}/id`);
@@ -480,6 +486,23 @@ export function checkCandidateProfile(wire: ObjectValue, legacy = false): void {
   });
 }
 
+/** Internal synchronous edit admission for already verified, immutable PNG backing.
+ * Never substitutes for full native PNG admission when opening or replacing media.
+ */
+export function assertEmbeddedRoundTripEditorState(value: unknown): string {
+  try {
+    if (validateProjectFormatV11Schema(value).length !== 0)
+      candidateFailure("PROJECT_SCHEMA_INVALID");
+    checkCandidateProfile(object(value));
+    validateProjectFormatV11Structure(value as ViviFileDataWireV11);
+    // Use the real Save wire representation and its existing input/output
+    // budgets before Editor/history publication; immutable PNG is not decoded.
+    return canonicalizeJsonV11(parseJsonV11(JSON.stringify(value)));
+  } catch {
+    throw new Error("PROJECT_EDIT_INVALID");
+  }
+}
+
 export function candidateCodecOptions(ports: EmbeddedRoundTripPorts) {
   if (typeof ports?.sha256 !== "function" || typeof ports?.verifyPng !== "function")
     candidateFailure("PROJECT_INTERNAL");
@@ -533,7 +556,9 @@ function canonicalBase64(value: string): boolean {
       ? (alphabet.indexOf(value.charAt(value.length - 2)) & 3) === 0
       : true;
 }
-function pngPolicy(bytes: Uint8Array): "ok" | "malformed" | "unsupported" {
+export function embeddedRoundTripPngPolicy(
+  bytes: Uint8Array,
+): "ok" | "malformed" | "unsupported" {
   if (
     bytes.length < 8 ||
     [137, 80, 78, 71, 13, 10, 26, 10].some((byte, index) => byte !== bytes[index])
@@ -624,7 +649,7 @@ async function verifyImages(
         candidateFailure("PROJECT_INTERNAL", at);
       candidateFailure(codes[verdict as keyof typeof codes], at);
     }
-    const policy = pngPolicy(bytes);
+    const policy = embeddedRoundTripPngPolicy(bytes);
     if (policy !== "ok") candidateFailure(codes[policy], at);
   }
 }

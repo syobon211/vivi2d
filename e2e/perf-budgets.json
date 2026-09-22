@@ -1,6 +1,6 @@
 {
   "description": "Budgets for the Playwright perf suite. Soft budgets are log-oriented guardrails. Hard budgets fail the spec when exceeded.",
-  "lastUpdated": "2026-05-02",
+  "lastUpdated": "2026-09-22",
   "notes": [
     "These thresholds are intended for the local Windows Electron test environment. CI noise can differ by runner.",
     "Use docs/developer/quality/baselines/perf-*.json diffs to inspect slower regressions in detail.",
@@ -54,13 +54,12 @@
       "layerPanelClickToNextFrameMs_max": 40,
       "selectionStoreSelectLayerMs_max": 10,
       "selectionViviMeshReadyMs_max": 20,
-      "toolButtonClickToNextFrameMs_max": 8,
       "viewportSetToolMs_max": 8,
       "meshEditAppReadyMs_max": 20,
       "meshOverlayVertexDetailsReadyMs_max": 8,
       "meshOverlayVisualModelBuildMs_max": 8
     },
-    "note": "Measured on a warm editor after importing the test PSD. Each sample resets to select mode, selects a representative ViviMesh, enters mesh edit, then exits back to select mode. The coarse browser-visible envelope is still recorded for diagnostics, but the enforced regression signal should come from the internal app probes for layer-selection, tool-switch, and mesh-overlay readiness."
+    "note": "Measured on a warm editor after importing the test PSD. Each sample resets to select mode, selects a representative ViviMesh, enters mesh edit, then exits back to select mode. Tool-button next-frame timing includes rAF waiting and is report-only by owner decision on 2026-09-22; its former 8ms hard condition is retired, while viewportSetTool remains below 8ms and meshEditAppReady below 20ms. All required probes must be observed with matching metadata and valid durations, without buffer saturation. Each phase has one bounded 1s collection wait; this changes the observation overhead included in the report-only coarse envelope. Other thresholds and historical snapshots are unchanged."
   },
   "fps": {
     "budget_soft": {

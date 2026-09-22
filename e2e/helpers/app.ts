@@ -7,14 +7,17 @@ import { clickFileMenuItem } from "./operations";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
 const ELECTRON_VIDEO_DIR =
-  process.env.VIVI2D_E2E_VIDEO_DIR ??
-  path.join(ROOT, "test-results", "electron-videos");
+  process.env.VIVI2D_E2E_VIDEO_DIR ?? path.join(ROOT, "test-results", "electron-videos");
 const IS_RECORDING_WORKFLOWS = process.env.VIVI2D_RECORD_E2E_WORKFLOWS === "1";
 const CANVAS_OPEN_PROBE_NAMES = [
   "canvasOpen.projectReady",
   "canvasOpen.layerListReady",
   "canvasOpen.editableCanvasReady",
 ] as const;
+
+type CanvasProbeWindow = Window & {
+  __vivi2dPerfProbeState__?: { events: ReadonlyArray<{ name: string }> };
+};
 
 function e2eTimeout(ms: number): number {
   return IS_RECORDING_WORKFLOWS ? Math.max(ms * 4, 60_000) : ms;
@@ -44,13 +47,15 @@ export async function waitForViviRuntime(
   await waitForAppReady(window);
   await window.waitForFunction(
     (storeNames) => {
-      const runtime = (window as Window & typeof globalThis).__vivi2d as
-        | Record<string, unknown>
-        | undefined;
+      const runtime = globalThis.window.__vivi2d;
       if (!runtime) return false;
       return storeNames.every((storeName) => {
-        const store = runtime[storeName] as { getState?: () => unknown } | undefined;
-        return typeof store === "function" && typeof store.getState === "function";
+        const store = runtime[storeName];
+        return (
+          typeof store === "function" &&
+          "getState" in store &&
+          typeof store.getState === "function"
+        );
       });
     },
     requiredStores,
@@ -79,7 +84,7 @@ export async function waitForStableFrame(window: Page, frameCount = 2): Promise<
 
 export async function clearPerfProbeEvents(window: Page): Promise<void> {
   await window.evaluate(() => {
-    const runtime = (window as Window & typeof globalThis).__vivi2d as
+    const runtime = globalThis.window.__vivi2d as
       | { clearE2EPerfProbeEvents?: () => void }
       | undefined;
     runtime?.clearE2EPerfProbeEvents?.();
@@ -347,8 +352,8 @@ export async function expectDialogFocusTrap(
         (candidate) =>
           !candidate.hasAttribute("hidden") && candidate.offsetParent !== null,
       );
-      const active = document.activeElement as HTMLElement | null;
-      return focusables.indexOf(active);
+      const active = document.activeElement;
+      return focusables.findIndex((candidate) => candidate === active);
     });
 
   await focusAtIndex(0);
@@ -442,8 +447,8 @@ export async function waitForCanvasOpenReady(window: Page): Promise<void> {
   try {
     await window.waitForFunction(
       (probeNames) => {
-        const events =
-          (window as Window & typeof globalThis).__vivi2dPerfProbeState__?.events ?? [];
+        const browser = globalThis.window as CanvasProbeWindow;
+        const events = browser.__vivi2dPerfProbeState__?.events ?? [];
         const seen = new Set(events.map((event) => event.name));
         return probeNames.every((name) => seen.has(name));
       },
@@ -497,7 +502,12 @@ export async function launchApp(): Promise<{
   window: Page;
 }> {
   const app = await electron.launch({
-    args: [path.join(ROOT, "electron/main.cjs")],
+    args: [
+      ...(process.platform === "linux"
+        ? ["--enable-webgl", "--use-gl=angle", "--use-angle=swiftshader"]
+        : []),
+      path.join(ROOT, "electron/main.cjs"),
+    ],
     env: {
       ...process.env,
       NODE_ENV: "test",
@@ -506,8 +516,7 @@ export async function launchApp(): Promise<{
       ? {
           recordVideo: {
             dir:
-              fs.mkdirSync(ELECTRON_VIDEO_DIR, { recursive: true }) ??
-              ELECTRON_VIDEO_DIR,
+              fs.mkdirSync(ELECTRON_VIDEO_DIR, { recursive: true }) ?? ELECTRON_VIDEO_DIR,
             size: { width: 1600, height: 900 },
           },
         }

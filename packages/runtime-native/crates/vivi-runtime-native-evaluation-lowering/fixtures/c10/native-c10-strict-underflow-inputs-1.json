@@ -1,0 +1,731 @@
+{
+  "kind": "native-c10-strict-underflow-inputs-v1",
+  "status": "fixed-public-supplement-not-original82",
+  "baseInputPin": {
+    "name": "native-c10-concrete-inputs-skin-culling-1.json",
+    "bytes": 596935,
+    "sha256": "2983caf1ac6796464fce251cda1d825558a9848be23dab86873678001e5f1612"
+  },
+  "oldTieBits": "3690000000000000",
+  "strictBelowBits": "3680000000000000",
+  "encoding": "Binary64 bits are authoritative; decimal JSON values were encoded from fixed words, not computed numerically.",
+  "variants": [
+    {
+      "id": "strict-below-half-initial14",
+      "scenarioId": "supplement-legacy-strict-below-half",
+      "classification": "public-input",
+      "baseInput": {
+        "pin": {
+          "name": "native-c10-concrete-inputs-skin-culling-1.json",
+          "bytes": 596935,
+          "sha256": "2983caf1ac6796464fce251cda1d825558a9848be23dab86873678001e5f1612"
+        },
+        "pointer": "/scenarios/6/variants/2",
+        "resolvedPayloadCompactJsonSha256": "28ddcf9b6fd25c1983032f4c24f87ba34e9499a97cc8410764670a2b330cfa94"
+      },
+      "payloadLeafPatch": {
+        "pointer": "/layers/0/mesh/vertices/4",
+        "beforeD64Bits": "3690000000000000",
+        "afterD64Bits": "3680000000000000"
+      },
+      "payload": {
+        "schema": "vivi2d.evaluationPayload.v1",
+        "canvas": {
+          "width": 32,
+          "height": 64
+        },
+        "layers": [
+          {
+            "id": "mesh",
+            "name": "mesh",
+            "kind": "viviMesh",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "mesh": {
+              "vertices": [
+                0,
+                0,
+                1,
+                0,
+                3.503246160812043e-46,
+                1
+              ],
+              "uvs": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "indices": [
+                0,
+                1,
+                2
+              ],
+              "divisionsX": 1,
+              "divisionsY": 1
+            }
+          },
+          {
+            "id": "A",
+            "name": "A",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          },
+          {
+            "id": "C",
+            "name": "C",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          },
+          {
+            "id": "D",
+            "name": "D",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          }
+        ],
+        "parameters": [],
+        "parameterBindings": [],
+        "skins": {
+          "mesh": {
+            "weights": [
+              [
+                {
+                  "boneId": "A",
+                  "weight": 1
+                }
+              ],
+              [
+                {
+                  "boneId": "A",
+                  "weight": 1
+                }
+              ],
+              [
+                {
+                  "boneId": "A",
+                  "weight": 1
+                }
+              ]
+            ],
+            "bindPoseInverse": {
+              "A": [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "ikControllers": [],
+        "physicsGroups": [],
+        "colliders": [],
+        "expressionPresets": [],
+        "clips": [],
+        "stateMachines": [],
+        "atlases": [
+          {
+            "id": "atlas",
+            "width": 1,
+            "height": 1,
+            "entries": [
+              {
+                "layerId": "mesh",
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1
+              }
+            ]
+          }
+        ]
+      },
+      "payloadNumericD64Bits": {
+        "/canvas/width": "4040000000000000",
+        "/canvas/height": "4050000000000000",
+        "/layers/0/opacity": "3ff0000000000000",
+        "/layers/0/x": "0000000000000000",
+        "/layers/0/y": "0000000000000000",
+        "/layers/0/width": "3ff0000000000000",
+        "/layers/0/height": "3ff0000000000000",
+        "/layers/0/mesh/vertices/0": "0000000000000000",
+        "/layers/0/mesh/vertices/1": "0000000000000000",
+        "/layers/0/mesh/vertices/2": "3ff0000000000000",
+        "/layers/0/mesh/vertices/3": "0000000000000000",
+        "/layers/0/mesh/vertices/4": "3680000000000000",
+        "/layers/0/mesh/vertices/5": "3ff0000000000000",
+        "/layers/0/mesh/uvs/0": "0000000000000000",
+        "/layers/0/mesh/uvs/1": "0000000000000000",
+        "/layers/0/mesh/uvs/2": "0000000000000000",
+        "/layers/0/mesh/uvs/3": "0000000000000000",
+        "/layers/0/mesh/uvs/4": "0000000000000000",
+        "/layers/0/mesh/uvs/5": "0000000000000000",
+        "/layers/0/mesh/indices/0": "0000000000000000",
+        "/layers/0/mesh/indices/1": "3ff0000000000000",
+        "/layers/0/mesh/indices/2": "4000000000000000",
+        "/layers/0/mesh/divisionsX": "3ff0000000000000",
+        "/layers/0/mesh/divisionsY": "3ff0000000000000",
+        "/layers/1/opacity": "3ff0000000000000",
+        "/layers/1/x": "0000000000000000",
+        "/layers/1/y": "0000000000000000",
+        "/layers/1/width": "3ff0000000000000",
+        "/layers/1/height": "3ff0000000000000",
+        "/layers/1/bone/angle": "0000000000000000",
+        "/layers/1/bone/length": "3ff0000000000000",
+        "/layers/1/bone/scaleX": "3ff0000000000000",
+        "/layers/1/bone/scaleY": "3ff0000000000000",
+        "/layers/2/opacity": "3ff0000000000000",
+        "/layers/2/x": "0000000000000000",
+        "/layers/2/y": "0000000000000000",
+        "/layers/2/width": "3ff0000000000000",
+        "/layers/2/height": "3ff0000000000000",
+        "/layers/2/bone/angle": "0000000000000000",
+        "/layers/2/bone/length": "3ff0000000000000",
+        "/layers/2/bone/scaleX": "3ff0000000000000",
+        "/layers/2/bone/scaleY": "3ff0000000000000",
+        "/layers/3/opacity": "3ff0000000000000",
+        "/layers/3/x": "0000000000000000",
+        "/layers/3/y": "0000000000000000",
+        "/layers/3/width": "3ff0000000000000",
+        "/layers/3/height": "3ff0000000000000",
+        "/layers/3/bone/angle": "0000000000000000",
+        "/layers/3/bone/length": "3ff0000000000000",
+        "/layers/3/bone/scaleX": "3ff0000000000000",
+        "/layers/3/bone/scaleY": "3ff0000000000000",
+        "/layers/4/opacity": "3ff0000000000000",
+        "/layers/4/x": "0000000000000000",
+        "/layers/4/y": "0000000000000000",
+        "/layers/4/width": "3ff0000000000000",
+        "/layers/4/height": "3ff0000000000000",
+        "/layers/4/bone/angle": "0000000000000000",
+        "/layers/4/bone/length": "3ff0000000000000",
+        "/layers/4/bone/scaleX": "3ff0000000000000",
+        "/layers/4/bone/scaleY": "3ff0000000000000",
+        "/skins/mesh/weights/0/0/weight": "3ff0000000000000",
+        "/skins/mesh/weights/1/0/weight": "3ff0000000000000",
+        "/skins/mesh/weights/2/0/weight": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/A/0": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/A/1": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/A/2": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/A/3": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/A/4": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/A/5": "0000000000000000",
+        "/atlases/0/width": "3ff0000000000000",
+        "/atlases/0/height": "3ff0000000000000",
+        "/atlases/0/entries/0/x": "0000000000000000",
+        "/atlases/0/entries/0/y": "0000000000000000",
+        "/atlases/0/entries/0/width": "3ff0000000000000",
+        "/atlases/0/entries/0/height": "3ff0000000000000"
+      },
+      "payloadCompactJsonSha256": "8d12a8740eff945576c0b83154f6a221bfc93b3fea5a353e032230158f065151",
+      "correlation": {
+        "callerGenerationU64": "5",
+        "candidateGenerationU64": "5",
+        "texturePlan": {
+          "schema": "vivi2d.evaluationTexturePlan.v1",
+          "textures": [
+            {
+              "id": "atlas:atlas",
+              "asset": {
+                "object_address_hex": "0707070707070707070707070707070707070707070707070707070707070707",
+                "storage_kind": "Blob",
+                "content_sha256_hex": "0707070707070707070707070707070707070707070707070707070707070707",
+                "media_type": "image/png",
+                "size_bytes_u64": "0"
+              },
+              "width_u32": "1",
+              "height_u32": "1",
+              "media_type": "image/png",
+              "color_space": "srgb",
+              "alpha_mode": "straight"
+            }
+          ]
+        }
+      },
+      "sourceStateReference": {
+        "file": "native-c10-concrete-inputs-skin-culling-1.json",
+        "pointer": "/scenarios/6/variants/2/sourceState",
+        "literalPatches": [
+          {
+            "pointer": "/skinnedRestInputBitsByMesh/mesh/4",
+            "before": "3690000000000000",
+            "after": "3680000000000000"
+          }
+        ]
+      },
+      "actions": [
+        {
+          "kind": "construct-initial"
+        }
+      ],
+      "injections": [],
+      "notes": [
+        "Independent supplemental variant; old exact-half input unchanged. Payload has exactly one changed numeric leaf.",
+        "No C10 execution; statuses are expected obligations, C9 admission separately reported."
+      ]
+    },
+    {
+      "id": "strict-below-half-dynamic9-repair",
+      "scenarioId": "supplement-legacy-strict-below-half",
+      "classification": "public-input",
+      "baseInput": {
+        "pin": {
+          "name": "native-c10-concrete-inputs-skin-culling-1.json",
+          "bytes": 596935,
+          "sha256": "2983caf1ac6796464fce251cda1d825558a9848be23dab86873678001e5f1612"
+        },
+        "pointer": "/scenarios/6/variants/3",
+        "resolvedPayloadCompactJsonSha256": "289f30b40383bd442588326a57d62f3e387cebfbb56773f2bc944d538b528eed"
+      },
+      "payloadLeafPatch": {
+        "pointer": "/parameterBindings/0/bindingPoints/1/targetValue",
+        "beforeD64Bits": "3690000000000000",
+        "afterD64Bits": "3680000000000000"
+      },
+      "payload": {
+        "schema": "vivi2d.evaluationPayload.v1",
+        "canvas": {
+          "width": 32,
+          "height": 64
+        },
+        "layers": [
+          {
+            "id": "mesh",
+            "name": "mesh",
+            "kind": "viviMesh",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "mesh": {
+              "vertices": [
+                0,
+                0,
+                1,
+                0,
+                0,
+                0
+              ],
+              "uvs": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ],
+              "indices": [
+                0,
+                1,
+                2
+              ],
+              "divisionsX": 1,
+              "divisionsY": 1
+            }
+          },
+          {
+            "id": "A",
+            "name": "A",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          },
+          {
+            "id": "C",
+            "name": "C",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          },
+          {
+            "id": "D",
+            "name": "D",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          }
+        ],
+        "parameters": [
+          {
+            "id": "p",
+            "name": "p",
+            "minValue": 0,
+            "maxValue": 1,
+            "defaultValue": 0
+          }
+        ],
+        "parameterBindings": [
+          {
+            "id": "B-x",
+            "parameterId": "p",
+            "target": {
+              "type": "bone",
+              "boneId": "B",
+              "property": "x"
+            },
+            "bindingPoints": [
+              {
+                "paramValue": 0,
+                "targetValue": 1
+              },
+              {
+                "paramValue": 1,
+                "targetValue": 3.503246160812043e-46
+              }
+            ]
+          }
+        ],
+        "skins": {
+          "mesh": {
+            "weights": [
+              [
+                {
+                  "boneId": "A",
+                  "weight": 1
+                }
+              ],
+              [
+                {
+                  "boneId": "A",
+                  "weight": 1
+                }
+              ],
+              [
+                {
+                  "boneId": "B",
+                  "weight": 1
+                }
+              ]
+            ],
+            "bindPoseInverse": {
+              "A": [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0
+              ],
+              "B": [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "ikControllers": [],
+        "physicsGroups": [],
+        "colliders": [],
+        "expressionPresets": [],
+        "clips": [],
+        "stateMachines": [],
+        "atlases": [
+          {
+            "id": "atlas",
+            "width": 1,
+            "height": 1,
+            "entries": [
+              {
+                "layerId": "mesh",
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1
+              }
+            ]
+          }
+        ]
+      },
+      "payloadNumericD64Bits": {
+        "/canvas/width": "4040000000000000",
+        "/canvas/height": "4050000000000000",
+        "/layers/0/opacity": "3ff0000000000000",
+        "/layers/0/x": "0000000000000000",
+        "/layers/0/y": "0000000000000000",
+        "/layers/0/width": "3ff0000000000000",
+        "/layers/0/height": "3ff0000000000000",
+        "/layers/0/mesh/vertices/0": "0000000000000000",
+        "/layers/0/mesh/vertices/1": "0000000000000000",
+        "/layers/0/mesh/vertices/2": "3ff0000000000000",
+        "/layers/0/mesh/vertices/3": "0000000000000000",
+        "/layers/0/mesh/vertices/4": "0000000000000000",
+        "/layers/0/mesh/vertices/5": "0000000000000000",
+        "/layers/0/mesh/uvs/0": "0000000000000000",
+        "/layers/0/mesh/uvs/1": "0000000000000000",
+        "/layers/0/mesh/uvs/2": "0000000000000000",
+        "/layers/0/mesh/uvs/3": "0000000000000000",
+        "/layers/0/mesh/uvs/4": "0000000000000000",
+        "/layers/0/mesh/uvs/5": "0000000000000000",
+        "/layers/0/mesh/indices/0": "0000000000000000",
+        "/layers/0/mesh/indices/1": "3ff0000000000000",
+        "/layers/0/mesh/indices/2": "4000000000000000",
+        "/layers/0/mesh/divisionsX": "3ff0000000000000",
+        "/layers/0/mesh/divisionsY": "3ff0000000000000",
+        "/layers/1/opacity": "3ff0000000000000",
+        "/layers/1/x": "0000000000000000",
+        "/layers/1/y": "0000000000000000",
+        "/layers/1/width": "3ff0000000000000",
+        "/layers/1/height": "3ff0000000000000",
+        "/layers/1/bone/angle": "0000000000000000",
+        "/layers/1/bone/length": "3ff0000000000000",
+        "/layers/1/bone/scaleX": "3ff0000000000000",
+        "/layers/1/bone/scaleY": "3ff0000000000000",
+        "/layers/2/opacity": "3ff0000000000000",
+        "/layers/2/x": "0000000000000000",
+        "/layers/2/y": "0000000000000000",
+        "/layers/2/width": "3ff0000000000000",
+        "/layers/2/height": "3ff0000000000000",
+        "/layers/2/bone/angle": "0000000000000000",
+        "/layers/2/bone/length": "3ff0000000000000",
+        "/layers/2/bone/scaleX": "3ff0000000000000",
+        "/layers/2/bone/scaleY": "3ff0000000000000",
+        "/layers/3/opacity": "3ff0000000000000",
+        "/layers/3/x": "0000000000000000",
+        "/layers/3/y": "0000000000000000",
+        "/layers/3/width": "3ff0000000000000",
+        "/layers/3/height": "3ff0000000000000",
+        "/layers/3/bone/angle": "0000000000000000",
+        "/layers/3/bone/length": "3ff0000000000000",
+        "/layers/3/bone/scaleX": "3ff0000000000000",
+        "/layers/3/bone/scaleY": "3ff0000000000000",
+        "/layers/4/opacity": "3ff0000000000000",
+        "/layers/4/x": "0000000000000000",
+        "/layers/4/y": "0000000000000000",
+        "/layers/4/width": "3ff0000000000000",
+        "/layers/4/height": "3ff0000000000000",
+        "/layers/4/bone/angle": "0000000000000000",
+        "/layers/4/bone/length": "3ff0000000000000",
+        "/layers/4/bone/scaleX": "3ff0000000000000",
+        "/layers/4/bone/scaleY": "3ff0000000000000",
+        "/parameters/0/minValue": "0000000000000000",
+        "/parameters/0/maxValue": "3ff0000000000000",
+        "/parameters/0/defaultValue": "0000000000000000",
+        "/parameterBindings/0/bindingPoints/0/paramValue": "0000000000000000",
+        "/parameterBindings/0/bindingPoints/0/targetValue": "3ff0000000000000",
+        "/parameterBindings/0/bindingPoints/1/paramValue": "3ff0000000000000",
+        "/parameterBindings/0/bindingPoints/1/targetValue": "3680000000000000",
+        "/skins/mesh/weights/0/0/weight": "3ff0000000000000",
+        "/skins/mesh/weights/1/0/weight": "3ff0000000000000",
+        "/skins/mesh/weights/2/0/weight": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/A/0": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/A/1": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/A/2": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/A/3": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/A/4": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/A/5": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/B/0": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/B/1": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/B/2": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/B/3": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/B/4": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/B/5": "0000000000000000",
+        "/atlases/0/width": "3ff0000000000000",
+        "/atlases/0/height": "3ff0000000000000",
+        "/atlases/0/entries/0/x": "0000000000000000",
+        "/atlases/0/entries/0/y": "0000000000000000",
+        "/atlases/0/entries/0/width": "3ff0000000000000",
+        "/atlases/0/entries/0/height": "3ff0000000000000"
+      },
+      "payloadCompactJsonSha256": "00f1e29a0510009a14c1c15ca6208fb066278fd892d75454345e0ffa47aeab5a",
+      "correlation": {
+        "callerGenerationU64": "5",
+        "candidateGenerationU64": "5",
+        "texturePlan": {
+          "schema": "vivi2d.evaluationTexturePlan.v1",
+          "textures": [
+            {
+              "id": "atlas:atlas",
+              "asset": {
+                "object_address_hex": "0707070707070707070707070707070707070707070707070707070707070707",
+                "storage_kind": "Blob",
+                "content_sha256_hex": "0707070707070707070707070707070707070707070707070707070707070707",
+                "media_type": "image/png",
+                "size_bytes_u64": "0"
+              },
+              "width_u32": "1",
+              "height_u32": "1",
+              "media_type": "image/png",
+              "color_space": "srgb",
+              "alpha_mode": "straight"
+            }
+          ]
+        }
+      },
+      "sourceStateReference": {
+        "file": "native-c10-concrete-inputs-skin-culling-1.json",
+        "pointer": "/scenarios/6/variants/3/sourceState",
+        "literalPatches": []
+      },
+      "actions": [
+        {
+          "kind": "construct-initial"
+        },
+        {
+          "kind": "set_input",
+          "parameterId": "p",
+          "valueD64Bits": "3ff0000000000000"
+        },
+        {
+          "kind": "update",
+          "deltaD64Bits": "0000000000000000"
+        },
+        {
+          "kind": "set_input",
+          "parameterId": "p",
+          "valueD64Bits": "0000000000000000"
+        },
+        {
+          "kind": "update",
+          "deltaD64Bits": "0000000000000000"
+        }
+      ],
+      "injections": [],
+      "notes": [
+        "Independent supplemental variant; old exact-half input unchanged. Payload has exactly one changed numeric leaf.",
+        "No C10 execution; statuses are expected obligations, C9 admission separately reported."
+      ]
+    }
+  ]
+}

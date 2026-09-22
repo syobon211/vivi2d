@@ -1,5 +1,10 @@
 // Menu bar + .vivid dialog
 export const menu = {
+  "menu.v11Copy": "Save v11 copy (supported profile)",
+  "menu.v11Fork": "Save v11 fork (new document identity)",
+  "menu.v11Original": "Duplicate originally opened v11 file",
+  "menu.v11Unused": "Remove unused v11 images (undoable)",
+  "menu.v11Replace": "Choose replacement PNG (detach shared atlas)",
   "menu.fileMenu": "File",
   "menu.viewMenu": "View",
   "menu.settingsMenu": "Settings",
@@ -55,18 +60,17 @@ export const menu = {
   "notify.vividImportFailed": ".vivid import failed",
   "notify.projectLoadFailed": "Project load failed",
   "notify.projectSaveFailed": "Project save failed",
+  "notify.projectSaveBusy": "A Project save is already in progress.",
+  "notify.projectWrittenMetadataFailed":
+    "The file was written, but the Editor could not update its saved-state record. Your current edits remain active.",
   "notify.psdLoadFailed": "PSD file load failed",
   "notify.undoFailed": "Undo failed",
   "notify.redoFailed": "Redo failed",
   "notify.actionFailed": "Action failed",
-  "notify.cleanedParameterBindings":
-    "Removed {count} stale parameter binding(s).",
-  "notify.cleanedStateMachines":
-    "Cleaned {count} stale state machine reference(s).",
-  "notify.cleanedSceneBlends":
-    "Cleaned {count} stale scene blend reference(s).",
-  "notify.cleanedAnimationTracks":
-    "Cleaned {count} stale animation track reference(s).",
+  "notify.cleanedParameterBindings": "Removed {count} stale parameter binding(s).",
+  "notify.cleanedStateMachines": "Cleaned {count} stale state machine reference(s).",
+  "notify.cleanedSceneBlends": "Cleaned {count} stale scene blend reference(s).",
+  "notify.cleanedAnimationTracks": "Cleaned {count} stale animation track reference(s).",
   "notify.defaultFormLocked":
     "The default form is locked. Move a parameter or unlock it first.",
   "notify.audioInputFailed": "Failed to connect audio input",

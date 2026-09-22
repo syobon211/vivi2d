@@ -1,6 +1,69 @@
 // All dialogs (external JSON export / Media output / Validation / PSD reimport /
 // ComfyUI / Error boundary / Notification toast / Generic dialog)
 export const dialog = {
+  "runtimePreview.title": "Runtime preview",
+  "runtimePreview.scope":
+    "Preview a selected .vivi snapshot for this replica. This does not edit, save or publish the Project.",
+  "runtimePreview.open": "Preview a Project",
+  "runtimePreview.reload": "Reload",
+  "runtimePreview.close": "Close preview",
+  "runtimePreview.loading": "Preparing preview…",
+  "runtimePreview.ready": "Preview ready",
+  "runtimePreview.warning":
+    "Preview state was applied, but display or cleanup did not complete. Reload to recover.",
+  "runtimePreview.missing":
+    "Required assets are missing. The current image is unchanged.",
+  "runtimePreview.failed": "Preview failed. Reload to try again.",
+  "runtimePreview.parameter": "Parameter",
+  "runtimePreview.preset": "Expression preset",
+  "runtimePreview.generation": "Runtime generation",
+  "localExchange.title": "Durable local jobs and exchange",
+  "localAssetCopy.title": "Copy a referenced Project locally",
+  "localAssetCopy.scope":
+    "Copy the accepted canonical Project and its PNG assets between local replicas. This does not open it in the Editor, change its content, or publish a Sync revision.",
+  "localAssetCopy.source": "Source replica",
+  "localAssetCopy.receiver": "Receiver replica",
+  "localAssetCopy.prepare": "Select Project",
+  "localAssetCopy.commit": "Copy assets and Save As",
+  "localAssetCopy.cancel": "Cancel remaining work",
+  "localAssetCopy.consent":
+    "Copy this captured Project and its assets to the selected local replica? Save As will ask for a destination. Completed immutable assets remain if later work fails or is cancelled.",
+  "localAssetCopy.unavailable": "Copy is unavailable for this runtime configuration.",
+  "localAssetCopy.failed":
+    "The copy result could not be confirmed. Check the selected output before retrying. Completed immutable assets may remain.",
+  "localAssetCopy.ambiguous":
+    "Work may have completed, but its result could not be confirmed. Check the selected output, then select the same Project for an explicit retry.",
+  "localAssetCopy.committed": "Canonical Project copy saved for document:",
+  "localExchange.scope":
+    "Internal local mode. Requests and results remain on this computer. Nothing starts automatically after restart.",
+  "localExchange.refresh": "Refresh",
+  "localExchange.createWorkspace": "Create local workspace",
+  "localExchange.workspace": "Workspace",
+  "localExchange.replica": "Create matching replica",
+  "localExchange.publish": "Publish current complete v11",
+  "localExchange.target": "Target replica",
+  "localExchange.queue": "Queue current v11 against target head",
+  "localExchange.deliver": "Deliver / replay",
+  "localExchange.queuePrompt": "Queue prompt job",
+  "localExchange.queueImage": "Select image and queue job",
+  "localExchange.job": "Job",
+  "localExchange.retry": "Explicit retry",
+  "localExchange.start": "Start",
+  "localExchange.cancel": "Cancel",
+  "localExchange.selection": "Select exact result artifacts",
+  "localExchange.consent":
+    "Replace the current editor with this retained candidate? Unsaved changes will be replaced.",
+  "localExchange.approve": "Approve ordinary import",
+  "localExchange.reject": "Reject proposal",
+  "localExchange.psd": "Queue separate PSD conversion (server dependency)",
+  "localExchange.openCandidate": "Open retained approved candidate",
+  "localExchange.legacy":
+    "Ordinary Provider imports retain all supported data. They are not v11 Sync revisions or exact Project-artifact acceptance proofs.",
+  "localExchange.failed":
+    "Operation failed or became stale. Refresh state before another explicit action.",
+  "localExchange.unavailable": "Local exchange is unavailable.",
+  "localExchange.integrity":
+    "Some retained cells failed integrity checks and are unavailable.",
   "export.spineTitle": "External JSON Export",
   "export.noViviMesh": "No ViviMeshes",
   "export.outputFiles": "Output Files",

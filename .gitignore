@@ -9,7 +9,9 @@ node_modules/
 
 # Build outputs
 dist/
+electron/generated/
 packages/runtime-native/target/
+/target/
 *.tsbuildinfo
 
 # Test and report outputs

@@ -1,3 +1,5 @@
+import { ensureProjectDefaults } from "../project-migration";
+import type { ProjectData } from "../types";
 import {
   ProjectFormatV11SemanticError,
   type ProjectFormatV11SemanticErrorCode,
@@ -1087,29 +1089,9 @@ function materializeCanonicalV11Project(
   project: NormalizedViviFileDataV11["project"] | ProjectDataV11 | ProjectDataWireV1To10,
 ): ProjectDataV11 {
   const output = cloneJsonValue(project) as Record<string, unknown>;
-  output.name ??= "Untitled";
-  output.width ??= 1;
-  output.height ??= 1;
-  output.clips ??= [];
-  output.scenes ??= [];
-  output.physicsGroups ??= [];
-  output.lipsyncConfig ??= {
-    enabled: false,
-    targetParameterId: null,
-    source: "microphone",
-    threshold: 0.02,
-    smoothing: 0.7,
-    gain: 2,
-  };
-  output.skins ??= {};
-  output.parameterBindings ??= [];
-  output.sceneBlends ??= [];
-  output.ikControllers ??= [];
-  output.offscreenTargets ??= [];
-  output.expressionPresets ??= [];
-  output.colliders ??= [];
-  output.stateMachines ??= [];
-  return output as unknown as ProjectDataV11;
+  return ensureProjectDefaults(
+    output as unknown as ProjectData,
+  ) as unknown as ProjectDataV11;
 }
 
 function projectOrdinaryMaskLayer(layer: NormalizedProjectLayerV11): ProjectLayerV11 {

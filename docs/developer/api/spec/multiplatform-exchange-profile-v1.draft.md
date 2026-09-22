@@ -2,7 +2,8 @@
 
 ## Status And Authority
 
-- Status: public design draft; not normative and not implemented.
+- Status: public design draft; not normative or adopted as an interoperable
+  product contract. Implemented internal slices do not close the adoption gates.
 - Scope: the minimum provider-neutral data exchange between the Vivi2D Windows
   application and a compatible client, including the intended proprietary iOS
   companion.
@@ -92,10 +93,12 @@ extended blend modes, inverted masks, and provider metadata. The owning Project
 specification MUST freeze the exact fields, defaults, limits, and fixture
 manifest before adoption.
 
-This is a proposed profile, not a statement about the current Windows writer.
-The ordinary Windows writer currently emits version 9, the normal parser and
-runtime accept through version 10, and Project v11 is an internal foundation.
-Adoption therefore requires an explicit migration and normal load/save change.
+This is a proposed interoperability profile, not a public adoption claim.
+Legacy Windows documents retain their version-9 writer and v1-v10 parser/runtime
+path. The separate bounded embedded-v11 Editor route now supplies explicit copy
+migration and retained-carrier ordinary load/save; it does not replace all legacy
+saves or satisfy the independent-consumer/public-promotion gates by itself.
+Its implemented limits and operations are recorded in the Project draft.
 
 `documentId` identifies the authoring document. It MUST NOT be treated as a
 Sync revision identifier, an account identifier, an authorization principal,
@@ -204,8 +207,8 @@ document identically. A `runtime-parity` claim additionally requires:
   language-neutral consumer boundary;
 - an explicit consumer surface for Evaluation load, lifecycle, snapshots,
   errors, ownership, and generation behavior;
-- completion of the model-ready Evaluation path, including the currently open
-  category 10 and category 11 obligations;
+- accepted evidence for the model-ready Evaluation path, including the
+  implemented internal category 10 and category 11 obligations;
 - connection of deterministic math to the evaluator;
 - the same golden, hostile, and unsupported-feature fixtures on the
   TypeScript, native, and claimed target implementations; and

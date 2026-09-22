@@ -13,12 +13,26 @@ on:
       - "packages/runtime/**"
       - "packages/runtime-native/**"
       - "packages/runtime-wasm/**"
+      - "packages/editor-host/**"
+      - "packages/renderer-pixi/**"
+      - "packages/model/src/project-format-v11/**"
+      - "packages/model/src/internal/project-format-v11.ts"
+      - "packages/model/src/evaluation-payload-v1/**"
+      - "packages/model/src/internal/evaluation-payload-v1.ts"
+      - "src/lib/project-v11-native-png.ts"
+      - "src/lib/__tests__/project-v11-native-png.test.ts"
+      - "src/lib/runtime-evaluation-preview.ts"
+      - "src/lib/__tests__/runtime-evaluation-preview.test.ts"
+      - "src/lib/local-asset-copy.ts"
+      - "src/components/RuntimePreviewPanel.tsx"
+      - "scripts/check-editor-v11-masks-browser.mjs"
       - "scripts/check-runtime-native-wasm.mjs"
       - "scripts/check-native-artifact-policy.mjs"
       - "scripts/check-runtime-wasm-browser.mjs"
       - "scripts/run-quality-gates.mjs"
       - "scripts/generate-runtime-native-wasm-module.mjs"
       - "tests/conformance/runtime-v1/**"
+      - "tests/conformance/project-embedded-round-trip-v11/**"
       - "tsconfig.json"
       - "tsconfig.packages.json"
       - "vite.aliases.ts"
@@ -45,4 +59,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npm run test:runtime-wasm:browser
+      - run: xvfb-run --auto-servernum -- npm run test:runtime-wasm:browser -- --headed
+      - name: Verify real Editor v11 WebGL mask pixels
+        run: node scripts/check-editor-v11-masks-browser.mjs
+      - run: npx biome check scripts/check-runtime-wasm-browser.mjs scripts/check-editor-v11-masks-browser.mjs packages/runtime-wasm/src/internal/evaluation-runtime-v1.ts packages/renderer-pixi/src/evaluation-model.ts

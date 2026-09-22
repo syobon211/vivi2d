@@ -2,8 +2,11 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
+import { loadC10Corpus } from "./lib/evaluation-lowering-c10-corpus.mjs";
+import { executeC10 } from "./lib/evaluation-lowering-c10-execution.mjs";
 
 const root = process.cwd();
+const executeC10Mode = process.argv.length === 3 && process.argv[2] === "--execute-c10";
 const protectedBodyPaths = new Set([
   "src/lib/__tests__/see-through-auto-setup.test.ts",
   "src/lib/see-through-auto-setup.ts",
@@ -55,69 +58,416 @@ const approvedCategory9Artifacts = [
 
 const expectedLoweringFiles = [
   "Cargo.toml",
+  "fixtures/c10/frozen-c9-setups.rs",
+  "fixtures/c10/native-c10-c11-identity-addendum-1.json",
+  "fixtures/c10/native-c10-postseal-identity-addendum-1.json",
+  "fixtures/c10/native-c10-phase-b-identity-addendum-1.json",
+  "fixtures/c10/native-c10-c2-identity-addendum-1.json",
+  "fixtures/c10/native-c10-callable-allocation-closure-4.json",
+  "fixtures/c10/native-c10-callable-allocation-closure-4.md",
+  "fixtures/c10/native-c10-case-index-manifest-1.json",
+  "fixtures/c10/native-c10-freeze-assertion-binding-2.json",
+  "fixtures/c10/native-c10-machine-dag-physics-slots-1.json",
+  "fixtures/c10/native-c10-review-data-bundle-3.json",
+  "fixtures/c10/native-c10-review-input-bundle-1.json",
+  "fixtures/c10/native-c10-skinned-offset-invariance-supplement-1.json",
+  "fixtures/c10/native-c10-source-bindings-4.json",
+  "fixtures/c10/native-c10-source-callsite-map-2.json",
+  "fixtures/c10/native-c10-strict-underflow-expectations-1.json",
+  "fixtures/c10/native-c10-strict-underflow-inputs-1.json",
+  "fixtures/c10/raw-transcendental-edge-matrix-1-expectations.json",
+  "fixtures/c10/raw-transcendental-edge-matrix-1-inputs.json",
+  "fixtures/c10/source-pins.json",
   "fixtures/evaluation-category9-reservation-v1-vectors.json",
   "fixtures/evaluation-lowering-v1-vectors.json",
+  "fixtures/c11-case139-topology.json",
+  "src/derived.rs",
+  "src/derived_candidate.rs",
   "src/error.rs",
   "src/lib.rs",
   "src/lower.rs",
   "src/model.rs",
+  "src/observation.rs",
+  "src/physics.rs",
+  "src/preparation.rs",
+  "src/preparation/tests.rs",
   "src/reservation.rs",
+  "src/sealed_candidate.rs",
+  "src/snapshot.rs",
+  "src/state.rs",
   "src/tests.rs",
+  "src/tests/c11.rs",
+  "src/topology.rs",
+  "src/topology_reservation.rs",
+  "tests/c10/README.md",
+  "tests/c10/generate-cases.mjs",
+  "tests/c10/generate-controls.mjs",
+  "tests/c10/generate-identities.mjs",
+  "tests/c10/generate-inputs.mjs",
+  "tests/c10/generate-projection-scope.mjs",
+  "tests/c10/generate-scopes.mjs",
+  "tests/c10/generate.mjs",
+  "tests/c10/literal_types.rs",
+  "tests/c10/production_boundary.rs",
+  "tests/c10/support/allocation_guard.rs",
+  "tests/c10/support/compare.rs",
+  "tests/c10/support/helper_checks.rs",
+  "tests/c10/support/injections.rs",
+  "tests/c10/support/native.rs.in",
+  "tests/c10/support/native_prerequisites.rs",
+  "tests/c10/support/raw_checks.rs",
+  "tests/c10/support/route_setup.rs",
+  "tests/c10/support/shared_full_route.rs",
+  "tests/c10/support/state_checks.rs",
+  "tests/c10/support/wasm.rs.in",
   "tests/no_allocation.rs",
   "tests/wasm_compile.rs",
 ].sort();
 
 const pinnedLoweringFiles = [
-  ["Cargo.toml", 715, "5f7fa0f5f3724fc64423ff42028afbeaf3775fbf5c61bfb44c9389ae136251b0"],
+  [
+    "fixtures/c10/native-c10-c2-identity-addendum-1.json",
+    5298,
+    "821a1d71afe238531c275b32eba8f51d8107a7914ba04b1ee6d0082bfb952f0a",
+  ],
+  [
+    "fixtures/c10/native-c10-phase-b-identity-addendum-1.json",
+    3201,
+    "514df71a6afb0e9e2b629961077b332750e35b5c95280b5227540821511a6c53",
+  ],
+  [
+    "fixtures/c10/native-c10-postseal-identity-addendum-1.json",
+    3125,
+    "3546eb1b46ed7ce8d30a24f040a981e1833be7ff0d4ddc6526d5b1a377c7eb70",
+  ],
+  [
+    "src/preparation.rs",
+    6951,
+    "2457b7bbaaa77f4ba3d843df5e9012c6e941b3a0605ef4a15ae8975ae60506f5",
+  ],
+  [
+    "src/preparation/tests.rs",
+    10147,
+    "632cb727ba65043c9ffec4b3eb2cc31d4413cfb9a1292c3cff437fc7435cafc9",
+  ],
+  [
+    "fixtures/c10/native-c10-c11-identity-addendum-1.json",
+    5294,
+    "96438b584cca5132e62400b08e444a2d4e1bec5d2ff3cf2c3adddfd8fee72863",
+  ],
+  [
+    "fixtures/c11-case139-topology.json",
+    6393,
+    "fa10dd5029229f55bbd31205f31e95599cd567da5dcef31007c119cce4583e39",
+  ],
+  [
+    "src/sealed_candidate.rs",
+    9083,
+    "5520bf2283169629ed8ac3ae753c8200f0231efea9095c04941da209f45ce8a0",
+  ],
+  [
+    "src/snapshot.rs",
+    8905,
+    "ab11e2d4645edd3f9af12b92568fb4eedbcb8d03bcc13f4ecafe20b9d96ec042",
+  ],
+  [
+    "src/tests/c11.rs",
+    18005,
+    "2e3f3e04d72d75e302e88a73b381dce9c6cdd35bebf40a213566d12978c2986b",
+  ],
+  [
+    "src/topology.rs",
+    14151,
+    "a355b9506c6487440e37c876b6c65220d72426897f6842db5d7bc54a316d4f6d",
+  ],
+  [
+    "src/topology_reservation.rs",
+    5284,
+    "92aeca9708b01db3ef18cc4a76be84782710d57d8e949952aefb7c1cdff4d42a",
+  ],
+  ["Cargo.toml", 948, "7be7d380ee31a1570d45c6944bbe7c6520863f03ef8a6ccde6f139222b437f76"],
+  [
+    "fixtures/c10/frozen-c9-setups.rs",
+    592053,
+    "fb98a3be0394894ffe3ed5c0245c2ff882de675f8bfa783af353a4f8ceb02536",
+  ],
+  [
+    "fixtures/c10/native-c10-callable-allocation-closure-4.json",
+    37990,
+    "0b5550665bb38cc5d0de6fc385a3804f2b153cfd196bb1c354883d21f00673e3",
+  ],
+  [
+    "fixtures/c10/native-c10-callable-allocation-closure-4.md",
+    16581,
+    "c1a42ca042a9d8eea7978b8d579f6675fe54e98055645dd1f9a7a8980bb289c6",
+  ],
+  [
+    "fixtures/c10/native-c10-case-index-manifest-1.json",
+    124683,
+    "3af093cec5c2b43bd8e711a3f4a40b3d496030c15f14870612db281404190ac1",
+  ],
+  [
+    "fixtures/c10/native-c10-freeze-assertion-binding-2.json",
+    44364,
+    "0bac949d56bc041899ce7bdbdd5a6949cc94171fbc8855c7e7f9aa3ab369ed0e",
+  ],
+  [
+    "fixtures/c10/native-c10-machine-dag-physics-slots-1.json",
+    278245,
+    "5592bdc24cf768069d0746922c3056aa38e57152aabbef5537e2ea8a211abdfc",
+  ],
+  [
+    "fixtures/c10/native-c10-review-data-bundle-3.json",
+    729926,
+    "3d857898abacc4487fceb9a610890cd440e4f29c0307ab6a023fed96b6c2f34f",
+  ],
+  [
+    "fixtures/c10/native-c10-review-input-bundle-1.json",
+    895432,
+    "db4c199b6da49167f9e63d1fa761af80d1a7e46ece4a795f9d61a37ab4715b1e",
+  ],
+  [
+    "fixtures/c10/native-c10-skinned-offset-invariance-supplement-1.json",
+    10581,
+    "ca9b8a299e1e4a5206d5d881c1a6739df1019f087da745ab01071ed815580b87",
+  ],
+  [
+    "fixtures/c10/native-c10-source-bindings-4.json",
+    12941,
+    "7f6f25a100036b72814fd5e9ff9d3c8dce840e4329a7cda219f9c34b69dd7bc2",
+  ],
+  [
+    "fixtures/c10/native-c10-source-callsite-map-2.json",
+    336521,
+    "6bc5b813a7b4a46579ce4c50d82b3238bb1b064b30bc002dbd3cdfed00e14f86",
+  ],
+  [
+    "fixtures/c10/native-c10-strict-underflow-expectations-1.json",
+    36328,
+    "00fd92ded8e323ff4d4919f34291052251b400177661e84f7458bd898e36197a",
+  ],
+  [
+    "fixtures/c10/native-c10-strict-underflow-inputs-1.json",
+    23640,
+    "03b73c616f0df051a6cc1a12ee386c9921cb9cb11a701ec973858d187d0099b5",
+  ],
+  [
+    "fixtures/c10/raw-transcendental-edge-matrix-1-expectations.json",
+    199979,
+    "6c1122d2e1aa27299e96ed71adc4825a2069dfee16a2b941c21d0d897ebcf88c",
+  ],
+  [
+    "fixtures/c10/raw-transcendental-edge-matrix-1-inputs.json",
+    193664,
+    "bb7cfca12a27fdad8fe7339e0c0cf0e17be29c155b77f697ae39f75d9b40e25e",
+  ],
+  [
+    "fixtures/c10/source-pins.json",
+    19682,
+    "f671bf1e5321e595caa07dd8584c88fc936b1bbb893f9b447b00be8e9b76595c",
+  ],
   [
     "fixtures/evaluation-category9-reservation-v1-vectors.json",
-    210_149,
+    210149,
     "06111e2868d6d007062dcf36dc8bffeaa8b45da5f6a0651a5a61492866b37ecc",
   ],
   [
     "fixtures/evaluation-lowering-v1-vectors.json",
-    90_906,
+    90906,
     "eadd382db0f9c08b61b2f714cde7714d0706aaa5ed2c0edf99f7ad2fa27b5f9b",
   ],
   [
+    "src/derived.rs",
+    52152,
+    "1e3a78a7c53769b258cfae84a2bd315f52c02d12be7274a2c5f60360c98f0388",
+  ],
+  [
+    "src/derived_candidate.rs",
+    12566,
+    "f88527dacdaa7b8c9a056a8d8880100da6254a66ec6fdc4949f685ad4b39920d",
+  ],
+  [
     "src/error.rs",
-    5_868,
+    5868,
     "3e5f2d3e76efa4c957f77d95060b8e041827e41bd815cf5a64333cb180d54b07",
   ],
   [
     "src/lib.rs",
-    4_455,
-    "694ca4b985355f50e897f2948439cb4bea07afaec3629c297fa35eadc1e6526f",
+    5848,
+    "da1b8554b26d8df5fd6176c5857002ec9138f58b05967f7d7e90e2aa4bbe681b",
   ],
   [
     "src/lower.rs",
-    101_620,
-    "aaefd1b24b145048fb80e97e2a00af40cc954717c8249ea8156eff9bf0861cf4",
+    102865,
+    "56a2790888b62aec45add9ab39f0f4a449d776f92a6288a8afb86b8ca55fc8f8",
   ],
   [
     "src/model.rs",
-    24_803,
+    24803,
     "90c007dabc9994f4c1fe7cd63f78b7c92b5f84119c4b896305d8d4e33a3283da",
   ],
   [
+    "src/observation.rs",
+    8699,
+    "36a6fb5d233e135ad2c7b257270cc8fd3b09407dfee4efdbb8ec514e28bf6664",
+  ],
+  [
+    "src/physics.rs",
+    22120,
+    "5257925d19242f7f588b862c21e692893939b757978024bf2a47ce9ea92b9249",
+  ],
+  [
     "src/reservation.rs",
-    36_783,
-    "9312254fa5f547709291853cdf36a9ffafcca3c74e8b29f613921af88b6dc1be",
+    36834,
+    "d5d11b8df71023d7a5440f7d6877c9e4f2f221769d557d04d9a8f71d5e1b2324",
+  ],
+  [
+    "src/state.rs",
+    5157,
+    "a3c5567f307b778ba18a9a8339a3ae7175c3a9d9fb0101cdfbfdf34e411e8906",
   ],
   [
     "src/tests.rs",
-    68_955,
-    "c4febd763028503aaaa31fefe757644eae818ae6fca40e9166e75d2f48d2d3fc",
+    92471,
+    "fe5f08ba3e048177adef654cde70217278e78ac544c6ea5353e9eab7622bcc04",
+  ],
+  [
+    "tests/c10/README.md",
+    5080,
+    "314ff58cb56d04f78fb26dd5bbf107992e094ba027a0e3a6955371df699f6f96",
+  ],
+  [
+    "tests/c10/generate-cases.mjs",
+    34997,
+    "f6476b956394ae1a9a702a46f61295158bafbac08fc921a8890cfe42f8f0f19b",
+  ],
+  [
+    "tests/c10/generate-controls.mjs",
+    6351,
+    "63e4ee6a11d6d54f8c7d75942e71baea265e2cd3f6a37d456bcbd8ea84a450fe",
+  ],
+  [
+    "tests/c10/generate-identities.mjs",
+    2084,
+    "b91a85283fff86ecb054770c71490a0e0391ca00519608c691bf6d0bdd0b20ca",
+  ],
+  [
+    "tests/c10/generate-inputs.mjs",
+    5313,
+    "e2f3c9fa58f2f45983f1355c8ed629a8abdb81a4b020e85e257fb4bb6a760407",
+  ],
+  [
+    "tests/c10/generate-projection-scope.mjs",
+    3199,
+    "b138409d1d7d87b9d7f558a43e40b997bbafa35c0c020321619eaa2ae964224d",
+  ],
+  [
+    "tests/c10/generate-scopes.mjs",
+    5085,
+    "c76ef465e37dff7291b0e37bc5b7ed96cd3b21df05daec9878df284d928c8e1d",
+  ],
+  [
+    "tests/c10/generate.mjs",
+    2827,
+    "762e755b1524e71fe9a5ec3d63e4262cc8fcaf40727286c6cc0715244420dc5d",
+  ],
+  [
+    "tests/c10/literal_types.rs",
+    10062,
+    "e4e3b25d9b40a67e0cf78f40942230f5dd81fea2efaa133ffb5d2c436f25b85e",
+  ],
+  [
+    "tests/c10/production_boundary.rs",
+    464,
+    "76432710a45a4a670e148676bcaccd0ea1ab1e7aa701f9067a7b8a71e5368895",
+  ],
+  [
+    "tests/c10/support/allocation_guard.rs",
+    2441,
+    "a1feef3636f5aded0ecc8c717ebdca55daa7f4ce7148f80c6f9d91b50c2402ce",
+  ],
+  [
+    "tests/c10/support/compare.rs",
+    5541,
+    "f100109b2331ca9409bdb78688815f2b0baaed2e0a224b33ec673b63ba0e3688",
+  ],
+  [
+    "tests/c10/support/helper_checks.rs",
+    3510,
+    "52b946494bb464629f243a11722861b7b905c36498f232c8d5f7bc680790a50e",
+  ],
+  [
+    "tests/c10/support/injections.rs",
+    3578,
+    "9ca8eb170764e356077c3686c0e8465c46d37616e538aef519637dbcfe1e80e7",
+  ],
+  [
+    "tests/c10/support/native.rs.in",
+    3736,
+    "972832957d682891c2d58ce46135cf14b959acf69cfe2f3f2bf0b910dae5e81d",
+  ],
+  [
+    "tests/c10/support/native_prerequisites.rs",
+    2242,
+    "67e112e8de9f5b0b7def4fa8e31f40495edd465f769eba4a638b922566158464",
+  ],
+  [
+    "tests/c10/support/raw_checks.rs",
+    1647,
+    "d54614e0fd64a3ca181f9dc5f35cb81901a233c423436ea30fcec5f809d0fcab",
+  ],
+  [
+    "tests/c10/support/route_setup.rs",
+    4246,
+    "e1f017171fa0a87932bab8020eb508478ccd2aef0ddb0f465e73589feec4d410",
+  ],
+  [
+    "tests/c10/support/shared_full_route.rs",
+    9116,
+    "e5e681fbb9f3abdc79e305f746200caa1c077601f3fe14107e927b2ba2839db4",
+  ],
+  [
+    "tests/c10/support/state_checks.rs",
+    36212,
+    "081b089c1c48bad391301fd55caf256a4ac01215fbe145d1dbcd7ed1669fb928",
+  ],
+  [
+    "tests/c10/support/wasm.rs.in",
+    7441,
+    "b51814cd1a141d0b8eaafcc558538ba890e56a72cf1a44d6bf29766a9e9751d3",
   ],
   [
     "tests/no_allocation.rs",
-    28_721,
-    "332dec391b826c2b27ac1643ce85f285f9b8600b69527e4f806fe073f5ffe62b",
+    33162,
+    "761a715a9b001bc0f83b7195e951f2d9946efbf45c3f445b859447eb8028154c",
   ],
   [
     "tests/wasm_compile.rs",
-    10_382,
-    "5e34a72e859a9ae745b5eba4c893b9f9a0ea2df3a48f80af96bea131f92e7d4f",
+    12725,
+    "f0b1da3e199849ab01d11d4cdbcd6b691d280a8f4fdd89bcd472ca58eebfa94e",
+  ],
+].sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0));
+
+const pinnedC10Helpers = [
+  [
+    "scripts/lib/evaluation-lowering-c10-corpus.mjs",
+    8345,
+    "8353d54d5597aa9d3421677088d000b0c2c934296872492bce3b35c870effedd",
+  ],
+  [
+    "scripts/lib/evaluation-lowering-c10-corpus.node-test.mjs",
+    3944,
+    "db047284183e391a7b9eab4ee21775cee2e1a5a6d0324c44a3a2f4fa8d026253",
+  ],
+  [
+    "scripts/lib/evaluation-lowering-c10-execution.mjs",
+    17240,
+    "7710522aee9381d673442356c31c940e65ada7bd17dc0d461d79ed420f732462",
+  ],
+  [
+    "scripts/lib/evaluation-lowering-c10-wasm-worker.mjs",
+    2679,
+    "72930bf3dc6f9eb38f9cda98ea45f2abe85e6c2e8b1d673c6dbbb3b89bf2f707",
   ],
 ];
 
@@ -443,6 +793,9 @@ const category9NormativeSectionPins = {
 };
 
 const expectedTestNames = [
+  "selected_direct_fields_use_frozen_projection_vectors",
+  "integer_metadata_and_erased_fields_preserve_their_routes",
+  "unsupported_numeric_owners_follow_their_preflight_boundaries",
   "adjacent_lowering_categories_have_total_precedence",
   "all_thirteen_blends_cross_all_seven_recursive_contexts",
   "all_thirty_scalar_projection_vectors_are_bit_exact",
@@ -475,9 +828,12 @@ const expectedIntegrationTestNames = [
     [
       "a_real_production_reserve_failure_maps_to_resource_status_six",
       "all_39_reservations_are_the_only_allocations_during_lowering",
+      "all_five_topology_denials_share_the_c9_attempt_counter_and_stop_before_allocator",
       "an_intervening_zero_site_has_neither_hook_nor_allocator_ordinal",
       "every_exact_denial_tuple_stops_before_its_allocator_attempt",
       "public_entry_materialization_branch_matrix_has_no_post_reserve_allocation",
+      "real_allocator_failure_in_new_site_is_resource_and_has_no_later_attempt",
+      "sealed_public_entry_has_exact_44_reserves_then_no_fill_query_or_update_allocation",
     ],
   ],
   [
@@ -552,33 +908,50 @@ const expectedArrayCounts = {
 };
 
 const expectedProductionClosurePin = {
-  count: 42,
-  sha256: "c96f8c93bf0563682cfdd399e78bff76696a5ee29fff1833506c742d07e4895e",
+  count: 45,
+  sha256: "a37424a045af576abd150a5bd79a57bb355fc6a53117c3d0d80878e2f421570c",
 };
 const expectedDevClosurePin = {
-  count: 0,
-  sha256: "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  count: 8,
+  sha256: "2b7efc53ce9ad73ed536075e85fc4534faf533e6898e6c1f0f1d4bed765aa532",
 };
 
 try {
+  if (process.argv.length !== 2 && !executeC10Mode) {
+    throw new Error("Only --execute-c10 is supported");
+  }
   const category9Vectors = assertCategory9ReviewUnit();
   assertSourceInventory();
+  assertC10AuthorityBindings();
   const vectors = assertApprovedReviewUnit();
   const metadata = assertCargoBoundary();
   assertDependencyPins(metadata);
   assertConsumerGraph(metadata);
   assertPublicSurface();
   assertFoundationContract(vectors, category9Vectors);
+  assertC11ImplementationContract();
+  assertPostsealImplementationContract();
   assertIsolation(metadata);
   assertGateAndDocumentationWiring();
+  loadC10Corpus().verify();
   runCategory9AllocatorGate();
   runRustdocGate();
+  if (executeC10Mode) {
+    const execution = await executeC10(root);
+    console.log(
+      `[runtime-native-evaluation-lowering] C10 execution evidence: ${execution.report}`,
+    );
+  }
   console.log(
-    "[runtime-native-evaluation-lowering] passed (approved phases 1-3/categories 1-9 foundation, consumer-zero native isolation)",
+    "[runtime-native-evaluation-lowering] passed (C1-C9 foundation, C10/C11 and optional native CPU owner; no application activation claim)",
   );
 } catch (error) {
   console.error("[runtime-native-evaluation-lowering] failed:");
-  console.error(`- ${error instanceof Error ? error.message : String(error)}`);
+  console.error(
+    executeC10Mode
+      ? "- C10 preflight or execution failed; inspect checkout-local evidence."
+      : `- ${error instanceof Error ? error.message : String(error)}`,
+  );
   process.exit(1);
 }
 
@@ -621,6 +994,372 @@ function assertSourceInventory() {
       `${relativePath} Rust test inventory`,
     );
   }
+}
+
+function assertC10AuthorityBindings() {
+  for (const [file, bytes, hash] of pinnedC10Helpers) {
+    const contents = readBuffer(file);
+    if (contents.length !== bytes || sha256(contents) !== hash) {
+      throw new Error(`C10 helper identity drifted: ${file}`);
+    }
+  }
+  const fixture = (name) => `${loweringRoot}/fixtures/c10/${name}`;
+  const dagName = "native-c10-machine-dag-physics-slots-1.json";
+  const bindingName = "native-c10-source-bindings-4.json";
+  const mapName = "native-c10-source-callsite-map-2.json";
+  const closureName = "native-c10-callable-allocation-closure-4.json";
+  const dag = readJson(fixture(dagName));
+  const binding = readJson(fixture(bindingName));
+  const mapping = readJson(fixture(mapName));
+  const closure = readJson(fixture(closureName));
+  const addendum = readJson(fixture("native-c10-c11-identity-addendum-1.json"));
+  const postseal = readJson(fixture("native-c10-postseal-identity-addendum-1.json"));
+  const phaseB = readJson(fixture("native-c10-phase-b-identity-addendum-1.json"));
+  const artifactPin = (name) => {
+    const bytes = readBuffer(fixture(name));
+    return { bytes: bytes.length, sha256: sha256(bytes) };
+  };
+  assertExactJson(
+    mapping.dag,
+    { file: dagName, ...artifactPin(dagName) },
+    "C10 map/DAG identity",
+  );
+  assertExactJson(
+    mapping.inputBinding,
+    { file: bindingName, sha256: artifactPin(bindingName).sha256 },
+    "C10 map/input binding identity",
+  );
+  assertExactJson(
+    binding.supplements,
+    { path: dagName, ...artifactPin(dagName) },
+    "C10 binding/DAG identity",
+  );
+  assertExactJson(
+    Object.keys(binding.bindings).sort(),
+    Object.keys(dag.inputs).sort(),
+    "C10 explicit input binding inventory",
+  );
+
+  // These immutable author artifacts keep their original pre-review wording.
+  // Map v2 remains immutable. The pinned C11 overlay changes only the shared
+  // constructor seam; every mapped arithmetic span still binds actual source.
+  assertExactJson(
+    [dag.status, binding.status, mapping.status],
+    [
+      "DRAFT_NOT_INDEPENDENTLY_REVIEWED_OR_FROZEN",
+      "AUTHOR-RECONCILED-NOT-INDEPENDENTLY-FROZEN",
+      "AUTHOR_CURRENT_PRODUCTION_MAPPING_FOR_FINAL_ADOPTION_REVIEW",
+    ],
+    "C10 historical provenance statuses",
+  );
+  const currentSources = new Map();
+  const sourceNames = [
+    "derived.rs",
+    "physics.rs",
+    "state.rs",
+    "derived_candidate.rs",
+    "observation.rs",
+  ];
+  assertExactJson(
+    mapping.sourcePins.map((pin) => pin.path),
+    sourceNames.map((name) => `${loweringRoot}/src/${name}`),
+    "C10 mapped production source inventory",
+  );
+  assertExactJson(
+    [addendum.kind, addendum.status, addendum.counts],
+    [
+      "vivi2d-c10-c11-identity-addendum-v1",
+      "AUTHOR_C11_IMPLEMENTATION_REVIEW_PENDING",
+      mapping.counts,
+    ],
+    "C11 addendum identity/status/counts",
+  );
+  assertExactJson(
+    addendum.historicalAuthorities,
+    [
+      dagName,
+      bindingName,
+      mapName,
+      closureName,
+      "native-c10-callable-allocation-closure-4.md",
+    ].map((name) => ({ path: fixture(name), ...artifactPin(name) })),
+    "C11 unchanged historical authority identities",
+  );
+  const derivedPath = `${loweringRoot}/src/derived_candidate.rs`;
+  assertExactJson(
+    addendum.mappedSourceUpdate.historical,
+    mapping.sourcePins.find((pin) => pin.path === derivedPath),
+    "C11 overlay original constructor identity",
+  );
+  if (addendum.mappedSourceUpdate.current.path !== derivedPath) {
+    throw new Error("C11 overlay may change only the mapped constructor source");
+  }
+  assertExactJson(
+    addendum.unchangedMappedNumericalSources,
+    mapping.sourcePins.filter((pin) => pin.path !== derivedPath),
+    "C11 exact unchanged arithmetic/observer source identities",
+  );
+  assertExactJson(
+    addendum.connectionSourcePins.map((pin) => pin.path),
+    [
+      "lib.rs",
+      "lower.rs",
+      "reservation.rs",
+      "sealed_candidate.rs",
+      "snapshot.rs",
+      "topology.rs",
+      "topology_reservation.rs",
+    ].map((name) => `${loweringRoot}/src/${name}`),
+    "C11 exact connection source inventory",
+  );
+  assertExactJson(
+    [postseal.kind, postseal.status],
+    [
+      "vivi2d-c10-postseal-identity-addendum-v1",
+      "AUTHOR_POSTSEAL_IMPLEMENTATION_REVIEW_PENDING",
+    ],
+    "postseal historical identity status",
+  );
+  assertExactJson(
+    postseal.historicalC11,
+    {
+      path: fixture("native-c10-c11-identity-addendum-1.json"),
+      ...artifactPin("native-c10-c11-identity-addendum-1.json"),
+    },
+    "postseal preserves C11 authority bytes",
+  );
+  assertExactJson(
+    postseal.connectionSourceUpdates.map((v) => v.current.path),
+    ["lib.rs", "sealed_candidate.rs"].map((v) => `${loweringRoot}/src/${v}`),
+    "postseal only overlays root exports and private borrowed plan accessor",
+  );
+  for (const update of postseal.connectionSourceUpdates) {
+    assertExactJson(
+      update.historical,
+      addendum.connectionSourcePins.find((p) => p.path === update.current.path),
+      "postseal exact historical C11 connection pin",
+    );
+  }
+  for (const original of addendum.connectionSourcePins) {
+    const pin = currentC2Pin(
+      postseal.connectionSourceUpdates.find((v) => v.current.path === original.path)
+        ?.current ?? original,
+    );
+    const bytes = readBuffer(pin.path);
+    assertExactJson(
+      { bytes: bytes.length, sha256: sha256(bytes) },
+      { bytes: pin.bytes, sha256: pin.sha256 },
+      `C11 connection identity ${pin.path}`,
+    );
+  }
+  for (const pin of mapping.sourcePins) {
+    const bytes = readBuffer(pin.path);
+    const current = pin.path === derivedPath ? addendum.mappedSourceUpdate.current : pin;
+    assertExactJson(
+      { bytes: bytes.length, sha256: sha256(bytes) },
+      { bytes: current.bytes, sha256: current.sha256 },
+      `C10 current mapped source ${pin.path}`,
+    );
+    currentSources.set(pin.path, bytes.toString("utf8"));
+    assertExactJson(
+      closure.sourcePins.filter((candidate) => candidate.path === pin.path),
+      [pin],
+      `C10 closure/mapping source ${pin.path}`,
+    );
+  }
+  for (const name of [mapName, "native-c10-callable-allocation-closure-4.md"]) {
+    assertExactJson(
+      closure.evidence.filter((pin) => pin.path === name),
+      [{ path: name, ...artifactPin(name) }],
+      `C10 closure evidence ${name}`,
+    );
+  }
+  const currentLock = readBuffer(nativeLockPath);
+  assertExactJson(
+    [phaseB.kind, phaseB.status],
+    [
+      "vivi2d-c10-phase-b-identity-addendum-v1",
+      "AUTHOR_PHASE_B_IMPLEMENTATION_REVIEW_PENDING",
+    ],
+    "Phase B historical review-input status",
+  );
+  assertExactJson(
+    phaseB.historicalPostseal,
+    {
+      path: fixture("native-c10-postseal-identity-addendum-1.json"),
+      ...artifactPin("native-c10-postseal-identity-addendum-1.json"),
+    },
+    "Phase B preserves immutable postseal identity",
+  );
+  assertExactJson(
+    phaseB.cargoLockUpdate.current,
+    { path: nativeLockPath, bytes: currentLock.length, sha256: sha256(currentLock) },
+    "Phase B current lock identity",
+  );
+  assertExactJson(
+    phaseB.cargoLockUpdate.historical,
+    postseal.cargoLockUpdate.current,
+    "Phase B prior lock identity",
+  );
+  assertExactJson(
+    phaseB.cargoLockUpdate.addedEdges,
+    [
+      {
+        package: "vivi-runtime-native-core",
+        dependencies: [
+          "tempfile",
+          "vivi-runtime-native-evaluation-lowering",
+          "vivi-runtime-native-preactivation",
+        ],
+      },
+    ],
+    "Phase B exact core lock edges",
+  );
+  const phaseBBlocks = currentLock.toString("utf8").split("[[package]]");
+  const coreBlocks = phaseBBlocks
+    .map((block, index) => ({ block, index }))
+    .filter(({ block }) => block.includes('\nname = "vivi-runtime-native-core"\n'));
+  if (coreBlocks.length !== 1) throw new Error("Phase B core lock stanza mismatch");
+  let coreBlock = coreBlocks[0].block;
+  for (const dependency of phaseB.cargoLockUpdate.addedEdges[0].dependencies) {
+    const line = ` "${dependency}",\n`;
+    if (coreBlock.split(line).length !== 2)
+      throw new Error("Phase B core lock edge mismatch");
+    coreBlock = coreBlock.replace(line, "");
+  }
+  phaseBBlocks[coreBlocks[0].index] = coreBlock;
+  const lock = Buffer.from(phaseBBlocks.join("[[package]]"));
+  assertExactJson(
+    postseal.cargoLockUpdate.current,
+    { path: nativeLockPath, bytes: lock.length, sha256: sha256(lock) },
+    "postseal current lock identity",
+  );
+  assertExactJson(
+    postseal.cargoLockUpdate.historical,
+    closure.cargoLock,
+    "postseal exact historical C10 lock identity",
+  );
+  assertExactJson(
+    postseal.cargoLockUpdate.addedEdges,
+    [
+      {
+        package: "vivi-runtime-native-c-abi",
+        dependencies: ["tempfile", "vivi-asset-host-local"],
+      },
+      { package: "vivi-runtime-native-evaluation-lowering", dependencies: ["tempfile"] },
+    ],
+    "postseal and parallel E exact lock additions",
+  );
+  const lockBlocks = lock.toString("utf8").split("[[package]]");
+  for (const addition of postseal.cargoLockUpdate.addedEdges) {
+    const matches = lockBlocks
+      .map((block, index) => ({ block, index }))
+      .filter((v) => v.block.includes(`\nname = "${addition.package}"\n`));
+    if (matches.length !== 1) throw new Error("postseal lock stanza mismatch");
+    let block = matches[0].block;
+    for (const dependency of addition.dependencies) {
+      const line = ` "${dependency}",\n`;
+      if (block.split(line).length !== 2) throw new Error("postseal lock edge mismatch");
+      block = block.replace(line, "");
+    }
+    lockBlocks[matches[0].index] = block;
+  }
+  const restoredLock = Buffer.from(lockBlocks.join("[[package]]"));
+  assertExactJson(
+    { path: nativeLockPath, bytes: restoredLock.length, sha256: sha256(restoredLock) },
+    closure.cargoLock,
+    "exact historical lock byte restoration, no other dependency drift",
+  );
+
+  const checkSpan = (span) => {
+    const source = currentSources.get(span.file);
+    if (
+      source === undefined ||
+      !Number.isSafeInteger(span.line) ||
+      !Number.isSafeInteger(span.endLine) ||
+      span.line < 1 ||
+      span.endLine < span.line ||
+      typeof span.text !== "string" ||
+      span.text.length === 0 ||
+      sha256(span.text) !== span.utf8Sha256 ||
+      !source
+        .split("\n")
+        .slice(span.line - 1, span.endLine)
+        .join("\n")
+        .includes(span.text)
+    ) {
+      throw new Error("C10 fixed source span identity drifted");
+    }
+  };
+  const callsites = new Set();
+  if (mapping.rows.length !== 198 || dag.nodes.length !== 198) {
+    throw new Error("C10 contextual operation inventory drifted");
+  }
+  for (const [index, row] of mapping.rows.entries()) {
+    const node = dag.nodes[index];
+    assertExactJson(
+      [
+        row.dagOccurrence,
+        row.scope,
+        row.template,
+        row.opcode,
+        row.normativeOperands,
+        row.normativeOwners,
+      ],
+      [
+        node.id,
+        node.scope,
+        node.checkpoint.template,
+        node.op,
+        node.operands,
+        node.checkpoint.ownerBindings,
+      ],
+      `C10 DAG/source row ${index}`,
+    );
+    checkSpan(row.source);
+    callsites.add(`${row.source.file}:${row.source.line}:${row.source.utf8Sha256}`);
+    for (const definition of row.definitions) checkSpan(definition);
+    if (row.context?.call) checkSpan(row.context.call);
+    for (const call of row.context?.calls ?? []) checkSpan(call);
+  }
+  for (const span of mapping.wrapperSpans) checkSpan(span);
+  const counts = {
+    templates: new Set(mapping.rows.map((row) => row.template)).size,
+    dagOccurrences: new Set(mapping.rows.map((row) => row.dagOccurrence)).size,
+    ownerDomains: Object.keys(dag.ownerDomains).length,
+    ownerShapes: dag.ownerTupleShapes.length,
+    distinctObservedSourceCallsites: callsites.size,
+    mappedObservedSourceCallsites: callsites.size,
+  };
+  assertExactJson(
+    counts,
+    {
+      templates: 160,
+      dagOccurrences: 198,
+      ownerDomains: 22,
+      ownerShapes: 22,
+      distinctObservedSourceCallsites: 156,
+      mappedObservedSourceCallsites: 156,
+    },
+    "C10 fixed correspondence counts",
+  );
+  assertExactJson(mapping.counts, counts, "C10 mapping count consistency");
+  assertExactJson(
+    dag.correspondence.map((row) => row.template).sort(),
+    [...new Set(mapping.rows.map((row) => row.template))].sort(),
+    "C10 template inventory (not execution order)",
+  );
+  for (const template of dag.correspondence) {
+    const rows = mapping.rows.filter((row) => row.template === template.template);
+    assertExactJson(
+      [rows.map((row) => row.dagOccurrence), [...new Set(rows.map((row) => row.opcode))]],
+      [template.occurrences, [template.op]],
+      `C10 contextual correspondence ${template.template}`,
+    );
+  }
+  // This checks fixed reviewed correspondence, not Rust semantics or a whole-
+  // program allocation proof. The actual runner and independent review remain
+  // required; old execution reports cannot approve a changed runner.
 }
 
 function assertApprovedReviewUnit() {
@@ -2633,7 +3372,11 @@ function assertCargoBoundary() {
     pkg.rust_version !== "1.89" ||
     pkg.license !== "Apache-2.0" ||
     JSON.stringify(pkg.publish) !== "[]" ||
-    JSON.stringify(pkg.features) !== "{}" ||
+    JSON.stringify(pkg.features) !==
+      JSON.stringify({
+        default: ["native-host"],
+        "native-host": ["vivi-runtime-native-preactivation/native-host"],
+      }) ||
     path.resolve(pkg.manifest_path) !== resolve(loweringManifestPath)
   ) {
     throw new Error(
@@ -2675,6 +3418,14 @@ function assertCargoBoundary() {
   const expectedDirect = [
     directDependency("serde_json", "^1.0", "normal", ["std"], "registry", false),
     directDependency(
+      "vivi-runtime-native-evaluation-math",
+      "*",
+      "normal",
+      [],
+      "path",
+      false,
+    ),
+    directDependency(
       "vivi-runtime-native-preactivation",
       "*",
       "normal",
@@ -2683,6 +3434,7 @@ function assertCargoBoundary() {
       false,
     ),
     directDependency("sha2", "^0.10", "dev", [], "registry", false),
+    directDependency("tempfile", "^3", "dev", [], "registry", true),
   ].sort(compareDirectDependencies);
   assertExactJson(actualDirect, expectedDirect, "lowering direct dependency inventory");
 
@@ -2712,7 +3464,13 @@ function assertCargoBoundary() {
     .sort();
   assertExactJson(
     actualLockDependencies,
-    ["serde_json", "sha2", "vivi-runtime-native-preactivation"].sort(),
+    [
+      "serde_json",
+      "sha2",
+      "tempfile",
+      "vivi-runtime-native-evaluation-math",
+      "vivi-runtime-native-preactivation",
+    ].sort(),
     "lowering Cargo.lock dependency inventory",
   );
   return metadata;
@@ -2745,6 +3503,7 @@ function assertDependencyPins(metadata) {
 }
 
 function assertConsumerGraph(metadata) {
+  assertOptionalLocalAssetCAbi(metadata);
   assertExactJson(
     consumersOf(metadata, "vivi-runtime-native-evaluation"),
     ["vivi-runtime-native-preactivation"],
@@ -2752,7 +3511,7 @@ function assertConsumerGraph(metadata) {
   );
   assertExactJson(
     consumersOf(metadata, "vivi-asset-host-local"),
-    ["vivi-runtime-native-preactivation"],
+    ["vivi-runtime-native-c-abi", "vivi-runtime-native-preactivation"],
     "local Asset host production consumer graph",
   );
   assertExactJson(
@@ -2762,9 +3521,10 @@ function assertConsumerGraph(metadata) {
   );
   assertExactJson(
     consumersOf(metadata, "vivi-runtime-native-evaluation-lowering"),
-    [],
-    "lowering consumer-zero production graph",
+    ["vivi-runtime-native-core"],
+    "lowering exact optional native owner consumer",
   );
+  assertEvaluationOwnerBoundary(metadata);
 
   const loweringPackage = requirePackage(
     metadata,
@@ -2776,11 +3536,14 @@ function assertConsumerGraph(metadata) {
     .sort();
   assertExactJson(
     productionDependencies,
-    ["serde_json", "vivi-runtime-native-preactivation"],
+    [
+      "serde_json",
+      "vivi-runtime-native-evaluation-math",
+      "vivi-runtime-native-preactivation",
+    ],
     "lowering production dependency graph",
   );
   for (const packageName of [
-    "vivi-runtime-native-core",
     "vivi-runtime-native-c-abi",
     "vivi-runtime-native-wasm",
     "vivi-asset-host-local",
@@ -2800,13 +3563,56 @@ function assertConsumerGraph(metadata) {
 
 function assertPublicSurface() {
   const expectedPublicItemsByFile = {
+    "src/derived_candidate.rs": [
+      "EvaluationDerivedCandidateV1",
+      "EvaluationMutationError",
+    ],
+    "src/derived.rs": [],
+    "src/state.rs": [],
+    "src/observation.rs": [],
+    "src/physics.rs": [],
+    "src/preparation.rs": [
+      "PrepareLoweredEvaluationV1",
+      "PreparedLoweredEvaluationV1",
+      "MissingLoweredEvaluationV1",
+    ],
     "src/error.rs": ["EvaluationLoweringError", "EvaluationLoweringErrorKind"],
     "src/lib.rs": [],
     "src/lower.rs": [],
     "src/model.rs": ["EvaluationLoweringFoundationV1"],
     "src/reservation.rs": [],
+    "src/sealed_candidate.rs": ["SealedEvaluationCandidateV1"],
+    "src/snapshot.rs": ["EvaluationMeshSnapshotV1", "EvaluationParameterSnapshotV1"],
+    "src/topology.rs": [],
+    "src/topology_reservation.rs": [],
   };
   const expectedPublicFunctionsByFile = {
+    "src/derived_candidate.rs": [
+      "apply_preset",
+      "dynamic_generation",
+      "lower_derived_evaluation_v1",
+      "mesh_count",
+      "request_generation",
+      "set_input",
+      "status",
+      "update",
+    ],
+    "src/derived.rs": [],
+    "src/state.rs": [],
+    "src/observation.rs": [],
+    "src/physics.rs": [],
+    "src/preparation.rs": [
+      "candidate",
+      "candidate",
+      "into_parts",
+      "into_parts",
+      "request_generation",
+      "request_generation",
+      "prepared_textures",
+      "missing_textures",
+      "prepare_lowered_evaluation_v1",
+      "prepare_lowered_evaluation_from_bytes_v1",
+    ],
     "src/error.rs": ["kind", "load_status", "load_status"],
     "src/lib.rs": [],
     "src/lower.rs": ["lower_evaluation_foundation_v1"],
@@ -2819,6 +3625,47 @@ function assertPublicSurface() {
       "texture_binding_count",
     ],
     "src/reservation.rs": [],
+    "src/sealed_candidate.rs": [
+      "request_generation",
+      "dynamic_generation",
+      "topology_generation",
+      "mesh_count",
+      "texture_count",
+      "required_render_features",
+      "draw_commands",
+      "mesh_snapshot",
+      "parameter_count",
+      "parameter_snapshot",
+      "preset_count",
+      "preset_id",
+      "set_input",
+      "apply_preset",
+      "update",
+      "lower_sealed_evaluation_v1",
+    ],
+    "src/snapshot.rs": [
+      "id",
+      "mesh_slot",
+      "texture_slot",
+      "vertex_bits",
+      "uv_bits",
+      "indices",
+      "translation_bits",
+      "opacity_bits",
+      "multiply_bits",
+      "screen_bits",
+      "blend",
+      "visible",
+      "culled",
+      "id",
+      "min_bits",
+      "max_bits",
+      "default_bits",
+      "current_bits",
+      "evaluated_bits",
+    ],
+    "src/topology.rs": [],
+    "src/topology_reservation.rs": [],
   };
   for (const relativePath of Object.keys(expectedPublicItemsByFile).sort()) {
     const source = readText(`${loweringRoot}/${relativePath}`);
@@ -2853,10 +3700,34 @@ function assertPublicSurface() {
   assertExactJson(
     collectRootReexports(lib).sort(),
     [
+      "EvaluationDerivedCandidateV1",
+      "EvaluationMutationError",
+      "lower_derived_evaluation_v1",
       "EvaluationLoweringError",
       "EvaluationLoweringErrorKind",
       "EvaluationLoweringFoundationV1",
       "lower_evaluation_foundation_v1",
+      "SealedEvaluationCandidateV1",
+      "lower_sealed_evaluation_v1",
+      "EvaluationMeshSnapshotV1",
+      "EvaluationParameterSnapshotV1",
+      "PrepareLoweredEvaluationV1",
+      "PreparedLoweredEvaluationV1",
+      "MissingLoweredEvaluationV1",
+      "prepare_lowered_evaluation_v1",
+      "EvaluationPreactivationError",
+      "LocalAssetHost",
+      "MissingActivationTexturesV1",
+      "PreparedActivationTextureSetV1",
+      "AssetRef",
+      "Digest",
+      "EvaluationPayloadError",
+      "EvaluationPhysicalObjectV1",
+      "EvaluationTextureBindingV1",
+      "EvaluationTexturePlanV1",
+      "StorageKind",
+      "parse_evaluation_payload_v1",
+      "prepare_lowered_evaluation_from_bytes_v1",
     ].sort(),
     "lowering root re-export inventory",
   );
@@ -2875,6 +3746,16 @@ function assertPublicSurface() {
   const model = readText(`${loweringRoot}/src/model.rs`);
   const error = readText(`${loweringRoot}/src/error.rs`);
   assertPrivateStructFields(model, "EvaluationLoweringFoundationV1");
+  const derived = readText(`${loweringRoot}/src/derived_candidate.rs`);
+  assertPrivateStructFields(derived, "EvaluationDerivedCandidateV1");
+  assertPrivateStructFields(derived, "EvaluationMutationError");
+  if (
+    /#\[derive\([^\]]*Clone[^\]]*\)\]\s*pub struct EvaluationDerivedCandidateV1/s.test(
+      derived,
+    )
+  ) {
+    throw new Error("derived candidate must remain move-only");
+  }
   assertPrivateStructFields(error, "EvaluationLoweringError");
   assertExactEnumVariants(error, "EvaluationLoweringErrorKind", [
     "Correlation",
@@ -2957,9 +3838,23 @@ function assertFoundationContract(vectors, category9Vectors) {
       "lowering must reuse the pure correlation seam and token exactly once",
     );
   }
-  const entry = sliceBetween(lower, "fn lower_correlated_impl", "#[derive(Default)]");
+  const entry = sliceBetween(lower, "fn lower_correlated_impl", "// The C11 route");
   assertOrderedEvidence(
     entry,
+    [
+      "preflight_correlated(correlated)?",
+      "Category9ReservationBuffersV1::reserve_all",
+      "materialize_preflighted(preflight, buffers)",
+    ],
+    "foundation-only preflight/reserve/materialize order",
+  );
+  const preflight = sliceBetween(
+    lower,
+    "pub(crate) fn preflight_correlated",
+    "pub(crate) fn materialize_preflighted",
+  );
+  assertOrderedEvidence(
+    preflight,
     [
       "correlated.request_generation()",
       "correlated.into_parts()",
@@ -2975,7 +3870,17 @@ function assertFoundationContract(vectors, category9Vectors) {
       "census_category9(root, layers)?",
       "Category9SiteCountsV1::try_from_ordered",
       "census.finish_incumbent_usize_defenses()?",
-      "Category9ReservationBuffersV1::reserve_all",
+    ],
+    "lowering phases 1-3/categories 1-9 preflight order",
+  );
+  const materialize = sliceBetween(
+    lower,
+    "pub(crate) fn materialize_preflighted",
+    "#[cfg(test)]",
+  );
+  assertOrderedEvidence(
+    materialize,
+    [
       "materialize_category9(root, layers, &census, &mut buffers)?",
       "buffers.finish(",
       "let canvas =",
@@ -2983,7 +3888,7 @@ function assertFoundationContract(vectors, category9Vectors) {
       "Category9ReservationBuffersV1::verify_plan(",
       "Ok(foundation)",
     ],
-    "lowering phases 1-3/categories 1-9 order",
+    "lowering categories 1-9 retained fill/verification order",
   );
 
   const categoryOneThroughEight = sliceBetween(
@@ -3485,7 +4390,7 @@ function assertCategory9ImplementationContract(vectors, sources) {
       "let additional_count = counts.count(site)",
       "if additional_count == 0",
       "return Ok(())",
-      "state.begin_nonzero_attempt(site, additional_count)?",
+      "state.begin_nonzero_attempt(site.id(), additional_count)?",
       ".try_reserve_exact(counts.count_usize(site))",
       ".map_err(|_| resource())?",
     ],
@@ -3914,9 +4819,221 @@ function assertCategory9Step40Verifier(lower) {
   ]);
 }
 
+function assertC11ImplementationContract() {
+  const read = (name) => readText(`${loweringRoot}/src/${name}`);
+  const sealed = read("sealed_candidate.rs");
+  const topology = read("topology.rs");
+  const reservation = read("topology_reservation.rs");
+  const snapshots = read("snapshot.rs");
+  const derived = read("derived_candidate.rs");
+  const tests = read("tests/c11.rs");
+  assertPrivateStructFields(sealed, "SealedEvaluationCandidateV1");
+  assertPrivateStructFields(snapshots, "EvaluationMeshSnapshotV1");
+  assertPrivateStructFields(snapshots, "EvaluationParameterSnapshotV1");
+  if (
+    /impl\s+Clone\s+for\s+SealedEvaluationCandidateV1|derive\([^)]*Clone/.test(sealed)
+  ) {
+    throw new Error("C11 sealed owner must remain move-only");
+  }
+  const entry = sliceBetween(
+    sealed,
+    "pub fn lower_sealed_evaluation_v1",
+    "pub(crate) fn seal_preflighted",
+  );
+  assertOrderedEvidence(
+    entry,
+    [
+      "correlate_evaluation_activation_v1(",
+      "preflight_correlated(correlated)?",
+      "seal_preflighted(",
+    ],
+    "C11 one correlated owner",
+  );
+  const fill = sealed.slice(sealed.indexOf("fn seal_impl("));
+  assertOrderedEvidence(
+    fill,
+    [
+      "TopologyCountsV1::census(",
+      "Category9ReservationBuffersV1::reserve_all_with_state(",
+      "counts.reserve(state)?",
+      "materialize_preflighted(preflight, buffers)?",
+      "evaluate_reserved_foundation_observed(foundation, observer)?",
+      "topology.fill(&derived.foundation)?",
+      "SealedEvaluationCandidateV1 { derived, topology }",
+      ".mesh_snapshot(slot)?",
+      ".parameter_snapshot(slot)?",
+      ".preset_id(slot)?",
+      "Ok(sealed)",
+    ],
+    "C11 all 44 reserves before retained fill, initial C10 once then pure sealing",
+  );
+  if (
+    (fill.match(/evaluate_reserved_foundation_observed\(/g) ?? []).length !== 1 ||
+    (derived.match(/evaluate_initial\(/g) ?? []).length !== 1 ||
+    !sealed.includes("#[cfg(test)]\npub(crate) fn seal_with_topology_input_for_test") ||
+    !sealed.includes("#[cfg(test)] input: Option<&serde_json::Value>")
+  ) {
+    throw new Error("C11 shared initial evaluator/test-only companion boundary drifted");
+  }
+  assertExactJson(
+    [...reservation.matchAll(/"(topology\.[a-z-]+)"/g)].map((m) => m[1]),
+    [
+      "topology.id-bytes",
+      "topology.mesh-records",
+      "topology.mask-edges",
+      "topology.draw-order",
+      "topology.draw-commands",
+    ],
+    "C11 exact five storage sites",
+  );
+  assertOrderedEvidence(
+    reservation,
+    [
+      "meshes.checked_mul(17)",
+      "let counts = [ids, meshes, edges, meshes, commands]",
+      "let mut total = c9_bytes",
+      "total > 0x7fff_ffff",
+      "Layout::array::<u8>",
+      "Layout::array::<MeshTopologyV1>",
+      "Layout::array::<MaskEdgeV1>",
+      "Layout::array::<u32>",
+      "Layout::array::<DrawCommandV1>",
+    ],
+    "C11 storage census and combined checked ceiling",
+  );
+  assertOrderedEvidence(
+    reservation,
+    [
+      "reserve(&mut topology.id_bytes, 0",
+      "reserve(&mut topology.meshes, 1",
+      "reserve(&mut topology.edges, 2",
+      "reserve(&mut topology.draw_order, 3",
+      "reserve(&mut topology.commands, 4",
+      "topology.reserved_capacities = topology.capacities()",
+    ],
+    "C11 exact reserve order",
+  );
+  for (const [source, required] of [
+    [
+      topology,
+      [
+        "size_of::<MeshTopologyV1>() == 36",
+        "size_of::<MaskEdgeV1>() == 8",
+        "size_of::<DrawCommandV1>() == 24",
+        "sort_unstable_by_key",
+        "let mut path = [u32::MAX; 9]",
+        "path[..level].contains(&slot)",
+        "*active > 8",
+        "words: [24, kind, mesh, depth, flags, 0]",
+        "self.verify_commands()?",
+        "values.len() >= values.capacity()",
+        "self.capacities() != self.reserved_capacities",
+      ],
+    ],
+    [
+      reservation,
+      [
+        "if counts.counts[site] == 0",
+        "state.begin_nonzero_attempt(SITE_IDS[site], counts.counts[site])?",
+        "try_reserve_exact(counts.usize_counts[site])",
+      ],
+    ],
+  ]) {
+    for (const text of required)
+      if (!source.includes(text)) throw new Error(`C11 fixed invariant omits ${text}`);
+  }
+  // This is an exact source boundary check, not a semantic/no-allocation proof.
+  // Native allocator observation and the current C10 execution gate remain required.
+  if (
+    /try_reserve|\.reserve\(|\.collect\(|\.clone\(|\.to_vec\(/.test(
+      `${fill.slice(fill.indexOf("materialize_preflighted(preflight, buffers)?"))}\n${snapshots}`,
+    ) ||
+    /try_reserve|\.reserve\(|\.collect\(|\.clone\(|\.to_vec\(/.test(topology)
+  ) {
+    throw new Error("C11 fill/views may not add allocation or buffer cloning");
+  }
+  assertExactJson(
+    [...tests.matchAll(/#\[test\]\s*fn\s+(\w+)/g)].map((m) => m[1]).sort(),
+    [
+      "mixed_exact_public_census_and_complete_ordered_invert_commands",
+      "storage_leaf_policy_and_combined_resource_boundary_do_not_validate_schema",
+      "every_new_denial_precedes_math_and_exact_count_controls_matching",
+      "payload_slots_and_draw_ties_are_independent_of_texture_order",
+      "eight_nested_masks_validate_invisible_dependencies_and_full_command_balance",
+      "all_six_deferred_case139_topology_selectors_and_real_rollback_are_bound",
+      "queries_fail_closed_on_trusted_ranges_and_redact_values",
+      "same_count_trusted_mask_leaf_runs_after_actual_initial_numeric_failure",
+      "duplicate_edges_are_a_trusted_topology_witness_not_public_admission",
+      "trusted_cycle_chain9_and_sibling9_fail_without_conflating_duplicates",
+    ].sort(),
+    "C11 exact focused test inventory",
+  );
+}
+
+function assertPostsealImplementationContract() {
+  const preparation = readText(`${loweringRoot}/src/preparation.rs`);
+  const sealed = readText(`${loweringRoot}/src/sealed_candidate.rs`);
+  for (const name of ["PreparedLoweredEvaluationV1", "MissingLoweredEvaluationV1"]) {
+    assertPrivateStructFields(preparation, name);
+  }
+  if (
+    /derive\([^)]*Clone|pub\s*\([^)]*\)\s*fn\s+own_outcome|\.clone\(|Arc<|Mutex<|RefCell</.test(
+      preparation,
+    )
+  ) {
+    throw new Error("postseal ownership must be private, move-only and non-cloning");
+  }
+  const entry = /pub fn prepare_lowered_evaluation_v1\([\s\S]*?\n\}/.exec(
+    preparation,
+  )?.[0];
+  if (!entry) throw new Error("postseal consuming entry missing");
+  assertOrderedEvidence(
+    entry,
+    [
+      "prepare_evaluation_texture_plan_v1(",
+      "candidate.request_generation()",
+      "candidate.texture_plan()",
+      "Ok(own_outcome(candidate, outcome))",
+    ],
+    "sealed borrowed-plan preparation before owning real host output",
+  );
+  if (
+    /lower_sealed_evaluation_v1|correlate_evaluation_activation_v1|\.update\(|Vec::|\.reserve|serde_json|evaluate_initial/.test(
+      preparation,
+    )
+  ) {
+    throw new Error(
+      "postseal must not parse, correlate, reserve, evaluate or clone host output",
+    );
+  }
+  const accessor = /pub\(crate\) fn texture_plan\([\s\S]*?\n {4}\}/.exec(sealed)?.[0];
+  if (!accessor || !accessor.includes("&self.derived.foundation.texture_plan")) {
+    throw new Error("postseal must borrow the exact privately retained texture plan");
+  }
+  assertExactJson(
+    [
+      ...readText(`${loweringRoot}/src/preparation/tests.rs`).matchAll(
+        /#\[test\]\s*fn\s+(\w+)/g,
+      ),
+    ]
+      .map((v) => v[1])
+      .sort(),
+    [
+      "actual_missing_retains_same_seal_and_retry_prepares_without_reinitializing",
+      "actual_ready_handoff_and_parts_move_exact_owned_buffers_with_redacted_debug",
+      "real_later_descriptor_error_wins_over_earlier_missing_without_leaking_data",
+    ].sort(),
+    "postseal actual-host test inventory",
+  );
+}
+
 function assertIsolation(metadata) {
   const productionFiles = walkFiles(resolve(`${loweringRoot}/src`)).filter(
-    (filePath) => filePath.endsWith(".rs") && !filePath.endsWith("tests.rs"),
+    (filePath) =>
+      filePath.endsWith(".rs") &&
+      !["src/tests.rs", "src/tests/c11.rs", "src/preparation/tests.rs"].some(
+        (test) => filePath === resolve(`${loweringRoot}/${test}`),
+      ),
   );
   const forbiddenPatterns = [
     [/\bunsafe\s+(?:fn|trait|impl)\b|\bunsafe\s*\{/m, "unsafe code"],
@@ -3925,10 +5042,7 @@ function assertIsolation(metadata) {
       /\bvivi_runtime_native_core\b|\bCoreRuntimeModel\b|\bDrawCommand\b/m,
       "runtime-native core/model construction",
     ],
-    [
-      /\bvivi_asset_host_local\b|\bLocalAssetHost\b|\bAssetRef\b/m,
-      "direct Asset-host use",
-    ],
+    [/\bvivi_asset_host_local\b/m, "direct Asset-host use"],
     [/\b(?:wasm_bindgen|napi|neon|pyo3|jni|uniffi|cxx)\b/m, "language/WASM bridge"],
     [/\b(?:wgpu|glow|vulkano|ash)\b/m, "GPU integration"],
     [/\bvivi_model_load_evaluation\b/m, "editor-only C ABI symbol"],
@@ -3940,6 +5054,18 @@ function assertIsolation(metadata) {
   ];
   for (const filePath of productionFiles) {
     const source = readFileSync(filePath, "utf8");
+    if (/\bAssetRef\b/.test(source) && filePath !== resolve(`${loweringRoot}/src/lib.rs`))
+      throw new Error(
+        "Only the exact root type reexport may name AssetRef; no second validator",
+      );
+    if (
+      /\bLocalAssetHost\b|prepare_evaluation_texture_plan_v1/.test(source) &&
+      !["src/lib.rs", "src/preparation.rs"].some(
+        (file) => filePath === resolve(`${loweringRoot}/${file}`),
+      )
+    ) {
+      throw new Error(`${toRelative(filePath)} adds host preparation to pure lowering`);
+    }
     for (const [pattern, label] of forbiddenPatterns) {
       if (pattern.test(source)) {
         throw new Error(`${toRelative(filePath)} adds forbidden ${label}`);
@@ -3958,6 +5084,20 @@ function assertIsolation(metadata) {
 }
 
 function assertGateAndDocumentationWiring() {
+  const currentBoundary = readText(
+    "docs/developer/architecture/evaluation-c10-integration.md",
+  );
+  for (const required of [
+    "--execute-c10",
+    "137 compound",
+    "574 raw",
+    "six topology",
+    "no production consumer",
+    "actual math dependency",
+  ]) {
+    if (!currentBoundary.includes(required))
+      throw new Error(`C10 integration boundary omits ${required}`);
+  }
   const runtimePackage = readJson("packages/runtime-native/package.json");
   const expectedNativeScript =
     "cargo test --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-lowering --all-targets && cargo clippy --locked --manifest-path Cargo.toml -p vivi-runtime-native-evaluation-lowering --all-targets -- -D warnings";
@@ -3965,9 +5105,14 @@ function assertGateAndDocumentationWiring() {
     throw new Error("lowering native test/Clippy script drifted");
   }
   if (
-    Object.entries(runtimePackage.scripts ?? {}).some(
-      ([name, command]) =>
-        /evaluation-lowering/i.test(`${name} ${command}`) && /wasm32/i.test(command),
+    Object.entries(runtimePackage.scripts ?? {}).some(([name, command]) =>
+      command
+        .split(" && ")
+        .some(
+          (invocation) =>
+            /evaluation-lowering/i.test(`${name} ${invocation}`) &&
+            /wasm32/i.test(invocation),
+        ),
     )
   ) {
     throw new Error("lowering must not add a full-package wasm32 target gate");
@@ -3975,7 +5120,7 @@ function assertGateAndDocumentationWiring() {
 
   const rootPackage = readJson("package.json");
   const expectedRootScript =
-    "node scripts/check-runtime-native-evaluation-lowering.mjs && npm run check:evaluation-lowering --workspace @vivi2d/runtime-native";
+    "node scripts/check-runtime-native-evaluation-lowering.mjs --execute-c10 && npm run check:evaluation-lowering --workspace @vivi2d/runtime-native";
   if (
     rootPackage.scripts?.["check:runtime-native-evaluation-lowering"] !==
     expectedRootScript
@@ -4087,6 +5232,29 @@ function assertGateAndDocumentationWiring() {
   }
 
   const workflow = readText(".github/workflows/runtime-native.yml");
+  for (const [helper] of pinnedC10Helpers) {
+    if (
+      !workflow.includes(`      - "${helper}"`) ||
+      !workflow
+        .split(/\r?\n/)
+        .some(
+          (line) =>
+            line.startsWith("      - run: npx biome check ") &&
+            line.split(/\s+/).includes(helper),
+        )
+    ) {
+      throw new Error(`Runtime Native omits C10 helper watch/lint: ${helper}`);
+    }
+  }
+  const qualityWorkflow = readText(".github/workflows/quality-gates.yml");
+  if (
+    !qualityWorkflow.includes('      - "scripts/**"') ||
+    !qualityWorkflow.includes('      - "packages/**"') ||
+    !workflow.includes('      - "packages/runtime-native/**"') ||
+    !workflow.includes("    timeout-minutes: 15")
+  ) {
+    throw new Error("C10 package/helper workflow path or timeout policy drifted");
+  }
   for (const evidence of [
     "RUSTUP_TOOLCHAIN: 1.89.0",
     "matrix:\n        os: [ubuntu-latest, windows-latest, macos-latest]",
@@ -4259,6 +5427,254 @@ function requirePackage(metadata, packageName) {
   const pkg = metadata.packages.find((candidate) => candidate.name === packageName);
   if (!pkg) throw new Error(`cargo metadata omitted ${packageName}`);
   return pkg;
+}
+
+function currentC2Pin(historical) {
+  const prefix = `${loweringRoot}/fixtures/c10/`;
+  const addendum = readJson(`${prefix}native-c10-c2-identity-addendum-1.json`);
+  const phaseB = readJson(`${prefix}native-c10-phase-b-identity-addendum-1.json`);
+  const postseal = readJson(`${prefix}native-c10-postseal-identity-addendum-1.json`);
+  assertExactJson(
+    [addendum.kind, addendum.status],
+    ["vivi2d-c10-c2-identity-addendum-v1", "AUTHOR_C2_IMPLEMENTATION_REVIEW_PENDING"],
+    "C2 overlay preserves historical pending wording, not approval",
+  );
+  for (const [field, file] of [
+    ["historicalPhaseB", "native-c10-phase-b-identity-addendum-1.json"],
+    ["historicalPostseal", "native-c10-postseal-identity-addendum-1.json"],
+  ]) {
+    const bytes = readBuffer(prefix + file);
+    assertExactJson(
+      addendum[field],
+      { path: prefix + file, bytes: bytes.length, sha256: sha256(bytes) },
+      "C2 immutable prior identity",
+    );
+  }
+  assertExactJson(
+    addendum.sourceUpdates.map((v) => v.historical),
+    [postseal.connectionSourceUpdates[0].current, ...phaseB.sourcePins],
+    "C2 exact connection-only historical update set",
+  );
+  const update = addendum.sourceUpdates.find(
+    (v) => v.historical.path === historical.path,
+  );
+  if (!update) return historical;
+  assertExactJson(update.historical, historical, "C2 historical identity binding");
+  if (update.current.path !== historical.path)
+    throw new Error("C2 overlay cannot redirect source paths");
+  return update.current;
+}
+
+function assertEvaluationOwnerBoundary(metadata) {
+  const core = requirePackage(metadata, "vivi-runtime-native-core");
+  const lower = requirePackage(metadata, "vivi-runtime-native-evaluation-lowering");
+  const preactivation = requirePackage(metadata, "vivi-runtime-native-preactivation");
+  assertExactJson(
+    core.features,
+    {
+      default: [],
+      "evaluation-v1": ["dep:vivi-runtime-native-evaluation-lowering"],
+      "render-v02": [],
+    },
+    "core exact feature boundary",
+  );
+  assertExactJson(
+    core.dependencies.map((d) => [d.name, d.kind ?? "normal"]).sort(),
+    [
+      ["serde_json", "normal"],
+      ["tempfile", "dev"],
+      ["vivi-runtime-native-evaluation-lowering", "dev"],
+      ["vivi-runtime-native-evaluation-lowering", "normal"],
+      ["vivi-runtime-native-preactivation", "dev"],
+    ],
+    "core exact dependency kinds",
+  );
+  for (const [name, kind, optional, target] of [
+    [lower.name, "normal", true, lower],
+    [lower.name, "dev", false, lower],
+    [preactivation.name, "dev", false, preactivation],
+  ]) {
+    const edge = core.dependencies.find(
+      (d) => d.name === name && (d.kind ?? "normal") === kind,
+    );
+    assertExactJson(
+      [
+        edge.kind ?? "normal",
+        edge.optional,
+        edge.uses_default_features,
+        edge.features,
+        edge.target,
+        path.resolve(edge.path),
+      ],
+      [
+        kind,
+        optional,
+        false,
+        kind === "dev" ? ["native-host"] : [],
+        null,
+        path.dirname(target.manifest_path),
+      ],
+      `core exact ${name} edge`,
+    );
+  }
+  const defaults = closureFromRoot(metadata, core.id, new Set([null, "build"]));
+  if (defaults.has(lower.id) || defaults.has(preactivation.id))
+    throw new Error("default core must not reach Evaluation");
+  const enabled = JSON.parse(
+    runCapture("cargo", [
+      "+1.89.0",
+      "metadata",
+      "--locked",
+      "--format-version",
+      "1",
+      "--manifest-path",
+      nativeManifestPath,
+      "--features",
+      "vivi-runtime-native-core/evaluation-v1",
+    ]),
+  );
+  const enabledCore = requirePackage(enabled, core.name);
+  const enabledLower = requirePackage(enabled, lower.name);
+  const expected = new Set([
+    ...defaults,
+    enabledLower.id,
+    ...closureFromRoot(enabled, enabledLower.id, new Set([null, "build"])),
+  ]);
+  assertExactJson(
+    [...closureFromRoot(enabled, enabledCore.id, new Set([null, "build"]))].sort(),
+    [...expected].sort(),
+    "opt-in core adds exactly existing lowering closure",
+  );
+  const phaseB = readJson(
+    `${loweringRoot}/fixtures/c10/native-c10-phase-b-identity-addendum-1.json`,
+  );
+  assertExactJson(
+    phaseB.sourcePins.map((p) => p.path),
+    [
+      "packages/runtime-native/crates/vivi-runtime-native-core/Cargo.toml",
+      "packages/runtime-native/crates/vivi-runtime-native-core/src/lib.rs",
+      "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation.rs",
+      "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation/tests.rs",
+      "packages/editor-host/src/read-only-authoring-host.ts",
+      "packages/editor-host/src/request-generation.ts",
+      "packages/editor-host/src/__tests__/read-only-authoring-host.test.ts",
+      "packages/runtime-native/package.json",
+    ],
+    "Phase B exact source pin inventory",
+  );
+  for (const historical of phaseB.sourcePins) {
+    const pin = currentC2Pin(historical);
+    const bytes = readBuffer(pin.path);
+    assertExactJson(
+      { bytes: bytes.length, sha256: sha256(bytes) },
+      { bytes: pin.bytes, sha256: pin.sha256 },
+      `C2 current source, immutable Phase B provenance ${pin.path}`,
+    );
+  }
+  const lib = readText(
+    "packages/runtime-native/crates/vivi-runtime-native-core/src/lib.rs",
+  );
+  if (
+    !/#\[cfg\(feature = "evaluation-v1"\)\]\s*mod evaluation;/m.test(lib) ||
+    !/#\[cfg\(feature = "evaluation-v1"\)\]\s*pub use evaluation::/m.test(lib)
+  )
+    throw new Error("core Evaluation module/exports must remain opt-in");
+  const owner = readText(
+    "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation.rs",
+  );
+  assertExactJson(
+    rustStructFields(owner, "ActiveEvaluationV1"),
+    [
+      ["candidate", "SealedEvaluationCandidateV1"],
+      ["textures", "PreparedActivationTextureSetV1"],
+      ["model_generation", "u64"],
+    ],
+    "Active owns moved sealed and texture values",
+  );
+  for (const forbidden of [
+    /RuntimeModel|lower_sealed_evaluation_v1|prepare_lowered_evaluation_v1/,
+    /\.clone\s*\(|Arc\s*<|Mutex\s*<|RefCell\s*</,
+    /std::(?:fs|net)|LocalAssetHost/,
+  ]) {
+    if (forbidden.test(owner))
+      throw new Error("B owner adds duplicated evaluation, cloning or host operations");
+  }
+  const positions = [
+    "self.latest_observed == 0",
+    "let model_generation = self",
+    "let (candidate, textures) = ready.into_parts();",
+    "let retired = self.active.replace(next);",
+    "self.last_model_generation = model_generation;",
+    "drop(retired);",
+  ].map((anchor) => owner.indexOf(anchor));
+  if (positions.some((p, i) => p < 0 || (i && p <= positions[i - 1])))
+    throw new Error("B freshness/check/move/publication order drifted");
+  const command =
+    "cargo test --locked --manifest-path Cargo.toml -p vivi-runtime-native-core --features evaluation-v1 --all-targets && cargo clippy --locked --manifest-path Cargo.toml -p vivi-runtime-native-core --features evaluation-v1 --all-targets -- -D warnings";
+  if (
+    readJson("packages/runtime-native/package.json").scripts["check:evaluation-owner"] !==
+    command
+  )
+    throw new Error("B native test/Clippy script drifted");
+  if (
+    !readText(".github/workflows/runtime-native.yml").includes(
+      "npm run check:evaluation-owner --workspace @vivi2d/runtime-native",
+    )
+  )
+    throw new Error("B native workflow step missing");
+}
+
+function assertOptionalLocalAssetCAbi(metadata) {
+  const abi = requirePackage(metadata, "vivi-runtime-native-c-abi");
+  const host = requirePackage(metadata, "vivi-asset-host-local");
+  const dependencies = abi.dependencies.filter((v) => v.name === host.name);
+  if (dependencies.length !== 1)
+    throw new Error("C ABI must declare one optional local Asset edge");
+  const edge = dependencies[0];
+  assertExactJson(
+    [
+      edge.kind ?? "normal",
+      edge.optional,
+      edge.uses_default_features,
+      path.resolve(edge.path),
+      edge.features,
+      edge.target,
+    ],
+    ["normal", true, false, path.dirname(host.manifest_path), [], null],
+    "exact optional native C ABI/local Asset declaration",
+  );
+  assertExactJson(
+    abi.features["local-asset-host-v1"],
+    ["dep:vivi-asset-host-local", "vivi-asset-host-local/local-store"],
+    "local Asset opt-in feature",
+  );
+  assertExactJson(abi.features.default, [], "C ABI defaults remain empty");
+  const nodes = new Map(metadata.resolve.nodes.map((v) => [v.id, v]));
+  const packages = new Map(metadata.packages.map((v) => [v.id, v]));
+  const seen = new Set(),
+    pending = [abi.id];
+  while (pending.length) {
+    const id = pending.pop();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const node = nodes.get(id),
+      pkg = packages.get(id);
+    if (!node || !pkg) throw new Error("C ABI default graph node missing");
+    if (
+      [
+        "vivi-asset-host-local",
+        "vivi-asset-store-local",
+        "rusqlite",
+        "libsqlite3-sys",
+      ].includes(pkg.name)
+    ) {
+      throw new Error("Default C ABI must not reach local host/store/SQLite");
+    }
+    for (const dependency of node.deps) {
+      if (dependency.dep_kinds.some((k) => k.kind === null || k.kind === "build"))
+        pending.push(dependency.pkg);
+    }
+  }
 }
 
 function consumersOf(metadata, dependencyName) {
@@ -4542,6 +5958,14 @@ function collectRootReexports(source) {
 
 function assertReferenceAllowlist() {
   const allowed = new Set([
+    "packages/runtime-native/crates/vivi-runtime-native-core/Cargo.toml",
+    "packages/runtime-native/crates/vivi-runtime-native-core/src/lib.rs",
+    "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation.rs",
+    "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation/tests.rs",
+    "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation/preparation.rs",
+    "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation/preparation/tests.rs",
+    "docs/developer/architecture/evaluation-c10-integration.md",
+    "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/src/lib.rs",
     ".github/ISSUE_TEMPLATE/gate_failure.yml",
     ".github/workflows/runtime-native.yml",
     "docs/developer/architecture/overview.md",
@@ -4561,6 +5985,11 @@ function assertReferenceAllowlist() {
     "scripts/check-runtime-native-evaluation-lowering.mjs",
     "scripts/check-runtime-native-evaluation-math.mjs",
     "scripts/check-runtime-native-evaluation.mjs",
+    "scripts/lib/evaluation-lowering-c10-corpus.mjs",
+    "scripts/lib/evaluation-lowering-c10-corpus.node-test.mjs",
+    "scripts/lib/evaluation-lowering-c10-execution.mjs",
+    "scripts/lib/evaluation-lowering-c10-wasm-worker.mjs",
+    "scripts/lib/runtime-native-evaluation-wasm.mjs",
     "scripts/check-runtime-native-preactivation.mjs",
     "scripts/quality-gate-manifest.json",
     "scripts/run-quality-gates.mjs",
@@ -4593,7 +6022,7 @@ function assertReferenceAllowlist() {
 
 function structBody(source, structName) {
   const match = new RegExp(
-    `pub\\s+struct\\s+${escapeRegExp(structName)}\\s*\\{([\\s\\S]*?)\\n\\}`,
+    `pub\\s+struct\\s+${escapeRegExp(structName)}(?:<'[A-Za-z][A-Za-z0-9_]*>)?\\s*\\{([\\s\\S]*?)\\n\\}`,
   ).exec(source);
   if (!match) throw new Error(`public struct ${structName} is missing`);
   return match[1];

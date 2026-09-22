@@ -11,14 +11,22 @@
 //! rejection, schema validation, and conversion into the typed plan belong to
 //! a later language-bridge slice.
 
+mod activation;
+mod byte_input;
 mod error;
+#[cfg(feature = "local-store")]
 mod host;
 mod model;
 
+pub use byte_input::{EvaluationPhysicalObjectV1, prepare_activation_texture_set_from_bytes};
 pub use error::{LocalAssetHostError, LocalAssetHostErrorKind};
+#[cfg(feature = "local-store")]
+pub use error::{PngTransferError, PngTransferErrorKind};
+#[cfg(feature = "local-store")]
 pub use host::LocalAssetHost;
 pub use model::{
-    EvaluationTextureBindingV1, EvaluationTexturePlanV1, MissingActivationTexturesV1,
+    EvaluationTextureBindingV1, EvaluationTexturePlanV1, ExportPngClosureV1,
+    MissingActivationTexturesV1, PngClosureExportV1, PngClosureObjectV1,
     PrepareActivationTextureSetV1, PreparedActivationTextureSetV1, PreparedActivationTextureV1,
     ReferencedAtlasResolutionV1, ReferencedPngClosureObjectV1, ReferencedPngManifestClosureV1,
     VerifiedAtlasAssetV1, VerifiedPngV1,
@@ -26,7 +34,8 @@ pub use model::{
 pub use vivi_asset_resolver::{
     AssetErrorCode, AssetRef, Digest, PrincipalId, ReadyPng, StorageKind,
 };
+#[cfg(feature = "local-store")]
 pub use vivi_asset_store_local::LocalStoreErrorKind;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "local-store"))]
 mod tests;

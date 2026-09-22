@@ -25,6 +25,8 @@ use crate::model::{
     ReferencedAtlasResolutionV1, ReferencedPngClosureObjectV1, ReferencedPngManifestClosureV1,
 };
 
+mod transfer;
+
 const PNG_BASE64: &str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMQMgljAAABlQCdTUEI3wAAAABJRU5ErkJggg==";
 const GENERATION: u64 = 41;
 

@@ -17,7 +17,11 @@ export type {
   EmbeddedRoundTripResult,
   ProjectCandidateErrorCode,
 } from "../project-format-v11/embedded-round-trip-profile";
-export { validateEmbeddedRoundTripV11 } from "../project-format-v11/embedded-round-trip-profile";
+export {
+  assertEmbeddedRoundTripEditorState,
+  embeddedRoundTripPngPolicy,
+  validateEmbeddedRoundTripV11,
+} from "../project-format-v11/embedded-round-trip-profile";
 export type {
   ProjectFormatV11SemanticErrorCode,
   ProjectFormatV11ValidationStage,
@@ -35,4 +39,9 @@ export {
   forkEmbeddedRoundTripV11,
   migrateLegacyToEmbeddedRoundTripV11,
 } from "../project-format-v11/legacy-to-embedded-round-trip";
+export {
+  decodeRawBase64,
+  encodeUtf8,
+  utf8ByteLength,
+} from "../project-format-v11/portable-primitives";
 export type * from "../project-format-v11/types";

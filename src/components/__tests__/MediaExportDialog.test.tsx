@@ -127,6 +127,49 @@ describe("MediaExportDialog", () => {
     expect(exportPngSpy).not.toHaveBeenCalled();
   });
 
+  it.each([
+    "replaced",
+    "preparation-failed",
+  ])("does not capture or report success when the display is %s", async (failure) => {
+    const draw = vi.fn();
+    const refs = {
+      app: { render: vi.fn(), canvas: document.createElement("canvas") },
+      prepareDisplayFrame: () => {
+        if (failure === "preparation-failed") throw Error("PROJECT_DISPLAY_UNAVAILABLE");
+      },
+      renderDisplay: draw,
+    };
+    vi.mocked(getPixiAppRefs).mockReturnValue(refs as any);
+    window.electronAPI.selectExportDirectory = vi.fn(async () => {
+      if (failure === "replaced") vi.mocked(getPixiAppRefs).mockReturnValue(null);
+      return "/tmp/export";
+    });
+    // Exercise the actual dialog adapter, not just the mocked export invocation.
+    vi.mocked(mediaExporter.exportPngSequence).mockImplementationOnce(async (app) => {
+      app.render();
+      return 1;
+    });
+    useEditorStore.setState({
+      project: createProject({
+        scenes: [{ id: "s1", name: "S", clips: [createClip()] }],
+      }),
+      projectVersion: 1,
+    });
+    const notify = vi.fn();
+    useNotificationStore.setState({ addNotification: notify });
+    render(<MediaExportDialog onClose={onClose} />);
+    fireEvent.click(screen.getByRole("button", { name: /^エクスポート$|^Export$/i }));
+    await waitFor(() =>
+      expect(notify).toHaveBeenCalledWith(
+        "error",
+        expect.stringContaining("PROJECT_DISPLAY_UNAVAILABLE"),
+      ),
+    );
+    expect(draw).not.toHaveBeenCalled();
+    expect(refs.app.render).not.toHaveBeenCalled();
+    expect(notify.mock.calls.some(([kind]) => kind === "info")).toBe(false);
+  });
+
   it("PNG連番エクスポートが成功すると通知される", async () => {
     vi.mocked(getPixiAppRefs).mockReturnValue({
       app: { render: vi.fn(), canvas: document.createElement("canvas") } as any,

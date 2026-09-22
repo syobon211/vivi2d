@@ -507,12 +507,25 @@ function assertRustFeatureGraph(metadata, pngPackage) {
     (pkg) => pkg.name === "vivi-runtime-native-c-abi",
   );
   if (!cAbiPackage) throw new Error("cargo metadata omitted C ABI crate");
+  const expectedCAbiFeatures = {
+    "abi-v02": ["vivi-runtime-native-core/render-v02"],
+    default: [],
+    "evaluation-v1": ["abi-v02", "vivi-runtime-native-core/evaluation-v1"],
+    "local-asset-host-v1": [
+      "dep:vivi-asset-host-local",
+      "vivi-asset-host-local/local-store",
+    ],
+    "png-v1": ["dep:vivi-png-ref"],
+  };
   if (
-    JSON.stringify(cAbiPackage.features.default) !== "[]" ||
-    JSON.stringify(cAbiPackage.features["png-v1"]) !==
-      JSON.stringify(["dep:vivi-png-ref"])
+    JSON.stringify(Object.keys(cAbiPackage.features).sort()) !==
+      JSON.stringify(Object.keys(expectedCAbiFeatures).sort()) ||
+    Object.entries(expectedCAbiFeatures).some(
+      ([name, members]) =>
+        JSON.stringify(cAbiPackage.features[name]) !== JSON.stringify(members),
+    )
   ) {
-    throw new Error("C ABI default/png-v1 feature graph drifted");
+    throw new Error("C ABI exact opt-in feature graph drifted");
   }
 
   const pngFeatureReferences = Object.entries(cAbiPackage.features).filter(
@@ -528,16 +541,37 @@ function assertRustFeatureGraph(metadata, pngPackage) {
   const optionalDependencies = cAbiPackage.dependencies.filter(
     (dependency) => dependency.optional,
   );
-  const pngDependency = optionalDependencies[0];
+  const pngDependency = optionalDependencies.find(
+    (dependency) => dependency.name === "vivi-png-ref",
+  );
+  const hostDependency = optionalDependencies.find(
+    (dependency) => dependency.name === "vivi-asset-host-local",
+  );
   const expectedPngPath = path.join(root, "packages/runtime-native/crates/vivi-png-ref");
   if (
-    optionalDependencies.length !== 1 ||
-    pngDependency.name !== "vivi-png-ref" ||
+    JSON.stringify(optionalDependencies.map((dependency) => dependency.name).sort()) !==
+      JSON.stringify(["vivi-asset-host-local", "vivi-png-ref"]) ||
+    !pngDependency ||
     pngDependency.kind !== null ||
     pngDependency.source !== null ||
-    path.resolve(pngDependency.path) !== path.resolve(expectedPngPath)
+    path.resolve(pngDependency.path) !== path.resolve(expectedPngPath) ||
+    !pngDependency.uses_default_features ||
+    pngDependency.features.length !== 0
   ) {
     throw new Error("C ABI vivi-png-ref optional path dependency edge drifted");
+  }
+  if (
+    !hostDependency ||
+    hostDependency.kind !== null ||
+    hostDependency.source !== null ||
+    hostDependency.uses_default_features ||
+    hostDependency.features.length !== 0 ||
+    path.resolve(hostDependency.path) !==
+      path.resolve(root, "packages/runtime-native/crates/vivi-asset-host-local")
+  ) {
+    throw new Error(
+      "C ABI local Asset host must remain the exact isolated optional path edge",
+    );
   }
 
   const resolverPackage = metadata.packages.find(
@@ -562,11 +596,35 @@ function assertRustFeatureGraph(metadata, pngPackage) {
     path.resolve(resolverPngDependency.path) !==
       path.resolve(root, "packages/runtime-native/crates/vivi-png-ref") ||
     JSON.stringify(pngConsumers) !==
-      JSON.stringify(["vivi-asset-resolver", "vivi-runtime-native-c-abi"])
+      JSON.stringify([
+        "vivi-asset-resolver",
+        "vivi-runtime-native-c-abi",
+        "vivi-runtime-native-wasm",
+      ])
   ) {
     throw new Error(
-      "vivi-png-ref consumers must remain the private resolver direct path edge and C ABI optional png-v1 edge",
+      "vivi-png-ref consumers must remain the resolver direct edge and C ABI/WASM optional png-v1 edges",
     );
+  }
+
+  const wasmPackage = metadata.packages.find(
+    (pkg) => pkg.name === "vivi-runtime-native-wasm",
+  );
+  const wasmPngDependency = wasmPackage?.dependencies.find(
+    (dependency) => dependency.name === "vivi-png-ref",
+  );
+  if (
+    !wasmPngDependency?.optional ||
+    wasmPngDependency.kind !== null ||
+    wasmPngDependency.source !== null ||
+    path.resolve(wasmPngDependency.path) !== path.resolve(expectedPngPath) ||
+    JSON.stringify(wasmPackage.features) !==
+      JSON.stringify({
+        "evaluation-v1": ["vivi-runtime-native-core/evaluation-v1"],
+        "png-v1": ["dep:vivi-png-ref"],
+      })
+  ) {
+    throw new Error("WASM PNG dependency must remain the opt-in png-v1 path edge");
   }
 
   const expectedDirectDependencies = new Map([

@@ -54,6 +54,7 @@ describe("electron/security.cjs", () => {
       expect(csp).toContain("frame-ancestors 'none'");
       expect(csp).toContain("worker-src 'self' blob:");
       expect(csp).not.toContain("'unsafe-eval'");
+      expect(csp).toContain("script-src 'self' 'wasm-unsafe-eval'");
       expect(csp).not.toContain("https:");
       expect(csp).not.toContain("localhost");
       expect(csp).not.toContain("127.0.0.1");

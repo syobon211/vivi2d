@@ -2,6 +2,10 @@ import type { ProjectData } from "@vivi2d/core/types";
 import { applyPatches, type Patch } from "immer";
 import { create } from "zustand";
 import { t as tGlobal } from "@/lib/i18n";
+import type {
+  V11AtlasHistoryEffect,
+  V11AtlasRevision,
+} from "@/lib/project-v11-serializer";
 import {
   type PreparedTextureHistoryEffects,
   prepareTextureHistoryEffects,
@@ -27,6 +31,12 @@ interface HistoryCallbacks {
 }
 
 let callbacks: HistoryCallbacks | null = null;
+let restoreV11History: ((direction: "undo" | "redo") => boolean) | undefined;
+export function registerV11HistoryRestore(
+  restore: (direction: "undo" | "redo") => boolean,
+): void {
+  restoreV11History = restore;
+}
 
 export function registerHistoryCallbacks(cb: HistoryCallbacks): void {
   callbacks = cb;
@@ -45,7 +55,7 @@ export type HistoryEntry =
       effects?: HistoryEffect[];
     };
 
-export type HistoryEffect = TextureHistoryEffect;
+export type HistoryEffect = TextureHistoryEffect | V11AtlasHistoryEffect;
 
 interface HistoryStore {
   undoStack: HistoryEntry[];
@@ -203,7 +213,153 @@ export function prepareHistorySnapshot(
   };
 }
 
+export interface PreparedHistoryChange {
+  commit(): void;
+  rollback(): void;
+}
+
+/** Fixed stack/timer participant for the v11 synchronous transaction. */
+function prepareHistoryChange(
+  undoStack: HistoryEntry[],
+  redoStack: HistoryEntry[],
+  pushTime: number,
+  mergeKey: string | null,
+): PreparedHistoryChange {
+  const before = useHistoryStore.getState();
+  const beforeTime = lastPushTime,
+    beforeKey = lastMergeKey;
+  let started = false;
+  return {
+    commit() {
+      const current = useHistoryStore.getState();
+      if (
+        current.undoStack !== before.undoStack ||
+        current.redoStack !== before.redoStack
+      )
+        throw new Error("PROJECT_HISTORY_CONFLICT");
+      started = true;
+      useHistoryStore.setState({ undoStack, redoStack });
+      lastPushTime = pushTime;
+      lastMergeKey = mergeKey;
+    },
+    rollback() {
+      if (!started) return;
+      try {
+        useHistoryStore.setState({
+          undoStack: before.undoStack,
+          redoStack: before.redoStack,
+        });
+      } finally {
+        lastPushTime = beforeTime;
+        lastMergeKey = beforeKey;
+        started = false;
+      }
+    },
+  };
+}
+
+export function prepareHistoryClear(): PreparedHistoryChange {
+  return prepareHistoryChange([], [], 0, null);
+}
+
+function boundedV11History(
+  undo: HistoryEntry[],
+  redo: HistoryEntry[],
+  active: V11AtlasRevision,
+): { undoStack: HistoryEntry[]; redoStack: HistoryEntry[] } {
+  const activeBacking = new Set(active.atlases.map((atlas) => atlas.backing));
+  let undoStack = [...undo],
+    redoStack = [...redo];
+  const exceeds = () => {
+    if (undoStack.length + redoStack.length > MAX_HISTORY) return true;
+    const retained = new Set(activeBacking);
+    let png = 0,
+      rgba = 0;
+    for (const entry of [...undoStack, ...redoStack])
+      for (const effect of entry.effects ?? []) {
+        if (effect.kind !== "v11-atlas") continue;
+        for (const revision of [effect.before, effect.after])
+          for (const { backing } of revision.atlases) {
+            if (retained.has(backing)) continue;
+            retained.add(backing);
+            png += backing.pngByteLength;
+            rgba += backing.rgbaByteLength;
+          }
+      }
+    return png > 67_108_864 || rgba > 268_435_456;
+  };
+  // Drop complete farthest entries, keeping both directions contiguous nearest
+  // the active state. Count unique backing across BOTH stacks, never per stack.
+  while ((undoStack.length || redoStack.length) && exceeds()) {
+    if (undoStack.length >= redoStack.length) undoStack = undoStack.slice(1);
+    else redoStack = redoStack.slice(1);
+  }
+  return { undoStack, redoStack };
+}
+
+export function prepareV11HistoryEdit(
+  before: ProjectData,
+  active: V11AtlasRevision,
+  options: {
+    patches?: Patch[];
+    inversePatches?: Patch[];
+    mergeKey?: string;
+    effect?: V11AtlasHistoryEffect;
+  },
+): PreparedHistoryChange {
+  const state = useHistoryStore.getState();
+  const now = Date.now();
+  const top = state.undoStack.at(-1);
+  const canMerge =
+    !options.effect &&
+    options.patches &&
+    top?.kind === "patch" &&
+    !top.effects?.length &&
+    options.mergeKey !== undefined &&
+    options.mergeKey === lastMergeKey &&
+    now - lastPushTime < MERGE_INTERVAL;
+  const entry: HistoryEntry =
+    canMerge && top.kind === "patch"
+      ? {
+          kind: "patch",
+          patches: [...top.patches, ...(options.patches ?? [])],
+          inversePatches: [...(options.inversePatches ?? []), ...top.inversePatches],
+        }
+      : options.patches && !options.effect
+        ? {
+            kind: "patch",
+            patches: options.patches,
+            inversePatches: options.inversePatches ?? [],
+          }
+        : {
+            kind: "snapshot",
+            snapshot: structuredClone(before),
+            effects: options.effect ? [options.effect] : undefined,
+          };
+  const stack = [...(canMerge ? state.undoStack.slice(0, -1) : state.undoStack), entry];
+  return prepareHistoryChange(
+    boundedV11History(stack, [], active).undoStack,
+    [],
+    now,
+    options.effect ? null : (options.mergeKey ?? null),
+  );
+}
+
+export function prepareV11HistoryNavigation(
+  direction: "undo" | "redo",
+  reverse: HistoryEntry,
+  active: V11AtlasRevision,
+): PreparedHistoryChange {
+  const { undoStack, redoStack } = useHistoryStore.getState();
+  const bounded =
+    direction === "undo"
+      ? boundedV11History(undoStack.slice(0, -1), [...redoStack, reverse], active)
+      : boundedV11History([...undoStack, reverse], redoStack.slice(0, -1), active);
+  return prepareHistoryChange(bounded.undoStack, bounded.redoStack, 0, null);
+}
+
 function restoreHistory(direction: "undo" | "redo"): void {
+  if (restoreV11History?.(direction)) return;
   const { undoStack, redoStack } = useHistoryStore.getState();
   const source = direction === "undo" ? undoStack : redoStack;
   const cb = callbacks;
@@ -246,7 +402,12 @@ function restoreHistory(direction: "undo" | "redo"): void {
       };
     }
     if (entry.effects && entry.effects.length > 0) {
-      textures = prepareTextureHistoryEffects(entry.effects, direction);
+      textures = prepareTextureHistoryEffects(
+        entry.effects.filter(
+          (effect): effect is TextureHistoryEffect => effect.kind === "texture",
+        ),
+        direction,
+      );
       textures.commit();
     }
     projectStarted = true;

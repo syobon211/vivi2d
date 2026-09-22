@@ -1,0 +1,119 @@
+{
+  "kind": "vivi2d-c10-c11-identity-addendum-v1",
+  "status": "AUTHOR_C11_IMPLEMENTATION_REVIEW_PENDING",
+  "historicalAuthorities": [
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-machine-dag-physics-slots-1.json",
+      "bytes": 278245,
+      "sha256": "5592bdc24cf768069d0746922c3056aa38e57152aabbef5537e2ea8a211abdfc"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-source-bindings-4.json",
+      "bytes": 12941,
+      "sha256": "7f6f25a100036b72814fd5e9ff9d3c8dce840e4329a7cda219f9c34b69dd7bc2"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-source-callsite-map-2.json",
+      "bytes": 336521,
+      "sha256": "6bc5b813a7b4a46579ce4c50d82b3238bb1b064b30bc002dbd3cdfed00e14f86"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-callable-allocation-closure-4.json",
+      "bytes": 37990,
+      "sha256": "0b5550665bb38cc5d0de6fc385a3804f2b153cfd196bb1c354883d21f00673e3"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-callable-allocation-closure-4.md",
+      "bytes": 16581,
+      "sha256": "c1a42ca042a9d8eea7978b8d579f6675fe54e98055645dd1f9a7a8980bb289c6"
+    }
+  ],
+  "mappedSourceUpdate": {
+    "historical": {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/derived_candidate.rs",
+      "bytes": 12225,
+      "sha256": "d2dfd4e625b4280ab137f776c82b453555beba6d7845f1b4fc6bef86fda16156"
+    },
+    "current": {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/derived_candidate.rs",
+      "bytes": 12566,
+      "sha256": "f88527dacdaa7b8c9a056a8d8880100da6254a66ec6fdc4949f685ad4b39920d"
+    }
+  },
+  "connectionSourcePins": [
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lib.rs",
+      "bytes": 4975,
+      "sha256": "53be073827c3c489d1252ea4689af1e19d011888491f7bd65b8fc096b7d1a42d"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lower.rs",
+      "bytes": 102865,
+      "sha256": "56a2790888b62aec45add9ab39f0f4a449d776f92a6288a8afb86b8ca55fc8f8"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/reservation.rs",
+      "bytes": 36834,
+      "sha256": "d5d11b8df71023d7a5440f7d6877c9e4f2f221769d557d04d9a8f71d5e1b2324"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/sealed_candidate.rs",
+      "bytes": 8962,
+      "sha256": "dc5990d6053e3fe693fb91b68ea099e676236cfde089d9a23bc9a17650714f83"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/snapshot.rs",
+      "bytes": 8905,
+      "sha256": "ab11e2d4645edd3f9af12b92568fb4eedbcb8d03bcc13f4ecafe20b9d96ec042"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/topology.rs",
+      "bytes": 14151,
+      "sha256": "a355b9506c6487440e37c876b6c65220d72426897f6842db5d7bc54a316d4f6d"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/topology_reservation.rs",
+      "bytes": 5284,
+      "sha256": "92aeca9708b01db3ef18cc4a76be84782710d57d8e949952aefb7c1cdff4d42a"
+    }
+  ],
+  "unchangedMappedNumericalSources": [
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/derived.rs",
+      "bytes": 52152,
+      "sha256": "1e3a78a7c53769b258cfae84a2bd315f52c02d12be7274a2c5f60360c98f0388"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/physics.rs",
+      "bytes": 22120,
+      "sha256": "5257925d19242f7f588b862c21e692893939b757978024bf2a47ce9ea92b9249"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/state.rs",
+      "bytes": 5157,
+      "sha256": "a3c5567f307b778ba18a9a8339a3ae7175c3a9d9fb0101cdfbfdf34e411e8906"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/observation.rs",
+      "bytes": 8699,
+      "sha256": "36a6fb5d233e135ad2c7b257270cc8fd3b09407dfee4efdbb8ec514e28bf6664"
+    }
+  ],
+  "counts": {
+    "templates": 160,
+    "dagOccurrences": 198,
+    "ownerDomains": 22,
+    "ownerShapes": 22,
+    "distinctObservedSourceCallsites": 156,
+    "mappedObservedSourceCallsites": 156
+  },
+  "claims": {
+    "historicalApprovalTransfersToChangedCode": false,
+    "originalAuthorityBytesPreserved": true,
+    "mappedArithmeticSpansUnchanged": true,
+    "requiresCurrentFullC10Execution": true,
+    "requiresCurrentC11Tests": true,
+    "productionConsumerOrActivation": false
+  },
+  "change": "C9 preflight/reserve/materialize split; one shared unchanged initial C10 evaluate/commit tail; C11 reserves all 44 storage sites before retained fill, then performs pure topology fill and borrowed-view verification. This is an identity overlay, not a replacement numerical oracle or whole-program proof."
+}

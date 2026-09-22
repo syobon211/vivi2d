@@ -108,12 +108,39 @@ function validateSaveFile(channel, args) {
   assertOnlyKeys(
     payload,
     channel,
-    new Set(["data", "binary", "defaultName", "filePath"]),
+    new Set([
+      "data",
+      "binary",
+      "defaultName",
+      "filePath",
+      "format",
+      "preserveSourcePaths",
+    ]),
   );
   assertString(payload.data, channel, "data", { optional: true, allowEmpty: true });
   assertBinary(payload.binary, channel, "binary", { optional: true });
   assertString(payload.defaultName, channel, "defaultName");
   assertString(payload.filePath, channel, "filePath", { optional: true });
+  if (
+    payload.preserveSourcePaths !== undefined &&
+    (payload.format !== "project-v11-json" ||
+      !Array.isArray(payload.preserveSourcePaths) ||
+      payload.preserveSourcePaths.length < 1 ||
+      payload.preserveSourcePaths.length > 2 ||
+      payload.preserveSourcePaths.some(
+        (value) => typeof value !== "string" || value.length === 0,
+      ))
+  )
+    throw new Error("Invalid project copy source.");
+  if (payload.format !== undefined && payload.format !== "project-v11-json") {
+    throw new Error("Invalid project save format.");
+  }
+  if (
+    payload.format === "project-v11-json" &&
+    (typeof payload.data !== "string" || payload.binary !== undefined)
+  ) {
+    throw new Error("Invalid project v11 save payload.");
+  }
   if (payload.data === undefined && payload.binary === undefined) {
     throw new Error(`Invalid IPC payload for ${channel}: data or binary is required.`);
   }
@@ -269,6 +296,8 @@ function validateComfyDownload(channel, args) {
 }
 
 const OBJECT_ARG_CONTRACTS = new Map([
+  ["local-asset-copy", require("./local-asset-copy-contract.cjs").validateLocalAssetCopy],
+  ["local-exchange", require("./local-exchange-contract.cjs").validateLocalExchange],
   ["save-file", validateSaveFile],
   ["save-vivid-file", validateSaveVividFile],
   ["write-export-files", validateWriteExportFiles],

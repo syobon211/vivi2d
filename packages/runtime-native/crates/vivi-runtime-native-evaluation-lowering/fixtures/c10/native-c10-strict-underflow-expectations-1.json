@@ -1,0 +1,1142 @@
+{
+  "kind": "native-c10-strict-underflow-expectations-v1",
+  "status": "fixed-independent-literal-data-raw-validation-separate-not-C10-acceptance",
+  "inputPin": {
+    "name": "native-c10-strict-underflow-inputs-1.json",
+    "bytes": 23640,
+    "sha256": "03b73c616f0df051a6cc1a12ee386c9921cb9cb11a701ec973858d187d0099b5"
+  },
+  "priorBranchPlan": {
+    "name": "native-c10-strict-underflow-plan-1.md",
+    "bytes": 3557,
+    "sha256": "531385ddfe064d71a63cb808e82b410785f919bf48fecd4cb0112578dbc5ed18"
+  },
+  "baseExpectedPin": {
+    "name": "native-c10-s-expectations-1.json",
+    "bytes": 1266863,
+    "sha256": "4df2e4448b235cbca0903f13fccd585031300592ff800536492af41e828db4d4"
+  },
+  "traceEncoding": "Copy exact base trace at pointer from pinned S expected JSON. Assert every replacement.before equals that base row. Replace only listed indexes by replacement.after, preserve array order, verify expandedCount and expandedCompactSha256. No numerical evaluation.",
+  "cases": [
+    {
+      "scenarioId": "supplement-legacy-strict-below-half",
+      "variant": "strict-below-half-initial14",
+      "inputVariantIndex": 0,
+      "baseCase": {
+        "file": "native-c10-s-expectations-1.json",
+        "pointer": "/cases/11"
+      },
+      "steps": [
+        {
+          "operation": "construct-initial",
+          "status": 14,
+          "derivedTokenReturned": false,
+          "dynamicGenerationU64": null,
+          "checkpointTrace": {
+            "kind": "fixed-literal-trace-base-and-row-replacements",
+            "base": {
+              "file": "native-c10-s-expectations-1.json",
+              "pointer": "/cases/11/steps/0/checkpointTrace",
+              "compactSha256": "480ebe9e66619b7483cba390245bbcd7116347dd160eb1b5fd237b7db7b14d65"
+            },
+            "rowReplacements": [
+              {
+                "index": 110,
+                "before": {
+                  "checkpoint": "skin.transform.x-left",
+                  "opcode": 3,
+                  "operands": [
+                    "3ff0000000000000",
+                    "3690000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.transform.x-left",
+                  "opcode": 3,
+                  "operands": [
+                    "3ff0000000000000",
+                    "3680000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 112,
+                "before": {
+                  "checkpoint": "skin.transform.x-pair",
+                  "opcode": 1,
+                  "operands": [
+                    "3690000000000000",
+                    "0000000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.transform.x-pair",
+                  "opcode": 1,
+                  "operands": [
+                    "3680000000000000",
+                    "0000000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 113,
+                "before": {
+                  "checkpoint": "skin.transform.x-translation",
+                  "opcode": 1,
+                  "operands": [
+                    "3690000000000000",
+                    "0000000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.transform.x-translation",
+                  "opcode": 1,
+                  "operands": [
+                    "3680000000000000",
+                    "0000000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 114,
+                "before": {
+                  "checkpoint": "skin.weighted-x",
+                  "opcode": 3,
+                  "operands": [
+                    "3690000000000000",
+                    "3ff0000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.weighted-x",
+                  "opcode": 3,
+                  "operands": [
+                    "3680000000000000",
+                    "3ff0000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 115,
+                "before": {
+                  "checkpoint": "skin.sum-x",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3690000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.sum-x",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3680000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 116,
+                "before": {
+                  "checkpoint": "skin.transform.y-left",
+                  "opcode": 3,
+                  "operands": [
+                    "0000000000000000",
+                    "3690000000000000"
+                  ],
+                  "result": "0000000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.transform.y-left",
+                  "opcode": 3,
+                  "operands": [
+                    "0000000000000000",
+                    "3680000000000000"
+                  ],
+                  "result": "0000000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                }
+              }
+            ],
+            "expandedCount": 123,
+            "expandedCompactSha256": "cebf6fad054f86d4285cbb87f2180bcc98552e7c20a627b0df603ad7782cfabc"
+          },
+          "projectionTrace": [
+            {
+              "meshSlot": 0,
+              "vertexIndex": 0,
+              "axis": 0,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 0,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 1,
+              "axis": 0,
+              "sourceD64Bits": "3ff0000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "3f800000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 1,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 2,
+              "axis": 0,
+              "sourceD64Bits": "3680000000000000",
+              "classification": "NumericUnderflow",
+              "rejectedD32Bits": "00000000"
+            }
+          ],
+          "firstFailure": {
+            "phase": "category10-projection",
+            "meshSlot": 0,
+            "vertexIndex": 2,
+            "axis": 0,
+            "reason": "NumericUnderflow",
+            "sourceD64Bits": "3680000000000000",
+            "projectionOccurrenceZeroBased": 4
+          },
+          "noCommittedSnapshotPublished": true,
+          "requestGenerationU64": "5"
+        }
+      ]
+    },
+    {
+      "scenarioId": "supplement-legacy-strict-below-half",
+      "variant": "strict-below-half-dynamic9-repair",
+      "inputVariantIndex": 1,
+      "baseCase": {
+        "file": "native-c10-s-expectations-1.json",
+        "pointer": "/cases/12"
+      },
+      "steps": [
+        {
+          "operation": "construct-initial",
+          "dynamicGenerationU64": "0",
+          "status": 0,
+          "derivedTokenReturned": true,
+          "checkpointTrace": {
+            "kind": "fixed-literal-trace-base-and-row-replacements",
+            "base": {
+              "file": "native-c10-s-expectations-1.json",
+              "pointer": "/cases/12/steps/0/checkpointTrace",
+              "compactSha256": "cd7a4ef0a703f2e0029b4b0b4d97e7f8cf37256f94c4a309c88049f4fe4a153a"
+            },
+            "rowReplacements": [],
+            "expandedCount": 126,
+            "expandedCompactSha256": "cd7a4ef0a703f2e0029b4b0b4d97e7f8cf37256f94c4a309c88049f4fe4a153a"
+          },
+          "projectionTrace": [
+            {
+              "meshSlot": 0,
+              "vertexIndex": 0,
+              "axis": 0,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 0,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 1,
+              "axis": 0,
+              "sourceD64Bits": "3ff0000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "3f800000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 1,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 2,
+              "axis": 0,
+              "sourceD64Bits": "3ff0000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "3f800000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 2,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            }
+          ],
+          "firstFailure": null,
+          "callerCurrentD64Bits": [
+            "0000000000000000"
+          ],
+          "committedState": {
+            "parameterPreviousD64Bits": [
+              "0000000000000000"
+            ],
+            "boneOverrides": [
+              {
+                "boneSlot": 0,
+                "presentProperties": [],
+                "presenceU32": "0",
+                "paddingU32": "0",
+                "xD64Bits": "0000000000000000",
+                "yD64Bits": "0000000000000000",
+                "angleD64Bits": "0000000000000000",
+                "scaleXD64Bits": "0000000000000000",
+                "scaleYD64Bits": "0000000000000000"
+              },
+              {
+                "boneSlot": 1,
+                "presentProperties": [
+                  "x"
+                ],
+                "xD64Bits": "3ff0000000000000",
+                "yD64Bits": "0000000000000000",
+                "angleD64Bits": "0000000000000000",
+                "scaleXD64Bits": "0000000000000000",
+                "scaleYD64Bits": "0000000000000000",
+                "paddingU32": "0"
+              },
+              {
+                "boneSlot": 2,
+                "presentProperties": [],
+                "presenceU32": "0",
+                "paddingU32": "0",
+                "xD64Bits": "0000000000000000",
+                "yD64Bits": "0000000000000000",
+                "angleD64Bits": "0000000000000000",
+                "scaleXD64Bits": "0000000000000000",
+                "scaleYD64Bits": "0000000000000000"
+              },
+              {
+                "boneSlot": 3,
+                "presentProperties": [],
+                "presenceU32": "0",
+                "paddingU32": "0",
+                "xD64Bits": "0000000000000000",
+                "yD64Bits": "0000000000000000",
+                "angleD64Bits": "0000000000000000",
+                "scaleXD64Bits": "0000000000000000",
+                "scaleYD64Bits": "0000000000000000"
+              }
+            ],
+            "physicsPresent": false,
+            "physicsPendulums": [],
+            "physicsAccumulatorD64Bits": "0000000000000000",
+            "physicsSnapshotValid": false,
+            "derivedD32Bits": [
+              "00000000",
+              "00000000",
+              "3f800000",
+              "00000000",
+              "3f800000",
+              "00000000"
+            ],
+            "directVertexD32Bits": [],
+            "meshes": [
+              {
+                "meshSlot": 0,
+                "snapshotValid": true,
+                "culled": false,
+                "visible": true,
+                "effectiveVisible": true,
+                "xD32Bits": "00000000",
+                "yD32Bits": "00000000",
+                "vertexD32Bits": [
+                  "00000000",
+                  "00000000",
+                  "3f800000",
+                  "00000000",
+                  "3f800000",
+                  "00000000"
+                ]
+              }
+            ]
+          },
+          "evaluationScratchAfterSuccess": {
+            "worldPre": [],
+            "worldPost": [
+              [
+                "3ff0000000000000",
+                "0000000000000000",
+                "8000000000000000",
+                "3ff0000000000000",
+                "0000000000000000",
+                "0000000000000000"
+              ],
+              [
+                "3ff0000000000000",
+                "0000000000000000",
+                "8000000000000000",
+                "3ff0000000000000",
+                "3ff0000000000000",
+                "0000000000000000"
+              ],
+              [
+                "3ff0000000000000",
+                "0000000000000000",
+                "8000000000000000",
+                "3ff0000000000000",
+                "0000000000000000",
+                "0000000000000000"
+              ],
+              [
+                "3ff0000000000000",
+                "0000000000000000",
+                "8000000000000000",
+                "3ff0000000000000",
+                "0000000000000000",
+                "0000000000000000"
+              ]
+            ],
+            "skinnedD64Bits": [
+              "0000000000000000",
+              "0000000000000000",
+              "3ff0000000000000",
+              "0000000000000000",
+              "3ff0000000000000",
+              "0000000000000000"
+            ],
+            "bindingAccumulatorsD64Bits": [
+              "3ff0000000000000"
+            ],
+            "ikScratch": [],
+            "physicsUpdateAccumulatorD64Bits": "0000000000000000",
+            "physicsUpdateSnapshotValid": false
+          },
+          "requestGenerationU64": "5"
+        },
+        {
+          "operation": "set_input",
+          "status": 0,
+          "dynamicGenerationU64": "0",
+          "checkpointTrace": [],
+          "projectionTrace": [],
+          "callerCurrentD64Bits": [
+            "3ff0000000000000"
+          ],
+          "parameterPreviousD64Bits": [
+            "0000000000000000"
+          ],
+          "committedDerivedStateRef": "after-action-0",
+          "requestGenerationU64": "5"
+        },
+        {
+          "operation": "update",
+          "deltaD64Bits": "0000000000000000",
+          "status": 9,
+          "dynamicGenerationU64": "0",
+          "checkpointTrace": {
+            "kind": "fixed-literal-trace-base-and-row-replacements",
+            "base": {
+              "file": "native-c10-s-expectations-1.json",
+              "pointer": "/cases/12/steps/2/checkpointTrace",
+              "compactSha256": "26353d589ebc1734fecba8aa69443693d5a50564d31d1fb3c03d6018c37b645b"
+            },
+            "rowReplacements": [
+              {
+                "index": 0,
+                "before": {
+                  "checkpoint": "bind.delta",
+                  "opcode": 2,
+                  "operands": [
+                    "3690000000000000",
+                    "0000000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "bind.delta",
+                  "opcode": 2,
+                  "operands": [
+                    "3680000000000000",
+                    "0000000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 1,
+                "before": {
+                  "checkpoint": "bind.accum",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3690000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "bind.accum",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3680000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 2,
+                "before": {
+                  "checkpoint": "bind.final",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3690000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "bind.final",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3680000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 108,
+                "before": {
+                  "checkpoint": "skin.affine.translation-sum",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3690000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0,
+                    4
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.affine.translation-sum",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3680000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0,
+                    4
+                  ]
+                }
+              },
+              {
+                "index": 116,
+                "before": {
+                  "checkpoint": "skin.transform.x-translation",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3690000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.transform.x-translation",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3680000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 117,
+                "before": {
+                  "checkpoint": "skin.weighted-x",
+                  "opcode": 3,
+                  "operands": [
+                    "3690000000000000",
+                    "3ff0000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.weighted-x",
+                  "opcode": 3,
+                  "operands": [
+                    "3680000000000000",
+                    "3ff0000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                }
+              },
+              {
+                "index": 118,
+                "before": {
+                  "checkpoint": "skin.sum-x",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3690000000000000"
+                  ],
+                  "result": "3690000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                },
+                "after": {
+                  "checkpoint": "skin.sum-x",
+                  "opcode": 1,
+                  "operands": [
+                    "0000000000000000",
+                    "3680000000000000"
+                  ],
+                  "result": "3680000000000000",
+                  "owners": [
+                    0,
+                    2,
+                    0
+                  ]
+                }
+              }
+            ],
+            "expandedCount": 126,
+            "expandedCompactSha256": "382947a7e26d437f38beb0534ef9eb464b173fcbf0b165cf8ceafe735877945c"
+          },
+          "projectionTrace": [
+            {
+              "meshSlot": 0,
+              "vertexIndex": 0,
+              "axis": 0,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 0,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 1,
+              "axis": 0,
+              "sourceD64Bits": "3ff0000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "3f800000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 1,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 2,
+              "axis": 0,
+              "sourceD64Bits": "3680000000000000",
+              "classification": "NumericUnderflow",
+              "rejectedD32Bits": "00000000"
+            }
+          ],
+          "firstFailure": {
+            "phase": "category10-projection",
+            "meshSlot": 0,
+            "vertexIndex": 2,
+            "axis": 0,
+            "reason": "NumericUnderflow",
+            "sourceD64Bits": "3680000000000000",
+            "projectionOccurrenceZeroBased": 4
+          },
+          "callerCurrentD64Bits": [
+            "3ff0000000000000"
+          ],
+          "parameterPreviousD64Bits": [
+            "0000000000000000"
+          ],
+          "committedDerivedStateRef": "after-action-0",
+          "callerInputRef": "after-action-1",
+          "scratch": "unusable; not included in committed-state preservation",
+          "requestGenerationU64": "5"
+        },
+        {
+          "operation": "set_input",
+          "status": 0,
+          "dynamicGenerationU64": "0",
+          "checkpointTrace": [],
+          "projectionTrace": [],
+          "callerCurrentD64Bits": [
+            "0000000000000000"
+          ],
+          "parameterPreviousD64Bits": [
+            "0000000000000000"
+          ],
+          "committedDerivedStateRef": "after-action-0",
+          "requestGenerationU64": "5",
+          "actionIndex": 3
+        },
+        {
+          "operation": "update",
+          "dynamicGenerationU64": "1",
+          "status": 0,
+          "derivedTokenReturned": true,
+          "checkpointTrace": {
+            "kind": "fixed-literal-trace-base-and-row-replacements",
+            "base": {
+              "file": "native-c10-s-expectations-1.json",
+              "pointer": "/cases/12/steps/0/checkpointTrace",
+              "compactSha256": "cd7a4ef0a703f2e0029b4b0b4d97e7f8cf37256f94c4a309c88049f4fe4a153a"
+            },
+            "rowReplacements": [],
+            "expandedCount": 126,
+            "expandedCompactSha256": "cd7a4ef0a703f2e0029b4b0b4d97e7f8cf37256f94c4a309c88049f4fe4a153a"
+          },
+          "projectionTrace": [
+            {
+              "meshSlot": 0,
+              "vertexIndex": 0,
+              "axis": 0,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 0,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 1,
+              "axis": 0,
+              "sourceD64Bits": "3ff0000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "3f800000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 1,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 2,
+              "axis": 0,
+              "sourceD64Bits": "3ff0000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "3f800000"
+            },
+            {
+              "meshSlot": 0,
+              "vertexIndex": 2,
+              "axis": 1,
+              "sourceD64Bits": "0000000000000000",
+              "classification": "accepted",
+              "resultD32Bits": "00000000"
+            }
+          ],
+          "firstFailure": null,
+          "callerCurrentD64Bits": [
+            "0000000000000000"
+          ],
+          "committedState": {
+            "parameterPreviousD64Bits": [
+              "0000000000000000"
+            ],
+            "boneOverrides": [
+              {
+                "boneSlot": 0,
+                "presentProperties": [],
+                "presenceU32": "0",
+                "paddingU32": "0",
+                "xD64Bits": "0000000000000000",
+                "yD64Bits": "0000000000000000",
+                "angleD64Bits": "0000000000000000",
+                "scaleXD64Bits": "0000000000000000",
+                "scaleYD64Bits": "0000000000000000"
+              },
+              {
+                "boneSlot": 1,
+                "presentProperties": [
+                  "x"
+                ],
+                "xD64Bits": "3ff0000000000000",
+                "yD64Bits": "0000000000000000",
+                "angleD64Bits": "0000000000000000",
+                "scaleXD64Bits": "0000000000000000",
+                "scaleYD64Bits": "0000000000000000",
+                "paddingU32": "0"
+              },
+              {
+                "boneSlot": 2,
+                "presentProperties": [],
+                "presenceU32": "0",
+                "paddingU32": "0",
+                "xD64Bits": "0000000000000000",
+                "yD64Bits": "0000000000000000",
+                "angleD64Bits": "0000000000000000",
+                "scaleXD64Bits": "0000000000000000",
+                "scaleYD64Bits": "0000000000000000"
+              },
+              {
+                "boneSlot": 3,
+                "presentProperties": [],
+                "presenceU32": "0",
+                "paddingU32": "0",
+                "xD64Bits": "0000000000000000",
+                "yD64Bits": "0000000000000000",
+                "angleD64Bits": "0000000000000000",
+                "scaleXD64Bits": "0000000000000000",
+                "scaleYD64Bits": "0000000000000000"
+              }
+            ],
+            "physicsPresent": false,
+            "physicsPendulums": [],
+            "physicsAccumulatorD64Bits": "0000000000000000",
+            "physicsSnapshotValid": false,
+            "derivedD32Bits": [
+              "00000000",
+              "00000000",
+              "3f800000",
+              "00000000",
+              "3f800000",
+              "00000000"
+            ],
+            "directVertexD32Bits": [],
+            "meshes": [
+              {
+                "meshSlot": 0,
+                "snapshotValid": true,
+                "culled": false,
+                "visible": true,
+                "effectiveVisible": true,
+                "xD32Bits": "00000000",
+                "yD32Bits": "00000000",
+                "vertexD32Bits": [
+                  "00000000",
+                  "00000000",
+                  "3f800000",
+                  "00000000",
+                  "3f800000",
+                  "00000000"
+                ]
+              }
+            ]
+          },
+          "evaluationScratchAfterSuccess": {
+            "worldPre": [],
+            "worldPost": [
+              [
+                "3ff0000000000000",
+                "0000000000000000",
+                "8000000000000000",
+                "3ff0000000000000",
+                "0000000000000000",
+                "0000000000000000"
+              ],
+              [
+                "3ff0000000000000",
+                "0000000000000000",
+                "8000000000000000",
+                "3ff0000000000000",
+                "3ff0000000000000",
+                "0000000000000000"
+              ],
+              [
+                "3ff0000000000000",
+                "0000000000000000",
+                "8000000000000000",
+                "3ff0000000000000",
+                "0000000000000000",
+                "0000000000000000"
+              ],
+              [
+                "3ff0000000000000",
+                "0000000000000000",
+                "8000000000000000",
+                "3ff0000000000000",
+                "0000000000000000",
+                "0000000000000000"
+              ]
+            ],
+            "skinnedD64Bits": [
+              "0000000000000000",
+              "0000000000000000",
+              "3ff0000000000000",
+              "0000000000000000",
+              "3ff0000000000000",
+              "0000000000000000"
+            ],
+            "bindingAccumulatorsD64Bits": [
+              "3ff0000000000000"
+            ],
+            "ikScratch": [],
+            "physicsUpdateAccumulatorD64Bits": "0000000000000000",
+            "physicsUpdateSnapshotValid": false
+          },
+          "requestGenerationU64": "5",
+          "deltaD64Bits": "0000000000000000",
+          "actionIndex": 4
+        }
+      ]
+    }
+  ],
+  "projectionProof": {
+    "sourceD64Bits": "3680000000000000",
+    "signBit": 0,
+    "binary64ExponentFieldHex": "368",
+    "unbiasedExponent": -151,
+    "fractionHex": "0000000000000",
+    "sourceExact": "2^-151",
+    "minimumBinary32Subnormal": "2^-149",
+    "halfMinimumBinary32Subnormal": "2^-150",
+    "relation": "0 < 2^-151 < 2^-150",
+    "roundedD32Bits": "00000000",
+    "sourceIsNonzero": true,
+    "classification": "NumericUnderflow",
+    "method": "Fixed exact powers-of-two interval proof, not a projection kernel or host float cast."
+  },
+  "rollbackBindings": {
+    "baseline": "/cases/1/steps/0/committedState",
+    "failure": "/cases/1/steps/2",
+    "callerSetter": "/cases/1/steps/1",
+    "repairSetter": "/cases/1/steps/3",
+    "retry": "/cases/1/steps/4",
+    "expectedCommittedStateEquality": [
+      "baseline equals after-failure committed semantic state by committedDerivedStateRef",
+      "baseline equals successful repaired retry committedState"
+    ],
+    "requestGenerationU64": "5",
+    "dynamicGenerationsU64": [
+      "0",
+      "0",
+      "0",
+      "0",
+      "1"
+    ],
+    "preserved": [
+      "previous parameters",
+      "bone override presence and values",
+      "physics absent/zero accumulator",
+      "derived coordinates and mesh flags",
+      "request generation",
+      "dynamic generation"
+    ],
+    "notPreserved": [
+      "evaluation scratch"
+    ],
+    "callerCurrentOnFailure": "3ff0000000000000",
+    "note": "This is independent expected equality, not observed implementation bytes. Only successful retry advances dynamic generation."
+  },
+  "expansionChecks": [
+    {
+      "caseIndex": 0,
+      "stepIndex": 0,
+      "expandedStepCompactSha256": "c5258456bddacf9668787893d48649d76e45bf17f8c13a8534ac3d159fb0d668",
+      "checkpointRows": 123,
+      "projectionRows": 5
+    },
+    {
+      "caseIndex": 1,
+      "stepIndex": 0,
+      "expandedStepCompactSha256": "8370793189d62421b354c9eae32eaebc308c68915b2f5eeec82efb819e2d1558",
+      "checkpointRows": 126,
+      "projectionRows": 6
+    },
+    {
+      "caseIndex": 1,
+      "stepIndex": 2,
+      "expandedStepCompactSha256": "1da7266ba4ed3b712e9b5002c71a5df8b0c5a6726d24f56501bc0e7cfcc5a465",
+      "checkpointRows": 126,
+      "projectionRows": 5
+    },
+    {
+      "caseIndex": 1,
+      "stepIndex": 4,
+      "expandedStepCompactSha256": "038c1848e3a6107b8c0f0cb03e3630e5cb7ecf416825156da52e4903cc4552f2",
+      "checkpointRows": 126,
+      "projectionRows": 6
+    }
+  ],
+  "summary": {
+    "variants": 2,
+    "steps": 6,
+    "evaluations": 4,
+    "primitiveRows": 501,
+    "changedRawRows": 13,
+    "projectionAttempts": 22,
+    "underflowFailures": 2,
+    "expectedStatusSequence": [
+      [
+        14
+      ],
+      [
+        0,
+        0,
+        9,
+        0,
+        0
+      ]
+    ],
+    "noC10Execution": true
+  },
+  "limits": [
+    "Supplement only; no old author file changed.",
+    "Raw primitive and C9 admission evidence are separate prerequisites, not C10 conformance.",
+    "No C11 rendering/topology assertion."
+  ]
+}

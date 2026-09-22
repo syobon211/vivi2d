@@ -9,6 +9,7 @@ import {
   type ReferencedAtlasResolutionV1,
   type VerifiedAtlasAssetV1,
 } from "../index";
+import { issueRequestGeneration } from "../request-generation";
 
 const ZERO_BYTE_SHA256 =
   "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d";
@@ -251,6 +252,7 @@ describe("read-only authoring host W7a", () => {
     expect(Object.keys(host).sort()).toEqual([
       "buildRuntimePayload",
       "dispose",
+      "getRequestState",
       "getSnapshot",
       "initJson",
       "initUtf8",
@@ -1037,23 +1039,93 @@ describe("read-only authoring host W7a", () => {
     (fastWire.atlases as Array<Record<string, unknown>>)[0]!.id = "atlas_fast";
 
     const slowInit = host.initJson(JSON.stringify(slowWire));
+    expect(host.getRequestState()).toEqual({
+      latestIssuedGeneration: 1,
+      exhausted: false,
+    });
     await slowStarted;
-    const fast = await host.initJson(JSON.stringify(fastWire));
+    const fastInit = host.initJson(JSON.stringify(fastWire));
+    expect(host.getRequestState()).toEqual({
+      latestIssuedGeneration: 2,
+      exhausted: false,
+    });
+    const fast = await fastInit;
     expect(fast.snapshot.requestGeneration).toBe(2);
     releaseSlow?.();
     const slow = await slowInit;
     expect(slow.snapshot.requestGeneration).toBe(1);
+    expect(host.getRequestState()).toEqual({
+      latestIssuedGeneration: 2,
+      exhausted: false,
+    });
   });
 
   it("sanitizes parse causes and consumes the failed request generation", async () => {
     const { host } = harness();
-    const error = await rejected(host.initJson("{"), "VIVI_EDITOR_HOST_INIT_FAILED");
+    const before = host.getRequestState();
+    expect(before).toEqual({ latestIssuedGeneration: 0, exhausted: false });
+    const failed = host.initJson("{");
+    expect(host.getRequestState()).toEqual({
+      latestIssuedGeneration: 1,
+      exhausted: false,
+    });
+    const error = await rejected(failed, "VIVI_EDITOR_HOST_INIT_FAILED");
     expect(error).toMatchObject({
       causeCode: "VIVI_FMT_INVALID_JSON",
       causeOffset: 1,
     });
     const initialized = await host.initJson(JSON.stringify(embeddedWire()));
     expect(initialized.snapshot.requestGeneration).toBe(2);
+    expect(before).toEqual({ latestIssuedGeneration: 0, exhausted: false });
+    const detached = host.getRequestState() as {
+      latestIssuedGeneration: number;
+      exhausted: boolean;
+    };
+    detached.latestIssuedGeneration = 0;
+    detached.exhausted = true;
+    expect(host.getRequestState()).toEqual({
+      latestIssuedGeneration: 2,
+      exhausted: false,
+    });
+  });
+
+  it("observes a newer failed request started synchronously inside the real provider callback", async () => {
+    let host: ReturnType<typeof createReadOnlyAuthoringHost>;
+    let nested: Promise<ReadOnlyAuthoringHostError> | undefined;
+    const materializeEmbeddedAtlas = () => {
+      nested = rejected(host.initJson("{"), "VIVI_EDITOR_HOST_INIT_FAILED");
+      expect(host.getRequestState()).toEqual({
+        latestIssuedGeneration: 2,
+        exhausted: false,
+      });
+      return verified();
+    };
+    host = harness({ materializeEmbeddedAtlas }).host;
+    const older = await host.initJson(JSON.stringify(embeddedWire()));
+    expect(nested).toBeDefined();
+    await nested;
+    expect(older.snapshot.requestGeneration).toBe(1);
+    expect(host.getRequestState()).toEqual({
+      latestIssuedGeneration: 2,
+      exhausted: false,
+    });
+    // This is EDH issuance evidence, not a fake native/renderer activation test.
+  });
+
+  it("uses the production issuance step at the safe ceiling and retains exhaustion", () => {
+    const state = {
+      latestIssuedGeneration: Number.MAX_SAFE_INTEGER - 1,
+      exhausted: false,
+    };
+    expect(issueRequestGeneration(state)).toBe(Number.MAX_SAFE_INTEGER);
+    expect(state.exhausted).toBe(false);
+    expect(issueRequestGeneration(state)).toBeNull();
+    expect(state).toEqual({
+      latestIssuedGeneration: Number.MAX_SAFE_INTEGER,
+      exhausted: true,
+    });
+    expect(issueRequestGeneration(state)).toBeNull();
+    expect(state.latestIssuedGeneration).toBe(Number.MAX_SAFE_INTEGER);
   });
 
   it("runs without browser, Node, encoding, crypto, or clone ambient globals", async () => {

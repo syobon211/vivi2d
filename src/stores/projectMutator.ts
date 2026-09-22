@@ -4,10 +4,25 @@ import {
   createProjectMutation,
   type Patch,
 } from "@vivi2d/editor-core/project-transaction";
+import { isProjectV11Publishing } from "@/lib/project-v11-publishing";
 import { useEditorStore } from "./editorStore";
 import { _resetMergeTimer, useHistoryStore } from "./historyStore";
 
 let _transactionDepth = 0;
+type V11Edit = (
+  project: ProjectData,
+  options: { patches?: Patch[]; inversePatches?: Patch[]; mergeKey?: string },
+) => void;
+let v11Edit: V11Edit | undefined;
+/** Fixed transaction implementation installs this seam, like history callbacks.
+ * No registry, plugin dispatch, or lazy asynchronous mutation is involved. */
+export function registerV11ProjectEdit(edit: V11Edit): void {
+  v11Edit = edit;
+}
+function commitV11Edit(project: ProjectData, options: Parameters<V11Edit>[1]): void {
+  if (!v11Edit) throw new Error("PROJECT_TRANSACTION_UNAVAILABLE");
+  v11Edit(project, options);
+}
 
 function pushSnapshotIfTopLevel(mergeKey?: string): void {
   if (_transactionDepth > 0) return;
@@ -27,6 +42,10 @@ function pushPatchesIfTopLevel(
 }
 
 export function runInHistoryTransaction<T>(fn: () => T): T {
+  // This legacy batching seam is used only by provenance/auto-setup workflows.
+  // v11 supported edits use one prepared core transaction, never partial batches.
+  if (useEditorStore.getState().projectV11 || isProjectV11Publishing())
+    throw new Error("PROJECT_PROFILE_UNSUPPORTED");
   const isTopLevel = _transactionDepth === 0;
   const editorState = useEditorStore.getState();
   const editorBefore = isTopLevel
@@ -70,11 +89,16 @@ export function mutateProject(
   fn: (project: ProjectData) => void,
   mergeKey?: string,
 ): void {
+  if (isProjectV11Publishing()) throw new Error("PROJECT_TRANSACTION_BUSY");
   const prev = useEditorStore.getState().project;
   if (!prev) return;
 
   const { next, patches, inversePatches, changed } = createProjectMutation(prev, fn);
   if (!changed) return;
+  if (useEditorStore.getState().projectV11) {
+    commitV11Edit(next, { patches, inversePatches, mergeKey });
+    return;
+  }
   pushPatchesIfTopLevel(patches, inversePatches, mergeKey);
   useEditorStore.setState({ project: next });
 }
@@ -84,6 +108,11 @@ export function replaceProject(
   bumpVersion = true,
   mergeKey?: string,
 ): void {
+  if (isProjectV11Publishing()) throw new Error("PROJECT_TRANSACTION_BUSY");
+  if (useEditorStore.getState().projectV11) {
+    commitV11Edit(next, { mergeKey });
+    return;
+  }
   pushSnapshotIfTopLevel(mergeKey);
   useEditorStore.setState((state) => {
     state.project = next;
@@ -92,6 +121,9 @@ export function replaceProject(
 }
 
 export function bumpProjectStructureVersion(): void {
+  if (isProjectV11Publishing()) throw new Error("PROJECT_TRANSACTION_BUSY");
+  // v11 edits publish their exact structural delta in the same commit.
+  if (useEditorStore.getState().projectV11) return;
   useEditorStore.setState((state) => {
     state.projectStructureVersion += 1;
   });

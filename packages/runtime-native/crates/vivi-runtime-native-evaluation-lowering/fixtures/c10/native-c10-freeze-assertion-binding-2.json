@@ -1,0 +1,1305 @@
+{
+  "kind": "vivi2d.c10.freezeAssertionBindingSupplement.v2",
+  "status": "ROOT_PROPOSED_NOT_INDEPENDENTLY_FROZEN",
+  "sourcePins": [
+    {
+      "file": "native-c10-case-index-manifest-1.json",
+      "bytes": 124683,
+      "sha256": "3af093cec5c2b43bd8e711a3f4a40b3d496030c15f14870612db281404190ac1"
+    },
+    {
+      "file": "native-c10-physics-latefault-expectations-3.json",
+      "bytes": 224037,
+      "sha256": "fff9407640e4f345e4a1b7c793cf74729ea5a285fb62f48188f0a2d2e5b97d77"
+    },
+    {
+      "file": "native-c10-f-expectations-1.json",
+      "bytes": 6920,
+      "sha256": "e9bed5ca67f8fba9781053e6eea7ae7effc47ab3fce838e78afbf95179274554"
+    },
+    {
+      "file": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/fixtures/evaluation-deterministic-math-v1-vectors.json",
+      "bytes": 79921,
+      "sha256": "0a467b96d93ea0b7b8d12f8b8229d050b50945c40fff29c8ace0469b76cdec00"
+    }
+  ],
+  "mandatoryFindings": {
+    "C10-F02": "Resolved by exactly six named assertion-disposition overrides below; no numerical changes or new C10 state.",
+    "C10-F01": "Existing raw collection binding corrected here; additional applicable primitive edge corpus supplied separately and remains required."
+  },
+  "preservation": "All original byte-pinned files remain unchanged. This explicit binding supersedes only the named topology assertions and ambiguous F selection/self references. Unknown/unlisted expected fields must not be silently skipped.",
+  "topologyAssertionOverrides": [
+    {
+      "caseIndex": 139,
+      "file": "native-c10-physics-latefault-expectations-3.json",
+      "sha256": "fff9407640e4f345e4a1b7c793cf74729ea5a285fb62f48188f0a2d2e5b97d77",
+      "pointer": "/cases/0/steps/0/committedState/topologyGenerationU64",
+      "preservedHistoricalValue": "1",
+      "disposition": "deferred-C11 / non-C10-assertion",
+      "reason": "The accepted C10 candidate owns request and dynamic state, not a topology generation or sealed C11 topology. No actual C10 field can be observed for this value.",
+      "countAsC10Pass": false
+    },
+    {
+      "caseIndex": 139,
+      "file": "native-c10-physics-latefault-expectations-3.json",
+      "sha256": "fff9407640e4f345e4a1b7c793cf74729ea5a285fb62f48188f0a2d2e5b97d77",
+      "pointer": "/cases/0/steps/1/committedState/topologyGenerationU64",
+      "preservedHistoricalValue": "1",
+      "disposition": "deferred-C11 / non-C10-assertion",
+      "reason": "The accepted C10 candidate owns request and dynamic state, not a topology generation or sealed C11 topology. No actual C10 field can be observed for this value.",
+      "countAsC10Pass": false
+    },
+    {
+      "caseIndex": 139,
+      "file": "native-c10-physics-latefault-expectations-3.json",
+      "sha256": "fff9407640e4f345e4a1b7c793cf74729ea5a285fb62f48188f0a2d2e5b97d77",
+      "pointer": "/cases/0/steps/2/committedState/topologyGenerationU64",
+      "preservedHistoricalValue": "1",
+      "disposition": "deferred-C11 / non-C10-assertion",
+      "reason": "The accepted C10 candidate owns request and dynamic state, not a topology generation or sealed C11 topology. No actual C10 field can be observed for this value.",
+      "countAsC10Pass": false
+    },
+    {
+      "caseIndex": 139,
+      "file": "native-c10-physics-latefault-expectations-3.json",
+      "sha256": "fff9407640e4f345e4a1b7c793cf74729ea5a285fb62f48188f0a2d2e5b97d77",
+      "pointer": "/cases/0/steps/3/committedState/topologyGenerationU64",
+      "preservedHistoricalValue": "1",
+      "disposition": "deferred-C11 / non-C10-assertion",
+      "reason": "The accepted C10 candidate owns request and dynamic state, not a topology generation or sealed C11 topology. No actual C10 field can be observed for this value.",
+      "countAsC10Pass": false
+    },
+    {
+      "caseIndex": 139,
+      "file": "native-c10-physics-latefault-expectations-3.json",
+      "sha256": "fff9407640e4f345e4a1b7c793cf74729ea5a285fb62f48188f0a2d2e5b97d77",
+      "pointer": "/cases/0/steps/4/committedState/topologyGenerationU64",
+      "preservedHistoricalValue": "1",
+      "disposition": "deferred-C11 / non-C10-assertion",
+      "reason": "The accepted C10 candidate owns request and dynamic state, not a topology generation or sealed C11 topology. No actual C10 field can be observed for this value.",
+      "countAsC10Pass": false
+    },
+    {
+      "caseIndex": 139,
+      "file": "native-c10-physics-latefault-expectations-3.json",
+      "sha256": "fff9407640e4f345e4a1b7c793cf74729ea5a285fb62f48188f0a2d2e5b97d77",
+      "pointer": "/cases/0/steps/5/committedState/topologyGenerationU64",
+      "preservedHistoricalValue": "1",
+      "disposition": "deferred-C11 / non-C10-assertion",
+      "reason": "The accepted C10 candidate owns request and dynamic state, not a topology generation or sealed C11 topology. No actual C10 field can be observed for this value.",
+      "countAsC10Pass": false
+    }
+  ],
+  "unchangedAssertions": [
+    "requestGenerationU64=5 where declared",
+    "actual dynamic_generation and success-only increment",
+    "actual immutable input/structural identities",
+    "caller-current versus previous",
+    "committed state and declared scratch",
+    "all literal reached trace and projection comparisons",
+    "rollback from the preceding exact successful state"
+  ],
+  "allocationReuse": {
+    "dispatchCaseIndex": 43,
+    "originalFPointer": "/cases/2",
+    "reusedCases": [
+      {
+        "index": 19,
+        "scenarioId": "scenario-binding-endpoints-midpoint",
+        "variant": "interior-left-index-1",
+        "input": {
+          "file": "native-c10-concrete-inputs-1.json",
+          "pointer": "/scenarios/0/variants/1",
+          "role": "original-input",
+          "sha256": "a690a20420e2a4d217f675d8f6928eb8cfc532ae9eaf88f19c803ec2aefd6324"
+        },
+        "expected": {
+          "file": "native-c10-b-expectations-3.json",
+          "pointer": "/cases/1",
+          "sha256": "45ae4b078e17134e67b9603be6ec70d34a8da323763e202470f3762282f5169c"
+        },
+        "actions": "all actions and reached trace/state assertions of this exact frozen case; same body trapped/untrapped"
+      },
+      {
+        "index": 33,
+        "scenarioId": "scenario-initial-first-checkpoint-status",
+        "variant": "initial-max-target",
+        "input": {
+          "file": "native-c10-concrete-inputs-1.json",
+          "pointer": "/scenarios/17/variants/0",
+          "role": "original-input",
+          "sha256": "a690a20420e2a4d217f675d8f6928eb8cfc532ae9eaf88f19c803ec2aefd6324"
+        },
+        "expected": {
+          "file": "native-c10-e-expectations-2.json",
+          "pointer": "/cases/0",
+          "sha256": "43b6e67e229fa6cb4b7769430427b1e5b9beb655789dee2eb71276b07f4f65d2"
+        },
+        "actions": "all actions and reached trace/state assertions of this exact frozen case; same body trapped/untrapped"
+      },
+      {
+        "index": 34,
+        "scenarioId": "scenario-dynamic-first-checkpoint-rollback",
+        "variant": "safe-fail-repair-retry",
+        "input": {
+          "file": "native-c10-concrete-inputs-1.json",
+          "pointer": "/scenarios/18/variants/0",
+          "role": "original-input",
+          "sha256": "a690a20420e2a4d217f675d8f6928eb8cfc532ae9eaf88f19c803ec2aefd6324"
+        },
+        "expected": {
+          "file": "native-c10-e-expectations-2.json",
+          "pointer": "/cases/1",
+          "sha256": "43b6e67e229fa6cb4b7769430427b1e5b9beb655789dee2eb71276b07f4f65d2"
+        },
+        "actions": "all actions and reached trace/state assertions of this exact frozen case; same body trapped/untrapped"
+      },
+      {
+        "index": 54,
+        "scenarioId": "scenario-physics-parent-updated-velocity",
+        "variant": "two-pendulum-wind-step",
+        "input": {
+          "file": "native-c10-concrete-inputs-physics-1.json",
+          "pointer": "/scenarios/4/variants/0",
+          "role": "original-input",
+          "sha256": "32101fdc1b95c2067d0a5ef8340da835506027c8face5abd5fec7146e1e342c3"
+        },
+        "expected": {
+          "file": "native-c10-pot-expectations-1.json",
+          "pointer": "/cases/10",
+          "sha256": "6828da7e6213c42d52528680986514100d095ce6449deb30d6e17fe029a916a5"
+        },
+        "actions": "all actions and reached trace/state assertions of this exact frozen case; same body trapped/untrapped"
+      },
+      {
+        "index": 58,
+        "scenarioId": "scenario-physics-mass-length-overflow",
+        "variant": "positive-step-only-max-times-two",
+        "input": {
+          "file": "native-c10-concrete-inputs-physics-1.json",
+          "pointer": "/scenarios/6/variants/0",
+          "role": "original-input",
+          "sha256": "32101fdc1b95c2067d0a5ef8340da835506027c8face5abd5fec7146e1e342c3"
+        },
+        "expected": {
+          "file": "native-c10-pot-expectations-1.json",
+          "pointer": "/cases/14",
+          "sha256": "6828da7e6213c42d52528680986514100d095ce6449deb30d6e17fe029a916a5"
+        },
+        "actions": "all actions and reached trace/state assertions of this exact frozen case; same body trapped/untrapped"
+      },
+      {
+        "index": 71,
+        "scenarioId": "scenario-expression-preset-survives-update-failure",
+        "variant": "preset-negative-zero-failure-repair-retry",
+        "input": {
+          "file": "native-c10-concrete-inputs-physics-1.json",
+          "pointer": "/scenarios/17/variants/0",
+          "role": "original-input",
+          "sha256": "32101fdc1b95c2067d0a5ef8340da835506027c8face5abd5fec7146e1e342c3"
+        },
+        "expected": {
+          "file": "native-c10-pot-expectations-1.json",
+          "pointer": "/cases/27",
+          "sha256": "6828da7e6213c42d52528680986514100d095ce6449deb30d6e17fe029a916a5"
+        },
+        "actions": "all actions and reached trace/state assertions of this exact frozen case; same body trapped/untrapped"
+      },
+      {
+        "index": 111,
+        "scenarioId": "scenario-two-bone-interior-pole",
+        "variant": "pole-0-2",
+        "input": {
+          "file": "native-c10-concrete-inputs-world-ik-policy-1.json",
+          "pointer": "/scenarios/8/variants/0",
+          "role": "original-input",
+          "sha256": "0327cd2b75f437a4934306e2ad8875ba45ac1b806ea3dae0f04a2ef2953f0211"
+        },
+        "expected": {
+          "file": "native-c10-ic-expectations-1.json",
+          "pointer": "/cases/5",
+          "sha256": "d62d6b33c46a545b3f8e82b7ec3d771a40f4cdf2c5306ae27e8c96962f2e1bed"
+        },
+        "actions": "all actions and reached trace/state assertions of this exact frozen case; same body trapped/untrapped"
+      },
+      {
+        "index": 130,
+        "scenarioId": "scenario-ccd-max-iterations-maximum-1024",
+        "variant": "explicit-1024-iterations",
+        "input": {
+          "file": "native-c10-concrete-inputs-world-ik-policy-1.json",
+          "pointer": "/scenarios/22/variants/0",
+          "role": "original-input",
+          "sha256": "0327cd2b75f437a4934306e2ad8875ba45ac1b806ea3dae0f04a2ef2953f0211"
+        },
+        "expected": {
+          "file": "native-c10-ic-expectations-1.json",
+          "pointer": "/cases/24",
+          "sha256": "d62d6b33c46a545b3f8e82b7ec3d771a40f4cdf2c5306ae27e8c96962f2e1bed"
+        },
+        "actions": "all actions and reached trace/state assertions of this exact frozen case; same body trapped/untrapped"
+      }
+    ],
+    "rawCollections": [
+      {
+        "file": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/fixtures/evaluation-deterministic-math-v1-vectors.json",
+        "sha256": "0a467b96d93ea0b7b8d12f8b8229d050b50945c40fff29c8ace0469b76cdec00",
+        "pointer": "/curatedKernelVectors",
+        "count": 85,
+        "rows": [
+          {
+            "pointer": "/curatedKernelVectors/0",
+            "id": "kernel-add-one-two",
+            "op": "add",
+            "inputBits": [
+              "3ff0000000000000",
+              "4000000000000000"
+            ],
+            "expectedBits": "4008000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/1",
+            "id": "kernel-add-half-ulp-tie-even",
+            "op": "add",
+            "inputBits": [
+              "3ff0000000000000",
+              "3ca0000000000000"
+            ],
+            "expectedBits": "3ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/2",
+            "id": "kernel-add-positive-negative-zero",
+            "op": "add",
+            "inputBits": [
+              "0000000000000000",
+              "8000000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/3",
+            "id": "kernel-add-overflow",
+            "op": "add",
+            "inputBits": [
+              "7fefffffffffffff",
+              "7fefffffffffffff"
+            ],
+            "expectedBits": "7ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/4",
+            "id": "kernel-sub-cancellation",
+            "op": "sub",
+            "inputBits": [
+              "3ff0000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/5",
+            "id": "kernel-mul-negative-zero",
+            "op": "mul",
+            "inputBits": [
+              "8000000000000000",
+              "4000000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/6",
+            "id": "kernel-mul-overflow",
+            "op": "mul",
+            "inputBits": [
+              "7fefffffffffffff",
+              "4000000000000000"
+            ],
+            "expectedBits": "7ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/7",
+            "id": "kernel-mul-min-subnormal-half",
+            "op": "mul",
+            "inputBits": [
+              "0000000000000001",
+              "3fe0000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/8",
+            "id": "kernel-div-one-two",
+            "op": "div",
+            "inputBits": [
+              "3ff0000000000000",
+              "4000000000000000"
+            ],
+            "expectedBits": "3fe0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/9",
+            "id": "kernel-div-one-positive-zero",
+            "op": "div",
+            "inputBits": [
+              "3ff0000000000000",
+              "0000000000000000"
+            ],
+            "expectedBits": "7ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/10",
+            "id": "kernel-div-zero-zero-canonical-nan",
+            "op": "div",
+            "inputBits": [
+              "0000000000000000",
+              "0000000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/11",
+            "id": "kernel-c-fmod-three-two",
+            "op": "c_fmod",
+            "inputBits": [
+              "4008000000000000",
+              "4000000000000000"
+            ],
+            "expectedBits": "3ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/12",
+            "id": "kernel-c-fmod-negative-three-two",
+            "op": "c_fmod",
+            "inputBits": [
+              "c008000000000000",
+              "4000000000000000"
+            ],
+            "expectedBits": "bff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/13",
+            "id": "kernel-c-fmod-negative-exact",
+            "op": "c_fmod",
+            "inputBits": [
+              "c000000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/14",
+            "id": "kernel-c-fmod-zero-divisor-canonical-nan",
+            "op": "c_fmod",
+            "inputBits": [
+              "3ff0000000000000",
+              "0000000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/15",
+            "id": "kernel-neg-positive-zero",
+            "op": "neg",
+            "inputBits": [
+              "0000000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/16",
+            "id": "kernel-neg-positive-one",
+            "op": "neg",
+            "inputBits": [
+              "3ff0000000000000"
+            ],
+            "expectedBits": "bff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/17",
+            "id": "kernel-neg-noncanonical-qnan",
+            "op": "neg",
+            "inputBits": [
+              "7ff8000000000042"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/18",
+            "id": "kernel-neg-signaling-nan",
+            "op": "neg",
+            "inputBits": [
+              "7ff0000000000001"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/19",
+            "id": "kernel-abs-negative-zero",
+            "op": "abs",
+            "inputBits": [
+              "8000000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/20",
+            "id": "kernel-abs-negative-one",
+            "op": "abs",
+            "inputBits": [
+              "bff0000000000000"
+            ],
+            "expectedBits": "3ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/21",
+            "id": "kernel-abs-noncanonical-qnan",
+            "op": "abs",
+            "inputBits": [
+              "7ff8000000000042"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/22",
+            "id": "kernel-abs-signaling-nan",
+            "op": "abs",
+            "inputBits": [
+              "7ff0000000000001"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/23",
+            "id": "kernel-sin-positive-zero",
+            "op": "sin",
+            "inputBits": [
+              "0000000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/24",
+            "id": "kernel-sin-negative-zero",
+            "op": "sin",
+            "inputBits": [
+              "8000000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/25",
+            "id": "kernel-cos-positive-zero",
+            "op": "cos",
+            "inputBits": [
+              "0000000000000000"
+            ],
+            "expectedBits": "3ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/26",
+            "id": "kernel-cos-negative-zero",
+            "op": "cos",
+            "inputBits": [
+              "8000000000000000"
+            ],
+            "expectedBits": "3ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/27",
+            "id": "kernel-atan2-positive-zero-positive-one",
+            "op": "atan2",
+            "inputBits": [
+              "0000000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/28",
+            "id": "kernel-atan2-negative-zero-positive-one",
+            "op": "atan2",
+            "inputBits": [
+              "8000000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/29",
+            "id": "kernel-atan2-positive-zero-negative-one",
+            "op": "atan2",
+            "inputBits": [
+              "0000000000000000",
+              "bff0000000000000"
+            ],
+            "expectedBits": "400921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/30",
+            "id": "kernel-atan2-negative-zero-negative-one",
+            "op": "atan2",
+            "inputBits": [
+              "8000000000000000",
+              "bff0000000000000"
+            ],
+            "expectedBits": "c00921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/31",
+            "id": "kernel-atan2-positive-one-positive-zero",
+            "op": "atan2",
+            "inputBits": [
+              "3ff0000000000000",
+              "0000000000000000"
+            ],
+            "expectedBits": "3ff921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/32",
+            "id": "kernel-atan2-negative-one-positive-zero",
+            "op": "atan2",
+            "inputBits": [
+              "bff0000000000000",
+              "0000000000000000"
+            ],
+            "expectedBits": "bff921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/33",
+            "id": "kernel-acos-positive-one",
+            "op": "acos",
+            "inputBits": [
+              "3ff0000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/34",
+            "id": "kernel-acos-negative-one",
+            "op": "acos",
+            "inputBits": [
+              "bff0000000000000"
+            ],
+            "expectedBits": "400921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/35",
+            "id": "kernel-acos-positive-zero",
+            "op": "acos",
+            "inputBits": [
+              "0000000000000000"
+            ],
+            "expectedBits": "3ff921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/36",
+            "id": "kernel-acos-negative-zero",
+            "op": "acos",
+            "inputBits": [
+              "8000000000000000"
+            ],
+            "expectedBits": "3ff921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/37",
+            "id": "kernel-acos-one-plus-ulp-canonical-nan",
+            "op": "acos",
+            "inputBits": [
+              "3ff0000000000001"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/38",
+            "id": "kernel-sqrt-positive-zero",
+            "op": "sqrt",
+            "inputBits": [
+              "0000000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/39",
+            "id": "kernel-sqrt-negative-zero",
+            "op": "sqrt",
+            "inputBits": [
+              "8000000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/40",
+            "id": "kernel-sqrt-one",
+            "op": "sqrt",
+            "inputBits": [
+              "3ff0000000000000"
+            ],
+            "expectedBits": "3ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/41",
+            "id": "kernel-sqrt-four",
+            "op": "sqrt",
+            "inputBits": [
+              "4010000000000000"
+            ],
+            "expectedBits": "4000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/42",
+            "id": "kernel-sqrt-negative-one-canonical-nan",
+            "op": "sqrt",
+            "inputBits": [
+              "bff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/43",
+            "id": "kernel-add-min-subnormal-positive-zero",
+            "op": "add",
+            "inputBits": [
+              "0000000000000001",
+              "0000000000000000"
+            ],
+            "expectedBits": "0000000000000001"
+          },
+          {
+            "pointer": "/curatedKernelVectors/44",
+            "id": "kernel-add-positive-one-negative-one-cancellation",
+            "op": "add",
+            "inputBits": [
+              "3ff0000000000000",
+              "bff0000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/45",
+            "id": "kernel-add-noncanonical-qnan-canonical",
+            "op": "add",
+            "inputBits": [
+              "7ff8000000000001",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/46",
+            "id": "kernel-sub-negative-zero-positive-zero",
+            "op": "sub",
+            "inputBits": [
+              "8000000000000000",
+              "0000000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/47",
+            "id": "kernel-sub-half-ulp-tie-even",
+            "op": "sub",
+            "inputBits": [
+              "3ff0000000000000",
+              "3c90000000000000"
+            ],
+            "expectedBits": "3ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/48",
+            "id": "kernel-sub-overflow",
+            "op": "sub",
+            "inputBits": [
+              "7fefffffffffffff",
+              "ffefffffffffffff"
+            ],
+            "expectedBits": "7ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/49",
+            "id": "kernel-sub-signaling-nan-canonical",
+            "op": "sub",
+            "inputBits": [
+              "7ff0000000000001",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/50",
+            "id": "kernel-mul-min-subnormal-one",
+            "op": "mul",
+            "inputBits": [
+              "0000000000000001",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "0000000000000001"
+          },
+          {
+            "pointer": "/curatedKernelVectors/51",
+            "id": "kernel-mul-positive-zero-infinity-canonical-nan",
+            "op": "mul",
+            "inputBits": [
+              "0000000000000000",
+              "7ff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/52",
+            "id": "kernel-mul-noncanonical-qnan-canonical",
+            "op": "mul",
+            "inputBits": [
+              "7ff8000000000042",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/53",
+            "id": "kernel-div-negative-zero-one",
+            "op": "div",
+            "inputBits": [
+              "8000000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/54",
+            "id": "kernel-div-min-subnormal-one",
+            "op": "div",
+            "inputBits": [
+              "0000000000000001",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "0000000000000001"
+          },
+          {
+            "pointer": "/curatedKernelVectors/55",
+            "id": "kernel-div-max-finite-min-subnormal-overflow",
+            "op": "div",
+            "inputBits": [
+              "7fefffffffffffff",
+              "0000000000000001"
+            ],
+            "expectedBits": "7ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/56",
+            "id": "kernel-div-signaling-nan-canonical",
+            "op": "div",
+            "inputBits": [
+              "7ff0000000000001",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/57",
+            "id": "kernel-c-fmod-min-subnormal-one",
+            "op": "c_fmod",
+            "inputBits": [
+              "0000000000000001",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "0000000000000001"
+          },
+          {
+            "pointer": "/curatedKernelVectors/58",
+            "id": "kernel-c-fmod-one-positive-infinity",
+            "op": "c_fmod",
+            "inputBits": [
+              "3ff0000000000000",
+              "7ff0000000000000"
+            ],
+            "expectedBits": "3ff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/59",
+            "id": "kernel-c-fmod-positive-infinity-one-canonical-nan",
+            "op": "c_fmod",
+            "inputBits": [
+              "7ff0000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/60",
+            "id": "kernel-c-fmod-noncanonical-qnan-canonical",
+            "op": "c_fmod",
+            "inputBits": [
+              "7ff8000000000042",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/61",
+            "id": "kernel-sin-one",
+            "op": "sin",
+            "inputBits": [
+              "3ff0000000000000"
+            ],
+            "expectedBits": "3feaed548f090cee"
+          },
+          {
+            "pointer": "/curatedKernelVectors/62",
+            "id": "kernel-sin-pi",
+            "op": "sin",
+            "inputBits": [
+              "400921fb54442d18"
+            ],
+            "expectedBits": "3ca1a62633145c07"
+          },
+          {
+            "pointer": "/curatedKernelVectors/63",
+            "id": "kernel-sin-two-to-63",
+            "op": "sin",
+            "inputBits": [
+              "43e0000000000000"
+            ],
+            "expectedBits": "3fefff6dfd42dc54"
+          },
+          {
+            "pointer": "/curatedKernelVectors/64",
+            "id": "kernel-sin-positive-infinity-canonical-nan",
+            "op": "sin",
+            "inputBits": [
+              "7ff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/65",
+            "id": "kernel-cos-one",
+            "op": "cos",
+            "inputBits": [
+              "3ff0000000000000"
+            ],
+            "expectedBits": "3fe14a280fb5068c"
+          },
+          {
+            "pointer": "/curatedKernelVectors/66",
+            "id": "kernel-cos-pi",
+            "op": "cos",
+            "inputBits": [
+              "400921fb54442d18"
+            ],
+            "expectedBits": "bff0000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/67",
+            "id": "kernel-cos-two-to-63",
+            "op": "cos",
+            "inputBits": [
+              "43e0000000000000"
+            ],
+            "expectedBits": "3f882aa375b3c33e"
+          },
+          {
+            "pointer": "/curatedKernelVectors/68",
+            "id": "kernel-cos-negative-infinity-canonical-nan",
+            "op": "cos",
+            "inputBits": [
+              "fff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/69",
+            "id": "kernel-atan2-one-one",
+            "op": "atan2",
+            "inputBits": [
+              "3ff0000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "3fe921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/70",
+            "id": "kernel-atan2-one-negative-one",
+            "op": "atan2",
+            "inputBits": [
+              "3ff0000000000000",
+              "bff0000000000000"
+            ],
+            "expectedBits": "4002d97c7f3321d2"
+          },
+          {
+            "pointer": "/curatedKernelVectors/71",
+            "id": "kernel-atan2-negative-one-negative-one",
+            "op": "atan2",
+            "inputBits": [
+              "bff0000000000000",
+              "bff0000000000000"
+            ],
+            "expectedBits": "c002d97c7f3321d2"
+          },
+          {
+            "pointer": "/curatedKernelVectors/72",
+            "id": "kernel-atan2-min-subnormal-one",
+            "op": "atan2",
+            "inputBits": [
+              "0000000000000001",
+              "3ff0000000000000"
+            ],
+            "expectedBits": "0000000000000001"
+          },
+          {
+            "pointer": "/curatedKernelVectors/73",
+            "id": "kernel-atan2-positive-zero-positive-zero",
+            "op": "atan2",
+            "inputBits": [
+              "0000000000000000",
+              "0000000000000000"
+            ],
+            "expectedBits": "0000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/74",
+            "id": "kernel-atan2-negative-zero-positive-zero",
+            "op": "atan2",
+            "inputBits": [
+              "8000000000000000",
+              "0000000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/75",
+            "id": "kernel-atan2-positive-zero-negative-zero",
+            "op": "atan2",
+            "inputBits": [
+              "0000000000000000",
+              "8000000000000000"
+            ],
+            "expectedBits": "400921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/76",
+            "id": "kernel-atan2-negative-zero-negative-zero",
+            "op": "atan2",
+            "inputBits": [
+              "8000000000000000",
+              "8000000000000000"
+            ],
+            "expectedBits": "c00921fb54442d18"
+          },
+          {
+            "pointer": "/curatedKernelVectors/77",
+            "id": "kernel-acos-one-half",
+            "op": "acos",
+            "inputBits": [
+              "3fe0000000000000"
+            ],
+            "expectedBits": "3ff0c152382d7366"
+          },
+          {
+            "pointer": "/curatedKernelVectors/78",
+            "id": "kernel-acos-negative-one-half",
+            "op": "acos",
+            "inputBits": [
+              "bfe0000000000000"
+            ],
+            "expectedBits": "4000c152382d7366"
+          },
+          {
+            "pointer": "/curatedKernelVectors/79",
+            "id": "kernel-acos-next-below-one",
+            "op": "acos",
+            "inputBits": [
+              "3fefffffffffffff"
+            ],
+            "expectedBits": "3e50000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/80",
+            "id": "kernel-acos-positive-infinity-canonical-nan",
+            "op": "acos",
+            "inputBits": [
+              "7ff0000000000000"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/81",
+            "id": "kernel-sqrt-two",
+            "op": "sqrt",
+            "inputBits": [
+              "4000000000000000"
+            ],
+            "expectedBits": "3ff6a09e667f3bcd"
+          },
+          {
+            "pointer": "/curatedKernelVectors/82",
+            "id": "kernel-sqrt-min-normal",
+            "op": "sqrt",
+            "inputBits": [
+              "0010000000000000"
+            ],
+            "expectedBits": "2000000000000000"
+          },
+          {
+            "pointer": "/curatedKernelVectors/83",
+            "id": "kernel-sqrt-max-finite",
+            "op": "sqrt",
+            "inputBits": [
+              "7fefffffffffffff"
+            ],
+            "expectedBits": "5fefffffffffffff"
+          },
+          {
+            "pointer": "/curatedKernelVectors/84",
+            "id": "kernel-sqrt-positive-infinity",
+            "op": "sqrt",
+            "inputBits": [
+              "7ff0000000000000"
+            ],
+            "expectedBits": "7ff0000000000000"
+          }
+        ]
+      },
+      {
+        "file": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/fixtures/evaluation-deterministic-math-v1-vectors.json",
+        "sha256": "0a467b96d93ea0b7b8d12f8b8229d050b50945c40fff29c8ace0469b76cdec00",
+        "pointer": "/comparisonVectors",
+        "count": 12,
+        "rows": [
+          {
+            "pointer": "/comparisonVectors/0",
+            "id": "comparison-positive-negative-zero-eq",
+            "op": "eq",
+            "inputBits": [
+              "0000000000000000",
+              "8000000000000000"
+            ],
+            "expectedBoolean": true
+          },
+          {
+            "pointer": "/comparisonVectors/1",
+            "id": "comparison-positive-negative-zero-lt",
+            "op": "lt",
+            "inputBits": [
+              "0000000000000000",
+              "8000000000000000"
+            ],
+            "expectedBoolean": false
+          },
+          {
+            "pointer": "/comparisonVectors/2",
+            "id": "comparison-negative-one-positive-zero-lt",
+            "op": "lt",
+            "inputBits": [
+              "bff0000000000000",
+              "0000000000000000"
+            ],
+            "expectedBoolean": true
+          },
+          {
+            "pointer": "/comparisonVectors/3",
+            "id": "comparison-one-one-le",
+            "op": "le",
+            "inputBits": [
+              "3ff0000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBoolean": true
+          },
+          {
+            "pointer": "/comparisonVectors/4",
+            "id": "comparison-canonical-nan-one-le",
+            "op": "le",
+            "inputBits": [
+              "7ff8000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBoolean": false
+          },
+          {
+            "pointer": "/comparisonVectors/5",
+            "id": "comparison-positive-one-positive-zero-gt",
+            "op": "gt",
+            "inputBits": [
+              "3ff0000000000000",
+              "0000000000000000"
+            ],
+            "expectedBoolean": true
+          },
+          {
+            "pointer": "/comparisonVectors/6",
+            "id": "comparison-one-one-gt",
+            "op": "gt",
+            "inputBits": [
+              "3ff0000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBoolean": false
+          },
+          {
+            "pointer": "/comparisonVectors/7",
+            "id": "comparison-canonical-nan-one-gt",
+            "op": "gt",
+            "inputBits": [
+              "7ff8000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBoolean": false
+          },
+          {
+            "pointer": "/comparisonVectors/8",
+            "id": "comparison-one-one-ge",
+            "op": "ge",
+            "inputBits": [
+              "3ff0000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBoolean": true
+          },
+          {
+            "pointer": "/comparisonVectors/9",
+            "id": "comparison-canonical-nan-one-eq",
+            "op": "eq",
+            "inputBits": [
+              "7ff8000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBoolean": false
+          },
+          {
+            "pointer": "/comparisonVectors/10",
+            "id": "comparison-canonical-nan-one-lt",
+            "op": "lt",
+            "inputBits": [
+              "7ff8000000000000",
+              "3ff0000000000000"
+            ],
+            "expectedBoolean": false
+          },
+          {
+            "pointer": "/comparisonVectors/11",
+            "id": "comparison-one-canonical-nan-ge",
+            "op": "ge",
+            "inputBits": [
+              "3ff0000000000000",
+              "7ff8000000000000"
+            ],
+            "expectedBoolean": false
+          }
+        ]
+      },
+      {
+        "file": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/fixtures/evaluation-deterministic-math-v1-vectors.json",
+        "sha256": "0a467b96d93ea0b7b8d12f8b8229d050b50945c40fff29c8ace0469b76cdec00",
+        "pointer": "/wrapperUtilityVectors",
+        "count": 11,
+        "rows": [
+          {
+            "pointer": "/wrapperUtilityVectors/0",
+            "id": "utility-from-to-bits-negative-zero",
+            "op": "from_bits_to_bits",
+            "inputBits": [
+              "8000000000000000"
+            ],
+            "expectedBits": "8000000000000000"
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/1",
+            "id": "utility-from-to-bits-min-subnormal",
+            "op": "from_bits_to_bits",
+            "inputBits": [
+              "0000000000000001"
+            ],
+            "expectedBits": "0000000000000001"
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/2",
+            "id": "utility-from-to-bits-noncanonical-nan",
+            "op": "from_bits_to_bits",
+            "inputBits": [
+              "7ff8000000000042"
+            ],
+            "expectedBits": "7ff8000000000000"
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/3",
+            "id": "utility-classify-positive-zero",
+            "op": "classify",
+            "inputBits": [
+              "0000000000000000"
+            ],
+            "expectedClass": "zero"
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/4",
+            "id": "utility-classify-min-subnormal",
+            "op": "classify",
+            "inputBits": [
+              "0000000000000001"
+            ],
+            "expectedClass": "subnormal"
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/5",
+            "id": "utility-classify-one",
+            "op": "classify",
+            "inputBits": [
+              "3ff0000000000000"
+            ],
+            "expectedClass": "normal"
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/6",
+            "id": "utility-classify-positive-infinity",
+            "op": "classify",
+            "inputBits": [
+              "7ff0000000000000"
+            ],
+            "expectedClass": "infinite"
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/7",
+            "id": "utility-classify-noncanonical-nan",
+            "op": "classify",
+            "inputBits": [
+              "7ff8000000000042"
+            ],
+            "expectedClass": "nan"
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/8",
+            "id": "utility-is-finite-max-finite",
+            "op": "is_finite",
+            "inputBits": [
+              "7fefffffffffffff"
+            ],
+            "expectedBoolean": true
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/9",
+            "id": "utility-is-finite-infinity",
+            "op": "is_finite",
+            "inputBits": [
+              "7ff0000000000000"
+            ],
+            "expectedBoolean": false
+          },
+          {
+            "pointer": "/wrapperUtilityVectors/10",
+            "id": "utility-is-finite-nan",
+            "op": "is_finite",
+            "inputBits": [
+              "7ff8000000000000"
+            ],
+            "expectedBoolean": false
+          }
+        ]
+      }
+    ],
+    "excludedMetadataPointer": "/curatedKernelExecution",
+    "excludedMetadataReason": "This is historical execution-status metadata, not an operand/expected-value collection.",
+    "expandedEdges": "Use the separately fixed C10-F01 primitive edge applicability table in addition to these existing collections. It does not increase the147 compound/auxiliary manifest entries."
+  },
+  "noNewImplementation": true
+}

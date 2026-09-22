@@ -9,11 +9,11 @@ const CANONICAL_NAN_BITS: u64 = 0x7ff8_0000_0000_0000;
 ///
 /// No host floating-point value is created by this type.
 #[derive(Clone, Copy)]
-pub(crate) struct DetF64(u64);
+pub struct DetF64(u64);
 
 /// The five binary64 classes frozen by the deterministic-math vectors.
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub(crate) enum DetF64Class {
+pub enum DetF64Class {
     /// Either sign of zero.
     Zero,
     /// A finite nonzero value with an all-zero exponent field.
@@ -29,19 +29,19 @@ pub(crate) enum DetF64Class {
 impl DetF64 {
     /// Constructs a raw binary64 value, canonicalizing every NaN encoding.
     #[inline]
-    pub(crate) const fn from_bits(bits: u64) -> Self {
+    pub const fn from_bits(bits: u64) -> Self {
         Self(canonicalize_nan(bits))
     }
 
     /// Returns the canonical raw binary64 interchange bits.
     #[inline]
-    pub(crate) const fn to_bits(self) -> u64 {
+    pub const fn to_bits(self) -> u64 {
         self.0
     }
 
     /// Classifies the raw binary64 value without using a host float.
     #[inline]
-    pub(crate) const fn classify(self) -> DetF64Class {
+    pub const fn classify(self) -> DetF64Class {
         let exponent = self.0 & EXPONENT_MASK;
         let fraction = self.0 & FRACTION_MASK;
         if exponent == 0 {
@@ -61,13 +61,17 @@ impl DetF64 {
 
     /// Reports whether the raw value is neither infinity nor NaN.
     #[inline]
-    pub(crate) const fn is_finite(self) -> bool {
+    pub const fn is_finite(self) -> bool {
         self.0 & EXPONENT_MASK != EXPONENT_MASK
     }
 
     /// Adds two values using APFloat round-to-nearest, ties-to-even.
+    #[allow(
+        clippy::should_implement_trait,
+        reason = "The adopted raw-callable contract is not an operator-trait surface"
+    )]
     #[inline]
-    pub(crate) fn add(self, rhs: Self) -> Self {
+    pub fn add(self, rhs: Self) -> Self {
         let result = rustc_apfloat::Float::add_r(
             self.as_apfloat(),
             rhs.as_apfloat(),
@@ -77,8 +81,12 @@ impl DetF64 {
     }
 
     /// Subtracts two values using APFloat round-to-nearest, ties-to-even.
+    #[allow(
+        clippy::should_implement_trait,
+        reason = "The adopted raw-callable contract is not an operator-trait surface"
+    )]
     #[inline]
-    pub(crate) fn sub(self, rhs: Self) -> Self {
+    pub fn sub(self, rhs: Self) -> Self {
         let result = rustc_apfloat::Float::sub_r(
             self.as_apfloat(),
             rhs.as_apfloat(),
@@ -88,8 +96,12 @@ impl DetF64 {
     }
 
     /// Multiplies two values using APFloat round-to-nearest, ties-to-even.
+    #[allow(
+        clippy::should_implement_trait,
+        reason = "The adopted raw-callable contract is not an operator-trait surface"
+    )]
     #[inline]
-    pub(crate) fn mul(self, rhs: Self) -> Self {
+    pub fn mul(self, rhs: Self) -> Self {
         let result = rustc_apfloat::Float::mul_r(
             self.as_apfloat(),
             rhs.as_apfloat(),
@@ -99,8 +111,12 @@ impl DetF64 {
     }
 
     /// Divides two values using APFloat round-to-nearest, ties-to-even.
+    #[allow(
+        clippy::should_implement_trait,
+        reason = "The adopted raw-callable contract is not an operator-trait surface"
+    )]
     #[inline]
-    pub(crate) fn div(self, rhs: Self) -> Self {
+    pub fn div(self, rhs: Self) -> Self {
         let result = rustc_apfloat::Float::div_r(
             self.as_apfloat(),
             rhs.as_apfloat(),
@@ -111,50 +127,54 @@ impl DetF64 {
 
     /// Computes C `fmod` semantics through APFloat.
     #[inline]
-    pub(crate) fn c_fmod(self, rhs: Self) -> Self {
+    pub fn c_fmod(self, rhs: Self) -> Self {
         let result = rustc_apfloat::Float::c_fmod(self.as_apfloat(), rhs.as_apfloat());
         Self::from_apfloat(result.value)
     }
 
     /// Flips the sign bit exactly, then restores the canonical NaN invariant.
     #[inline]
-    pub(crate) const fn neg(self) -> Self {
+    pub const fn neg(self) -> Self {
         Self::from_bits(self.0 ^ SIGN_MASK)
     }
 
     /// Clears the sign bit exactly, then restores the canonical NaN invariant.
     #[inline]
-    pub(crate) const fn abs(self) -> Self {
+    pub const fn abs(self) -> Self {
         Self::from_bits(self.0 & !SIGN_MASK)
     }
 
     /// Performs IEEE quiet equality using APFloat.
+    #[allow(
+        clippy::should_implement_trait,
+        reason = "The adopted raw-callable contract is not an operator-trait surface"
+    )]
     #[inline]
-    pub(crate) fn eq(self, rhs: Self) -> bool {
+    pub fn eq(self, rhs: Self) -> bool {
         self.as_apfloat() == rhs.as_apfloat()
     }
 
     /// Performs IEEE quiet less-than comparison using APFloat.
     #[inline]
-    pub(crate) fn lt(self, rhs: Self) -> bool {
+    pub fn lt(self, rhs: Self) -> bool {
         self.as_apfloat() < rhs.as_apfloat()
     }
 
     /// Performs IEEE quiet less-than-or-equal comparison using APFloat.
     #[inline]
-    pub(crate) fn le(self, rhs: Self) -> bool {
+    pub fn le(self, rhs: Self) -> bool {
         self.as_apfloat() <= rhs.as_apfloat()
     }
 
     /// Performs IEEE quiet greater-than comparison using APFloat.
     #[inline]
-    pub(crate) fn gt(self, rhs: Self) -> bool {
+    pub fn gt(self, rhs: Self) -> bool {
         self.as_apfloat() > rhs.as_apfloat()
     }
 
     /// Performs IEEE quiet greater-than-or-equal comparison using APFloat.
     #[inline]
-    pub(crate) fn ge(self, rhs: Self) -> bool {
+    pub fn ge(self, rhs: Self) -> bool {
         self.as_apfloat() >= rhs.as_apfloat()
     }
 

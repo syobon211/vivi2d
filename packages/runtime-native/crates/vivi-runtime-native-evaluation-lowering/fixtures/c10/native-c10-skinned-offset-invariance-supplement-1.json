@@ -1,0 +1,304 @@
+{
+  "kind": "vivi2d.c10.skinnedOffsetInvarianceSupplement.v1",
+  "status": "OWNER_SELECTED_DATA_ONLY_REVIEW_PROPOSAL_NOT_C10_EXECUTED_OR_FROZEN",
+  "ownerDirection": "Reuse S8 exact actions, trace and committed/scratch/caller-current/projection expectations. Only finite mesh x/y change to MAX64/negative MAX64. No new mathematical derivation or raw execution.",
+  "sourcePins": [
+    {
+      "name": "c10-input-admission-1/inputs.json",
+      "bytes": 574245,
+      "sha256": "1717fb804acfae752bbbb00dd892e88e88eff35deadc9a0f6dc3d9bb31f43a7b"
+    },
+    {
+      "name": "native-c10-concrete-inputs-skin-culling-1.json",
+      "bytes": 596935,
+      "sha256": "2983caf1ac6796464fce251cda1d825558a9848be23dab86873678001e5f1612"
+    },
+    {
+      "name": "native-c10-s-expectations-1.json",
+      "bytes": 1266863,
+      "sha256": "4df2e4448b235cbca0903f13fccd585031300592ff800536492af41e828db4d4"
+    }
+  ],
+  "originalInputSelector": {
+    "name": "native-c10-concrete-inputs-skin-culling-1.json",
+    "pointer": "/scenarios/5/variants/0",
+    "admittedSource": "c10-input-admission-1/inputs.json",
+    "admittedPointer": "/105",
+    "payloadSha256": "db8188398be9d941359422cdd482944ff025ceed023c64b96c7c0a36d450cda0"
+  },
+  "obligationId": "nf026-nf027-owner-context-02",
+  "scenarioId": "scenario-skin-early-f32-discriminator",
+  "variants": [
+    {
+      "id": "skinned-offset-max-and-negative-max-erased-S8-control",
+      "payload": {
+        "schema": "vivi2d.evaluationPayload.v1",
+        "canvas": {
+          "width": 32,
+          "height": 64
+        },
+        "layers": [
+          {
+            "id": "mesh",
+            "name": "mesh",
+            "kind": "viviMesh",
+            "visible": true,
+            "opacity": 1,
+            "x": 1.7976931348623157e+308,
+            "y": -1.7976931348623157e+308,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "mesh": {
+              "vertices": [
+                1.0000000596046448,
+                0
+              ],
+              "uvs": [
+                0,
+                0
+              ],
+              "indices": [
+                0,
+                0,
+                0
+              ],
+              "divisionsX": 1,
+              "divisionsY": 1
+            }
+          },
+          {
+            "id": "A",
+            "name": "A",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 3,
+              "scaleY": 1
+            }
+          },
+          {
+            "id": "B",
+            "name": "B",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          },
+          {
+            "id": "C",
+            "name": "C",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          },
+          {
+            "id": "D",
+            "name": "D",
+            "kind": "bone",
+            "visible": true,
+            "opacity": 1,
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 1,
+            "blendMode": "normal",
+            "expanded": true,
+            "children": [],
+            "bone": {
+              "angle": 0,
+              "length": 1,
+              "scaleX": 1,
+              "scaleY": 1
+            }
+          }
+        ],
+        "parameters": [],
+        "parameterBindings": [],
+        "skins": {
+          "mesh": {
+            "weights": [
+              [
+                {
+                  "boneId": "A",
+                  "weight": 1
+                }
+              ]
+            ],
+            "bindPoseInverse": {
+              "A": [
+                1,
+                0,
+                0,
+                1,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "ikControllers": [],
+        "physicsGroups": [],
+        "colliders": [],
+        "expressionPresets": [],
+        "clips": [],
+        "stateMachines": [],
+        "atlases": [
+          {
+            "id": "atlas",
+            "width": 1,
+            "height": 1,
+            "entries": [
+              {
+                "layerId": "mesh",
+                "x": 0,
+                "y": 0,
+                "width": 1,
+                "height": 1
+              }
+            ]
+          }
+        ]
+      },
+      "payloadNumericD64Bits": {
+        "/canvas/width": "4040000000000000",
+        "/canvas/height": "4050000000000000",
+        "/layers/0/opacity": "3ff0000000000000",
+        "/layers/0/x": "7fefffffffffffff",
+        "/layers/0/y": "ffefffffffffffff",
+        "/layers/0/width": "3ff0000000000000",
+        "/layers/0/height": "3ff0000000000000",
+        "/layers/0/mesh/vertices/0": "3ff0000010000000",
+        "/layers/0/mesh/vertices/1": "0000000000000000",
+        "/layers/0/mesh/uvs/0": "0000000000000000",
+        "/layers/0/mesh/uvs/1": "0000000000000000",
+        "/layers/0/mesh/indices/0": "0000000000000000",
+        "/layers/0/mesh/indices/1": "0000000000000000",
+        "/layers/0/mesh/indices/2": "0000000000000000",
+        "/layers/0/mesh/divisionsX": "3ff0000000000000",
+        "/layers/0/mesh/divisionsY": "3ff0000000000000",
+        "/layers/1/opacity": "3ff0000000000000",
+        "/layers/1/x": "0000000000000000",
+        "/layers/1/y": "0000000000000000",
+        "/layers/1/width": "3ff0000000000000",
+        "/layers/1/height": "3ff0000000000000",
+        "/layers/1/bone/angle": "0000000000000000",
+        "/layers/1/bone/length": "3ff0000000000000",
+        "/layers/1/bone/scaleX": "4008000000000000",
+        "/layers/1/bone/scaleY": "3ff0000000000000",
+        "/layers/2/opacity": "3ff0000000000000",
+        "/layers/2/x": "0000000000000000",
+        "/layers/2/y": "0000000000000000",
+        "/layers/2/width": "3ff0000000000000",
+        "/layers/2/height": "3ff0000000000000",
+        "/layers/2/bone/angle": "0000000000000000",
+        "/layers/2/bone/length": "3ff0000000000000",
+        "/layers/2/bone/scaleX": "3ff0000000000000",
+        "/layers/2/bone/scaleY": "3ff0000000000000",
+        "/layers/3/opacity": "3ff0000000000000",
+        "/layers/3/x": "0000000000000000",
+        "/layers/3/y": "0000000000000000",
+        "/layers/3/width": "3ff0000000000000",
+        "/layers/3/height": "3ff0000000000000",
+        "/layers/3/bone/angle": "0000000000000000",
+        "/layers/3/bone/length": "3ff0000000000000",
+        "/layers/3/bone/scaleX": "3ff0000000000000",
+        "/layers/3/bone/scaleY": "3ff0000000000000",
+        "/layers/4/opacity": "3ff0000000000000",
+        "/layers/4/x": "0000000000000000",
+        "/layers/4/y": "0000000000000000",
+        "/layers/4/width": "3ff0000000000000",
+        "/layers/4/height": "3ff0000000000000",
+        "/layers/4/bone/angle": "0000000000000000",
+        "/layers/4/bone/length": "3ff0000000000000",
+        "/layers/4/bone/scaleX": "3ff0000000000000",
+        "/layers/4/bone/scaleY": "3ff0000000000000",
+        "/skins/mesh/weights/0/0/weight": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/A/0": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/A/1": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/A/2": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/A/3": "3ff0000000000000",
+        "/skins/mesh/bindPoseInverse/A/4": "0000000000000000",
+        "/skins/mesh/bindPoseInverse/A/5": "0000000000000000",
+        "/atlases/0/width": "3ff0000000000000",
+        "/atlases/0/height": "3ff0000000000000",
+        "/atlases/0/entries/0/x": "0000000000000000",
+        "/atlases/0/entries/0/y": "0000000000000000",
+        "/atlases/0/entries/0/width": "3ff0000000000000",
+        "/atlases/0/entries/0/height": "3ff0000000000000"
+      },
+      "payloadCompactUtf8Bytes": 1540,
+      "payloadCompactJsonSha256": "0c1b7b632efa7bc8cb14d306b97226636f98e091c6769667590cebaad64afc83",
+      "actions": [
+        {
+          "kind": "construct-initial"
+        },
+        {
+          "kind": "update",
+          "deltaD64Bits": "0000000000000000"
+        }
+      ],
+      "injections": [],
+      "classification": "public-input-two-field-differential",
+      "expectedByExactSharedReference": {
+        "file": "native-c10-s-expectations-1.json",
+        "bytes": 1266863,
+        "sha256": "4df2e4448b235cbca0903f13fccd585031300592ff800536492af41e828db4d4",
+        "pointer": "/cases/8/steps",
+        "baselineScenarioId": "scenario-skin-early-f32-discriminator",
+        "baselineVariant": "one-plus-two-negative24-rest-scale3",
+        "claim": "Every expected step, trace, status, committed/scratch/caller-current/projection value is reused unchanged. Only the new input identity differs."
+      }
+    }
+  ],
+  "compositionalBasis": [
+    "Existing actual C9 owner test verifies nonzero skinned input offsets erase to retained positive zero.",
+    "C10 must consume only the typed retained route, never re-read original mesh x/y from retained source JSON. That implementation/read-set evidence is still required.",
+    "This differential would detect a future C10 source-JSON offset reread using an unchanged independent S8 oracle."
+  ],
+  "preservation": "Original S8, input bundle1 and expectation bundle3 remain immutable. This is an additional review piece, not a silent replacement or new scenario-count target.",
+  "remaining": [
+    "C9-only admission of this exact payload",
+    "Independent review/freeze and future real native/WASM C10 comparison",
+    "Typed-only/read-set and full-trace absence verification; C11 snapshot offset remains positive zero"
+  ],
+  "numericalExpectationsCalculated": false,
+  "candidateExecuted": false
+}

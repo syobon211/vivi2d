@@ -20,8 +20,8 @@ type LoweringResult<T> = Result<T, EvaluationLoweringError>;
 /// scanned allocation-free in their normative order; category 9 performs
 /// checked arithmetic and fallible reservation before direct projection records
 /// are filled. The returned foundation is not sealed, complete, model-ready, or
-/// activation-ready because category-10 derived evaluation and category-11
-/// topology/invariant construction remain deliberately unimplemented.
+/// activation-ready: this foundation-only entry deliberately does not perform
+/// category-10 evaluation or category-11 topology construction.
 pub fn lower_evaluation_foundation_v1(
     caller_generation: u64,
     candidate: ValidatedEvaluationPayloadV1,
@@ -57,6 +57,33 @@ fn lower_correlated_impl(
     correlated: CorrelatedEvaluationActivationV1,
     #[cfg(test)] denial: Option<ReservationDenialKeyV1>,
 ) -> LoweringResult<EvaluationLoweringFoundationV1> {
+    let preflight = preflight_correlated(correlated)?;
+    #[cfg(not(test))]
+    let buffers = Category9ReservationBuffersV1::reserve_all(&preflight.site_counts)?;
+    #[cfg(test)]
+    let buffers = match denial {
+        Some(key) => Category9ReservationBuffersV1::reserve_all_with_test_denial(
+            &preflight.site_counts,
+            key,
+        )?,
+        None => Category9ReservationBuffersV1::reserve_all(&preflight.site_counts)?,
+    };
+    materialize_preflighted(preflight, buffers)
+}
+
+// The C11 route adds its five checked/reserved vectors before this same C9 fill.
+// The record owns the original candidate/plan, never copies their storage.
+pub(crate) struct EvaluationPreflightV1 {
+    generation: u64,
+    pub(crate) candidate: ValidatedEvaluationPayloadV1,
+    texture_plan: EvaluationTexturePlanV1,
+    census: FoundationCounts,
+    pub(crate) site_counts: Category9SiteCountsV1,
+}
+
+pub(crate) fn preflight_correlated(
+    correlated: CorrelatedEvaluationActivationV1,
+) -> LoweringResult<EvaluationPreflightV1> {
     let generation = correlated.request_generation();
     let (candidate, texture_plan) = correlated.into_parts();
     let root = object(candidate.value())?;
@@ -75,15 +102,28 @@ fn lower_correlated_impl(
     let mut census = census_category9(root, layers)?;
     let site_counts = Category9SiteCountsV1::try_from_ordered(census.site_counts())?;
     census.finish_incumbent_usize_defenses()?;
-    #[cfg(not(test))]
-    let mut buffers = Category9ReservationBuffersV1::reserve_all(&site_counts)?;
-    #[cfg(test)]
-    let mut buffers = match denial {
-        Some(key) => {
-            Category9ReservationBuffersV1::reserve_all_with_test_denial(&site_counts, key)?
-        }
-        None => Category9ReservationBuffersV1::reserve_all(&site_counts)?,
-    };
+    Ok(EvaluationPreflightV1 {
+        generation,
+        candidate,
+        texture_plan,
+        census,
+        site_counts,
+    })
+}
+
+pub(crate) fn materialize_preflighted(
+    preflight: EvaluationPreflightV1,
+    mut buffers: Category9ReservationBuffersV1,
+) -> LoweringResult<EvaluationLoweringFoundationV1> {
+    let EvaluationPreflightV1 {
+        generation,
+        candidate,
+        texture_plan,
+        census,
+        site_counts,
+    } = preflight;
+    let root = object(candidate.value())?;
+    let layers = array_property(root, "layers")?;
 
     let (inline_physics_group, inline_ik_controller) =
         materialize_category9(root, layers, &census, &mut buffers)?;
@@ -785,7 +825,11 @@ fn validate_category9_prefix_ranges(
     Ok(())
 }
 
-fn visit_layers<F>(layers: &[Value], ancestor_visible: bool, visitor: &mut F) -> LoweringResult<()>
+pub(crate) fn visit_layers<F>(
+    layers: &[Value],
+    ancestor_visible: bool,
+    visitor: &mut F,
+) -> LoweringResult<()>
 where
     F: FnMut(&Map<String, Value>, bool) -> LoweringResult<()>,
 {
@@ -2676,7 +2720,6 @@ fn optional_f64_property(
     }
 }
 
-#[cfg(test)]
 pub(crate) fn project_binary64_to_binary32(value: f64) -> LoweringResult<f32> {
     validate_binary64_for_projection(value)?;
     Ok(project_validated_binary64_to_binary32(value))

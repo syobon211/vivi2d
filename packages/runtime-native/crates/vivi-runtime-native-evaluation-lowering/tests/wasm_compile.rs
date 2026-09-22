@@ -32,6 +32,9 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn get(&self, key: &str) -> Option<&Value> {
+        self.as_object()?.get(key)
+    }
     pub fn as_object(&self) -> Option<&Map<String, Value>> {
         match self {
             Self::Object(value) => Some(value),
@@ -91,7 +94,11 @@ impl ValidatedEvaluationPayloadV1 {
     }
 }
 
-pub struct EvaluationTextureBindingV1;
+pub struct EvaluationTextureBindingV1 {
+    pub id: String,
+    pub width: u32,
+    pub height: u32,
+}
 
 pub struct EvaluationTexturePlanV1 {
     pub textures: Vec<EvaluationTextureBindingV1>,
@@ -152,6 +159,12 @@ pub mod model;
 mod reservation;
 #[path = r#"__LOWER_RS__"#]
 mod lower;
+#[path = r#"__TOPOLOGY_RS__"#]
+mod topology;
+#[path = r#"__TOPOLOGY_RESERVATION_RS__"#]
+mod topology_reservation;
+pub use error::{EvaluationLoweringError, EvaluationLoweringErrorKind};
+pub use model::EvaluationLoweringFoundationV1;
 
 // These retained Rust-function-pointer statics make the actual public entry,
 // its complete private call graph, public getters/error methods, and the
@@ -163,6 +176,12 @@ pub static ACTUAL_PUBLIC_ENTRY_CODEGEN_ROOT: fn(
     EvaluationTexturePlanV1,
 ) -> Result<model::EvaluationLoweringFoundationV1, error::EvaluationLoweringError> =
     lower::lower_evaluation_foundation_v1;
+
+// C10 now uses the same projection wrapper in ordinary production. Keep this
+// C9-only probe codegen-visible without suppressing unused-source warnings.
+#[used]
+pub static ACTUAL_PROJECTION_CODEGEN_ROOT: fn(f64) -> Result<f32, error::EvaluationLoweringError> =
+    lower::project_binary64_to_binary32;
 
 fn probe_actual_public_surface(
     candidate: ValidatedEvaluationPayloadV1,
@@ -220,6 +239,27 @@ fn probe_actual_reservation_surface(
 #[used]
 pub static ACTUAL_RESERVATION_CODEGEN_ROOT: fn([u32; 39]) -> i32 =
     probe_actual_reservation_surface;
+
+// Compile/codegen only: exposes the actual five layouts/reserve/fill call graph
+// on wasm32. It deliberately omits C10 and is NOT executable sealing evidence.
+fn probe_topology_codegen(candidate: ValidatedEvaluationPayloadV1, plan: EvaluationTexturePlanV1) -> i32 {
+    let result = (|| {
+        let correlated = correlate_evaluation_activation_v1(0, candidate, plan)
+            .map_err(error::EvaluationLoweringError::from_correlation)?;
+        let preflight = lower::preflight_correlated(correlated)?;
+        let counts = topology_reservation::TopologyCountsV1::census(preflight.candidate.value(), &preflight.site_counts)?;
+        let mut state = reservation::ReservationStateV1::production();
+        let buffers = reservation::Category9ReservationBuffersV1::reserve_all_with_state(&preflight.site_counts, &mut state)?;
+        let topology = counts.reserve(&mut state)?;
+        let foundation = lower::materialize_preflighted(preflight, buffers)?;
+        topology.fill(&foundation).map(|_| ())
+    })();
+    result.map_or_else(|error| error.load_status(), |()| 0)
+}
+
+#[used]
+pub static ACTUAL_TOPOLOGY_LAYOUT_AND_FILL_CODEGEN_ROOT: fn(ValidatedEvaluationPayloadV1, EvaluationTexturePlanV1) -> i32 =
+    probe_topology_codegen;
 "###;
 
 struct ExternalTempDir {
@@ -304,7 +344,16 @@ fn actual_lowering_sources_compile_for_wasm32_without_a_product_surface_claim() 
     let model_rs = sources.join("model.rs");
     let reservation_rs = sources.join("reservation.rs");
     let lower_rs = sources.join("lower.rs");
-    for source in [&error_rs, &model_rs, &reservation_rs, &lower_rs] {
+    let topology_rs = sources.join("topology.rs");
+    let topology_reservation_rs = sources.join("topology_reservation.rs");
+    for source in [
+        &error_rs,
+        &model_rs,
+        &reservation_rs,
+        &lower_rs,
+        &topology_rs,
+        &topology_reservation_rs,
+    ] {
         assert!(
             source.is_file(),
             "actual lowering source exists: {source:?}"
@@ -315,7 +364,12 @@ fn actual_lowering_sources_compile_for_wasm32_without_a_product_surface_claim() 
         .replace("__ERROR_RS__", source_path(&error_rs))
         .replace("__MODEL_RS__", source_path(&model_rs))
         .replace("__RESERVATION_RS__", source_path(&reservation_rs))
-        .replace("__LOWER_RS__", source_path(&lower_rs));
+        .replace("__LOWER_RS__", source_path(&lower_rs))
+        .replace("__TOPOLOGY_RS__", source_path(&topology_rs))
+        .replace(
+            "__TOPOLOGY_RESERVATION_RS__",
+            source_path(&topology_reservation_rs),
+        );
     let temporary = ExternalTempDir::create();
     let probe_rs = temporary.path.join("category9_wasm_probe.rs");
     let artifact = temporary.path.join("category9_wasm_probe.rlib");

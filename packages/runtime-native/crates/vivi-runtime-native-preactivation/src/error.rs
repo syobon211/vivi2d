@@ -1,8 +1,8 @@
 use std::fmt;
+#[cfg(feature = "native-host")]
+use vivi_asset_host_local::LocalStoreErrorKind;
 
-use vivi_asset_host_local::{
-    AssetErrorCode, LocalAssetHostError, LocalAssetHostErrorKind, LocalStoreErrorKind,
-};
+use vivi_asset_host_local::{AssetErrorCode, LocalAssetHostError, LocalAssetHostErrorKind};
 
 /// Stable, redacted failure classes for Evaluation preactivation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -29,14 +29,30 @@ pub enum EvaluationPreactivationErrorKind {
 pub struct EvaluationPreactivationError {
     kind: EvaluationPreactivationErrorKind,
     asset_code: Option<AssetErrorCode>,
+    #[cfg(feature = "native-host")]
     store_kind: Option<LocalStoreErrorKind>,
 }
 
 impl EvaluationPreactivationError {
+    /// Frozen outer-load status, retaining this error's sanitized cause codes.
+    /// This is not the legacy runtime ABI's smaller status catalog.
+    #[must_use]
+    pub const fn load_status(self) -> i32 {
+        match self.kind {
+            EvaluationPreactivationErrorKind::ResourceLimitExceeded => 6,
+            EvaluationPreactivationErrorKind::Internal => 10,
+            EvaluationPreactivationErrorKind::Correlation
+            | EvaluationPreactivationErrorKind::InvalidTexturePlan
+            | EvaluationPreactivationErrorKind::Asset
+            | EvaluationPreactivationErrorKind::Store => 14,
+        }
+    }
+
     pub(crate) const fn correlation() -> Self {
         Self {
             kind: EvaluationPreactivationErrorKind::Correlation,
             asset_code: None,
+            #[cfg(feature = "native-host")]
             store_kind: None,
         }
     }
@@ -45,6 +61,7 @@ impl EvaluationPreactivationError {
         Self {
             kind: EvaluationPreactivationErrorKind::Internal,
             asset_code: None,
+            #[cfg(feature = "native-host")]
             store_kind: None,
         }
     }
@@ -53,6 +70,7 @@ impl EvaluationPreactivationError {
         Self {
             kind: EvaluationPreactivationErrorKind::ResourceLimitExceeded,
             asset_code: None,
+            #[cfg(feature = "native-host")]
             store_kind: None,
         }
     }
@@ -71,6 +89,7 @@ impl EvaluationPreactivationError {
         Self {
             kind,
             asset_code: error.asset_code(),
+            #[cfg(feature = "native-host")]
             store_kind: error.store_kind(),
         }
     }
@@ -89,6 +108,7 @@ impl EvaluationPreactivationError {
 
     /// Returns the sanitized local-store cause only for store failures.
     #[must_use]
+    #[cfg(feature = "native-host")]
     pub const fn store_kind(self) -> Option<LocalStoreErrorKind> {
         self.store_kind
     }
@@ -96,12 +116,13 @@ impl EvaluationPreactivationError {
 
 impl fmt::Debug for EvaluationPreactivationError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter
-            .debug_struct("EvaluationPreactivationError")
+        let mut value = formatter.debug_struct("EvaluationPreactivationError");
+        value
             .field("kind", &self.kind)
-            .field("asset_code", &self.asset_code)
-            .field("store_kind", &self.store_kind)
-            .finish()
+            .field("asset_code", &self.asset_code);
+        #[cfg(feature = "native-host")]
+        value.field("store_kind", &self.store_kind);
+        value.finish()
     }
 }
 
@@ -131,3 +152,30 @@ impl fmt::Display for EvaluationPreactivationError {
 }
 
 impl std::error::Error for EvaluationPreactivationError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_error_kinds_preserve_the_frozen_outer_load_mapping() {
+        use EvaluationPreactivationErrorKind::*;
+        for (kind, status) in [
+            (Correlation, 14),
+            (InvalidTexturePlan, 14),
+            (ResourceLimitExceeded, 6),
+            (Asset, 14),
+            (Store, 14),
+            (Internal, 10),
+        ] {
+            let error = EvaluationPreactivationError {
+                kind,
+                asset_code: None,
+                #[cfg(feature = "native-host")]
+                store_kind: None,
+            };
+            assert_eq!(error.load_status(), status);
+            assert_eq!(error.kind(), kind);
+        }
+    }
+}

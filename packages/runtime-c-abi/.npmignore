@@ -3,5 +3,8 @@
 include/vivi_runtime_v02.h
 include/vivi_runtime_editor.h
 include/vivi_png.h
+include/vivi_local_asset.h
+include/vivi_local_asset_preview.h
+samples/evaluation-host.c
 tests/header-layout-v02.c
 tests/png-header-layout.c

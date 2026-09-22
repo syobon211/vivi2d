@@ -155,6 +155,11 @@ vi.mock("pixi.js", () => {
       init: vi.fn().mockResolvedValue(undefined),
       destroy: vi.fn(),
       resize: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+      render: vi.fn(),
+      ticker: { add: vi.fn(), remove: vi.fn() },
+      renderer: { render: vi.fn(), background: { color: 0 }, on: vi.fn(), off: vi.fn() },
       stage: mockContainer(),
       canvas: document.createElement("canvas"),
       screen: { width: 1600, height: 900 },
@@ -163,6 +168,7 @@ vi.mock("pixi.js", () => {
 
   return {
     Application: appFactory,
+    UPDATE_PRIORITY: { LOW: -25 },
     Container: vi.fn().mockImplementation(mockContainer),
     Graphics: vi.fn().mockImplementation(mockGraphics),
     Sprite: vi.fn().mockImplementation(function () {

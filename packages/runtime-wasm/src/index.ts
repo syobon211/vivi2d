@@ -1,10 +1,4 @@
 import {
-  VIVI_RUNTIME_ABI_VERSION,
-  VIVI_RUNTIME_ERROR_CODES,
-  VIVI_RUNTIME_SPEC_V1_VERSION,
-  VIVI_RUNTIME_TOLERANCES,
-  ViviRuntime,
-  ViviRuntimeError,
   type RuntimeExpressionPresetInfo,
   type RuntimeHitResult,
   type RuntimeLimitOverrides,
@@ -12,36 +6,43 @@ import {
   type RuntimeModel,
   type RuntimeModelOptions,
   type RuntimeParameterInfo,
-  type RuntimePlayClipOptions,
   type RuntimePlaybackState,
+  type RuntimePlayClipOptions,
   type RuntimeStateMachineState,
   type RuntimeTextureData,
   type RuntimeTextureInfo,
   type RuntimeVersion,
-  type ViviFileData,
-} from "@vivi2d/runtime";
-import { PortableRuntimeModel } from "./portable-evaluator";
-import { VIVI_RUNTIME_NATIVE_WASM_BASE64 } from "./native-wasm-bytes";
-
-export {
   VIVI_RUNTIME_ABI_VERSION,
   VIVI_RUNTIME_ERROR_CODES,
   VIVI_RUNTIME_SPEC_V1_VERSION,
   VIVI_RUNTIME_TOLERANCES,
+  type ViviFileData,
+  ViviRuntime,
   ViviRuntimeError,
+} from "@vivi2d/runtime";
+import { createEmbeddedWasmLoader } from "./native-wasm-bootstrap";
+import { VIVI_RUNTIME_NATIVE_WASM_BASE64 } from "./native-wasm-bytes";
+import { PortableRuntimeModel } from "./portable-evaluator";
+
+export {
   type RuntimeExpressionPresetInfo,
   type RuntimeHitResult,
   type RuntimeLimitOverrides,
   type RuntimeMeshSnapshot,
   type RuntimeModelOptions,
   type RuntimeParameterInfo,
-  type RuntimePlayClipOptions,
   type RuntimePlaybackState,
+  type RuntimePlayClipOptions,
   type RuntimeStateMachineState,
   type RuntimeTextureData,
   type RuntimeTextureInfo,
   type RuntimeVersion,
+  VIVI_RUNTIME_ABI_VERSION,
+  VIVI_RUNTIME_ERROR_CODES,
+  VIVI_RUNTIME_SPEC_V1_VERSION,
+  VIVI_RUNTIME_TOLERANCES,
   type ViviFileData,
+  ViviRuntimeError,
 };
 
 export interface ViviWasmRuntimeBackendInfo {
@@ -50,10 +51,7 @@ export interface ViviWasmRuntimeBackendInfo {
   readonly backendPreference: ViviWasmRuntimeBackendPreference;
   readonly selectedBackend: "native" | "portable";
   readonly nativeAvailable: boolean;
-  readonly evaluator:
-    | "native-rust"
-    | "portable-typescript"
-    | "typescript-reference";
+  readonly evaluator: "native-rust" | "portable-typescript" | "typescript-reference";
   readonly wasmModuleValidated: boolean;
   readonly fallbackReason: "native-wasm-init-failed" | null;
 }
@@ -93,10 +91,7 @@ type ViviRuntimeWasmExports = {
     idPtr: number,
     idLen: number,
   ) => number;
-  readonly vivi_wasm_model_update: (
-    handle: number,
-    deltaSeconds: number,
-  ) => number;
+  readonly vivi_wasm_model_update: (handle: number, deltaSeconds: number) => number;
   readonly vivi_wasm_model_snapshot_json: (handle: number) => number;
   readonly vivi_wasm_model_hit_test_json: (
     handle: number,
@@ -141,8 +136,7 @@ type RuntimeModelReferenceSurface = {
 type RuntimeModelSurfaceCoversReference =
   RuntimeModelPublicSurface extends RuntimeModelReferenceSurface ? true : never;
 
-const RUNTIME_MODEL_SURFACE_COVERS_REFERENCE: RuntimeModelSurfaceCoversReference =
-  true;
+const RUNTIME_MODEL_SURFACE_COVERS_REFERENCE: RuntimeModelSurfaceCoversReference = true;
 void RUNTIME_MODEL_SURFACE_COVERS_REFERENCE;
 
 type NativeSnapshot = {
@@ -269,45 +263,13 @@ function validateNativeSnapshot(snapshot: NativeSnapshot): void {
   }
 }
 
-function decodeBase64ToBytes(base64: string): Uint8Array<ArrayBuffer> {
-  if (typeof atob === "function") {
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let index = 0; index < binary.length; index += 1) {
-      bytes[index] = binary.charCodeAt(index);
-    }
-    return bytes;
-  }
-  const maybeBuffer = (globalThis as typeof globalThis & {
-    Buffer?: { from(value: string, encoding: "base64"): Uint8Array };
-  }).Buffer;
-  if (maybeBuffer) {
-    return Uint8Array.from(maybeBuffer.from(base64, "base64"));
-  }
-  throw new Error("base64 decoding is not available in this host");
-}
-
-let cachedNativeWasmBytes: Uint8Array<ArrayBuffer> | null = null;
-
-function getNativeWasmBytes(): Uint8Array<ArrayBuffer> {
-  cachedNativeWasmBytes ??= decodeBase64ToBytes(
-    VIVI_RUNTIME_NATIVE_WASM_BASE64,
-  );
-  return cachedNativeWasmBytes;
-}
+const loadNativeWasm = createEmbeddedWasmLoader(VIVI_RUNTIME_NATIVE_WASM_BASE64);
 
 async function createKernelExports(
   expectedAbiVersion: number,
 ): Promise<ViviRuntimeWasmExports> {
   try {
-    if (typeof WebAssembly === "undefined") {
-      throw new Error("WebAssembly is not available in this host");
-    }
-    const nativeWasmBytes = getNativeWasmBytes();
-    if (!WebAssembly.validate(nativeWasmBytes)) {
-      throw new Error("embedded native runtime wasm module failed validation");
-    }
-    const { instance } = await WebAssembly.instantiate(nativeWasmBytes);
+    const instance = await loadNativeWasm();
     const exports = instance.exports as ViviRuntimeWasmExports;
     if (!(exports.memory instanceof WebAssembly.Memory)) {
       throw new Error("embedded native runtime wasm module is missing memory");
@@ -463,9 +425,7 @@ class NativeWasmKernel {
     if (pointer === 0) {
       throw this.#lastError("native runtime wasm allocation failed");
     }
-    new Uint8Array(this.#exports.memory.buffer, pointer, bytes.byteLength).set(
-      bytes,
-    );
+    new Uint8Array(this.#exports.memory.buffer, pointer, bytes.byteLength).set(bytes);
     return { pointer, byteLen: bytes.byteLength };
   }
 
@@ -504,13 +464,8 @@ class NativeWasmKernel {
   #lastError(fallbackMessage: string, knownStatus?: number): ViviRuntimeError {
     const status = knownStatus ?? this.#exports.vivi_wasm_last_error_code();
     const messagePointer = this.#exports.vivi_wasm_last_error_message_ptr();
-    const message = messagePointer === 0
-      ? ""
-      : this.#readOutput(messagePointer);
-    return runtimeWasmError(
-      nativeStatusToErrorCode(status),
-      message || fallbackMessage,
-    );
+    const message = messagePointer === 0 ? "" : this.#readOutput(messagePointer);
+    return runtimeWasmError(nativeStatusToErrorCode(status), message || fallbackMessage);
   }
 
   #readOutput(pointer: number): string {
@@ -676,9 +631,10 @@ class NativeWasmRuntimeModel implements RuntimeModelPublicSurface {
 
   getParameterValue(id: string): number | null {
     this.#assertUsable();
-    return this.#currentSnapshot().parameters.find(
-      (parameter) => parameter.id === id,
-    )?.currentValue ?? null;
+    return (
+      this.#currentSnapshot().parameters.find((parameter) => parameter.id === id)
+        ?.currentValue ?? null
+    );
   }
 
   getParameters(): readonly RuntimeParameterInfo[] {
@@ -708,9 +664,7 @@ class NativeWasmRuntimeModel implements RuntimeModelPublicSurface {
 
   getTextureData(id: string): RuntimeTextureData | null {
     this.#assertUsable();
-    const texture = this.#currentSnapshot().textures.find(
-      (item) => item.id === id,
-    );
+    const texture = this.#currentSnapshot().textures.find((item) => item.id === id);
     if (!texture) return null;
     return Object.freeze({
       info: Object.freeze({
@@ -758,9 +712,7 @@ class NativeWasmRuntimeModel implements RuntimeModelPublicSurface {
   getRenderList(): readonly RuntimeMeshSnapshot[] {
     this.#assertUsable();
     return Object.freeze(
-      this.#currentSnapshot().renderList.map((mesh) =>
-        this.#toMeshSnapshot(mesh),
-      ),
+      this.#currentSnapshot().renderList.map((mesh) => this.#toMeshSnapshot(mesh)),
     );
   }
 
@@ -895,9 +847,7 @@ export class ViviWasmRuntime {
     this.#fallbackReason = fallbackReason;
   }
 
-  static async create(
-    options: ViviWasmRuntimeOptions = {},
-  ): Promise<ViviWasmRuntime> {
+  static async create(options: ViviWasmRuntimeOptions = {}): Promise<ViviWasmRuntime> {
     const backendPreference = options.backend ?? "auto";
     let kernel: NativeWasmKernel | null = null;
     let fallbackReason: "native-wasm-init-failed" | null = null;

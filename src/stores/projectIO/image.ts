@@ -35,6 +35,7 @@ import {
   normalizeManualImageImportOptions,
 } from "@/lib/manual-image-import-options";
 import type { ProjectSourceKind } from "@/lib/project-source-kind";
+import { isProjectV11Publishing } from "@/lib/project-v11-publishing";
 import {
   clearTextures,
   getAllTextures,
@@ -55,8 +56,10 @@ import {
   runInHistoryTransaction,
 } from "../projectMutator";
 import { useSelectionStore } from "../selectionStore";
+import { rejectV11LegacyAction } from "../v11LegacyGuard";
 import { useViewportStore } from "../viewportStore";
 import { applyLoadedProject, initParameterValues, resetRelatedStores } from "./reset";
+import { importV11Images, replaceV11Image } from "./v11Images";
 
 type NamedImageBuffer = {
   buffer: ArrayBuffer;
@@ -285,6 +288,7 @@ export async function loadImageFromBufferAsync(
   options?: Partial<ManualImageImportOptions>,
   sourcePath?: string,
 ): Promise<boolean> {
+  if (rejectV11LegacyAction()) return false;
   const normalizedOptions = {
     ...normalizeManualImageImportOptions(options),
     createGroupForImportedLayers: false,
@@ -309,6 +313,12 @@ export async function loadImageFromBufferAsync(
     return false;
   }
 
+  if (
+    rejectV11LegacyAction() ||
+    useEditorStore.getState().project !== editorState.project ||
+    useEditorStore.getState().projectVersion !== editorState.projectVersion
+  )
+    return false;
   const project = createProjectFromPreparedCanvas(
     fileName,
     prepared,
@@ -429,6 +439,9 @@ export async function importImageAsLayerFromBufferAsync(
   options?: Partial<ManualImageImportOptions>,
   sourcePath?: string,
 ): Promise<boolean> {
+  if (isProjectV11Publishing()) throw new Error("PROJECT_TRANSACTION_BUSY");
+  if (useEditorStore.getState().projectV11)
+    return importV11Images([{ buffer, fileName }]);
   const currentProject = useEditorStore.getState().project;
   if (!currentProject) {
     useNotificationStore
@@ -458,6 +471,8 @@ export async function importImageAsLayerFromBufferAsync(
     normalizedOptions,
     detectTransparentPadding(decodedCanvas, normalizedOptions, prepared),
   );
+  if (rejectV11LegacyAction() || useEditorStore.getState().project !== currentProject)
+    return false;
   notifyImportRisk(analysis);
 
   const previousTextures = new Map(getAllTextures());
@@ -471,6 +486,8 @@ export async function importImageAsLayerFromBufferAsync(
     sourcePath,
     generateImportedMesh,
   );
+  if (rejectV11LegacyAction() || useEditorStore.getState().project !== currentProject)
+    return false;
 
   try {
     setTexture(preparedEntry.layer.id, preparedEntry.canvas);
@@ -518,6 +535,8 @@ export async function importImagesAsLayersFromBuffersAsync(
   files: NamedImageBuffer[],
   options?: Partial<ManualImageImportOptions>,
 ): Promise<boolean> {
+  if (isProjectV11Publishing()) throw new Error("PROJECT_TRANSACTION_BUSY");
+  if (useEditorStore.getState().projectV11) return importV11Images(files);
   const currentProject = useEditorStore.getState().project;
   if (!currentProject) {
     useNotificationStore
@@ -591,6 +610,8 @@ export async function importImagesAsLayersFromBuffersAsync(
       .addNotification("error", e instanceof Error ? e.message : String(e));
     return false;
   }
+  if (rejectV11LegacyAction() || useEditorStore.getState().project !== currentProject)
+    return false;
   if (autoCenteredImportCount > 0) {
     useNotificationStore
       .getState()
@@ -602,6 +623,8 @@ export async function importImagesAsLayersFromBuffersAsync(
       .addNotification("warning", tGlobal(TRANSPARENT_PADDING_WARNING_MESSAGE_KEY));
   }
 
+  if (rejectV11LegacyAction() || useEditorStore.getState().project !== currentProject)
+    return false;
   const previousTextures = new Map(getAllTextures());
 
   try {
@@ -675,6 +698,9 @@ export async function reimportManualPngLayer(
   layerId: string,
   source?: ManualPngReimportSource,
 ): Promise<boolean> {
+  if (isProjectV11Publishing()) throw new Error("PROJECT_TRANSACTION_BUSY");
+  if (useEditorStore.getState().projectV11)
+    return replaceV11Image(layerId, source?.buffer);
   const project = useEditorStore.getState().project;
   if (!project) {
     useNotificationStore

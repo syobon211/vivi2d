@@ -1,12 +1,5 @@
 import { spawnSync } from "node:child_process";
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   msvcCompileAndLinkArgs,
@@ -14,19 +7,45 @@ import {
 } from "./lib/runtime-c-abi-compiler.mjs";
 
 const root = process.cwd();
+if (process.argv.slice(2).some((arg) => arg !== "--evaluation-v1")) {
+  throw new Error("Only the fixed --evaluation-v1 profile is supported");
+}
+const evaluationMode = process.argv.includes("--evaluation-v1");
 const nativeManifest = path.join(root, "packages/runtime-native/Cargo.toml");
 const includeDir = path.join(root, "packages/runtime-c-abi/include");
-const samplePath = path.join(root, "packages/runtime-c-abi/samples/minimal-host.c");
-const targetDir = path.join(root, "packages/runtime-native/target/debug");
-const tmpDirRelative = path.join("tmp", "runtime-c-abi-link");
+const samplePath = path.join(
+  root,
+  `packages/runtime-c-abi/samples/${evaluationMode ? "evaluation-host" : "minimal-host"}.c`,
+);
+const targetDir = path.join(
+  root,
+  evaluationMode
+    ? "packages/runtime-native/target/evaluation-abi/debug"
+    : "packages/runtime-native/target/debug",
+);
+const tmpDirRelative = path.join(
+  "tmp",
+  evaluationMode ? "runtime-c-abi-evaluation-link" : "runtime-c-abi-link",
+);
 const tmpDir = path.join(root, tmpDirRelative);
 
 run("cargo", [
+  ...(evaluationMode ? ["+1.89.0"] : []),
   "build",
+  "--locked",
   "--manifest-path",
   nativeManifest,
   "-p",
   "vivi-runtime-native-c-abi",
+  ...(evaluationMode
+    ? [
+        "--no-default-features",
+        "--features",
+        "evaluation-v1",
+        "--target-dir",
+        path.dirname(targetDir),
+      ]
+    : []),
 ]);
 
 rmSync(tmpDir, { recursive: true, force: true });
@@ -42,7 +61,7 @@ if (importLibrary) {
   }
 }
 
-runRustFfiHost();
+if (!evaluationMode) runRustFfiHost();
 runOptionalCHost();
 
 console.log("[runtime-c-abi-link] passed");
@@ -100,6 +119,10 @@ fn main() {
 function runOptionalCHost() {
   const compiler = findCCompiler();
   if (!compiler) {
+    if (evaluationMode)
+      throw new Error(
+        "Evaluation profile requires an actual C header/link/copy-out check",
+      );
     console.log("[runtime-c-abi-link] C host skipped: no C compiler found on PATH");
     return;
   }
@@ -167,33 +190,31 @@ function findVcvars64() {
   if (process.platform !== "win32") return null;
   const programFilesX86 = process.env["ProgramFiles(x86)"];
   if (!programFilesX86) return null;
-  const visualStudioRoot = path.join(programFilesX86, "Microsoft Visual Studio");
-  if (!existsSync(visualStudioRoot)) return null;
-  for (const year of safeReaddir(visualStudioRoot)) {
-    const yearPath = path.join(visualStudioRoot, year.name);
-    if (!year.isDirectory()) continue;
-    for (const edition of safeReaddir(yearPath)) {
-      if (!edition.isDirectory()) continue;
-      const candidate = path.join(
-        yearPath,
-        edition.name,
-        "VC",
-        "Auxiliary",
-        "Build",
-        "vcvars64.bat",
-      );
-      if (existsSync(candidate)) return candidate;
-    }
-  }
-  return null;
-}
-
-function safeReaddir(directory) {
-  try {
-    return readdirSync(directory, { withFileTypes: true });
-  } catch {
-    return [];
-  }
+  const vswhere = path.join(
+    programFilesX86,
+    "Microsoft Visual Studio",
+    "Installer",
+    "vswhere.exe",
+  );
+  if (!existsSync(vswhere)) return null;
+  const result = spawnSync(
+    vswhere,
+    [
+      "-latest",
+      "-products",
+      "*",
+      "-requires",
+      "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+      "-property",
+      "installationPath",
+    ],
+    { encoding: "utf8", windowsHide: true, timeout: 10000 },
+  );
+  if (result.status !== 0 || result.error || result.signal) return null;
+  const installation = result.stdout.trim();
+  if (!path.isAbsolute(installation) || /[\r\n"&|<>%!]/.test(installation)) return null;
+  const candidate = path.join(installation, "VC", "Auxiliary", "Build", "vcvars64.bat");
+  return existsSync(candidate) ? candidate : null;
 }
 
 function commandExists(command) {

@@ -1,0 +1,79 @@
+{
+  "kind": "vivi2d-c10-phase-b-identity-addendum-v1",
+  "status": "AUTHOR_PHASE_B_IMPLEMENTATION_REVIEW_PENDING",
+  "historicalPostseal": {
+    "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-postseal-identity-addendum-1.json",
+    "bytes": 3125,
+    "sha256": "3546eb1b46ed7ce8d30a24f040a981e1833be7ff0d4ddc6526d5b1a377c7eb70"
+  },
+  "cargoLockUpdate": {
+    "historical": {
+      "path": "packages/runtime-native/Cargo.lock",
+      "bytes": 12159,
+      "sha256": "c5738848c483397a4cfc23a30d0134d462adcc1bde18f537618deaaaca781279"
+    },
+    "current": {
+      "path": "packages/runtime-native/Cargo.lock",
+      "bytes": 12254,
+      "sha256": "5a2e4b1a5458fb7a451fd80eb0f5105c4c23feb77202b191b460f47c192534cd"
+    },
+    "addedEdges": [
+      {
+        "package": "vivi-runtime-native-core",
+        "dependencies": [
+          "tempfile",
+          "vivi-runtime-native-evaluation-lowering",
+          "vivi-runtime-native-preactivation"
+        ]
+      }
+    ]
+  },
+  "sourcePins": [
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-core/Cargo.toml",
+      "bytes": 682,
+      "sha256": "717b69c0966182b11e402becc6a7df782b53efaabb0dbcc5c589576eead1f89d"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-core/src/lib.rs",
+      "bytes": 6323,
+      "sha256": "a2e88cd19c61fbc7b49a029a6651088bdd3448864e512b4764b3ca495a31e8d5"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation.rs",
+      "bytes": 7757,
+      "sha256": "f03de9dfd3417ce53a497c27e6159c0b97ca89d81ec3454a22d75451b808e596"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-core/src/evaluation/tests.rs",
+      "bytes": 10704,
+      "sha256": "e08da13e5e47455612dc5e100f45ec7df7d05542510a9b973a6934568feb361d"
+    },
+    {
+      "path": "packages/editor-host/src/read-only-authoring-host.ts",
+      "bytes": 44086,
+      "sha256": "1efd73b39bbe000155b163bdcc215e4ed9964b095434df7c9db5d87e11871a49"
+    },
+    {
+      "path": "packages/editor-host/src/request-generation.ts",
+      "bytes": 575,
+      "sha256": "6069d77b61ede1b6242706105528e564e55c5d31b95ec3501299a2c8c6f0fc44"
+    },
+    {
+      "path": "packages/editor-host/src/__tests__/read-only-authoring-host.test.ts",
+      "bytes": 45649,
+      "sha256": "818faf366839f7468eb19612f30666127dd73b788cc6be5083d24911cf449838"
+    },
+    {
+      "path": "packages/runtime-native/package.json",
+      "bytes": 3669,
+      "sha256": "111c98460ce6b08df3ad5d12711e8171b0f606e1925dee6ea46086266bbebbc0"
+    }
+  ],
+  "boundary": [
+    "Historical C10/C11/postseal bytes remain immutable; every lowerer/preactivation numerical/owner source remains unchanged.",
+    "One optional core-to-lowerer production edge, no default core/ABI/WASM activation. Core preactivation and tempfile edges are dev-only.",
+    "Actual native B ownership and detached EDH issuance metadata are separate evidence, not a browser or principal-authentication path.",
+    "No new numeric expectations or production math changes; actual current full-C10 evidence and independent B implementation review remain required."
+  ]
+}

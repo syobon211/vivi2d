@@ -44,7 +44,7 @@ describe("editorStore: saveProject / loadProject", () => {
     useEditorStore.setState({ project, projectVersion: 1 });
     const currentProject = useEditorStore.getState().project;
     const json = JSON.stringify({ version: 1, project, atlases: [] });
-    vi.spyOn(projectSerializer, "deserializeProject").mockRejectedValueOnce(
+    vi.spyOn(projectSerializer, "prepareDeserializedProject").mockRejectedValueOnce(
       new Error("Failed to load atlas image"),
     );
     if (format === "vivi") {

@@ -5,6 +5,22 @@
 //! Phase N2 adds runtime creation and parser-backed model loading. Evaluator,
 //! snapshot, and ownership-heavy APIs are intentionally left for later phases.
 
+#[cfg(all(
+    feature = "local-asset-host-v1",
+    any(
+        target_arch = "wasm32",
+        not(target_pointer_width = "64"),
+        not(target_endian = "little"),
+        feature = "abi-v02",
+        feature = "png-v1"
+    )
+))]
+compile_error!("local-asset-host-v1 requires its separate native64 little-endian profile");
+#[cfg(feature = "evaluation-v1")]
+mod evaluation;
+#[cfg(feature = "local-asset-host-v1")]
+mod local_asset;
+
 #[cfg(feature = "abi-v02")]
 use std::cell::Cell;
 use std::cell::RefCell;

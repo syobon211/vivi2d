@@ -2,8 +2,9 @@
 
 ## Status And Authority
 
-- Status: tracked public review draft; not normative, not published, and not
-  implemented by the ordinary Windows save path.
+- Status: tracked public review draft; not normative or released. The narrow
+  opt-in ordinary Editor route below is implemented locally; full consumer
+  acceptance and independent implementation review remain separate gates.
 - Scope: the Project-owned rules needed for the base offline `.vivi`
   `document-round-trip` claim in the
   [Multiplatform Exchange Profile v1 draft](./multiplatform-exchange-profile-v1.draft.md).
@@ -55,11 +56,11 @@ The implementation foundation and the ordinary application path are different:
 
 | Surface | Current fact |
 | --- | --- |
-| Ordinary Windows writer | Emits Project version 9. |
-| Ordinary parser and runtime model | Accept Project versions 1 through 10. |
-| Project Format v11 | Available only through an internal model subpath and read-only authoring host seam. |
-| Ordinary v11 editing and save | Not connected. |
-| Embedded round-trip candidate | Internal validator, explicit v9/v10 migration and fork, consumed by synthetic model/conformance tests; not an ordinary application save path. |
+| Ordinary Windows writer | Default legacy save emits version 9; an explicitly adopted narrow v11 document stays v11. |
+| Ordinary parser and runtime model | Legacy parsing accepts versions 1 through 10; the separate opt-in v11 route uses its real internal codec and PNG verifier. |
+| Project Format v11 | Internal model subpath, authoring host seam, and the bounded ordinary Editor consumer described below. |
+| Ordinary v11 editing and save | Locally implemented opt-in route; final whole-consumer acceptance is not inferred from codec or renderer unit tests. |
+| Embedded round-trip candidate | Internal validator, explicit v9/v10 copy migration/fork, synthetic conformance tests and actual Editor save/load witnesses; no default migration. |
 | Portable or independent consumer | No approved consumer has passed a public corpus. |
 
 The following tracked artifacts are review inputs, not public promises:
@@ -172,7 +173,7 @@ The current reference foundation supplies these candidate global ceilings:
 
 | Limit | Candidate value | Current gap |
 | --- | ---: | --- |
-| UTF-8 input bytes | 134,217,728 | The ordinary Windows writer is not connected to this profile. |
+| UTF-8 input bytes | 134,217,728 | Enforced by the narrow ordinary v11 route; complete portable boundary evidence remains separate. |
 | Container depth | 64 | A portable manifest must include exact boundary vectors. |
 | JSON tokens | 8,000,000 | The internal TS canonicalizer enforces an equivalent output budget; portable boundary fixtures remain open. |
 | Decoded UTF-8 bytes in one string | 67,108,864 | A portable manifest must include exact boundary vectors. |
@@ -191,8 +192,8 @@ Canonical number spelling can be longer than accepted input spelling, so an
 input within the byte ceiling can still be rejected when its canonical output
 would exceed that ceiling. Reflection arrays, small number strings, and accepted
 prefixes may still allocate; this is not an allocation-free or OOM guarantee.
-This reference implementation does not adopt the portable profile or connect the
-ordinary Windows writer.
+This reference implementation alone does not adopt the portable profile. The
+separate ordinary Editor route consumes it without promoting that wider claim.
 
 Candidate input and output behavior:
 
@@ -472,8 +473,8 @@ validated original UUID, also at root. No random/time ID generation, global
 collision ownership, silent downgrade or default ordinary-save interception is
 implemented. A byte copy retains identity and is not a fork.
 
-Future ordinary-path adoption requires an explicit migration rather than
-treating the internal codec as a product connection:
+Ordinary-path adoption requires the explicit migration used by the bounded
+Editor route, not merely the existence of an internal codec:
 
 1. Validate the source under its original version and profile.
 2. Apply a reviewed v9/v10-to-v11 migration with stable layer, atlas, parameter,
@@ -492,6 +493,118 @@ use separate fixtures, and never replace the source document silently.
 Legacy acceptance rules for versions 1 through 10 remain their own contract.
 Publishing a v11 profile must not broaden, narrow, or reinterpret those accepted
 sets accidentally.
+
+## Ordinary Editor embedded-v11 route
+
+This opt-in route uses `vivi2d.projectFormat.v11.embeddedRoundTrip.draft1`,
+the real codec owner and the native PNG WASM verifier. It does not promote the
+remaining portability gates below or change ordinary legacy v9/`.vivb` saves.
+Opening an unsupported document fails before adoption; it is never silently
+stripped or migrated. Explicit **Save v11 copy** validates and assigns one new
+UUID, writes a different target, and adopts only after a successful write.
+Ordinary Save/Save As preserves identity; Fork assigns a new UUID. Duplicate
+original writes the codec's preserved original canonical document, not a
+reconstruction from current Editor fields.
+
+The Editor retains complete original PNG atlases, including unused atlases and
+pixels outside entries. Layer textures alias the complete atlas; authored UVs
+remain atlas-space coordinates, including finite coordinates outside entries.
+Canvas readback is display state, not source-PNG authority: each detached display
+surface records its own initial readback fingerprint and dimensions, checked
+against that same surface before edits/save. Strict straight-alpha RGBA and
+original PNG bytes are retained separately. No ordinary-save repacker is used.
+
+Supported image operations have fixed semantics:
+
+- Add PNG creates a dedicated full-entry atlas with one newly minted, collision-
+  checked ID. A batch is prepared and validated before a single adoption.
+- Replacing an exclusive image retains the atlas ID and position. Replacing a
+  shared image detaches only the selected entry into a new appended atlas;
+  other entries and source pixels are preserved. Geometry, layer size and skin
+  remain unchanged. UVs become `(u * oldAtlasWidth - entry.x) / entry.width`
+  and the corresponding Y expression; a full entry preserves UV bits exactly.
+  Identical complete image/mapping is a no-op.
+- An explicit atlas/entry edit retains UVs. Raw per-vertex UV editing is
+  available. Generated UVs are mapped into the selected entry once; entry-local
+  image analysis uses its crop, not the unrelated remainder of a shared atlas.
+- Mesh deletion promotes its children in place, repairs parent-bone references,
+  and removes the mesh's skin, mask references and atlas entry in one edit.
+  Atlases made empty by this edit are removed; previously unused imported
+  atlases remain until explicit **Remove unused images**. Shared image pixels
+  are not scrubbed by removing an entry, and the UI discloses this fact.
+
+PSD/provenance imports, PNG split/auto-setup and `.vivid` operations do not run
+inside this narrow v11 profile: they report an explicit unsupported-operation
+message before texture installation or state change. Close/open provides the
+ordinary legacy transition. This is a capability boundary, not silent success.
+Supported mesh masks must work; non-mesh mask fields, including empty fields,
+and inverted masks are rejected without stripping. Current Editor
+`clipMaskIds` is the sole mask authority and is converted bidirectionally to the
+codec representation, preserving absent versus empty arrays without falling
+back to loaded edges. Mask rendering semantics are owned by Runtime Spec v1's
+ordinary Editor embedded-v11 subsection.
+
+Every successful UV/index/cardinality/mask/tree/parent/alias structural edit
+increments the structure version once in the same commit; vertex-only movement
+does not, and a no-op creates no history. A fixed synchronous publication guard
+and prepared participants cover texture aliases, Project/carrier/revision/path,
+parameter/evaluation stores, and history/merge state. A throwing participant or
+subscriber causes independent reverse rollback; later selection/notification
+failure does not roll back committed core state. Undo restores the retained
+revision with fresh display surfaces and the same carrier, including after a
+save. History bounds are 50 complete entries across both stacks and unique
+history-only backing of 64 MiB PNG / 256 MiB RGBA, excluding active backing.
+Budget eviction removes complete farthest entries, preserving contiguous steps
+nearest the active state on both sides.
+
+One save slot covers validation, dialog, write and completion, starting before
+the first await. Closing/opening another session does not release that slot;
+its old completion cannot update the new session. A successful older save may
+record its captured baseline but never rolls back newer same-session edits.
+Copy/fork/original-duplicate passes at most two paths through a closed v11-only
+IPC field: the source captured at adoption and the current save path, deduplicated.
+Ordinary Save As never changes the captured source. Main checks each already-authorized source and selected
+target using canonical filesystem identity (or canonical parent plus basename
+for a new target), before atomic replacement. This performs metadata reads and
+rejects same-entry parent aliases and platform path casing; it neither grants
+new arbitrary-path access nor locks against a separate process concurrently
+replacing filesystem directories. Existing final-symlink rejection remains.
+
+The mounted Canvas is the single fixed synchronous display-preparation participant.
+Its GPU preparation precedes CPU publication; accepted scene swaps retain old owners
+until the final history commit. CPU rollback does not promise that a renderer whose
+render call was interrupted is usable: ordinary drawing stops immediately, and the
+existing application lifecycle disposes and reinitializes that renderer before
+rebuilding the retained Project. Failure of that fresh rebuild leaves the display
+unavailable, rather than starting an automatic retry loop. No second renderer,
+private stack restoration or shared-pool clearing is used.
+
+Parameter bindings for this v11 route are a detached, display-only projection of
+one authored Project and captured parameter snapshot, using the existing additive
+binding evaluator. Paired coordinates/scales are applied together; skin and mask
+preparation consume the same projection. Default/live parameter changes do not
+rewrite the authored pose, create history entries or enter saved JSON. Binding
+edits and Undo reproject even when parameter identity has not changed. Legacy
+parameter application remains on its existing path.
+
+The existing Editor IK hook uses one coalesced frame request for external
+Project/carrier, parameter or runtime-target changes. It computes all solutions
+and mapped values off-store, rejects nonfinite/stale results, and publishes the
+two ephemeral fields under the same guard with independent owned rollback.
+Its successful own parameter object updates display but is not itself another
+IK trigger; a subsequent external change still is. Ordinary parameter/IK actions
+reject during publication, while internal raw store APIs remain trusted escape
+hatches, not a hostile-plugin isolation guarantee. Later GPU failure suspends
+display without undoing the accepted ephemeral CPU update. This route introduces
+no feedback-convergence engine or claim of Native C2 deterministic evaluation.
+
+Ordinary legacy loading continues to validate supplied fields using its existing
+schema. Only absent runtime fields receive the existing shared defaults; invalid
+supplied config/null is rejected before image decode. Historical transforms are
+selected from the validated input version, so pre-v2 clips still move into Scene 1
+but an authored empty v9 scene list stays empty. Authored scenes, lip-sync config
+and sourceKind are retained, even when explicit v11 copy must reject them. Derived
+Editor source classification is separate state, not an injected document field.
 
 ## Conformance Ownership
 

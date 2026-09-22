@@ -251,7 +251,7 @@ export function mapIKToParameters(
   controller: IKController,
   solution: IKSolution,
 ): Record<string, number> {
-  const params: Record<string, number> = {};
+  const params: Record<string, number> = Object.create(null);
   for (const mapping of controller.parameterMappings) {
     const solvedAngle = solution.solvedAngles.get(mapping.boneId);
     if (solvedAngle === undefined) continue;

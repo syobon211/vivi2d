@@ -7,7 +7,9 @@
     "publication": "internal"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./internal/png-rgba8-v1": "./src/internal/png-rgba8-v1.ts",
+    "./internal/evaluation-runtime-v1": "./src/internal/evaluation-runtime-v1.ts"
   },
   "dependencies": {
     "@vivi2d/core": "^0.1.0",

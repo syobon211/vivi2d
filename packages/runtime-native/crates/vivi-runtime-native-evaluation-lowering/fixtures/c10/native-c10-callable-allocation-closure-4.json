@@ -1,0 +1,1048 @@
+{
+  "kind": "c10-bounded-callable-allocation-closure-v4",
+  "generatedAt": "2026-09-20T22:49:36.643Z",
+  "base": "eacbe9a4d9be1439479f754a1547be098e216580",
+  "scope": "Read-only source linkage and selected dependency-member refresh; no compile or C10 execution in this run.",
+  "evidence": [
+    {
+      "path": "execution-evidence.json",
+      "bytes": 26384,
+      "sha256": "bd42d734be0f3da1f88e1b1ee98f179e1bd9ded83f2ddda71ea98eee47bf49fe"
+    },
+    {
+      "path": "c10-isolated-review-fixes-2-813GSi/summary.json",
+      "bytes": 12365,
+      "sha256": "e6668f8caa4e2adcc3fbda5d986d0142127fd95bc3f12039dab48372a7a0a341"
+    },
+    {
+      "path": "native-c10-source-callsite-map-2.json",
+      "bytes": 336521,
+      "sha256": "6bc5b813a7b4a46579ce4c50d82b3238bb1b064b30bc002dbd3cdfed00e14f86"
+    },
+    {
+      "path": "native-c10-callable-allocation-closure-4.md",
+      "bytes": 16581,
+      "sha256": "c1a42ca042a9d8eea7978b8d579f6675fe54e98055645dd1f9a7a8980bb289c6"
+    }
+  ],
+  "reportedReview": {
+    "source": "Parent recovered actual browser 6Pro final review",
+    "isolatedImplementation": "READY",
+    "closed": [
+      "I01",
+      "I02",
+      "I03"
+    ],
+    "repositoryAdoption": "PENDING"
+  },
+  "actualCompilerArtifacts": [
+    {
+      "name": "serde_json",
+      "target": "x86_64-pc-windows-msvc",
+      "sha256": "b3f74661844d747840dbd4eae78fef73d2faa63f435762c83202891cac25eb85"
+    },
+    {
+      "name": "vivi-runtime-native-preactivation",
+      "target": "x86_64-pc-windows-msvc",
+      "sha256": "79a489388e54dc5dce0f87061cc5b1b8bf3771be9ef2924f801690af76ccc10e"
+    },
+    {
+      "name": "vivi-runtime-native-evaluation-math",
+      "target": "x86_64-pc-windows-msvc",
+      "sha256": "199c61a9f9f6d96475a1e4e4671b4d590238f3c1bab4f257f72e5b3a8ae6b4c8"
+    },
+    {
+      "name": "vivi-runtime-native-evaluation-lowering",
+      "target": "x86_64-pc-windows-msvc",
+      "sha256": "65cb940eb865b219b0cfdbc0af9943d915e8e78ec40c982619cd6dca28bafcf1"
+    },
+    {
+      "name": "serde_json",
+      "target": "wasm32-unknown-unknown",
+      "sha256": "c5b2890758b3f1a7b71fda2144f4ca8afa322222845795aa727a1ad5f9aea337"
+    },
+    {
+      "name": "vivi-runtime-native-evaluation-math",
+      "target": "wasm32-unknown-unknown",
+      "sha256": "04641853ed2bb34959805858572e0523e41880c866a0d10a7038e4058f2955c1"
+    }
+  ],
+  "productionBoundary": [
+    "E0432",
+    "E0599",
+    "E0603"
+  ],
+  "sourcePins": [
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/derived.rs",
+      "bytes": 52152,
+      "sha256": "1e3a78a7c53769b258cfae84a2bd315f52c02d12be7274a2c5f60360c98f0388"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/derived_candidate.rs",
+      "bytes": 12225,
+      "sha256": "d2dfd4e625b4280ab137f776c82b453555beba6d7845f1b4fc6bef86fda16156"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/error.rs",
+      "bytes": 5868,
+      "sha256": "3e5f2d3e76efa4c957f77d95060b8e041827e41bd815cf5a64333cb180d54b07"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lib.rs",
+      "bytes": 4665,
+      "sha256": "19154105cc4b2dfa4713f9ee02461e3a30e5ec2144fdc842468a7fe6414bb804"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/lower.rs",
+      "bytes": 101607,
+      "sha256": "37a8789eb8af062b40d89fe330e8c29316c2fbc8f7fbb139316abc0cac1a9dac"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/model.rs",
+      "bytes": 24803,
+      "sha256": "90c007dabc9994f4c1fe7cd63f78b7c92b5f84119c4b896305d8d4e33a3283da"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/observation.rs",
+      "bytes": 8699,
+      "sha256": "36a6fb5d233e135ad2c7b257270cc8fd3b09407dfee4efdbb8ec514e28bf6664"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/physics.rs",
+      "bytes": 22120,
+      "sha256": "5257925d19242f7f588b862c21e692893939b757978024bf2a47ce9ea92b9249"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/reservation.rs",
+      "bytes": 36783,
+      "sha256": "9312254fa5f547709291853cdf36a9ffafcca3c74e8b29f613921af88b6dc1be"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/state.rs",
+      "bytes": 5157,
+      "sha256": "a3c5567f307b778ba18a9a8339a3ae7175c3a9d9fb0101cdfbfdf34e411e8906"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/src/tests.rs",
+      "bytes": 92461,
+      "sha256": "a6bfe47bb7d24d9f57b69e873b90e826b4af9cf76e268f709e60ecaaf8e1a53e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/README.md",
+      "bytes": 4199,
+      "sha256": "25eefb1cf8a76365d1c5cce840e72d6a41230a01a988a23533b0e6d7f4844982"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/generate-cases.mjs",
+      "bytes": 34997,
+      "sha256": "f6476b956394ae1a9a702a46f61295158bafbac08fc921a8890cfe42f8f0f19b"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/generate-controls.mjs",
+      "bytes": 6351,
+      "sha256": "63e4ee6a11d6d54f8c7d75942e71baea265e2cd3f6a37d456bcbd8ea84a450fe"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/generate-identities.mjs",
+      "bytes": 2084,
+      "sha256": "b91a85283fff86ecb054770c71490a0e0391ca00519608c691bf6d0bdd0b20ca"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/generate-inputs.mjs",
+      "bytes": 5313,
+      "sha256": "e2f3c9fa58f2f45983f1355c8ed629a8abdb81a4b020e85e257fb4bb6a760407"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/generate-projection-scope.mjs",
+      "bytes": 3199,
+      "sha256": "b138409d1d7d87b9d7f558a43e40b997bbafa35c0c020321619eaa2ae964224d"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/generate-scopes.mjs",
+      "bytes": 5085,
+      "sha256": "c76ef465e37dff7291b0e37bc5b7ed96cd3b21df05daec9878df284d928c8e1d"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/generate.mjs",
+      "bytes": 2827,
+      "sha256": "762e755b1524e71fe9a5ec3d63e4262cc8fcaf40727286c6cc0715244420dc5d"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/literal_types.rs",
+      "bytes": 10062,
+      "sha256": "e4e3b25d9b40a67e0cf78f40942230f5dd81fea2efaa133ffb5d2c436f25b85e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/production_boundary.rs",
+      "bytes": 464,
+      "sha256": "76432710a45a4a670e148676bcaccd0ea1ab1e7aa701f9067a7b8a71e5368895"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/allocation_guard.rs",
+      "bytes": 2441,
+      "sha256": "a1feef3636f5aded0ecc8c717ebdca55daa7f4ce7148f80c6f9d91b50c2402ce"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/compare.rs",
+      "bytes": 5541,
+      "sha256": "f100109b2331ca9409bdb78688815f2b0baaed2e0a224b33ec673b63ba0e3688"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/helper_checks.rs",
+      "bytes": 3510,
+      "sha256": "52b946494bb464629f243a11722861b7b905c36498f232c8d5f7bc680790a50e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/injections.rs",
+      "bytes": 3578,
+      "sha256": "9ca8eb170764e356077c3686c0e8465c46d37616e538aef519637dbcfe1e80e7"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/native.rs.in",
+      "bytes": 3736,
+      "sha256": "972832957d682891c2d58ce46135cf14b959acf69cfe2f3f2bf0b910dae5e81d"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/native_prerequisites.rs",
+      "bytes": 2242,
+      "sha256": "67e112e8de9f5b0b7def4fa8e31f40495edd465f769eba4a638b922566158464"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/raw_checks.rs",
+      "bytes": 1647,
+      "sha256": "d54614e0fd64a3ca181f9dc5f35cb81901a233c423436ea30fcec5f809d0fcab"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/route_setup.rs",
+      "bytes": 4246,
+      "sha256": "e1f017171fa0a87932bab8020eb508478ccd2aef0ddb0f465e73589feec4d410"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/shared_full_route.rs",
+      "bytes": 9116,
+      "sha256": "e5e681fbb9f3abdc79e305f746200caa1c077601f3fe14107e927b2ba2839db4"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/state_checks.rs",
+      "bytes": 36212,
+      "sha256": "081b089c1c48bad391301fd55caf256a4ac01215fbe145d1dbcd7ed1669fb928"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/tests/c10/support/wasm.rs.in",
+      "bytes": 7441,
+      "sha256": "b51814cd1a141d0b8eaafcc558538ba890e56a72cf1a44d6bf29766a9e9751d3"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/frozen-c9-setups.rs",
+      "bytes": 592053,
+      "sha256": "fb98a3be0394894ffe3ed5c0245c2ff882de675f8bfa783af353a4f8ceb02536"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-case-index-manifest-1.json",
+      "bytes": 124683,
+      "sha256": "3af093cec5c2b43bd8e711a3f4a40b3d496030c15f14870612db281404190ac1"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-freeze-assertion-binding-2.json",
+      "bytes": 44364,
+      "sha256": "0bac949d56bc041899ce7bdbdd5a6949cc94171fbc8855c7e7f9aa3ab369ed0e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-review-data-bundle-3.json",
+      "bytes": 729926,
+      "sha256": "3d857898abacc4487fceb9a610890cd440e4f29c0307ab6a023fed96b6c2f34f"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-review-input-bundle-1.json",
+      "bytes": 895432,
+      "sha256": "db4c199b6da49167f9e63d1fa761af80d1a7e46ece4a795f9d61a37ab4715b1e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-skinned-offset-invariance-supplement-1.json",
+      "bytes": 10581,
+      "sha256": "ca9b8a299e1e4a5206d5d881c1a6739df1019f087da745ab01071ed815580b87"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-strict-underflow-expectations-1.json",
+      "bytes": 36328,
+      "sha256": "00fd92ded8e323ff4d4919f34291052251b400177661e84f7458bd898e36197a"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/native-c10-strict-underflow-inputs-1.json",
+      "bytes": 23640,
+      "sha256": "03b73c616f0df051a6cc1a12ee386c9921cb9cb11a701ec973858d187d0099b5"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/raw-transcendental-edge-matrix-1-expectations.json",
+      "bytes": 199979,
+      "sha256": "6c1122d2e1aa27299e96ed71adc4825a2069dfee16a2b941c21d0d897ebcf88c"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/raw-transcendental-edge-matrix-1-inputs.json",
+      "bytes": 193664,
+      "sha256": "bb7cfca12a27fdad8fe7339e0c0cf0e17be29c155b77f697ae39f75d9b40e25e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/fixtures/c10/source-pins.json",
+      "bytes": 19682,
+      "sha256": "f671bf1e5321e595caa07dd8584c88fc936b1bbb893f9b447b00be8e9b76595c"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/src/binary64.rs",
+      "bytes": 5972,
+      "sha256": "1a28922c8f2ff01c9943b70c8eb82f2ef4a5036ccc5ef8e0f72571cc02499552"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/src/lib.rs",
+      "bytes": 3457,
+      "sha256": "df71cf7067fa730138aca80beda45dc22e33f5e52287afb5efeec3c7bb14f19e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/src/tests.rs",
+      "bytes": 18659,
+      "sha256": "0cd9ccfdd30df997f024c246617f3bd842d7f2cfdd402882b39eb19ac6f8b311"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/src/transcendental.rs",
+      "bytes": 1294,
+      "sha256": "adbf514a87c2afc80f28ff6cad110e955b8d71346840809c56ed47b177fba39b"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/src/wasm_test_adapter.rs",
+      "bytes": 1700,
+      "sha256": "d194fcd7df0e7956f691ad6ff20555f3c80d706b29c4e86df2051e76b434e9ee"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation/Cargo.toml",
+      "bytes": 435,
+      "sha256": "ebca7136f1e4926797c46c376ce90e9ce1e7cd91135314be4e42217c8914d23e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation/src/error.rs",
+      "bytes": 3163,
+      "sha256": "c31c5e7ca87a9681720cd994543c3697b6fe59085392055cc534b1965d9ff4d1"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation/src/lib.rs",
+      "bytes": 5362,
+      "sha256": "be45456abab790291b8e72c5b5ddb1d8c15c5c77d19efc8f0676a3f1649ab21e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation/src/schema_equivalent.rs",
+      "bytes": 14429,
+      "sha256": "e41b2be269274c0c3b98efee6d5d05752fd87ae28f40d059d50ec0f592fdddab"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation/src/semantic.rs",
+      "bytes": 32502,
+      "sha256": "9473f3a0510a610050e915e8cdb13bc106a0daafe0120547de4cd1fa3c00cc3d"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation/src/tests.rs",
+      "bytes": 55080,
+      "sha256": "c23e82227d127eeb6287271f7e61434833097c6b6991e31b158b7f92dc3863b9"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation/src/transport.rs",
+      "bytes": 14253,
+      "sha256": "c4b84f27fecc615f3b525c56f697a996c36581c2b375a873c2fa71423b8576b1"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-preactivation/Cargo.toml",
+      "bytes": 612,
+      "sha256": "d203cbf4a16fd220da0e335d8e872cb02ca25649a0961b4ce22d1d283cbab543"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-preactivation/src/coordinator.rs",
+      "bytes": 9103,
+      "sha256": "dab960e170b24f39c7dbfaf14a2e9fa0a06610bcdcca0d436721b4181bd872f9"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-preactivation/src/error.rs",
+      "bytes": 4725,
+      "sha256": "0eb67e4ce2d32b5f15129db7ab83872fd7c55e7059afbe4ba5910ffac46b62ad"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-preactivation/src/lib.rs",
+      "bytes": 1946,
+      "sha256": "3e625af7d5c94f5f91789c3c15d44e711801bca4a73a27354812790f3ff39344"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-preactivation/src/model.rs",
+      "bytes": 7229,
+      "sha256": "a4297f02adcc564b952f1a5d968c2ed70c8ca7039bce8cde36d0b9cad487901e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-preactivation/src/tests.rs",
+      "bytes": 23994,
+      "sha256": "254c23433b8e0209442a1017e05720b89c2ce5049bdf0ac0c328fa4228d58c06"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-host-local/Cargo.toml",
+      "bytes": 543,
+      "sha256": "3e84ee055ebd261e58e3cc973805d566a13c3b76d6014956836cbee7e6143b4b"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-host-local/src/error.rs",
+      "bytes": 5815,
+      "sha256": "5e5645eec4bf8e9af1e9e5a9fa66cb6ec1c8c91b6e05d98e17dde99634710a55"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-host-local/src/host.rs",
+      "bytes": 36784,
+      "sha256": "1a18d3b4809c60e27e48387e634d11c9f3a1d84b65b1146b818afc510805a70f"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-host-local/src/lib.rs",
+      "bytes": 1476,
+      "sha256": "4a0fe6da3af2a5d39a560fc71cec33682e9c7afddc040d6928310fd410a74676"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-host-local/src/model.rs",
+      "bytes": 9319,
+      "sha256": "8a6d06c0bd4d3e4acba4a130645ce3d7fe80cc4f9ea60235c5e1a4d957d4b772"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-host-local/src/tests/transfer.rs",
+      "bytes": 27517,
+      "sha256": "604c23d71398bf92c22ec716280eb032a1a8dd0985fbfbfee2bde922f30734cd"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-host-local/src/tests.rs",
+      "bytes": 48972,
+      "sha256": "48ef27a052f33757b2e419bb03a5ed80af0e2008b2b08993c2ce79d1fa951f55"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-store-local/Cargo.toml",
+      "bytes": 713,
+      "sha256": "9ea1dde0d57d7413ed202c9a85751b902e8bf1eb1fda9804da9512fadff83e4e"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-store-local/src/error.rs",
+      "bytes": 2254,
+      "sha256": "912b097381d4a86b3ca3f18ce29a6b8ce5879538a54283d8b989e3eb5453a3a8"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-store-local/src/filesystem.rs",
+      "bytes": 15353,
+      "sha256": "3e75a1b97840d8a23de643f1ee2620b30195c93cc35ebc4178c4a96540122add"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-store-local/src/lib.rs",
+      "bytes": 469,
+      "sha256": "ca85a461e3d70f703f7e1d382e1f8122e0d1577a0a5f26254fbcab3d26832489"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-store-local/src/principal.rs",
+      "bytes": 704,
+      "sha256": "c09ae03c9ca21357c2fa4d2aba196aa8363e2aec0dae2f2e84d50466e20b9d70"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-store-local/src/schema.rs",
+      "bytes": 11507,
+      "sha256": "e803c1eeabe11774491b428f61fc53218f6266cb92ff8b4cba604a7ed98f766a"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-store-local/src/store.rs",
+      "bytes": 17589,
+      "sha256": "2b74aa7e07c768f3c970d02d0a1ddcb359db87f174ff73bb7b8cdbdf5c061de4"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-store-local/src/tests.rs",
+      "bytes": 32055,
+      "sha256": "56f4a4d0082c58b8618897f0792980773471fb641374a50af9ab0c6367c56b71"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/Cargo.toml",
+      "bytes": 527,
+      "sha256": "9acae0615717a293f6303b1bee4f99b10b6bf146d67116437e9afb0d12c97d57"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/src/digest.rs",
+      "bytes": 2493,
+      "sha256": "284de3ce0a90ff764c9823a2602c81313439e860642cfe35199be3f8df1749e1"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/src/error.rs",
+      "bytes": 3902,
+      "sha256": "134e21623f641155ce7ec38d54a85df0d4e8c5a5e7f7f23140ef611378f64a43"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/src/lib.rs",
+      "bytes": 950,
+      "sha256": "d061fd3cde468ab22216c1fa9be43bc55ba41d166ed8a2e694b6cabe16489287"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/src/manifest/schema_equivalent.rs",
+      "bytes": 6644,
+      "sha256": "fb251fb24fc68ce8357b0b27f0ecb8f71a3c64ec52247d2c429f89085903d76f"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/src/manifest.rs",
+      "bytes": 14700,
+      "sha256": "50bb849e5500b3b849891d30ebc86e58f518ed65c78023710f8f4379b914fad2"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/src/model.rs",
+      "bytes": 2163,
+      "sha256": "8757db32226f416f2a84a7cb181472e58baaee747b0183002910e1c2e2df09d1"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/src/resolver.rs",
+      "bytes": 21223,
+      "sha256": "9c3d6eac128d0e06e83936ba9985064c4e306cc033a1757057e9c589c76e940c"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/src/store.rs",
+      "bytes": 1173,
+      "sha256": "7e56c945297ea1ae56121938ba906f0b64f2a18902b9fa149acf7351e1a5f513"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/src/tests.rs",
+      "bytes": 43558,
+      "sha256": "24b13166cb73247553d9f602f6c9c82c5f009e71ad17c505ab61cf3bc18096d4"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-png-ref/Cargo.toml",
+      "bytes": 468,
+      "sha256": "5f0d3f69c06dd6048ebdf6c56fb5694de066f64ac7519dd5078a4946084a59f7"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-png-ref/src/lib.rs",
+      "bytes": 23813,
+      "sha256": "1bf9a30d549bc869ee4838a32301e3ba9410391c97e4ca72c7579954717d1d58"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-png-ref/src/tests.rs",
+      "bytes": 16537,
+      "sha256": "c21fe7108a11be2c5fe1aaf6a0b3d07db32182e3aecb8bf1d2e32d3138aea222"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation/schema/evaluation-payload-v1.schema.json",
+      "bytes": 33961,
+      "sha256": "8d65b5ddea137a71894e57ba6e14c94576aad63b2b7586728fa2bcca5bb125a3"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-asset-resolver/schema/asset-model-v1.schema.json",
+      "bytes": 6114,
+      "sha256": "dfe762b5363fd2bf12ebf41fe7e81e8eb1d7cacfa9c5af1646004dfc49c52671"
+    },
+    {
+      "path": "packages/runtime-native/Cargo.toml",
+      "bytes": 688,
+      "sha256": "6723640b2ae8d7a04d6ef110fa3d4b32b1c834a5031a4ac5af61b097e2646067"
+    },
+    {
+      "path": "packages/runtime-native/Cargo.lock",
+      "bytes": 12107,
+      "sha256": "2fb55c803aa22c6a8095f457b95e16ddc1cc951ae4e9c1b0e52fcb6d8f32a2d2"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-lowering/Cargo.toml",
+      "bytes": 831,
+      "sha256": "f9b258c6272821769ec1a1514411292ac85bc9966c12c9834c1d025f71f99b8d"
+    },
+    {
+      "path": "packages/runtime-native/crates/vivi-runtime-native-evaluation-math/Cargo.toml",
+      "bytes": 522,
+      "sha256": "53ee392000cd8d815ea56f39454d7900dbe348066d250a5ee35d465ebe5e1707"
+    },
+    {
+      "path": ".cargo/config.toml",
+      "bytes": 85,
+      "sha256": "079f8a8032322e1fe2b7d2102bf5db329a0026c37d6e1866fdc776b9b058608b"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 672,
+      "sha256": "69560e9f705e8834489a9785db85ea94a8a4046813e29072786569601dcf8f0b"
+    },
+    {
+      "path": "scripts/lib/evaluation-lowering-c10-corpus.mjs",
+      "bytes": 8345,
+      "sha256": "8353d54d5597aa9d3421677088d000b0c2c934296872492bce3b35c870effedd"
+    },
+    {
+      "path": "scripts/lib/evaluation-lowering-c10-corpus.node-test.mjs",
+      "bytes": 3944,
+      "sha256": "db047284183e391a7b9eab4ee21775cee2e1a5a6d0324c44a3a2f4fa8d026253"
+    },
+    {
+      "path": "scripts/lib/evaluation-lowering-c10-execution.mjs",
+      "bytes": 17240,
+      "sha256": "7710522aee9381d673442356c31c940e65ada7bd17dc0d461d79ed420f732462"
+    },
+    {
+      "path": "scripts/lib/evaluation-lowering-c10-wasm-worker.mjs",
+      "bytes": 2679,
+      "sha256": "72930bf3dc6f9eb38f9cda98ea45f2abe85e6c2e8b1d673c6dbbb3b89bf2f707"
+    },
+    {
+      "path": "scripts/check-runtime-native-evaluation-math.mjs",
+      "bytes": 83271,
+      "sha256": "7c389b08b29205620e7cae2b3fded74a971f93b7acecb8a47e13cd3f7bfabb02"
+    },
+    {
+      "path": "scripts/check-runtime-native-evaluation-lowering.mjs",
+      "bytes": 169935,
+      "sha256": "e015c95a33fd00fc1d6a4539e5a331b2a8c11b0cb196c81757e0f09f8e2e879b"
+    }
+  ],
+  "executionSourceDrift": [
+    {
+      "path": "scripts/check-runtime-native-evaluation-lowering.mjs",
+      "executedSha256": "3b9fc98605042ac35b7f491bd57f27a6f62ca7cb62c9801547663e85e02fead7",
+      "currentSha256": "e015c95a33fd00fc1d6a4539e5a331b2a8c11b0cb196c81757e0f09f8e2e879b",
+      "disposition": "Current runner has not been validated by the earlier execution identity; root must rerun/review final runner."
+    }
+  ],
+  "checkerPin": {
+    "path": "scripts/check-runtime-native-evaluation-math.mjs",
+    "bytes": 83271,
+    "sha256": "7c389b08b29205620e7cae2b3fded74a971f93b7acecb8a47e13cd3f7bfabb02"
+  },
+  "cargoLock": {
+    "path": "packages/runtime-native/Cargo.lock",
+    "bytes": 12107,
+    "sha256": "2fb55c803aa22c6a8095f457b95e16ddc1cc951ae4e9c1b0e52fcb6d8f32a2d2"
+  },
+  "registryPackages": [
+    {
+      "name": "bitflags",
+      "version": "2.13.1",
+      "registryChecksum": "b588b76d00fde79687d7646a9b5bdf3cc0f655e0bbd080335a95d7e96f3587da"
+    },
+    {
+      "name": "fpmath",
+      "version": "0.1.1",
+      "registryChecksum": "f617488244e3bd5aa86da93efaf4072579a301832ca5a9c7e3493563b509a43d"
+    },
+    {
+      "name": "rustc_apfloat",
+      "version": "0.2.3+llvm-462a31f5a5ab",
+      "registryChecksum": "486c2179b4796f65bfe2ee33679acf0927ac83ecf583ad6c91c3b4570911b9ad"
+    },
+    {
+      "name": "smallvec",
+      "version": "1.15.2",
+      "registryChecksum": "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
+    }
+  ],
+  "selectedDependencyMembers": [
+    {
+      "package": "bitflags",
+      "version": "2.13.1",
+      "member": "src/lib.rs",
+      "bytes": 35195,
+      "sha256": "41e4e87cc47b9e54bdea72a8692f3923c8ec03caa942c6327e7e9fce8c660c7f"
+    },
+    {
+      "package": "bitflags",
+      "version": "2.13.1",
+      "member": "src/public.rs",
+      "bytes": 21007,
+      "sha256": "0af218c84f4597e803f69c62c89d51e834c6880369266d7af12855226af2655f"
+    },
+    {
+      "package": "bitflags",
+      "version": "2.13.1",
+      "member": "src/internal.rs",
+      "bytes": 4779,
+      "sha256": "645b13af0c7302258df61239073a4b8203d09f27b6c17f8a6f1f8c3e427f5334"
+    },
+    {
+      "package": "bitflags",
+      "version": "2.13.1",
+      "member": "src/traits.rs",
+      "bytes": 12951,
+      "sha256": "154244d22577c4825ab573e9b251084555d6b4f45d7660d6967559c0dc6798e2"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/lib.rs",
+      "bytes": 29532,
+      "sha256": "a5e4deee25937410c5db1b59d670a8879a53be7eb741cb4ac0b818bb41b09735"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/soft_f64.rs",
+      "bytes": 11362,
+      "sha256": "30da222738b4d068b23f6bad90248a59a094b79c13fca45f2a20e02f00a13a76"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/traits.rs",
+      "bytes": 6507,
+      "sha256": "f369128f888834aef1995367702827829c99dbba71b4c4ba30709d94b2bb153d"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/int.rs",
+      "bytes": 1244,
+      "sha256": "6bf81855c3e8b10788d25e03a810d289aaca56c0672a0d7675417a5ddae133b1"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/double.rs",
+      "bytes": 14345,
+      "sha256": "250178221b9bc9be81e075ef121555ac9cb85bb89eecf0178c35a1dcbf6292b6"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/f64/mod.rs",
+      "bytes": 1071,
+      "sha256": "a34c84f152754c3d56e5b43bb67ec4e1d1994d51fe921ddb0b39ebebf4c66e5e"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/f64/asin_acos.rs",
+      "bytes": 2146,
+      "sha256": "d376835b7196a229ebf1b1ee034d91409fc30961e70d81986d53dd1c06d05d96"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/f64/atan.rs",
+      "bytes": 3153,
+      "sha256": "61cc6977df833f1e794bcc7489833de67deba21ffdd1cefc0af61036fb4e8147"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/f64/reduce_pi_2.rs",
+      "bytes": 2734,
+      "sha256": "2aa331a20d99a547a2eaa9f10d67bb5dbb180c323b8b69ccf116ee65961cf352"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/f64/sin_cos.rs",
+      "bytes": 2901,
+      "sha256": "19ec6d4a61d5629f87d6e50761e8d00802dacee8b74126f81c82766c76794483"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/generic/mod.rs",
+      "bytes": 3380,
+      "sha256": "dc9a6936949cf6bd78a35d6d1be076742e8c045c493b0d36ecb281e301f95aca"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/generic/asin_acos.rs",
+      "bytes": 5147,
+      "sha256": "6fbc1f04e6b2e78689589f01b7d96cf5df757280474a45362cf007daa80e9e6a"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/generic/atan.rs",
+      "bytes": 7572,
+      "sha256": "ce5d10e6162a0db326ca8dde73158c11dbdbcb32f56a703c979874f019966863"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/generic/reduce_pi_2.rs",
+      "bytes": 3956,
+      "sha256": "722be389ab710f9acc59af227e1ef5d6d247be94616e09100500ef1b1e6d695a"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/generic/reduce_pi_2_large.rs",
+      "bytes": 6769,
+      "sha256": "16b70b51f32978ec235e383a099edb78bcbc4af63b9f4cf7ea22bd9044794944"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/generic/scalbn.rs",
+      "bytes": 6103,
+      "sha256": "9aa078049dce05271213efac7cdafc29d1a95a85580c0dfee6a31290bb592f59"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/generic/sin_cos.rs",
+      "bytes": 6464,
+      "sha256": "232424e5434a9861389c460d4845d3a59de23c05fcbd9747cd9d8515d6fd3e5e"
+    },
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/generic/sqrt.rs",
+      "bytes": 4483,
+      "sha256": "18afd36432b20e6e6fe69cf3c8d7589f2d9e85d8b6346693ba9256466678d118"
+    },
+    {
+      "package": "rustc_apfloat",
+      "version": "0.2.3+llvm-462a31f5a5ab",
+      "member": "src/lib.rs",
+      "bytes": 25858,
+      "sha256": "8ba58c2b08daf59b74686f55f0fad0615cb6019ad1605cf809f50291d82d4101"
+    },
+    {
+      "package": "rustc_apfloat",
+      "version": "0.2.3+llvm-462a31f5a5ab",
+      "member": "src/ieee.rs",
+      "bytes": 129142,
+      "sha256": "768bc8deabfa7be03826593fcab8a4e56deb96d20ffaa1ca0fc1f6a974846ef3"
+    }
+  ],
+  "excludedDependencyMembers": [
+    {
+      "package": "fpmath",
+      "version": "0.1.1",
+      "member": "src/host_f64.rs",
+      "bytes": 7004,
+      "sha256": "78656b31c46b60fc840bbb5b3eaefaad82a46321094a6352e57365fa5073355a"
+    },
+    {
+      "package": "smallvec",
+      "version": "1.15.2",
+      "member": "src/lib.rs",
+      "bytes": 84885,
+      "sha256": "a779bc485235ccb746b680be71d57b707865341209a585b53e63a91c4bda6cae"
+    }
+  ],
+  "callableEdges": [
+    {
+      "from": "construct",
+      "to": [
+        "C9 foundation setup (allocation allowed)",
+        "derived::evaluate_initial",
+        "state::commit_evaluation"
+      ],
+      "guard": "Native: arm before actual constructor and permit exact ordered nonempty 39-site C9 size/alignment prefix only; forbid additional C10 calls. WASM: materialize frozen foundation before arm, empty permitted prefix."
+    },
+    {
+      "from": "update_observed",
+      "to": [
+        "generation/delta validation",
+        "state::begin_update",
+        "derived::evaluate_update",
+        "state::commit_evaluation",
+        "generation publication"
+      ],
+      "guard": "candidate call only"
+    },
+    {
+      "from": "evaluate_initial",
+      "to": [
+        "preflight",
+        "bindings",
+        "neutral physics writes",
+        "finish"
+      ]
+    },
+    {
+      "from": "evaluate_update",
+      "to": [
+        "preflight",
+        "bindings",
+        "physics::step_physics",
+        "finish"
+      ]
+    },
+    {
+      "from": "finish",
+      "to": [
+        "optional worlds(pass0)",
+        "optional ik",
+        "worlds(pass1)",
+        "skinning",
+        "project",
+        "culling",
+        "validity publication"
+      ]
+    },
+    {
+      "from": "worlds/skinning",
+      "to": [
+        "fixed affine helper with contextual checkpoints",
+        "raw wrappers"
+      ]
+    },
+    {
+      "from": "ik",
+      "to": [
+        "two_bone far/near/interior OR bounded CCD",
+        "normalize",
+        "distance",
+        "end_effector",
+        "raw wrappers"
+      ]
+    },
+    {
+      "from": "physics::step_physics",
+      "to": [
+        "validate_snapshot",
+        "all input reads",
+        "bounded substeps",
+        "staged outputs",
+        "raw wrappers"
+      ]
+    },
+    {
+      "from": "raw direct arithmetic/comparison",
+      "to": [
+        "APFloat Double",
+        "fixed limb helpers",
+        "scalar status bitflags"
+      ]
+    },
+    {
+      "from": "raw sin/cos",
+      "to": [
+        "SoftF64",
+        "generic sin_cos",
+        "reduce_pi_2",
+        "reduce_pi_2_large fixed arrays",
+        "typed polynomial operations"
+      ]
+    },
+    {
+      "from": "raw atan2",
+      "to": [
+        "SoftF64",
+        "atan2_inner",
+        "atan_inner_common",
+        "typed double-double operations"
+      ]
+    },
+    {
+      "from": "raw acos",
+      "to": [
+        "SoftF64",
+        "acos_inner",
+        "two_hi_lo_sqrt_inner"
+      ]
+    },
+    {
+      "from": "raw sqrt",
+      "to": [
+        "SoftF64",
+        "sqrt_inner",
+        "sqrt_split"
+      ]
+    },
+    {
+      "from": "project",
+      "to": [
+        "existing checked binary64-to-binary32 classifier/converter",
+        "fixed test projection observation"
+      ]
+    }
+  ],
+  "excludedCallableRegions": [
+    "host_f64",
+    "SoftF64 to_host/from_host",
+    "APFloat Display/decimal string allocation regions",
+    "unselected FloatMath operations",
+    "FMA/IEEE remainder",
+    "IO/FFI/callbacks"
+  ],
+  "actualFiniteEvidence": {
+    "nativeDebugTestFunctions": 8,
+    "nativeReleaseTestFunctions": 8,
+    "wasmCompoundCases": 137,
+    "rawRows": 568,
+    "extraFPrimitiveRows": 6,
+    "helperCase": 39,
+    "F43ReusedCases": [
+      19,
+      33,
+      34,
+      54,
+      58,
+      71,
+      111,
+      130
+    ],
+    "traceCapacity": 28691,
+    "projectionCapacity": 6,
+    "measuredEvaluatorMemoryGrowthPages": 0,
+    "wholeHarnessFinalMemoryPages": null,
+    "wasm": {
+      "ok": true,
+      "compound": 137,
+      "helper": 1,
+      "rawRows": 574,
+      "reusedActualCases": 8,
+      "freshTraps": 10
+    },
+    "wasmSha256": "9c0a0a5f5295c68028666e56e5cf418b8be607b41e231de5bb7b5a9a4bb8f4a1",
+    "additionalC10AllocationCalls": 0,
+    "wasmObservedAllocationCalls": 0,
+    "allocationBoundary": {
+      "nativeInitial": "Actual constructor under guard; exact ordered nonempty C9 allocation prefix allowed, with count/size/alignment equality; nothing additional allowed.",
+      "wasmInitial": "Frozen foundation materialized before guard; empty allowed prefix.",
+      "otherActions": "Setters, presets, updates, helper and failed-initial companion forbid allocation.",
+      "outsideGuard": [
+        "Input/setup",
+        "Independent C9 baseline",
+        "Detached snapshots",
+        "Expected-state comparisons and diagnostics"
+      ]
+    },
+    "freshTraps": {
+      "count": 10,
+      "observerCapacities": [
+        "trace",
+        "projection"
+      ],
+      "nativeOnlyIndices": [
+        35,
+        91,
+        92,
+        93,
+        94,
+        95
+      ],
+      "unknownCompoundIndex": 147,
+      "invalidDiagnosticIndex": 8
+    },
+    "comparisonNegativeControls": {
+      "freshTraps": false,
+      "export": "c10_reuse_and_negative_controls",
+      "checks": [
+        "Copied expected trace-word flip returns actual Check::Err",
+        "Copied post-initial UV snapshot corruption returns actual Check::Err"
+      ],
+      "exportOutcome": "Success only after both actual comparison failures are verified"
+    }
+  },
+  "pending": [
+    "Final repository persistence/runner/architecture/CI and production-edge adoption review",
+    "Any final changed checker or runner pin requires fresh applicable evidence",
+    "C11 sealing/activation excluded"
+  ],
+  "limitations": [
+    "No whole-program formal callgraph or allocation proof.",
+    "Source member hashes do not establish semantic correctness alone.",
+    "Finite allocation/trace/state execution was performed by the pinned prior runner, not rerun here.",
+    "Native-only C9 cases are not WASM C9 coverage.",
+    "No private/protected input or unpublished product source was read."
+  ],
+  "reportingCorrection": {
+    "priorVersion": {
+      "file": "native-c10-callable-allocation-closure-3.json",
+      "sha256": "164d9492ff99932d2517c5f9eb9946fa8c018b6674642fb9a856e727c3c6a8af"
+    },
+    "sourceOrExpectationChanged": false,
+    "notes": [
+      "Native constructor guard includes only permitted ordered nonempty C9 prefix plus a strict no-additional-allocation check.",
+      "Ten fresh-instance traps exclude the separately successful comparison-negative export."
+    ]
+  }
+}

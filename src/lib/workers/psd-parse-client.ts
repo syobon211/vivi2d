@@ -10,12 +10,15 @@ export interface ParsedPsdResult {
   project: ProjectData;
 
   commitTextures: () => void;
+  /** Owned snapshots for candidate serialization, without touching global textures. */
+  getStagedTextures?: () => { layerId: string; imageData: ImageData }[];
 }
 
 export interface ParsePsdOptions {
   signal?: AbortSignal;
 
   transferInput?: boolean;
+  requireWorker?: boolean;
 }
 
 function isWorkerSupported(): boolean {
@@ -33,6 +36,7 @@ export function parsePsdAsync(
     throw new Error(PSD_PARSE_ERROR_MESSAGE);
   };
   if (!isWorkerSupported()) {
+    if (options?.requireWorker) return Promise.reject(new Error(PSD_PARSE_ERROR_MESSAGE));
     return Promise.resolve()
       .then(() => {
         const project = parsePsd(buffer, fileName);
@@ -53,6 +57,7 @@ export function parsePsdAsync(
   })
     .then((result) => ({
       project: result.project,
+      getStagedTextures: () => result.textures.map((tex) => ({ layerId: tex.layerId, imageData: new ImageData(new Uint8ClampedArray(tex.buffer.slice(0)), tex.width, tex.height) })),
       commitTextures: () => {
         clearTextures();
         for (const tex of result.textures) {

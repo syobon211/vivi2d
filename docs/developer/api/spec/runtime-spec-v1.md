@@ -69,6 +69,28 @@ missing references and cyclic mask dependencies use the same status, while an
 active mask depth greater than `8` returns `VIVI_ERR_LIMIT_EXCEEDED`. This
 strictness does not change the result for valid unmasked models.
 
+### Ordinary Editor embedded-v11 mask composition
+
+The opt-in embedded-v11 Editor profile preserves the existing unmasked path.
+Its supported mesh masks use current skinned positions and authored atlas-space
+UVs, with ordered nested non-inverted alpha masks. A source's own opacity is
+applied exactly once; its visibility, ancestor visibility and solo/culling state
+do not suppress its use as a mask. RGB channels are not mask coverage. Non-mesh
+mask fields and inverted masks are unsupported admission errors, not fields to
+silently discard. This Editor profile does not change legacy ABI 0.1 behavior.
+
+A masked target's triangles first composite normally in one isolated target
+layer, applying target opacity per triangle. The ordered masks then apply to
+that layer. One outer alpha filter with alpha `1` applies the final
+normal/add/multiply/screen blend against the scene exactly once.
+Consequently masked self-overlap intentionally differs from the unmasked
+per-fragment blend path. For background `(0.1, 0.2, 0.6)`, red alpha `0.5` then
+green alpha `0.5`, a full mask and target opacity `1`, the RGB results are
+normal `(0.275, 0.55, 0.15)`, add `(0.35, 0.7, 0.6)`, multiply
+`(0.05, 0.15, 0.15)`, and screen `(0.325, 0.6, 0.6)`, subject only to framebuffer
+quantization. Actual pixel checks, including nested/skinned and partial-alpha
+sources, are required before claiming this Editor renderer route complete.
+
 ## Canonical Constants
 
 The machine-readable constants are exposed from

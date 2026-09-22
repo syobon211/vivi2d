@@ -1,10 +1,8 @@
 import { findLayerById } from "@vivi2d/core/layer-utils";
 import { evaluateBindingsAdditive } from "@vivi2d/core/parameter-binding-eval";
-import type {
-  BoneBindingPropertyType,
-  ParameterBinding,
-} from "@vivi2d/core/types";
+import type { BoneBindingPropertyType, ParameterBinding } from "@vivi2d/core/types";
 import { useEffect, useRef } from "react";
+import { isProjectV11Publishing } from "@/lib/project-v11-publishing";
 import { useBoneStore } from "@/stores/boneStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useIKControllerStore } from "@/stores/ikControllerStore";
@@ -13,16 +11,23 @@ import { useParameterStore } from "@/stores/parameterStore";
 function bindingTargetKey(binding: ParameterBinding): string {
   const t = binding.target;
   if (t.type === "bone") return `bone:${t.boneId}:${t.property}`;
-  if (t.type === "ikController")
-    return `ikController:${t.controllerId}:${t.property}`;
+  if (t.type === "ikController") return `ikController:${t.controllerId}:${t.property}`;
   return "";
 }
 
 export function useParameterBinding() {
   const parameterValues = useParameterStore((s) => s.parameterValues);
+  const v11 = useEditorStore((s) => !!s.projectV11);
   const prevValuesRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
+    if (isProjectV11Publishing()) return;
+    // v11 bindings are a detached display projection, never authored edits.
+    // Clear legacy identity memory so a same-values transition back still runs.
+    if (v11) {
+      prevValuesRef.current = {};
+      return;
+    }
     if (prevValuesRef.current === parameterValues) return;
     prevValuesRef.current = parameterValues;
 
@@ -57,11 +62,7 @@ export function useParameterBinding() {
           target.boneId,
           target.property,
         );
-        const value = evaluateBindingsAdditive(
-          group,
-          parameterValues,
-          defaultValue,
-        );
+        const value = evaluateBindingsAdditive(group, parameterValues, defaultValue);
         applyBoneProperty(
           project.layers,
           boneStore,
@@ -75,20 +76,11 @@ export function useParameterBinding() {
           target.controllerId,
           target.property,
         );
-        const value = evaluateBindingsAdditive(
-          group,
-          parameterValues,
-          defaultValue,
-        );
-        applyIKControllerProperty(
-          ikStore,
-          target.controllerId,
-          target.property,
-          value,
-        );
+        const value = evaluateBindingsAdditive(group, parameterValues, defaultValue);
+        applyIKControllerProperty(ikStore, target.controllerId, target.property, value);
       }
     }
-  }, [parameterValues]);
+  }, [parameterValues, v11]);
 }
 
 function getBonePropertyDefault(
@@ -118,7 +110,7 @@ function applyBoneProperty(
   value: number,
 ): void {
   const node = findLayerById(layers, boneId);
-  if (!node || node.kind !== "bone") return;
+  if (node?.kind !== "bone") return;
 
   switch (property) {
     case "x":

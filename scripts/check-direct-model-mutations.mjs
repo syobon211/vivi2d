@@ -102,6 +102,8 @@ function collectMutations(relativePath) {
 
     if (
       (ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
+      (node.operator === ts.SyntaxKind.PlusPlusToken ||
+        node.operator === ts.SyntaxKind.MinusMinusToken) &&
       isPropertyLike(node.operand)
     ) {
       entries.push(signatureFor(relativePath, sourceFile, node, "update"));

@@ -1,4 +1,5 @@
 import { clearTextures } from "@/lib/texture-store";
+import { closeProjectV11 } from "../project-v11-transaction";
 import { useEditorStore } from "../editorStore";
 import { resetRelatedStores } from "./reset";
 
@@ -32,6 +33,7 @@ export { exportVividProject, importVividProject } from "./vivid";
 export { loadProject, saveProject } from "./viviFile";
 
 export function closeProject(): void {
+  if (closeProjectV11()) return;
   useEditorStore.setState((s) => {
     s.project = null;
     s.projectVersion = 0;
