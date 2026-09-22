@@ -129,7 +129,14 @@ export async function decodeThreeVideoFrames(
     info.frames.length !== 3 ||
     !info.frames.every(exactSize)
   )
-    throw decodeFailure();
+    throw new Error(
+      `Encoded video metadata mismatch: ${JSON.stringify({
+        streamCount: Array.isArray(info?.streams) ? info.streams.length : null,
+        frameCount: Array.isArray(info?.frames) ? info.frames.length : null,
+        streamSizesMatch: Array.isArray(info?.streams) && info.streams.every(exactSize),
+        frameSizesMatch: Array.isArray(info?.frames) && info.frames.every(exactSize),
+      })}`,
+    );
 
   const rgb = await decodeProcess(
     "ffmpeg",
