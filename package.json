@@ -192,7 +192,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "ajv": "8.20.0",
     "axe-core": "^4.11.3",
-    "concurrently": "^10.0.5",
+    "concurrently": "^10.0.6",
     "cross-env": "^10.1.0",
     "electron": "42.9.3",
     "electron-builder": "^26.15.3",
