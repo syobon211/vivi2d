@@ -196,7 +196,7 @@
     "cross-env": "^10.1.0",
     "electron": "42.9.3",
     "electron-builder": "^26.15.3",
-    "happy-dom": "^20.9.0",
+    "happy-dom": "^21.0.4",
     "msw": "^2.13.4",
     "three": "^0.184.0",
     "typescript": "^6.0.3",
